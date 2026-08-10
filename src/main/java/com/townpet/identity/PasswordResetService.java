@@ -3,7 +3,6 @@ package com.townpet.identity;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -38,35 +37,38 @@ public class PasswordResetService {
   private final AuthAuditRepository audit;
   private final PasswordEncoder passwordEncoder;
   private final SessionRevocationService sessionRevocation;
+  private final AccountTokenDelivery delivery;
 
   public PasswordResetService(
       CredentialRepository credentials,
       PasswordResetTokenRepository tokens,
       AuthAuditRepository audit,
       PasswordEncoder passwordEncoder,
-      SessionRevocationService sessionRevocation) {
+      SessionRevocationService sessionRevocation,
+      AccountTokenDelivery delivery) {
     this.credentials = credentials;
     this.tokens = tokens;
     this.audit = audit;
     this.passwordEncoder = passwordEncoder;
     this.sessionRevocation = sessionRevocation;
+    this.delivery = delivery;
   }
 
   @Transactional
-  public Optional<String> request(String email) {
-    Optional<CredentialEntity> credential = credentials.findByEmailIgnoreCase(email.trim());
-    if (credential.isEmpty() || credential.orElseThrow().isLifecycleLocked()) {
-      return Optional.empty();
+  public void request(String email) {
+    CredentialEntity credential = credentials.findByEmailIgnoreCase(email.trim()).orElse(null);
+    if (credential == null || credential.isLifecycleLocked()) {
+      return;
     }
 
     Instant now = Instant.now();
-    UUID memberId = credential.orElseThrow().getMemberId();
+    UUID memberId = credential.getMemberId();
     tokens.deleteConsumedOrExpired(memberId, now);
     String rawToken = SecureToken.create();
     tokens.save(
         new PasswordResetTokenEntity(
             memberId, SecureToken.hash(rawToken), now.plus(1, ChronoUnit.HOURS)));
-    return Optional.of(rawToken);
+    delivery.deliver(AccountTokenPurpose.PASSWORD_RESET, credential.getEmail(), rawToken);
   }
 
   @Transactional

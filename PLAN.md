@@ -7,10 +7,10 @@
 ## Active
 
 1. P2.1 - Credentials browser auth parity를 닫는다
-   - 파일: `src/main/java/com/townpet/identity/**`, `api/openapi/townpet.yaml`, `frontend/src/features/auth/**`, `frontend/e2e/auth-parity.spec.ts`
-   - 변경: password reset·email verification의 전달 경계를 local capture 구현으로 연결하고, demo identity 변경 금지와 login·logout·reset·verification·onboarding 화면 여정을 Spring API에 연결한다.
-   - 검증: `./gradlew test --tests '*Identity*' --tests '*Member*' migrationTest && corepack pnpm -C frontend test:e2e -- auth-parity.spec.ts`
-   - 완료: credentials login·logout·reset·verification·onboarding·role·IDOR·CSRF가 JDBC session과 합성 fixture에서 통과하고 공개 signup은 꺼져 있다.
+   - 파일: `api/openapi/townpet.yaml`, `frontend/src/**`, `frontend/e2e/auth-parity.spec.ts`
+   - 변경: login·logout·password reset·email verification·onboarding 화면을 Spring API에 연결하고 demo identity 변경 금지와 오류·만료 상태를 표시한다.
+   - 검증: `corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e -- auth-parity.spec.ts`
+   - 완료: Credentials 인증 여정이 desktop·mobile browser에서 실제 Spring session·CSRF와 함께 통과하고 공개 signup은 노출되지 않는다.
    - 주의: Kakao·Naver 회원가입·로그인은 현재 제품 범위가 아니다. OAuth provider, stub, link/unlink schema와 테스트를 미리 만들지 않는다.
 
 2. P2.2 - Publication·Media 작성과 상세 여정을 연결한다
