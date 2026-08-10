@@ -16,7 +16,7 @@ public class CredentialEntity {
   @Column(name = "member_id", nullable = false)
   private UUID memberId;
 
-  @Column(nullable = false, unique = true, length = 320)
+  @Column(nullable = false, unique = true, length = 320, columnDefinition = "citext")
   private String email;
 
   @Column(name = "password_hash", nullable = false, length = 100)

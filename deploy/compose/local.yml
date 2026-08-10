@@ -7,7 +7,6 @@ services:
       POSTGRES_DB: townpet
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_local_admin
-      TOWNPET_APP_PASSWORD: townpet_local_dev
     ports:
       - "54329:5432"
     volumes:

@@ -80,7 +80,7 @@ pages:
     spring: pending
   - path: /login
     legacy: true
-    spring: pending
+    spring: verified
   - path: /lost-found
     legacy: true
     spring: pending
@@ -101,10 +101,10 @@ pages:
     spring: pending
   - path: /onboarding
     legacy: true
-    spring: pending
+    spring: verified
   - path: /password/reset
     legacy: true
-    spring: pending
+    spring: verified
   - path: /password/setup
     legacy: true
     spring: pending
@@ -128,7 +128,7 @@ pages:
     spring: pending
   - path: /profile
     legacy: true
-    spring: pending
+    spring: verified
   - path: /register
     legacy: true
     spring: pending
@@ -155,7 +155,7 @@ pages:
     spring: pending
   - path: /verify-email
     legacy: true
-    spring: pending
+    spring: verified
 apiRoutes:
   - path: /api/acquisition/events
     methods: [POST]
@@ -188,19 +188,19 @@ apiRoutes:
   - path: /api/auth/{nextauth}
     methods: [GET, POST]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/auth/logout
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/auth/password/reset/confirm
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/auth/password/reset/request
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/auth/password/setup
     methods: [POST]
     legacy: true
@@ -209,7 +209,8 @@ apiRoutes:
   - path: /api/auth/register
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: excluded
+    decision: ADR-0040
   - path: /api/auth/social-accounts/{provider}
     methods: [DELETE]
     legacy: true
@@ -223,11 +224,11 @@ apiRoutes:
   - path: /api/auth/verify/confirm
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/auth/verify/request
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/boards/{board}/posts
     methods: [GET]
     legacy: true

@@ -1,5 +1,6 @@
 package com.townpet.identity;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -38,28 +39,33 @@ public class SecurityConfig {
   }
 
   @Bean
-  SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  SecurityFilterChain securityFilterChain(
+      HttpSecurity http, @Value("${townpet.e2e-support.enabled:false}") boolean e2eSupportEnabled)
+      throws Exception {
     CookieCsrfTokenRepository csrfTokens = CookieCsrfTokenRepository.withHttpOnlyFalse();
     CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
     csrfHandler.setCsrfRequestAttributeName(null);
 
     http.csrf(csrf -> csrf.csrfTokenRepository(csrfTokens).csrfTokenRequestHandler(csrfHandler))
         .authorizeHttpRequests(
-            requests ->
-                requests
-                    .requestMatchers(
-                        "/actuator/health", "/api/v1/auth/csrf", "/api/v1/auth/sessions")
-                    .permitAll()
-                    .requestMatchers("/api/v1/auth/password-resets/**")
-                    .permitAll()
-                    .requestMatchers("/api/v1/auth/email-verifications/**")
-                    .permitAll()
-                    .requestMatchers("/api/v1/catalog/**")
-                    .permitAll()
-                    .requestMatchers("/api/v1/operations/**")
-                    .hasRole("MODERATOR")
-                    .anyRequest()
-                    .authenticated())
+            requests -> {
+              if (e2eSupportEnabled) {
+                requests.requestMatchers("/api/_test/**").permitAll();
+              }
+              requests
+                  .requestMatchers("/actuator/health", "/api/v1/auth/csrf", "/api/v1/auth/sessions")
+                  .permitAll()
+                  .requestMatchers("/api/v1/auth/password-resets/**")
+                  .permitAll()
+                  .requestMatchers("/api/v1/auth/email-verifications/**")
+                  .permitAll()
+                  .requestMatchers("/api/v1/catalog/**")
+                  .permitAll()
+                  .requestMatchers("/api/v1/operations/**")
+                  .hasRole("MODERATOR")
+                  .anyRequest()
+                  .authenticated();
+            })
         .sessionManagement(
             sessions -> sessions.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .exceptionHandling(

@@ -46,8 +46,10 @@ backend, frontend, integration smoke, browser E2E를 계층으로 나눴다. smo
 
 비밀번호 reset에서 전체 session revoke를 구현하며 더 근본적인 누락을 발견했다. `spring-session-jdbc` library와 session table만 있었고 Boot 4의 JDBC session auto-configuration starter가 없어 기존 테스트는 servlet memory session을 사용하고 있었다. 의존성을 `spring-boot-starter-session-jdbc`로 바꾸고 테스트도 `MockHttpSession` 직접 전달 대신 실제 `SESSION` cookie와 JDBC repository를 확인하도록 수정했다. Reset token은 SHA-256 hash·1시간 만료·1회 사용·optimistic version으로 저장하고, 성공 시 password 변경·audit·모든 JDBC session 삭제를 한 transaction 경계에서 수행한다.
 
-- 근거: `482428d`, `c1f6155`, `461d4ad`, Flyway V004, `IdentityMemberControllerTest`
-- 현재 한계: token 전달 경계, demo scoped reset과 전체 Credentials auth parity는 아직 완료되지 않았다.
+Credentials 화면을 실제 PostgreSQL·Spring·Vite browser test로 연결하자 H2에서는 보이지 않던 `CHAR(64)` token hash와 JPA `VARCHAR(64)`, PostgreSQL `citext`와 기본 String mapping의 schema validation 차이가 차례로 드러났다. 적용된 migration을 수정하지 않고 V006에서 hash column을 정렬하고 길이 constraint를 유지했으며, email은 JPA mapping에 `citext`를 명시해 case-insensitive unique 의미를 보존했다. E2E는 운영과 분리된 임시 DB와 합성 계정을 사용하고 종료 시 volume을 제거하며, desktop·mobile 여정 뒤 JDBC session·auth audit row까지 대사한다.
+
+- 근거: `482428d`, `c1f6155`, `461d4ad`, Flyway V004~V006, `IdentityMemberControllerTest`, `auth-browser-e2e.sh`
+- 현재 한계: 실제 email provider와 transaction 이후 durable delivery·retry·bounce 처리는 아직 구현하지 않았다.
 
 ## 면접에서 강조할 핵심
 

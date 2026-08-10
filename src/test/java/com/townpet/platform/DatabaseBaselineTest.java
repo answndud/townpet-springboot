@@ -46,6 +46,10 @@ class DatabaseBaselineTest {
       assertThat(tableExists(statement, "identity_credential")).isTrue();
       assertThat(tableExists(statement, "password_reset_token")).isTrue();
       assertThat(tableExists(statement, "email_verification_token")).isTrue();
+      assertThat(columnDataType(statement, "password_reset_token", "token_hash"))
+          .isEqualTo("character varying");
+      assertThat(columnDataType(statement, "email_verification_token", "token_hash"))
+          .isEqualTo("character varying");
       assertThat(tableExists(statement, "identity_auth_audit")).isTrue();
       assertThat(columnExists(statement, "identity_credential", "role")).isTrue();
       assertThat(columnExists(statement, "identity_credential", "lifecycle_locked")).isTrue();
@@ -109,6 +113,21 @@ class DatabaseBaselineTest {
                 + column
                 + "'")) {
       return resultSet.next();
+    }
+  }
+
+  private static String columnDataType(Statement statement, String table, String column)
+      throws SQLException {
+    try (ResultSet resultSet =
+        statement.executeQuery(
+            "SELECT data_type FROM information_schema.columns WHERE table_schema = 'public'"
+                + " AND table_name = '"
+                + table
+                + "' AND column_name = '"
+                + column
+                + "'")) {
+      resultSet.next();
+      return resultSet.getString(1);
     }
   }
 
