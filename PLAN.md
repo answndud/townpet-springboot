@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.15 - media upload asset lifecycle 경계를 추가한다
-   - 파일: `src/main/java/com/townpet/media/**`, `src/main/java/com/townpet/media/api/**`, `src/test/java/com/townpet/media/**`, `src/main/resources/db/migration/**`
-   - 변경: upload asset의 owner·object key·상태·만료를 publication과 분리된 media write owner로 정의하고, finalize 전 asset을 publication에 연결할 수 없도록 최소 API 계약을 추가한다.
-   - 검증: `./gradlew integrationTest --tests '*Media*' --tests '*Publication*'`
-   - 완료: media 상태 전이와 publication 연결 실패가 독립된 오류·transaction 계약으로 검증되고, 삭제된 publication 복구가 media 원장을 임의로 변경하지 않는다.
+1. P2.16 - object storage adapter와 finalize 검증을 연결한다
+   - 파일: `src/main/java/com/townpet/media/**`, `src/main/java/com/townpet/media/api/**`, `src/test/java/com/townpet/media/**`, `deploy/compose/**`
+   - 변경: presigned upload·object metadata 조회를 storage port로 분리하고, finalize가 실제 object 존재·MIME·magic byte·checksum을 확인하도록 local test adapter를 연결한다.
+   - 검증: `./gradlew integrationTest --tests '*Media*' && ./gradlew check`; storage adapter contract test에서 missing/mismatched object를 거부한다.
+   - 완료: storage provider 교체 없이 media service가 검증된 object만 `READY`로 전환하고, 실패 시 metadata 상태가 `UPLOADING`에 남는다.
 
 ## Backlog
 
