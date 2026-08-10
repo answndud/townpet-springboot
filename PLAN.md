@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.12 - engagement read model과 삭제 lifecycle 경계를 검증한다
-   - 파일: `src/main/java/com/townpet/engagement/**`, `src/test/java/com/townpet/engagement/**`, `frontend/e2e/**`
-   - 변경: 댓글·reaction·bookmark 조회가 삭제·비활성화된 source row를 다시 노출하지 않고, 새로고침 후에도 viewer별 active/count 요약을 유지하는 회귀 테스트를 보강한다.
-   - 검증: `./gradlew integrationTest --tests '*Engagement*' && corepack pnpm -C frontend test:e2e:auth -- comment-management.spec.ts reaction-management.spec.ts bookmark-management.spec.ts`
-   - 완료: 댓글 목록과 세 engagement 상태 요약이 source row lifecycle/활성 상태와 일치하며, 전이 후 직접 조회와 브라우저 새로고침 결과가 동일하다.
+1. P2.13 - relationship 동시성·IDOR 경계를 확장한다
+   - 파일: `src/main/java/com/townpet/relationship/**`, `src/test/java/com/townpet/relationship/**`, `frontend/e2e/relationship-management.spec.ts`
+   - 변경: follow/block 전환을 동시에 반복해도 원장 unique 상태가 유지되고, authenticated principal과 대상 author가 바뀐 요청이 다른 회원의 관계 상태를 읽거나 변경하지 못하도록 회귀 테스트를 추가한다.
+   - 검증: `./gradlew integrationTest --tests '*Relationship*' && TOWNPET_PNPM_BIN=/path/to/pnpm ./scripts/auth-browser-e2e.sh -- relationship-management.spec.ts`
+   - 완료: 병렬 relationship mutation이 중복 row를 만들지 않고, 자기 상태·대상 상태·직접 URL 상태가 principal별로 격리된다.
 
 ## Backlog
 

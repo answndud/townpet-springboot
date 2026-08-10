@@ -45,6 +45,7 @@
 - parity는 내부 구현 동일성이 아니라 같은 actor·state에서 사용자가 관찰하는 의미가 같은지 비교한다.
 - UUID·시간·서명 URL 같은 volatile field만 allowlist로 normalize한다. status, permission, business field는 그대로 비교한다.
 - backend/frontend 단위 gate와 실제 두 프로세스 smoke, browser E2E를 분리해 실패 위치와 실행 비용을 조절한다.
+- 인증 browser E2E 스크립트는 기본적으로 `corepack pnpm`을 사용하되 `TOWNPET_PNPM_BIN`으로 로컬 pnpm 실행 파일을 주입할 수 있다. 이를 통해 Node/Corepack 버전 차이와 제품 기능 실패를 분리하면서도 같은 Docker PostgreSQL·Spring Boot·Vite 흐름을 검증한다.
 - 근거: `frontend`, `docs/parity/matrix.yaml`, `ParityInventoryTest`, CI workflow, smoke script
 
 ## Session·CSRF·authorization

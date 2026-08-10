@@ -24,5 +24,7 @@ test("member toggles a publication bookmark and keeps the state after reload", a
   await expect(page.getByRole("button", { name: /저장/ })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: /저장/ }).click();
   await expect(page.getByRole("button", { name: /저장/ })).toHaveAttribute("aria-pressed", "false");
+  await page.reload();
+  await expect(page.getByRole("button", { name: /저장/ })).toHaveAttribute("aria-pressed", "false");
   expect(browserErrors).toEqual([]);
 });
