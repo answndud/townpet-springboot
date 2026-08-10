@@ -10,6 +10,7 @@ export default defineConfig({
     "comment-management.spec.ts",
     "reaction-management.spec.ts",
     "bookmark-management.spec.ts",
+    "relationship-management.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,
