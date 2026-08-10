@@ -75,6 +75,11 @@ export type Bookmark = {
   active: boolean;
 };
 
+export type Relationship = {
+  following: boolean;
+  blocking: boolean;
+};
+
 export type CreatePublicationInput = {
   title: string;
   body: string;
@@ -297,6 +302,22 @@ export const publicationApi = {
         method: "PUT",
         headers: jsonHeaders,
         body: JSON.stringify({ active }),
+      },
+    );
+  },
+  relationship(memberId: string, signal?: AbortSignal) {
+    return apiFetch<Relationship>(
+      `/api/v1/members/${encodeURIComponent(memberId)}/relationship`,
+      { signal },
+    );
+  },
+  setRelationship(memberId: string, following: boolean, blocking: boolean) {
+    return mutate<Relationship>(
+      `/api/v1/members/${encodeURIComponent(memberId)}/relationship`,
+      {
+        method: "PUT",
+        headers: jsonHeaders,
+        body: JSON.stringify({ following, blocking }),
       },
     );
   },
