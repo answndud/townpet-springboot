@@ -6,6 +6,7 @@ import ProfilePage from "./ProfilePage";
 import VerifyEmailPage from "./VerifyEmailPage";
 import PublicationCreatePage from "./features/publication/PublicationCreatePage";
 import PublicationDetailPage from "./features/publication/PublicationDetailPage";
+import PublicationFeedPage from "./features/publication/PublicationFeedPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -21,6 +22,7 @@ function Header() {
   const publicHeader = ["/", "/guides", "/campaigns/neighborhood-map", "/towns"].some(
     (path) => location.pathname === path || location.pathname.startsWith(`${path}/`),
   );
+  const guestFeedHeader = location.pathname === "/feed/guest";
 
   return (
     <header className="site-header">
@@ -28,7 +30,7 @@ function Header() {
         <Link className="brand" to="/" aria-label="TownPet 홈으로 이동">
           <img src="/townpet-logo.svg" alt="TownPet" />
         </Link>
-        {publicHeader ? (
+        {publicHeader || guestFeedHeader ? (
           <nav aria-label="공개 안내 페이지 주요 이동">
             <NavLink to="/feed/guest">게시판</NavLink>
             <NavLink to="/login" data-testid="header-login-link-home">
@@ -125,6 +127,8 @@ export default function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/posts/new" element={<PublicationCreatePage />} />
         <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />
+        <Route path="/feed" element={<PublicationFeedPage memberView />} />
+        <Route path="/feed/guest" element={<PublicationFeedPage memberView={false} />} />
         <Route path="*" element={<PlaceholderPage />} />
       </Routes>
     </div>
