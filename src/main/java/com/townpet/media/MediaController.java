@@ -1,0 +1,113 @@
+package com.townpet.media;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import java.time.Instant;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestController
+@RequestMapping("/api/v1/media/uploads")
+class MediaController {
+  private final MediaService media;
+
+  MediaController(MediaService media) {
+    this.media = media;
+  }
+
+  @PostMapping
+  MediaResponse create(
+      @AuthenticationPrincipal UserDetails principal,
+      @Valid @RequestBody CreateUploadRequest request) {
+    return toResponse(
+        media.create(
+            memberId(principal),
+            request.checksumSha256(),
+            request.contentType(),
+            request.byteSize()));
+  }
+
+  @PostMapping("/{assetId}/finalize")
+  MediaResponse finalizeUpload(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID assetId,
+      @Valid @RequestBody FinalizeUploadRequest request) {
+    try {
+      return toResponse(
+          media.finalizeUpload(memberId(principal), assetId, request.checksumSha256()));
+    } catch (MediaAssetNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (MediaAssetStateException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not finalizable");
+    }
+  }
+
+  @PostMapping("/{assetId}/attachments/publications/{publicationId}")
+  MediaResponse attachPublication(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID assetId,
+      @PathVariable UUID publicationId) {
+    try {
+      return toResponse(media.attachToPublication(memberId(principal), assetId, publicationId));
+    } catch (MediaAssetNotFoundException | MediaPublicationNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (MediaOwnershipException exception) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } catch (MediaAssetStateException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not attachable");
+    }
+  }
+
+  private static UUID memberId(UserDetails principal) {
+    try {
+      return UUID.fromString(principal.getUsername());
+    } catch (IllegalArgumentException exception) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
+    }
+  }
+
+  private static MediaResponse toResponse(UploadAssetEntity asset) {
+    return new MediaResponse(
+        asset.getId(),
+        asset.getObjectKey(),
+        asset.getChecksumSha256(),
+        asset.getContentType(),
+        asset.getByteSize(),
+        asset.getStatus(),
+        asset.getPublicationId(),
+        asset.getExpiresAt(),
+        asset.getVersion());
+  }
+
+  record CreateUploadRequest(
+      @NotBlank @Pattern(regexp = "^[a-fA-F0-9]{64}$") String checksumSha256,
+      @NotBlank @Size(max = 120) String contentType,
+      @NotNull @Min(1) Long byteSize) {}
+
+  record FinalizeUploadRequest(
+      @NotBlank @Pattern(regexp = "^[a-fA-F0-9]{64}$") String checksumSha256) {}
+
+  record MediaResponse(
+      UUID id,
+      String objectKey,
+      String checksumSha256,
+      String contentType,
+      long byteSize,
+      MediaAssetStatus status,
+      @Nullable UUID publicationId,
+      Instant expiresAt,
+      long version) {}
+}
