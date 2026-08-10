@@ -6,6 +6,7 @@ import {
   publicationApi,
   type Comment,
   type Publication,
+  type Reaction,
 } from "../../api/client";
 
 function formatDate(value: string) {
@@ -31,6 +32,9 @@ export default function PublicationDetailPage() {
   const [commentBody, setCommentBody] = useState("");
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [reaction, setReaction] = useState<Reaction>({ active: false, count: 0 });
+  const [reactionLoading, setReactionLoading] = useState(true);
+  const [reactionSubmitting, setReactionSubmitting] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -39,6 +43,8 @@ export default function PublicationDetailPage() {
     setComments([]);
     setCommentsLoading(true);
     setCommentError(null);
+    setReaction({ active: false, count: 0 });
+    setReactionLoading(true);
     publicationApi
       .detail(publicationId, controller.signal)
       .then(setPublication)
@@ -60,6 +66,13 @@ export default function PublicationDetailPage() {
         }
       })
       .finally(() => setCommentsLoading(false));
+    publicationApi
+      .reaction(publicationId, controller.signal)
+      .then(setReaction)
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+      })
+      .finally(() => setReactionLoading(false));
     memberApi
       .current(controller.signal)
       .then((member) => setViewerId(member.id))
@@ -69,6 +82,21 @@ export default function PublicationDetailPage() {
       });
     return () => controller.abort();
   }, [publicationId]);
+
+  async function setPublicationReaction() {
+    if (!publication || reactionSubmitting) return;
+    setReactionSubmitting(true);
+    try {
+      const next = await publicationApi.setReaction(publication.id, !reaction.active);
+      setReaction(next);
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        navigate(`/login?next=/posts/${publication.id}`, { replace: true });
+      }
+    } finally {
+      setReactionSubmitting(false);
+    }
+  }
 
   async function createComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -194,6 +222,25 @@ export default function PublicationDetailPage() {
           </div>
         </header>
         <div className="publication-body">{publication.body}</div>
+        <div className="publication-reaction-row">
+          {viewerId ? (
+            <button
+              className={reaction.active ? "reaction-button active" : "reaction-button"}
+              type="button"
+              aria-label={reaction.active ? "좋아요 취소" : "좋아요"}
+              aria-pressed={reaction.active}
+              disabled={reactionLoading || reactionSubmitting}
+              onClick={setPublicationReaction}
+            >
+              <span aria-hidden="true">♥</span> 좋아요 {reaction.count}
+            </button>
+          ) : (
+            <Link className="reaction-button" to={`/login?next=/posts/${publication.id}`}>
+              <span aria-hidden="true">♥</span> 좋아요 {reaction.count}
+            </Link>
+          )}
+          <span className="publication-reaction-help">회원당 한 번만 표시됩니다.</span>
+        </div>
       </article>
       <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading">
         <div className="publication-comments-heading">

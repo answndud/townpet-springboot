@@ -385,6 +385,49 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /api/v1/publications/{publicationId}/reaction:
+    get:
+      operationId: getPublicationReaction
+      tags: [Engagement]
+      summary: Read the publication reaction state and count
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+      responses:
+        '200':
+          description: Reaction state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: setPublicationReaction
+      tags: [Engagement]
+      summary: Set or clear the current member reaction
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetReactionRequest'
+      responses:
+        '200':
+          description: Updated reaction state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   parameters:
     Cursor:
@@ -640,6 +683,22 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Comment'
+    SetReactionRequest:
+      type: object
+      required: [active]
+      properties:
+        active:
+          type: boolean
+    Reaction:
+      type: object
+      required: [active, count]
+      properties:
+        active:
+          type: boolean
+        count:
+          type: integer
+          format: int64
+          minimum: 0
     Publication:
       type: object
       required: [id, type, title, body, scope, authorId, lifecycle, createdAt, updatedAt, version]
