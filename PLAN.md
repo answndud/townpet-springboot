@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.14 - publication 복구와 media lifecycle을 분리한다
-   - 파일: `src/main/java/com/townpet/publication/**`, `src/main/java/com/townpet/media/**`, `src/test/java/com/townpet/publication/**`, `docs/report/technical-notes.md`
-   - 변경: 삭제된 publication의 복구 가능 상태와 media 참조 정리 정책을 먼저 테스트 가능한 application boundary로 나눈다.
-   - 검증: `./gradlew integrationTest --tests '*Publication*' --tests '*Media*'`
-   - 완료: publication lifecycle과 media lifecycle의 소유권·실패 응답·복구 전이가 각각 독립된 테스트 계약으로 드러난다.
+1. P2.15 - media upload asset lifecycle 경계를 추가한다
+   - 파일: `src/main/java/com/townpet/media/**`, `src/main/java/com/townpet/media/api/**`, `src/test/java/com/townpet/media/**`, `src/main/resources/db/migration/**`
+   - 변경: upload asset의 owner·object key·상태·만료를 publication과 분리된 media write owner로 정의하고, finalize 전 asset을 publication에 연결할 수 없도록 최소 API 계약을 추가한다.
+   - 검증: `./gradlew integrationTest --tests '*Media*' --tests '*Publication*'`
+   - 완료: media 상태 전이와 publication 연결 실패가 독립된 오류·transaction 계약으로 검증되고, 삭제된 publication 복구가 media 원장을 임의로 변경하지 않는다.
 
 ## Backlog
 
