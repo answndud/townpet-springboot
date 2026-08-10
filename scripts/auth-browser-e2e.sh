@@ -73,6 +73,7 @@ verify_auth_evidence=false
 verify_publication_evidence=false
 verify_deleted_publication_evidence=false
 verify_comment_evidence=false
+verify_reaction_evidence=false
 if (( $# == 0 )); then
   verify_auth_evidence=true
   verify_publication_evidence=true
@@ -83,6 +84,7 @@ for test_filter in "$@"; do
   [[ "${test_filter}" == *"feed-parity"* ]] && verify_publication_evidence=true
   [[ "${test_filter}" == *"publication-management"* ]] && verify_deleted_publication_evidence=true
   [[ "${test_filter}" == *"comment-management"* ]] && verify_comment_evidence=true
+  [[ "${test_filter}" == *"reaction-management"* ]] && verify_reaction_evidence=true
 done
 
 session_count="$(
@@ -110,8 +112,13 @@ comment_count="$(
     exec -T postgres psql -U postgres -d townpet -tAc \
     "SELECT COUNT(*) FROM engagement_comment"
 )"
+reaction_count="$(
+  docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" \
+    exec -T postgres psql -U postgres -d townpet -tAc \
+    "SELECT COUNT(*) FROM engagement_reaction"
+)"
 required_session_count=2
-if [[ "${verify_comment_evidence}" == true ]] \
+if [[ "${verify_comment_evidence}" == true || "${verify_reaction_evidence}" == true ]] \
   && [[ "${verify_publication_evidence}" == false ]] \
   && [[ "${verify_deleted_publication_evidence}" == false ]]; then
   required_session_count=1
@@ -136,4 +143,8 @@ if [[ "${verify_comment_evidence}" == true ]] && (( comment_count < 1 )); then
   echo "Expected comment evidence, got active_comments=${comment_count}" >&2
   exit 1
 fi
-echo "PostgreSQL evidence verified: sessions=${session_count}, auth_audits=${audit_count}, publications=${publication_count}, deleted_publications=${deleted_publication_count}, active_comments=${comment_count}"
+if [[ "${verify_reaction_evidence}" == true ]] && (( reaction_count != 0 )); then
+  echo "Expected final reaction toggle state to be empty, got reactions=${reaction_count}" >&2
+  exit 1
+fi
+echo "PostgreSQL evidence verified: sessions=${session_count}, auth_audits=${audit_count}, publications=${publication_count}, deleted_publications=${deleted_publication_count}, active_comments=${comment_count}, reactions=${reaction_count}"

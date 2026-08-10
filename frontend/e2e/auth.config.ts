@@ -8,6 +8,7 @@ export default defineConfig({
     "feed-parity.spec.ts",
     "publication-management.spec.ts",
     "comment-management.spec.ts",
+    "reaction-management.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,
