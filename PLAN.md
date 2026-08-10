@@ -30,27 +30,28 @@
 - 검증: `./gradlew openApiValidate generateOpenApiClients checkGeneratedSources contractTest` 통과. `clean check`에도 OpenAPI validation·contract gate가 연결됐다.
 - 보고서: [`docs/report/evolution/EV-004-p1-4-openapi-contract.md`](docs/report/evolution/EV-004-p1-4-openapi-contract.md), [`docs/report/knowledge/openapi-problemdetail.md`](docs/report/knowledge/openapi-problemdetail.md)
 
+### P1.5 - React·Vite shell과 기존 URL·visual parity 하네스를 만든다
+
+- 결과: React 19·Vite 6·React Router shell에 기존 로고·공개 header·blue palette·홈 CTA를 이식하고, `/api` proxy와 OpenAPI transport seam을 추가했다. desktop Chromium/mobile Pixel 5 Playwright shell smoke를 구성했다.
+- 검증: `corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend build && corepack pnpm -C frontend test:e2e` 통과. 4개 E2E(2 journeys × 2 viewports)가 통과했다.
+- 보고서: [`docs/parity/shell.md`](docs/parity/shell.md), [`docs/report/evolution/EV-005-p1-5-vite-shell.md`](docs/report/evolution/EV-005-p1-5-vite-shell.md), [`docs/report/knowledge/react-vite-parity.md`](docs/report/knowledge/react-vite-parity.md)
+
 ## Active
 
 ### P1 - 재현 가능한 Spring·React 기반과 동등성 하네스를 만든다
 
-1. P1.5 - React·Vite shell과 기존 URL·visual parity 하네스를 만든다
-   - 파일: `frontend/package.json`, `frontend/vite.config.ts`, `frontend/src/**`, `frontend/e2e/parity-shell.spec.ts`
-   - 변경: React 19, TypeScript, Vite, React Router와 generated API client를 구성한다. 기존 global style·layout·header·font·static asset을 선별 복사하고 49개 URL inventory, dual-target Playwright project와 visual baseline 규칙을 만든다.
-   - 검증: `corepack pnpm -C frontend install --frozen-lockfile && corepack pnpm -C frontend lint && corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e -- parity-shell.spec.ts`
-   - 완료: Vite dev와 Spring HTML shell에서 기준 URL이 열리고 desktop·mobile shell snapshot이 legacy baseline과 승인된 threshold 안에서 일치한다.
-
-2. P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
+1. P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
    - 파일: `docs/parity/matrix.md`, `migration/fixtures/logical-fixture.yaml`, `src/test/java/com/townpet/parity/**`, `frontend/e2e/parity.config.ts`
    - 변경: 49 page·55 API를 actor, fixture, 권한, 상태, error, responsive, accessibility, SEO, migration과 test ID에 연결한다. UUID·time·signed URL을 normalize하는 legacy/Spring differential runner를 만든다.
    - 검증: `./gradlew parityInventoryTest && corepack pnpm -C frontend test:e2e --project=parity-smoke`
    - 완료: 누락 page·API와 test 없는 핵심 여정이 report에 실패로 표시되고 동일 fixture의 의미 결과를 양쪽 target에서 비교할 수 있다.
 
-3. P1.7 - Frontend·backend 통합 smoke와 CI quality gate를 연결한다
+2. P1.7 - Frontend·backend 통합 smoke와 CI quality gate를 연결한다
    - 파일: `.github/workflows/**`, `src/test/java/com/townpet/smoke/**`, `frontend/e2e/**`
-   - 변경: frontend·Spring boot smoke와 계층형 CI quality gate를 연결한다.
+   - 변경: frontend·Spring Boot smoke와 계층형 CI quality gate를 연결한다.
    - 검증: `./gradlew clean check && corepack pnpm -C frontend lint && corepack pnpm -C frontend test`
    - 완료: fresh clone에서 backend·frontend의 최소 검증과 contract/architecture gate가 한 명령으로 재현된다.
+
 
 
 ### P2 - Domain별 vertical slice로 Write Owner를 Spring으로 옮긴다

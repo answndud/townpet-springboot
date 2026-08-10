@@ -1,0 +1,61 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+  color: #1e3f74;
+  background: #f8fafd;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; background: #f8fafd; }
+a { color: inherit; text-decoration: none; }
+.app-shell-bg {
+  min-height: 100vh;
+  background:
+    linear-gradient(to right, rgba(50, 88, 146, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(50, 88, 146, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at 0% 0%, #fff 0%, transparent 35%),
+    radial-gradient(circle at 100% 0%, #edf4ff 0%, transparent 34%),
+    linear-gradient(180deg, #fafdff 0%, #f3f8ff 52%, #edf5ff 100%);
+  background-size: 28px 28px, 28px 28px, auto, auto, auto;
+}
+.site-header { border-bottom: 1px solid #d8e4f6; background: #f4f8ffeb; backdrop-filter: blur(8px); }
+.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; max-width: 1320px; margin: 0 auto; padding: 8px 16px; }
+.brand { display: inline-flex; align-items: center; }
+.brand img { width: auto; height: 34px; }
+nav { display: flex; align-items: center; gap: 6px; }
+nav a { display: inline-flex; min-height: 36px; align-items: center; padding: 0 8px; color: #315484; font-size: 13px; font-weight: 600; }
+nav a.active { color: #2563eb; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.page { width: 100%; max-width: 1180px; margin: 0 auto; padding: 24px 16px 56px; }
+.hero-section { padding: 24px 0 28px; }
+.eyebrow, .card-label { color: #486894; font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+h1, h2, p { margin: 0; }
+.hero-section h1 { max-width: 760px; margin-top: 14px; color: #10284a; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.13; letter-spacing: -.04em; }
+.hero-copy { max-width: 680px; margin-top: 16px; color: #4f6f99; font-size: 17px; line-height: 1.75; word-break: keep-all; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+.button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 20px; border-radius: 8px; font-size: 14px; font-weight: 700; }
+.button-primary { border: 1px solid #3567b5; background: #3567b5; color: #fff; }
+.button-soft { border: 1px solid #cbdcf5; background: #fff; color: #315b9a; }
+.topic-section { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-block: 1px solid #dbe6f5; padding: 13px 0; }
+.topic-section h2 { color: #173963; font-size: 14px; }
+.topic-section p { margin-top: 2px; color: #5a7397; font-size: 12px; }
+.topic-list { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.topic-chip { display: inline-flex; min-height: 32px; align-items: center; border: 1px solid #d6e2f1; border-radius: 6px; background: #fbfdff; padding: 0 10px; color: #315b9a; font-size: 11px; font-weight: 700; }
+.preview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding-top: 24px; }
+.surface-card { border: 1px solid #d9e5f7; border-radius: 12px; background: #fff; padding: 22px; box-shadow: 0 10px 24px rgba(30, 63, 116, .05); }
+.surface-card h1, .surface-card h2 { margin-top: 10px; color: #10284a; line-height: 1.35; }
+.surface-card p { margin-top: 10px; color: #5a7397; font-size: 14px; line-height: 1.7; }
+.placeholder-page { min-height: calc(100vh - 52px); display: grid; place-items: center; }
+.placeholder-page .surface-card { width: min(100%, 600px); }
+@media (max-width: 640px) {
+  .header-inner { padding: 8px 12px; }
+  .brand img { height: 32px; }
+  .desktop-nav a:nth-child(2), .desktop-nav a:nth-child(3) { display: none; }
+  .page { padding: 22px 16px 44px; }
+  .hero-section { padding-top: 16px; }
+  .hero-copy { font-size: 15px; }
+  .topic-section { display: block; }
+  .topic-list { justify-content: flex-start; margin-top: 10px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+  .topic-chip { flex: 0 0 auto; }
+  .preview-grid { grid-template-columns: 1fr; }
+}
