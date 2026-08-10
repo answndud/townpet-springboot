@@ -52,6 +52,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/api/v1/catalog/**")
                     .permitAll()
+                    .requestMatchers("/api/v1/operations/**")
+                    .hasRole("MODERATOR")
                     .anyRequest()
                     .authenticated())
         .sessionManagement(
