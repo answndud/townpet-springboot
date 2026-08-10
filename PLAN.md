@@ -42,18 +42,13 @@
 - 검증: `JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home ./gradlew parityInventoryTest`와 `corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend build` 통과. parity inventory도 `clean check` gate에 연결했다.
 - 보고서: [`docs/report/evolution/EV-006-p1-6-parity-inventory.md`](docs/report/evolution/EV-006-p1-6-parity-inventory.md), [`docs/report/knowledge/parity-differential-testing.md`](docs/report/knowledge/parity-differential-testing.md)
 
+### P1.7 - Frontend·backend 통합 smoke와 CI quality gate를 연결한다
+
+- 결과: Java 25 backend, Node 22 frontend, integration smoke, main browser smoke를 계층형 GitHub Actions workflow로 연결하고, 동일한 `scripts/frontend-backend-smoke.sh`를 로컬·CI에서 실행하게 했다. smoke profile은 H2 `developmentOnly`로 production runtime과 분리했다.
+- 검증: `./gradlew clean check`, `corepack pnpm -C frontend install --frozen-lockfile && corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend build`, `./scripts/frontend-backend-smoke.sh` 통과.
+- 보고서: [`docs/report/evolution/EV-007-p1-7-quality-gate.md`](docs/report/evolution/EV-007-p1-7-quality-gate.md), [`docs/report/knowledge/ci-quality-gates.md`](docs/report/knowledge/ci-quality-gates.md)
+
 ## Active
-
-### P1 - 재현 가능한 Spring·React 기반과 동등성 하네스를 만든다
-
-1. P1.7 - Frontend·backend 통합 smoke와 CI quality gate를 연결한다
-   - 파일: `docs/parity/matrix.md`, `migration/fixtures/logical-fixture.yaml`, `src/test/java/com/townpet/parity/**`, `frontend/e2e/parity.config.ts`
-   - 변경: 49 page·55 API를 actor, fixture, 권한, 상태, error, responsive, accessibility, SEO, migration과 test ID에 연결한다. UUID·time·signed URL을 normalize하는 legacy/Spring differential runner를 만든다.
-   - 검증: `./gradlew parityInventoryTest && corepack pnpm -C frontend test:e2e --project=parity-smoke`
-   - 완료: 누락 page·API와 test 없는 핵심 여정이 report에 실패로 표시되고 동일 fixture의 의미 결과를 양쪽 target에서 비교할 수 있다.
-
-
-
 
 ### P2 - Domain별 vertical slice로 Write Owner를 Spring으로 옮긴다
 
