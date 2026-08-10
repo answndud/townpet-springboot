@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import jakarta.servlet.http.Cookie;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.lang.Nullable;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -165,6 +167,87 @@ class PublicationControllerTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.scope").value("LOCAL"))
         .andExpect(jsonPath("$.neighborhoodId").value(NEIGHBORHOOD_ID.toString()));
+  }
+
+  @Test
+  void feedUsesViewerSafeScopeAndStableCursor() throws Exception {
+    UUID deletedId = UUID.fromString("00000000-0000-4000-8000-000000000305");
+    UUID globalNewId = UUID.fromString("00000000-0000-4000-8000-000000000304");
+    UUID localOwnedId = UUID.fromString("00000000-0000-4000-8000-000000000303");
+    UUID localOtherId = UUID.fromString("00000000-0000-4000-8000-000000000302");
+    UUID globalOldId = UUID.fromString("00000000-0000-4000-8000-000000000301");
+    insertPublication(deletedId, "삭제된 글", "GLOBAL", null, "DELETED", "2026-08-10T10:05:00Z");
+    insertPublication(globalNewId, "새 전체 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:04:00Z");
+    insertPublication(
+        localOwnedId, "내 동네 글", "LOCAL", NEIGHBORHOOD_ID, "ACTIVE", "2026-08-10T10:03:00Z");
+    insertPublication(
+        localOtherId, "다른 동네 글", "LOCAL", OTHER_NEIGHBORHOOD_ID, "ACTIVE", "2026-08-10T10:02:00Z");
+    insertPublication(globalOldId, "이전 전체 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:01:00Z");
+
+    MvcResult firstPage =
+        mockMvc
+            .perform(get("/api/v1/feed").queryParam("limit", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items.length()").value(1))
+            .andExpect(jsonPath("$.items[0].id").value(globalNewId.toString()))
+            .andExpect(jsonPath("$.page.hasNext").value(true))
+            .andExpect(jsonPath("$.page.nextCursor").isNotEmpty())
+            .andReturn();
+    String cursor =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(firstPage.getResponse().getContentAsString())
+            .path("page")
+            .path("nextCursor")
+            .asText();
+
+    mockMvc
+        .perform(get("/api/v1/feed").queryParam("limit", "1").queryParam("cursor", cursor))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(1))
+        .andExpect(jsonPath("$.items[0].id").value(globalOldId.toString()))
+        .andExpect(jsonPath("$.page.hasNext").value(false))
+        .andExpect(jsonPath("$.page.nextCursor").isEmpty());
+
+    mockMvc
+        .perform(get("/api/v1/feed").cookie(login()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(3))
+        .andExpect(jsonPath("$.items[0].id").value(globalNewId.toString()))
+        .andExpect(jsonPath("$.items[1].id").value(localOwnedId.toString()))
+        .andExpect(jsonPath("$.items[2].id").value(globalOldId.toString()));
+
+    mockMvc
+        .perform(get("/api/v1/feed").cookie(login()).queryParam("audience", "GLOBAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items[0].id").value(globalNewId.toString()))
+        .andExpect(jsonPath("$.items[1].id").value(globalOldId.toString()));
+
+    mockMvc
+        .perform(get("/api/v1/feed").queryParam("cursor", "not-a-cursor"))
+        .andExpect(status().isBadRequest());
+  }
+
+  private void insertPublication(
+      UUID id,
+      String title,
+      String scope,
+      @Nullable UUID neighborhoodId,
+      String lifecycle,
+      String createdAt) {
+    OffsetDateTime timestamp = OffsetDateTime.parse(createdAt);
+    jdbc.update(
+        "INSERT INTO publication (id, author_member_id, type, scope, neighborhood_id, title, body, "
+            + "lifecycle, created_at, updated_at, version) VALUES (?, ?, 'FREE_BOARD', ?, ?, ?, ?, ?, ?, ?, 0)",
+        id,
+        MEMBER_ID,
+        scope,
+        neighborhoodId,
+        title,
+        title + " 본문",
+        lifecycle,
+        timestamp,
+        timestamp);
   }
 
   private Cookie login() throws Exception {

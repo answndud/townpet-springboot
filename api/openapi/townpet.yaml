@@ -137,6 +137,13 @@ paths:
       tags: [Feed]
       summary: Read a cursor-paginated feed
       parameters:
+        - name: audience
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [GLOBAL, VIEWER]
+            default: VIEWER
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -146,6 +153,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FeedPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
   /api/v1/catalog/neighborhoods:
     get:
       operationId: listNeighborhoods
@@ -226,20 +235,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
-    get:
-      operationId: listPublications
-      tags: [Publications]
-      summary: List visible publications
-      parameters:
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Limit'
-      responses:
-        '200':
-          description: Publication page
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PublicationPage'
   /api/v1/publications/{publicationId}:
     get:
       operationId: getPublication
@@ -484,8 +479,6 @@ components:
             $ref: '#/components/schemas/Publication'
         page:
           $ref: '#/components/schemas/PageInfo'
-    PublicationPage:
-      $ref: '#/components/schemas/FeedPage'
     ProblemDetail:
       type: object
       required: [type, title, status, code, traceId]

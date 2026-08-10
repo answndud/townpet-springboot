@@ -1,0 +1,175 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  ApiError,
+  memberApi,
+  publicationApi,
+  type Member,
+  type Publication,
+} from "../../api/client";
+
+type PublicationFeedPageProps = {
+  memberView: boolean;
+};
+
+const FEED_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  month: "long",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+function excerpt(body: string) {
+  const normalized = body.replace(/\s+/g, " ").trim();
+  return normalized.length > 120 ? `${normalized.slice(0, 120)}…` : normalized;
+}
+
+function formatFeedDate(value: string) {
+  return FEED_DATE_FORMATTER.format(new Date(value));
+}
+
+export default function PublicationFeedPage({ memberView }: PublicationFeedPageProps) {
+  const navigate = useNavigate();
+  const [member, setMember] = useState<Member | null>(null);
+  const [items, setItems] = useState<Publication[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasNext, setHasNext] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    const memberRequest = memberView
+      ? memberApi.current(controller.signal)
+      : Promise.resolve<Member | null>(null);
+
+    Promise.all([
+      memberRequest,
+      publicationApi.feed({
+        audience: memberView ? "VIEWER" : "GLOBAL",
+        signal: controller.signal,
+      }),
+    ])
+      .then(([currentMember, page]) => {
+        if (!active) return;
+        setMember(currentMember);
+        setItems(page.items);
+        setNextCursor(page.page.nextCursor);
+        setHasNext(page.page.hasNext);
+      })
+      .catch((requestError: unknown) => {
+        if (!active || (requestError instanceof DOMException && requestError.name === "AbortError")) {
+          return;
+        }
+        if (memberView && requestError instanceof ApiError && requestError.status === 401) {
+          navigate("/login?next=/feed", { replace: true });
+          return;
+        }
+        setError("피드를 불러오지 못했습니다.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [memberView, navigate]);
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const page = await publicationApi.feed({
+        audience: memberView ? "VIEWER" : "GLOBAL",
+        cursor: nextCursor,
+      });
+      setItems((current) => {
+        const existingIds = new Set(current.map((item) => item.id));
+        return [...current, ...page.items.filter((item) => !existingIds.has(item.id))];
+      });
+      setNextCursor(page.page.nextCursor);
+      setHasNext(page.page.hasNext);
+    } catch {
+      setError("다음 글을 불러오지 못했습니다.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="page feed-page">
+        <section className="surface-card" role="status">피드를 불러오는 중...</section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="page feed-page">
+      <header className="feed-hero">
+        <div>
+          <p className="eyebrow">{memberView ? "MY TOWNPET FEED" : "PUBLIC FEED"}</p>
+          <h1>{memberView ? "내 동네와 전체 새 글" : "공개 반려생활 피드"}</h1>
+          <p>
+            {memberView
+              ? `${member?.nickname ?? "회원"}님의 대표 동네와 전체 공개 글을 최신순으로 보여드려요.`
+              : "로그인 없이 볼 수 있는 전체 공개 글을 최신순으로 확인하세요."}
+          </p>
+        </div>
+        <Link className="button button-primary" to={memberView ? "/posts/new" : "/login?next=/posts/new"}>
+          글쓰기
+        </Link>
+      </header>
+
+      <nav className="feed-view-tabs" aria-label="피드 보기 전환">
+        <Link className={memberView ? "active" : ""} to="/feed">내 피드</Link>
+        <Link className={!memberView ? "active" : ""} to="/feed/guest">전체 공개</Link>
+      </nav>
+
+      {error ? <p className="form-error feed-error" role="alert">{error}</p> : null}
+      {items.length === 0 ? (
+        <section className="surface-card feed-empty">
+          <h2>아직 표시할 글이 없습니다</h2>
+          <p>첫 번째 반려생활 이야기를 나눠 보세요.</p>
+          <Link className="button button-soft" to={memberView ? "/posts/new" : "/login?next=/posts/new"}>
+            글 작성하기
+          </Link>
+        </section>
+      ) : (
+        <section className="surface-card feed-list" aria-label="게시글 목록">
+          {items.map((publication) => (
+            <article className="feed-item" key={publication.id}>
+              <div className="feed-item-chips">
+                <span className="publication-chip publication-chip-primary">자유게시판</span>
+                <span className="publication-chip">
+                  {publication.scope === "LOCAL" ? "내 동네" : "전체"}
+                </span>
+              </div>
+              <Link className="feed-item-title" to={`/posts/${publication.id}`}>
+                <h2>{publication.title}</h2>
+              </Link>
+              <p className="feed-item-excerpt">{excerpt(publication.body)}</p>
+              <div className="feed-item-meta">
+                <span>TownPet 회원</span>
+                <span aria-hidden="true">·</span>
+                <time dateTime={publication.createdAt}>{formatFeedDate(publication.createdAt)}</time>
+              </div>
+            </article>
+          ))}
+          {hasNext ? (
+            <div className="feed-load-more">
+              <button className="button button-soft" type="button" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? "불러오는 중..." : "더 보기"}
+              </button>
+            </div>
+          ) : null}
+        </section>
+      )}
+    </main>
+  );
+}
