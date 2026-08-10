@@ -64,6 +64,7 @@ class CommentControllerTest {
 
   @BeforeEach
   void resetState() {
+    jdbc.update("DELETE FROM relationship_block");
     jdbc.update("DELETE FROM engagement_comment");
     jdbc.update("DELETE FROM publication");
     jdbc.update("DELETE FROM member_profile WHERE member_id = ?", MEMBER_ID);

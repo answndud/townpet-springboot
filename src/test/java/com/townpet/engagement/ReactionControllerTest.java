@@ -58,6 +58,7 @@ class ReactionControllerTest {
 
   @BeforeEach
   void resetState() {
+    jdbc.update("DELETE FROM relationship_block");
     jdbc.update("DELETE FROM engagement_reaction");
     jdbc.update("DELETE FROM publication");
   }
