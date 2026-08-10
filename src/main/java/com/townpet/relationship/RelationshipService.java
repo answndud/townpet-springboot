@@ -1,5 +1,6 @@
 package com.townpet.relationship;
 
+import com.townpet.common.UuidV7;
 import com.townpet.member.api.MemberDirectory;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -33,10 +34,10 @@ class RelationshipService {
     var block = blocks.findByBlockerMemberIdAndBlockedMemberId(viewerId, targetId);
     if (blockActive) {
       follow.ifPresent(follows::delete);
-      if (block.isEmpty()) blocks.save(new BlockEntity(viewerId, targetId));
+      blocks.insertIfAbsent(UuidV7.randomUuid(), viewerId, targetId);
     } else {
       block.ifPresent(blocks::delete);
-      if (followActive && follow.isEmpty()) follows.save(new FollowEntity(viewerId, targetId));
+      if (followActive) follows.insertIfAbsent(UuidV7.randomUuid(), viewerId, targetId);
       if (!followActive) follow.ifPresent(follows::delete);
     }
     return new RelationshipState(followActive && !blockActive, blockActive);
