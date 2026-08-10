@@ -71,7 +71,9 @@ class UploadAssetEntity {
   }
 
   void finalizeUpload(String checksumSha256, Instant changedAt) {
-    if (status != MediaAssetStatus.UPLOADING || !this.checksumSha256.equals(checksumSha256)) {
+    if (status != MediaAssetStatus.UPLOADING
+        || !this.checksumSha256.equals(checksumSha256)
+        || !expiresAt.isAfter(changedAt)) {
       throw new MediaAssetStateException();
     }
     status = MediaAssetStatus.READY;

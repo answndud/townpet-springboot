@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import jakarta.servlet.http.Cookie;
 import java.util.Objects;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,6 +120,25 @@ class MediaControllerTest {
             jdbc.queryForObject(
                 "SELECT COUNT(*) FROM upload_asset WHERE status = 'ATTACHED'", Integer.class))
         .isEqualTo(1);
+
+    String expiredAssetId = createUpload(author);
+    jdbc.update(
+        "UPDATE upload_asset SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE id = ?",
+        UUID.fromString(expiredAssetId));
+    mockMvc
+        .perform(
+            post("/api/v1/media/uploads/{assetId}/finalize", expiredAssetId)
+                .cookie(author)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"checksumSha256\":\"" + CHECKSUM + "\"}"))
+        .andExpect(status().isConflict());
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject(
+                "SELECT status FROM upload_asset WHERE id = ?",
+                String.class,
+                UUID.fromString(expiredAssetId)))
+        .isEqualTo("UPLOADING");
   }
 
   private String createUpload(Cookie session) throws Exception {
