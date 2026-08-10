@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: townpet-springboot
+  main:
+    banner-mode: "off"
+  jackson:
+    time-zone: UTC
+
+server:
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+townpet:
+  build:
+    version: "0.1.0-SNAPSHOT"
