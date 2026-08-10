@@ -32,8 +32,13 @@ test("member toggles a publication reaction and keeps the state after reload", a
   await expect(reaction).toContainText("좋아요 1");
   await page.reload();
   await expect(page.getByRole("button", { name: /좋아요/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /좋아요/ })).toContainText("좋아요 1");
 
   await page.getByRole("button", { name: /좋아요/ }).click();
   await expect(page.getByRole("button", { name: /좋아요/ })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: /좋아요/ })).toContainText("좋아요 0");
+  await page.reload();
+  await expect(page.getByRole("button", { name: /좋아요/ })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: /좋아요/ })).toContainText("좋아요 0");
   expect(browserErrors).toEqual([]);
 });

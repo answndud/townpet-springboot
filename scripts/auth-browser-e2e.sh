@@ -20,6 +20,11 @@ if [[ "${1:-}" == "--" ]]; then
   shift
 fi
 
+pnpm_cmd=(corepack pnpm)
+if [[ -n "${TOWNPET_PNPM_BIN:-}" ]]; then
+  read -r -a pnpm_cmd <<< "${TOWNPET_PNPM_BIN}"
+fi
+
 docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" up --detach --wait
 
 gradle_args=(bootRun "--args=--spring.profiles.active=e2e")
@@ -50,7 +55,7 @@ if ! curl --fail --silent http://127.0.0.1:8080/actuator/health >/dev/null; then
 fi
 
 cd "${ROOT_DIR}/frontend"
-corepack pnpm exec vite --host 127.0.0.1 >"${FRONTEND_LOG}" 2>&1 &
+"${pnpm_cmd[@]}" exec vite --host 127.0.0.1 >"${FRONTEND_LOG}" 2>&1 &
 frontend_pid=$!
 for _ in {1..30}; do
   if curl --fail --silent http://127.0.0.1:5173/ >/dev/null; then
@@ -67,7 +72,7 @@ if ! curl --fail --silent http://127.0.0.1:5173/ >/dev/null; then
   exit 1
 fi
 
-corepack pnpm exec playwright test --config e2e/auth.config.ts "$@"
+"${pnpm_cmd[@]}" exec playwright test --config e2e/auth.config.ts "$@"
 
 verify_auth_evidence=false
 verify_publication_evidence=false
