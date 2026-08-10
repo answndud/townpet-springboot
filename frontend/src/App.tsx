@@ -1,5 +1,6 @@
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import LoginPage from "./LoginPage";
+import ProfilePage from "./ProfilePage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -113,6 +114,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<PlaceholderPage />} />
       </Routes>
     </div>
