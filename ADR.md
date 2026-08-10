@@ -2164,3 +2164,40 @@ Protected `main`, 작은 pull request와 비용·실행시간에 따라 계층�
 - 실제 repository 구성 후 fast gate 목표 시간과 job sharding을 benchmark해 확정해야 한다.
 - Mutation 대상 package와 변경 coverage 계산 도구를 scaffold 단계에서 선택해야 한다.
 - GitHub Actions 무료 quota 안의 nightly cadence를 최초 4주 사용량으로 재평가해야 한다.
+
+## ADR-0040 - 현재 인증 범위를 Credentials로 한정한다
+
+- 상태: accepted
+- 날짜: 2026-08-10
+- 근거 유형: explicit
+
+### Context
+
+Legacy TownPet에는 Credentials와 Kakao·Naver 인증 및 계정 연결 흐름이 있었고 초기 재아키텍처 계획도 provider stub까지 동등성 범위에 포함했다. 그러나 현재 프로젝트의 목표와 포트폴리오 증거에는 social provider 연동이 필수적이지 않으며, 이를 미리 구현하면 provider 계약, redirect·callback, 계정 충돌·연결·해제와 secret 운영 범위가 추가된다. 사용자는 Kakao·Naver 회원가입·로그인을 제공하지 않고 실제 필요가 생길 때 별도로 도입하기로 결정했다.
+
+### Decision
+
+- 현재 회원 인증은 이메일·비밀번호 Credentials, Spring Security와 PostgreSQL 서버 세션으로 한정한다.
+- 이메일 인증, 비밀번호 변경·재설정, session 폐기, CSRF, rate limit과 감사 로그를 현재 인증 완성도 범위로 삼는다.
+- Kakao·Naver OAuth endpoint, provider adapter·stub, account link·unlink schema와 테스트를 만들지 않는다.
+- Legacy의 Kakao 공유 기능은 인증과 별개인 콘텐츠 공유 entry이므로 해당 화면 parity 범위에 남긴다.
+- Social login 필요가 실제로 확인되면 provider 선택, identity 충돌·병합 정책, redirect 보안, secret과 장애 처리까지 새 요구사항과 ADR로 결정한다.
+- 이 결정은 ADR-0009, ADR-0029와 ADR-0030의 OAuth 구현·stub 관련 조항만 대체하며 해당 ADR의 서버 세션과 showcase 운영 결정은 유지한다.
+
+### Alternatives
+
+- Kakao·Naver를 지금 실제 연동: legacy parity는 높지만 현재 목표에 필요하지 않은 외부 연동과 운영 책임이 생긴다.
+- Provider stub만 구현: 외부 secret 없이 흐름을 보여줄 수 있지만 제공하지 않을 기능의 schema와 정책을 제품에 선반영한다.
+
+### Consequences
+
+- Identity module과 browser E2E는 Credentials 수명주기와 authorization에 집중한다.
+- Social account collision·link·unlink는 현재 완료 조건과 포트폴리오 증거에서 제외된다.
+- 향후 social login 도입은 단순 설정 변경이 아니라 별도 product·security 설계와 migration이 필요한 기능 추가가 된다.
+
+### Evidence
+
+- 사용자 결정(2026-08-10): 이 프로젝트는 Kakao·Naver 회원가입·로그인을 제공하지 않고 필요하면 나중에 적용한다.
+- `docs/PRD.md`: Credentials-only 사용자 여정과 OAuth 범위 제외를 제품 계약으로 명시한다.
+- `docs/TRD.md`: Identity module과 인증 계약에서 OAuth provider·link 저장소를 제외한다.
+- `PLAN.md`: OAuth stub 대신 Credentials browser auth parity를 다음 실행 slice로 둔다.
