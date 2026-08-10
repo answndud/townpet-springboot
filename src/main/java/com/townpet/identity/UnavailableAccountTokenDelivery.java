@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 @Component
-@Profile("!local & !test")
+@Profile("!local & !test & !e2e")
 final class UnavailableAccountTokenDelivery implements AccountTokenDelivery {
   @Override
   public void deliver(AccountTokenPurpose purpose, String recipient, String rawToken) {
