@@ -44,6 +44,11 @@ class DatabaseBaselineTest {
       assertThat(tableExists(statement, "event_publication")).isTrue();
       assertThat(tableExists(statement, "member_account")).isTrue();
       assertThat(tableExists(statement, "identity_credential")).isTrue();
+      assertThat(columnExists(statement, "identity_credential", "role")).isTrue();
+      assertThat(
+              queryInt(
+                  statement, "SELECT COUNT(*) FROM identity_credential WHERE role = 'MODERATOR'"))
+          .isEqualTo(1);
       assertThat(tableExists(statement, "neighborhood")).isTrue();
       assertThat(queryInt(statement, "SELECT COUNT(*) FROM neighborhood"))
           .isGreaterThanOrEqualTo(2);
@@ -73,6 +78,20 @@ class DatabaseBaselineTest {
             "SELECT 1 FROM information_schema.tables "
                 + "WHERE table_schema = 'public' AND table_name = '"
                 + table
+                + "'")) {
+      return resultSet.next();
+    }
+  }
+
+  private static boolean columnExists(Statement statement, String table, String column)
+      throws SQLException {
+    try (ResultSet resultSet =
+        statement.executeQuery(
+            "SELECT 1 FROM information_schema.columns WHERE table_schema = 'public'"
+                + " AND table_name = '"
+                + table
+                + "' AND column_name = '"
+                + column
                 + "'")) {
       return resultSet.next();
     }

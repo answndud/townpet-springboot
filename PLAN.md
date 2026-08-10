@@ -60,13 +60,19 @@
 - 검증: `./gradlew test --tests '*IdentityMemberControllerTest'` 통과. 전체 `clean check`, OpenAPI, frontend와 smoke는 다음 slice 종료 gate에서 다시 실행한다.
 - 보고서: [`docs/report/evolution/EV-009-p2-1b-session-onboarding.md`](docs/report/evolution/EV-009-p2-1b-session-onboarding.md), [`docs/report/knowledge/member-onboarding-and-session-revoke.md`](docs/report/knowledge/member-onboarding-and-session-revoke.md)
 
+### P2.1b-2a - Demo identity와 deny-by-default role을 추가한다
+
+- 결과: V003에 합성 MEMBER 3개·MODERATOR 1개를 hash-only로 seed하고 credential role을 Spring authority로 변환했다. 운영 prefix는 MODERATOR만 접근하며 일반 회원의 403 회귀를 추가했다.
+- 검증: `./gradlew test --tests '*Identity*'` 및 `./gradlew migrationTest` 통과.
+- 보고서: [`docs/report/evolution/EV-010-p2-1b-demo-roles.md`](docs/report/evolution/EV-010-p2-1b-demo-roles.md), [`docs/report/knowledge/demo-identity-and-rbac.md`](docs/report/knowledge/demo-identity-and-rbac.md)
+
 ## Active
 
 ### P2 - Domain별 vertical slice로 Write Owner를 Spring으로 옮긴다
 
-1. P2.1b-2 - Identity 정책과 demo onboarding parity를 닫는다
+1. P2.1b-2b - Password lifecycle과 auth parity를 닫는다
    - 파일: `src/main/java/com/townpet/identity/**`, `src/main/java/com/townpet/member/**`, `src/main/java/com/townpet/catalog/**`, `frontend/src/LoginPage.tsx`, `frontend/e2e/auth-parity.spec.ts`
-   - 변경: password reset·verification, demo account seed/lifecycle, deny-by-default member/staff policy와 legacy auth differential row를 추가한다. OAuth는 provider stub contract로만 검증한다. P2.1b-1의 logout·pet onboarding 회귀를 유지한다.
+   - 변경: password reset·verification, demo account scoped reset/lifecycle, member/profile IDOR matrix와 legacy auth differential row를 추가한다. OAuth는 provider stub contract로만 검증한다. 앞선 hardening slice의 logout·pet onboarding·role 회귀를 유지한다.
    - 검증: `./gradlew check integrationTest --tests '*Identity*' --tests '*Member*' && corepack pnpm -C frontend test:e2e -- auth-parity.spec.ts`
    - 완료: login·logout·session revoke·onboarding·member/profile IDOR·CSRF가 실제 Spring session과 parity fixture에서 통과하고 P2.1 전체 범위를 닫는다.
 

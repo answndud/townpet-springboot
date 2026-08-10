@@ -164,6 +164,26 @@ class IdentityMemberControllerTest {
   }
 
   @Test
+  void memberCannotAccessModeratorOperations() throws Exception {
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    org.springframework.mock.web.MockHttpSession session =
+        (org.springframework.mock.web.MockHttpSession)
+            Objects.requireNonNull(login.getRequest().getSession(false));
+
+    mockMvc
+        .perform(get("/api/v1/operations/demo-reset").session(session))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
   void csrfTokenIsExposedOnlyAsNonHttpOnlyCookie() throws Exception {
     mockMvc
         .perform(get("/api/v1/auth/csrf"))

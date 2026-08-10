@@ -34,6 +34,8 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 | [`knowledge/spring-session-csrf-auth.md`](knowledge/spring-session-csrf-auth.md) | session·CSRF·principal 경계 면접 노트 | P2.1a 완료 |
 | [`evolution/EV-009-p2-1b-session-onboarding.md`](evolution/EV-009-p2-1b-session-onboarding.md) | session revoke와 반려동물 onboarding hardening의 선택·증거 | P2.1b 진행 |
 | [`knowledge/member-onboarding-and-session-revoke.md`](knowledge/member-onboarding-and-session-revoke.md) | 회원 소유 데이터 transaction·logout revoke 면접 노트 | P2.1b 진행 |
+| [`evolution/EV-010-p2-1b-demo-roles.md`](evolution/EV-010-p2-1b-demo-roles.md) | 합성 demo identity와 deny-by-default role hardening의 선택·증거 | P2.1b 진행 |
+| [`knowledge/demo-identity-and-rbac.md`](knowledge/demo-identity-and-rbac.md) | BCrypt demo seed·RBAC·401/403 면접 노트 | P2.1b 진행 |
 
 ## 기능 Coverage
 
@@ -55,5 +57,6 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 | CI quality gate·integration smoke | ADR-0014 | `.github/workflows`, `scripts/frontend-backend-smoke.sh` | 단일 거대 workflow, preview-only 검증 | backend/frontend gate·smoke·browser smoke | [`knowledge/ci-quality-gates.md`](knowledge/ci-quality-gates.md) | evidenced |
 | Spring Session·CSRF·Identity | ADR-0009, ADR-0010 | V002, SecurityConfig, session/member tests | JWT browser storage, CSRF 제외 | IdentityMemberControllerTest, smoke | [`knowledge/spring-session-csrf-auth.md`](knowledge/spring-session-csrf-auth.md) | evidenced |
 | Member onboarding·session revoke | PRD FR-ID-04, TRD 9장 | MemberController, member_pet, profile UI | child CRUD 분리, cookie-only logout | onboarding/logout MockMvc tests | [`knowledge/member-onboarding-and-session-revoke.md`](knowledge/member-onboarding-and-session-revoke.md) | evidenced |
+| Demo identity·RBAC | PRD DEMO-01~03, NFR-SEC-02 | V003, CredentialEntity, SecurityConfig | 공개 signup, role 없는 authenticated 운영 API | migration + 403 authorization tests | [`knowledge/demo-identity-and-rbac.md`](knowledge/demo-identity-and-rbac.md) | evidenced |
 
 준비도는 `captured → understood → evidenced → rehearsed` 순서로만 올린다.
