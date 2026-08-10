@@ -1,0 +1,380 @@
+version: 1
+source: /Users/alex/project/townpet/app/src/app
+counts:
+  pages: 49
+  apiRoutes: 55
+normalization:
+  ignoredFields: [traceId, requestId, generatedAt]
+  uuid: '<uuid>'
+  timestamp: '<timestamp>'
+  signedUrl: '<signed-url>'
+pages:
+  - path: /
+    legacy: true
+    spring: pending
+  - path: /admin
+    legacy: true
+    spring: pending
+  - path: /admin/auth-audits
+    legacy: true
+    spring: pending
+  - path: /admin/breeds
+    legacy: true
+    spring: pending
+  - path: /admin/care-feedbacks
+    legacy: true
+    spring: pending
+  - path: /admin/corrections
+    legacy: true
+    spring: pending
+  - path: /admin/hospital-review-flags
+    legacy: true
+    spring: pending
+  - path: /admin/moderation-logs
+    legacy: true
+    spring: pending
+  - path: /admin/moderation/direct
+    legacy: true
+    spring: pending
+  - path: /admin/ops
+    legacy: true
+    spring: pending
+  - path: /admin/personalization
+    legacy: true
+    spring: pending
+  - path: /admin/policies
+    legacy: true
+    spring: pending
+  - path: /admin/reports
+    legacy: true
+    spring: pending
+  - path: /admin/reports/{id}
+    legacy: true
+    spring: pending
+  - path: /best
+    legacy: true
+    spring: pending
+  - path: /boards/adoption
+    legacy: true
+    spring: pending
+  - path: /bookmarks
+    legacy: true
+    spring: pending
+  - path: /campaigns/neighborhood-map
+    legacy: true
+    spring: pending
+  - path: /commercial
+    legacy: true
+    spring: pending
+  - path: /corrections/new
+    legacy: true
+    spring: pending
+  - path: /feed
+    legacy: true
+    spring: pending
+  - path: /feed/guest
+    legacy: true
+    spring: pending
+  - path: /guides/{guideSlug}
+    legacy: true
+    spring: pending
+  - path: /login
+    legacy: true
+    spring: pending
+  - path: /lost-found
+    legacy: true
+    spring: pending
+  - path: /lost/new
+    legacy: true
+    spring: pending
+  - path: /lounges/breeds/{breedCode}
+    legacy: true
+    spring: pending
+  - path: /lounges/breeds/{breedCode}/groupbuys/new
+    legacy: true
+    spring: pending
+  - path: /my-posts
+    legacy: true
+    spring: pending
+  - path: /notifications
+    legacy: true
+    spring: pending
+  - path: /onboarding
+    legacy: true
+    spring: pending
+  - path: /password/reset
+    legacy: true
+    spring: pending
+  - path: /password/setup
+    legacy: true
+    spring: pending
+  - path: /posts/new
+    legacy: true
+    spring: pending
+  - path: /posts/{id}
+    legacy: true
+    spring: pending
+  - path: /posts/{id}/edit
+    legacy: true
+    spring: pending
+  - path: /posts/{id}/guest
+    legacy: true
+    spring: pending
+  - path: /posts/{id}/sightings
+    legacy: true
+    spring: pending
+  - path: /privacy
+    legacy: true
+    spring: pending
+  - path: /profile
+    legacy: true
+    spring: pending
+  - path: /register
+    legacy: true
+    spring: pending
+  - path: /saved
+    legacy: true
+    spring: pending
+  - path: /search
+    legacy: true
+    spring: pending
+  - path: /search/guest
+    legacy: true
+    spring: pending
+  - path: /terms
+    legacy: true
+    spring: pending
+  - path: /towns/{townSlug}
+    legacy: true
+    spring: pending
+  - path: /towns/{townSlug}/{sectionSlug}
+    legacy: true
+    spring: pending
+  - path: /users/{id}
+    legacy: true
+    spring: pending
+  - path: /verify-email
+    legacy: true
+    spring: pending
+apiRoutes:
+  - path: /api/acquisition/events
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/admin/auth-audits/export
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/admin/auth-audits
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/admin/moderation/posts/{id}/visibility
+    methods: [PATCH]
+    legacy: true
+    spring: pending
+  - path: /api/admin/moderation/users/hide-content
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/admin/moderation/users/restore-content
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/admin/moderation/users/sanction
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/auth/{nextauth}
+    methods: [GET, POST]
+    legacy: true
+    spring: pending
+  - path: /api/auth/logout
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/auth/password/reset/confirm
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/auth/password/reset/request
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/auth/password/setup
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/auth/register
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/auth/social-accounts/{provider}
+    methods: [DELETE]
+    legacy: true
+    spring: pending
+  - path: /api/auth/social-dev/link
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/auth/verify/confirm
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/auth/verify/request
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/boards/{board}/posts
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/comments/{id}
+    methods: [PATCH, DELETE]
+    legacy: true
+    spring: pending
+  - path: /api/communities
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/corrections
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/feed/guest
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/feed/personalization
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/guest/step-up
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/health
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/home/feed
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/lounges/breeds/{breedCode}/groupbuys
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/lounges/breeds/{breedCode}/posts
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/metrics/web-vitals
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/neighborhoods
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/notifications
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/ops/web-vitals/summary
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/posts/{id}/comments
+    methods: [GET, POST]
+    legacy: true
+    spring: pending
+  - path: /api/posts/{id}/content
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/posts/{id}/detail
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/posts/{id}/lost-found-share.svg
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/posts/{id}/reaction
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/posts/{id}
+    methods: [GET, PATCH, DELETE]
+    legacy: true
+    spring: pending
+  - path: /api/posts/{id}/share
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/posts/{id}/stats
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/posts/{id}/view
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/posts
+    methods: [GET, POST]
+    legacy: true
+    spring: pending
+  - path: /api/posts/suggestions
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/profile/audience-segments
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/reports/{id}
+    methods: [PATCH]
+    legacy: true
+    spring: pending
+  - path: /api/reports/bulk
+    methods: [PATCH]
+    legacy: true
+    spring: pending
+  - path: /api/reports
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/search/guest
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/search/log
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/security/csp-report
+    methods: [GET, POST]
+    legacy: true
+    spring: pending
+  - path: /api/upload/client
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/upload
+    methods: [POST]
+    legacy: true
+    spring: pending
+  - path: /api/users/{id}/profile-summary
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/users/{id}/relation
+    methods: [GET]
+    legacy: true
+    spring: pending
+  - path: /api/viewer-shell
+    methods: [GET]
+    legacy: true
+    spring: pending
+

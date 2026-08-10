@@ -26,6 +26,8 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 | [`knowledge/openapi-problemdetail.md`](knowledge/openapi-problemdetail.md) | contract-first·RFC 9457 오류 계약 면접 노트 | P1.4 완료 |
 | [`evolution/EV-005-p1-5-vite-shell.md`](evolution/EV-005-p1-5-vite-shell.md) | React·Vite shell 이식과 UI parity smoke의 선택·증거 | P1.5 완료 |
 | [`knowledge/react-vite-parity.md`](knowledge/react-vite-parity.md) | shell-first·Vite·responsive parity 면접 노트 | P1.5 완료 |
+| [`evolution/EV-006-p1-6-parity-inventory.md`](evolution/EV-006-p1-6-parity-inventory.md) | 49 page·55 API inventory와 differential 기반의 선택·증거 | P1.6 완료 |
+| [`knowledge/parity-differential-testing.md`](knowledge/parity-differential-testing.md) | matrix·fixture·normalize 비교 면접 노트 | P1.6 완료 |
 
 ## 기능 Coverage
 
@@ -43,5 +45,6 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 | Spring Modulith·ArchUnit | ADR-0011 | 17개 package 경계·architecture tests | 물리 multi-project, shared business common | `./gradlew modulithTest` | [`knowledge/spring-modulith-architecture.md`](knowledge/spring-modulith-architecture.md) | evidenced |
 | OpenAPI·ProblemDetail | ADR-0012 | `api/openapi/townpet.yaml`, generated Java/TypeScript, global handler | controller code-first, 수동 DTO | `openApiValidate`, `contractTest` | [`knowledge/openapi-problemdetail.md`](knowledge/openapi-problemdetail.md) | evidenced |
 | React·Vite shell·Playwright | ADR-0001, ADR-0012 | `frontend/src`, shell E2E | Next.js server runtime 복제, 한 번에 전체 UI 이식 | `pnpm typecheck`, `pnpm test`, `pnpm test:e2e` | [`knowledge/react-vite-parity.md`](knowledge/react-vite-parity.md) | evidenced |
+| Parity inventory·differential | ADR-0001, ADR-0012 | `docs/parity/matrix.yaml`, `ParityInventoryTest`, `normalizePayload` | raw JSON 비교, 기억 기반 route 추적 | `parityInventoryTest`, normalization tests | [`knowledge/parity-differential-testing.md`](knowledge/parity-differential-testing.md) | evidenced |
 
 준비도는 `captured → understood → evidenced → rehearsed` 순서로만 올린다.
