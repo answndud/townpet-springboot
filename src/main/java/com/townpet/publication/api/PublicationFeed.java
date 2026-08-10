@@ -5,12 +5,14 @@ import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.table;
 
 import com.townpet.member.api.MemberDirectory;
+import com.townpet.relationship.api.BlockDirectory;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -40,10 +42,12 @@ public class PublicationFeed {
 
   private final DSLContext query;
   private final MemberDirectory members;
+  private final BlockDirectory blocks;
 
-  PublicationFeed(DSLContext query, MemberDirectory members) {
+  PublicationFeed(DSLContext query, MemberDirectory members, BlockDirectory blocks) {
     this.query = query;
     this.members = members;
+    this.blocks = blocks;
   }
 
   @Transactional(readOnly = true)
@@ -66,6 +70,10 @@ public class PublicationFeed {
       visible = visible.or(SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId)));
     }
     Condition condition = LIFECYCLE.eq("ACTIVE").and(visible);
+    if (viewerMemberId != null && includeViewerNeighborhood) {
+      Set<UUID> blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
+      if (!blockedAuthorIds.isEmpty()) condition = condition.and(AUTHOR_ID.notIn(blockedAuthorIds));
+    }
     if (cursor != null) {
       OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
       condition =

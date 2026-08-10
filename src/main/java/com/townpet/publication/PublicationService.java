@@ -2,6 +2,7 @@ package com.townpet.publication;
 
 import com.townpet.member.api.MemberDirectory;
 import com.townpet.member.api.MemberDirectory.MemberPublicationContext;
+import com.townpet.relationship.api.BlockDirectory;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.lang.Nullable;
@@ -12,10 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 class PublicationService {
   private final PublicationRepository publications;
   private final MemberDirectory members;
+  private final BlockDirectory blocks;
 
-  PublicationService(PublicationRepository publications, MemberDirectory members) {
+  PublicationService(
+      PublicationRepository publications, MemberDirectory members, BlockDirectory blocks) {
     this.publications = publications;
     this.members = members;
+    this.blocks = blocks;
   }
 
   @Transactional
@@ -35,8 +39,13 @@ class PublicationService {
   }
 
   @Transactional(readOnly = true)
-  Optional<PublicationEntity> findVisible(UUID publicationId) {
-    return publications.findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE);
+  Optional<PublicationEntity> findVisible(UUID publicationId, @Nullable UUID viewerMemberId) {
+    return publications
+        .findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
+        .filter(
+            publication ->
+                viewerMemberId == null
+                    || !blocks.isBlocked(viewerMemberId, publication.getAuthorMemberId()));
   }
 
   @Transactional
