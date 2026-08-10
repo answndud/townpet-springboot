@@ -11,11 +11,17 @@ class RelationshipService {
   private final FollowRepository follows;
   private final BlockRepository blocks;
   private final MemberDirectory members;
+  private final RelationshipMutationLock mutationLock;
 
-  RelationshipService(FollowRepository follows, BlockRepository blocks, MemberDirectory members) {
+  RelationshipService(
+      FollowRepository follows,
+      BlockRepository blocks,
+      MemberDirectory members,
+      RelationshipMutationLock mutationLock) {
     this.follows = follows;
     this.blocks = blocks;
     this.members = members;
+    this.mutationLock = mutationLock;
   }
 
   @Transactional(readOnly = true)
@@ -30,6 +36,7 @@ class RelationshipService {
   RelationshipState set(UUID viewerId, UUID targetId, boolean followActive, boolean blockActive) {
     requireTarget(targetId);
     if (viewerId.equals(targetId)) throw new RelationshipSelfTargetException();
+    mutationLock.acquire(viewerId, targetId);
     var follow = follows.findByFollowerMemberIdAndFollowedMemberId(viewerId, targetId);
     var block = blocks.findByBlockerMemberIdAndBlockedMemberId(viewerId, targetId);
     if (blockActive) {

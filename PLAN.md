@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.13 - relationship 동시성·IDOR 경계를 확장한다
-   - 파일: `src/main/java/com/townpet/relationship/**`, `src/test/java/com/townpet/relationship/**`, `frontend/e2e/relationship-management.spec.ts`
-   - 변경: follow/block 전환을 동시에 반복해도 원장 unique 상태가 유지되고, authenticated principal과 대상 author가 바뀐 요청이 다른 회원의 관계 상태를 읽거나 변경하지 못하도록 회귀 테스트를 추가한다.
-   - 검증: `./gradlew integrationTest --tests '*Relationship*' && TOWNPET_PNPM_BIN=/path/to/pnpm ./scripts/auth-browser-e2e.sh -- relationship-management.spec.ts`
-   - 완료: 병렬 relationship mutation이 중복 row를 만들지 않고, 자기 상태·대상 상태·직접 URL 상태가 principal별로 격리된다.
+1. P2.14 - publication 복구와 media lifecycle을 분리한다
+   - 파일: `src/main/java/com/townpet/publication/**`, `src/main/java/com/townpet/media/**`, `src/test/java/com/townpet/publication/**`, `docs/report/technical-notes.md`
+   - 변경: 삭제된 publication의 복구 가능 상태와 media 참조 정리 정책을 먼저 테스트 가능한 application boundary로 나눈다.
+   - 검증: `./gradlew integrationTest --tests '*Publication*' --tests '*Media*'`
+   - 완료: publication lifecycle과 media lifecycle의 소유권·실패 응답·복구 전이가 각각 독립된 테스트 계약으로 드러난다.
 
 ## Backlog
 
