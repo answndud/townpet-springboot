@@ -22,6 +22,8 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 | [`knowledge/postgres-flyway-baseline.md`](knowledge/postgres-flyway-baseline.md) | extension·권한·migration·session/event schema 개념 | P1.2 완료 |
 | [`evolution/EV-003-p1-3-module-boundaries.md`](evolution/EV-003-p1-3-module-boundaries.md) | 17개 모듈 경계와 architecture 검증의 문제·선택·증거 | P1.3 완료 |
 | [`knowledge/spring-modulith-architecture.md`](knowledge/spring-modulith-architecture.md) | Spring Modulith·ArchUnit과 모듈 경계 면접 노트 | P1.3 완료 |
+| [`evolution/EV-004-p1-4-openapi-contract.md`](evolution/EV-004-p1-4-openapi-contract.md) | OpenAPI 생성·검증과 ProblemDetail contract의 선택·증거 | P1.4 완료 |
+| [`knowledge/openapi-problemdetail.md`](knowledge/openapi-problemdetail.md) | contract-first·RFC 9457 오류 계약 면접 노트 | P1.4 완료 |
 
 ## 기능 Coverage
 
@@ -37,5 +39,6 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 | Spring Boot·Modulith foundation | [`../TRD.md`](../TRD.md) | application context·event registry | serializer·schema 초기화 | context test·verification tasks | [`evolution/EV-001-p1-1-build-foundation.md`](evolution/EV-001-p1-1-build-foundation.md) | evidenced |
 | PostgreSQL·PostGIS·Flyway | [`../TRD.md`](../TRD.md), ADR 결정 | Compose·V001·Testcontainers | extension 권한, schema authority, ARM image | migration test·bootRun·health·DB query | [`evolution/EV-002-p1-2-database-baseline.md`](evolution/EV-002-p1-2-database-baseline.md) | evidenced |
 | Spring Modulith·ArchUnit | ADR-0011 | 17개 package 경계·architecture tests | 물리 multi-project, shared business common | `./gradlew modulithTest` | [`knowledge/spring-modulith-architecture.md`](knowledge/spring-modulith-architecture.md) | evidenced |
+| OpenAPI·ProblemDetail | ADR-0012 | `api/openapi/townpet.yaml`, generated Java/TypeScript, global handler | controller code-first, 수동 DTO | `openApiValidate`, `contractTest` | [`knowledge/openapi-problemdetail.md`](knowledge/openapi-problemdetail.md) | evidenced |
 
 준비도는 `captured → understood → evidenced → rehearsed` 순서로만 올린다.

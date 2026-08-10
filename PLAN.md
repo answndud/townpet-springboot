@@ -24,27 +24,33 @@
 - 검증: `JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home ./gradlew modulithTest --no-daemon` 통과. 17개 module detection, Spring context, migration test와 architecture rules가 모두 통과했다.
 - 보고서: [`docs/report/evolution/EV-003-p1-3-module-boundaries.md`](docs/report/evolution/EV-003-p1-3-module-boundaries.md), [`docs/report/knowledge/spring-modulith-architecture.md`](docs/report/knowledge/spring-modulith-architecture.md)
 
+### P1.4 - OpenAPI code generation과 ProblemDetail contract를 만든다
+
+- 결과: OpenAPI 3.1 `/api/v1` contract에서 Spring Java transport와 TypeScript fetch client를 생성하고, RFC 9457 ProblemDetail 공통 handler와 contract test를 추가했다. generated source는 `build/generated`에서만 관리한다.
+- 검증: `./gradlew openApiValidate generateOpenApiClients checkGeneratedSources contractTest` 통과. `clean check`에도 OpenAPI validation·contract gate가 연결됐다.
+- 보고서: [`docs/report/evolution/EV-004-p1-4-openapi-contract.md`](docs/report/evolution/EV-004-p1-4-openapi-contract.md), [`docs/report/knowledge/openapi-problemdetail.md`](docs/report/knowledge/openapi-problemdetail.md)
+
 ## Active
 
 ### P1 - 재현 가능한 Spring·React 기반과 동등성 하네스를 만든다
 
-1. P1.4 - OpenAPI code generation과 ProblemDetail contract를 만든다
-   - 파일: `api/openapi/townpet.yaml`, `build.gradle.kts`, `src/main/java/com/townpet/common/web/GlobalProblemHandler.java`, `src/test/java/com/townpet/contract/OpenApiContractTest.java`
-   - 변경: `/api/v1`, UUID·UTC·KRW·cursor·idempotency·version·ProblemDetail 공통 schema를 정의하고 Java transport interface·DTO와 TypeScript client generation task를 연결한다. Generated domain·JPA code를 금지한다.
-   - 검증: `./gradlew openApiValidate openApiGenerate checkGeneratedSources contractTest`
-   - 완료: 같은 OpenAPI에서 Java·TypeScript가 생성되고 재생성 diff와 breaking contract가 CI를 실패시킨다.
-
-2. P1.5 - React·Vite shell과 기존 URL·visual parity 하네스를 만든다
+1. P1.5 - React·Vite shell과 기존 URL·visual parity 하네스를 만든다
    - 파일: `frontend/package.json`, `frontend/vite.config.ts`, `frontend/src/**`, `frontend/e2e/parity-shell.spec.ts`
    - 변경: React 19, TypeScript, Vite, React Router와 generated API client를 구성한다. 기존 global style·layout·header·font·static asset을 선별 복사하고 49개 URL inventory, dual-target Playwright project와 visual baseline 규칙을 만든다.
    - 검증: `corepack pnpm -C frontend install --frozen-lockfile && corepack pnpm -C frontend lint && corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e -- parity-shell.spec.ts`
    - 완료: Vite dev와 Spring HTML shell에서 기준 URL이 열리고 desktop·mobile shell snapshot이 legacy baseline과 승인된 threshold 안에서 일치한다.
 
-3. P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
+2. P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
    - 파일: `docs/parity/matrix.md`, `migration/fixtures/logical-fixture.yaml`, `src/test/java/com/townpet/parity/**`, `frontend/e2e/parity.config.ts`
    - 변경: 49 page·55 API를 actor, fixture, 권한, 상태, error, responsive, accessibility, SEO, migration과 test ID에 연결한다. UUID·time·signed URL을 normalize하는 legacy/Spring differential runner를 만든다.
    - 검증: `./gradlew parityInventoryTest && corepack pnpm -C frontend test:e2e --project=parity-smoke`
    - 완료: 누락 page·API와 test 없는 핵심 여정이 report에 실패로 표시되고 동일 fixture의 의미 결과를 양쪽 target에서 비교할 수 있다.
+
+3. P1.7 - Frontend·backend 통합 smoke와 CI quality gate를 연결한다
+   - 파일: `.github/workflows/**`, `src/test/java/com/townpet/smoke/**`, `frontend/e2e/**`
+   - 변경: frontend·Spring boot smoke와 계층형 CI quality gate를 연결한다.
+   - 검증: `./gradlew clean check && corepack pnpm -C frontend lint && corepack pnpm -C frontend test`
+   - 완료: fresh clone에서 backend·frontend의 최소 검증과 contract/architecture gate가 한 명령으로 재현된다.
 
 
 ### P2 - Domain별 vertical slice로 Write Owner를 Spring으로 옮긴다
