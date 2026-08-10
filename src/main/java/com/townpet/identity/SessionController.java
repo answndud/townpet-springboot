@@ -2,6 +2,10 @@ package com.townpet.identity;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpHeaders;
@@ -9,9 +13,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
@@ -54,16 +58,16 @@ public class SessionController {
 
   @PostMapping("/sessions")
   ResponseEntity<SessionResponse> createSession(
-      @RequestBody CreateSessionRequest request,
+      @Valid @RequestBody CreateSessionRequest request,
       HttpServletRequest httpRequest,
       HttpServletResponse httpResponse) {
+    String email = request.email().trim();
     Authentication authentication;
     try {
       authentication =
           authenticationManager.authenticate(
-              UsernamePasswordAuthenticationToken.unauthenticated(
-                  request.email(), request.password()));
-    } catch (BadCredentialsException exception) {
+              UsernamePasswordAuthenticationToken.unauthenticated(email, request.password()));
+    } catch (AuthenticationException exception) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
     }
 
@@ -76,7 +80,7 @@ public class SessionController {
 
     UUID memberId =
         credentials
-            .findByEmailIgnoreCase(request.email())
+            .findByEmailIgnoreCase(email)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED))
             .getMemberId();
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -92,7 +96,9 @@ public class SessionController {
     return ResponseEntity.noContent().build();
   }
 
-  record CreateSessionRequest(String email, String password) {}
+  record CreateSessionRequest(
+      @NotBlank @Email @Size(max = 320) String email,
+      @NotBlank @Size(min = 8, max = 72) String password) {}
 
   record SessionResponse(UUID memberId, Instant expiresAt) {}
 

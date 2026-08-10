@@ -76,6 +76,7 @@ class IdentityMemberControllerTest {
 
   @Test
   void loginPersistsSessionAndReturnsCurrentMember() throws Exception {
+    verifyCredential();
     MvcResult login =
         mockMvc
             .perform(
@@ -98,6 +99,7 @@ class IdentityMemberControllerTest {
 
   @Test
   void onboardingReplacesOwnedPetsAndReturnsThem() throws Exception {
+    verifyCredential();
     MvcResult login =
         mockMvc
             .perform(
@@ -142,6 +144,7 @@ class IdentityMemberControllerTest {
 
   @Test
   void logoutInvalidatesCurrentSession() throws Exception {
+    verifyCredential();
     MvcResult login =
         mockMvc
             .perform(
@@ -171,6 +174,7 @@ class IdentityMemberControllerTest {
 
   @Test
   void memberCannotAccessModeratorOperations() throws Exception {
+    verifyCredential();
     MvcResult login =
         mockMvc
             .perform(
@@ -189,6 +193,7 @@ class IdentityMemberControllerTest {
 
   @Test
   void passwordResetUsesHashedSingleUseTokenAndRevokesSession() throws Exception {
+    verifyCredential();
     MvcResult login =
         mockMvc
             .perform(
@@ -317,6 +322,17 @@ class IdentityMemberControllerTest {
   }
 
   @Test
+  void unverifiedEmailCannotLogin() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/auth/sessions")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   void emailVerificationUsesHashedSingleUseToken() throws Exception {
     mockMvc
         .perform(
@@ -349,6 +365,13 @@ class IdentityMemberControllerTest {
         .isTrue();
     org.assertj.core.api.Assertions.assertThat(emailVerificationTokens.count()).isZero();
     org.assertj.core.api.Assertions.assertThat(authAudits.count()).isEqualTo(1);
+    mockMvc
+        .perform(
+            post("/api/v1/auth/sessions")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+        .andExpect(status().isCreated());
     mockMvc
         .perform(
             post("/api/v1/auth/email-verifications/confirmations")
@@ -415,5 +438,11 @@ class IdentityMemberControllerTest {
 
   private static Cookie sessionCookie(MvcResult login) {
     return Objects.requireNonNull(login.getResponse().getCookie("SESSION"));
+  }
+
+  private void verifyCredential() {
+    CredentialEntity credential = credentials.findByMemberId(MEMBER_ID).orElseThrow();
+    credential.verifyEmail(java.time.Instant.now());
+    credentials.save(credential);
   }
 }
