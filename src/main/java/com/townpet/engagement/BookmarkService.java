@@ -3,6 +3,7 @@ package com.townpet.engagement;
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
 import java.util.UUID;
+import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,11 @@ class BookmarkService {
     requireAccessiblePublication(publicationId, memberId);
     var existing = bookmarks.findByPublicationIdAndMemberId(publicationId, memberId);
     if (active && existing.isEmpty()) {
-      bookmarks.save(new BookmarkEntity(publicationId, memberId));
+      try {
+        bookmarks.saveAndFlush(new BookmarkEntity(publicationId, memberId));
+      } catch (DataAccessException exception) {
+        throw new BookmarkPublicationNotFoundException();
+      }
     } else if (!active) {
       existing.ifPresent(bookmarks::delete);
     }

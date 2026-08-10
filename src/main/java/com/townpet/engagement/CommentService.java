@@ -5,6 +5,7 @@ import com.townpet.relationship.api.BlockDirectory;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,11 @@ class CommentService {
   @Transactional
   CommentEntity create(UUID memberId, UUID publicationId, String body) {
     requireAccessiblePublication(publicationId, memberId);
-    return comments.save(new CommentEntity(publicationId, memberId, body.trim()));
+    try {
+      return comments.saveAndFlush(new CommentEntity(publicationId, memberId, body.trim()));
+    } catch (DataAccessException exception) {
+      throw new CommentPublicationNotFoundException();
+    }
   }
 
   @Transactional

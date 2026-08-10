@@ -3,6 +3,7 @@ package com.townpet.engagement;
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
 import java.util.UUID;
+import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +40,11 @@ class ReactionService {
     var existing =
         reactions.findByPublicationIdAndAuthorMemberIdAndType(publicationId, memberId, TYPE);
     if (active && existing.isEmpty()) {
-      reactions.save(new ReactionEntity(publicationId, memberId, TYPE));
+      try {
+        reactions.saveAndFlush(new ReactionEntity(publicationId, memberId, TYPE));
+      } catch (DataAccessException exception) {
+        throw new ReactionPublicationNotFoundException();
+      }
     } else if (!active) {
       existing.ifPresent(reactions::delete);
     }

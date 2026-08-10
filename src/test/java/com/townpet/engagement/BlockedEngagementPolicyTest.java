@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -84,6 +85,15 @@ class BlockedEngagementPolicyTest {
     mockMvc
         .perform(get("/api/v1/publications/{id}/comments", PUBLICATION_ID).cookie(blockedViewer))
         .andExpect(status().isNotFound());
+
+    assertThatThrownBy(
+            () ->
+                jdbc.update(
+                    "INSERT INTO engagement_reaction (id, publication_id, author_member_id, type, created_at) VALUES (?, ?, ?, 'LIKE', CURRENT_TIMESTAMP)",
+                    UUID.fromString("00000000-0000-4000-8000-000000000707"),
+                    PUBLICATION_ID,
+                    UUID.fromString("00000000-0000-4000-8000-000000000202")))
+        .isInstanceOf(org.springframework.dao.DataAccessException.class);
     mockMvc
         .perform(get("/api/v1/publications/{id}/reaction", PUBLICATION_ID).cookie(blockedViewer))
         .andExpect(status().isNotFound());
