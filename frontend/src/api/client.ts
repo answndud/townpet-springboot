@@ -71,6 +71,10 @@ export type Reaction = {
   count: number;
 };
 
+export type Bookmark = {
+  active: boolean;
+};
+
 export type CreatePublicationInput = {
   title: string;
   body: string;
@@ -273,6 +277,22 @@ export const publicationApi = {
   setReaction(publicationId: string, active: boolean) {
     return mutate<Reaction>(
       `/api/v1/publications/${encodeURIComponent(publicationId)}/reaction`,
+      {
+        method: "PUT",
+        headers: jsonHeaders,
+        body: JSON.stringify({ active }),
+      },
+    );
+  },
+  bookmark(publicationId: string, signal?: AbortSignal) {
+    return apiFetch<Bookmark>(
+      `/api/v1/publications/${encodeURIComponent(publicationId)}/bookmark`,
+      { signal },
+    );
+  },
+  setBookmark(publicationId: string, active: boolean) {
+    return mutate<Bookmark>(
+      `/api/v1/publications/${encodeURIComponent(publicationId)}/bookmark`,
       {
         method: "PUT",
         headers: jsonHeaders,

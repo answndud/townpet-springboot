@@ -9,6 +9,7 @@ export default defineConfig({
     "publication-management.spec.ts",
     "comment-management.spec.ts",
     "reaction-management.spec.ts",
+    "bookmark-management.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,
