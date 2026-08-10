@@ -39,6 +39,29 @@ export type OnboardingInput = {
   pets: Array<{ name: string; species: string }>;
 };
 
+export type PublicationScope = "LOCAL" | "GLOBAL";
+
+export type Publication = {
+  id: string;
+  type: "FREE_BOARD";
+  title: string;
+  body: string;
+  scope: PublicationScope;
+  authorId: string;
+  neighborhoodId: string | null;
+  lifecycle: "ACTIVE" | "DELETED";
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+};
+
+export type CreatePublicationInput = {
+  title: string;
+  body: string;
+  scope: PublicationScope;
+  neighborhoodId?: string;
+};
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -153,5 +176,20 @@ export const memberApi = {
 export const catalogApi = {
   neighborhoods(signal?: AbortSignal) {
     return apiFetch<Neighborhood[]>("/api/v1/catalog/neighborhoods", { signal });
+  },
+};
+
+export const publicationApi = {
+  create(input: CreatePublicationInput) {
+    return mutate<Publication>("/api/v1/publications", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    });
+  },
+  detail(publicationId: string, signal?: AbortSignal) {
+    return apiFetch<Publication>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
+      signal,
+    });
   },
 };
