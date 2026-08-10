@@ -20,9 +20,18 @@ export class ApiError extends Error {
 
 /** Transport seam for the generated OpenAPI client; feature code never builds URLs directly. */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const method = init?.method?.toUpperCase() ?? "GET";
+  const csrf = document.cookie
+    .split("; ")
+    .find((cookie) => cookie.startsWith("XSRF-TOKEN="))
+    ?.split("=")[1];
   const response = await fetch(path, {
     credentials: "include",
-    headers: { accept: "application/json", ...init?.headers },
+    headers: {
+      accept: "application/json",
+      ...(method !== "GET" && method !== "HEAD" && csrf ? { "X-XSRF-TOKEN": decodeURIComponent(csrf) } : {}),
+      ...init?.headers,
+    },
     ...init,
   });
 
@@ -35,4 +44,9 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     return undefined as T;
   }
   return (await response.json()) as T;
+}
+
+export async function getCsrfToken(): Promise<string> {
+  const response = await apiFetch<{ token: string }>("/api/v1/auth/csrf");
+  return response.token;
 }

@@ -15,4 +15,16 @@ describe("TownPet Vite shell", () => {
     expect(screen.getByRole("link", { name: "전체 피드" })).toHaveAttribute("href", "/feed/guest");
     expect(screen.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
   });
+
+  it("renders the identity vertical slice login form", () => {
+    render(
+      <MemoryRouter initialEntries={["/login"]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("heading", { name: "TownPet 로그인" })).toBeInTheDocument();
+    expect(screen.getByLabelText("이메일")).toHaveAttribute("type", "email");
+    expect(screen.getByLabelText("비밀번호")).toHaveAttribute("type", "password");
+  });
 });
