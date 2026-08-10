@@ -1,6 +1,7 @@
 package com.townpet.publication;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,11 +11,14 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -53,6 +57,53 @@ class PublicationController {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
 
+  @PutMapping("/{publicationId}")
+  PublicationResponse edit(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID publicationId,
+      @Valid @RequestBody EditPublicationRequest request) {
+    try {
+      return toResponse(
+          publications.edit(
+              memberId(principal),
+              publicationId,
+              request.version(),
+              request.scope(),
+              request.neighborhoodId(),
+              request.title(),
+              request.body()));
+    } catch (PublicationPolicyException exception) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
+    } catch (PublicationNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (PublicationOwnershipException exception) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Only the author can edit this publication");
+    } catch (PublicationVersionConflictException
+        | ObjectOptimisticLockingFailureException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication has changed");
+    }
+  }
+
+  @DeleteMapping("/{publicationId}")
+  ResponseEntity<Void> delete(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID publicationId,
+      @Valid @RequestBody DeletePublicationRequest request) {
+    try {
+      publications.delete(memberId(principal), publicationId, request.version());
+      return ResponseEntity.noContent().build();
+    } catch (PublicationNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (PublicationOwnershipException exception) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Only the author can delete this publication");
+    } catch (PublicationVersionConflictException
+        | ObjectOptimisticLockingFailureException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication has changed");
+    }
+  }
+
   private static UUID memberId(UserDetails principal) {
     try {
       return UUID.fromString(principal.getUsername());
@@ -81,6 +132,15 @@ class PublicationController {
       @NotBlank @Size(max = 20000) String body,
       @NotNull PublicationScope scope,
       @Nullable UUID neighborhoodId) {}
+
+  record EditPublicationRequest(
+      @NotBlank @Size(max = 120) String title,
+      @NotBlank @Size(max = 20000) String body,
+      @NotNull PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      @NotNull @Min(0) Long version) {}
+
+  record DeletePublicationRequest(@NotNull @Min(0) Long version) {}
 
   record PublicationResponse(
       UUID id,

@@ -2,7 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: ".",
-  testMatch: ["auth-parity.spec.ts", "publication-parity.spec.ts", "feed-parity.spec.ts"],
+  testMatch: [
+    "auth-parity.spec.ts",
+    "publication-parity.spec.ts",
+    "feed-parity.spec.ts",
+    "publication-management.spec.ts",
+  ],
   fullyParallel: false,
   workers: 1,
   reporter: "list",

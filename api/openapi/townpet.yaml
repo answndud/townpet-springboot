@@ -251,6 +251,64 @@ paths:
                 $ref: '#/components/schemas/Publication'
         '404':
           $ref: '#/components/responses/NotFound'
+    put:
+      operationId: editPublication
+      tags: [Publications]
+      summary: Edit an owned active publication
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditPublicationRequest'
+      responses:
+        '200':
+          description: Publication edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      operationId: deletePublication
+      tags: [Publications]
+      summary: Delete an owned active publication
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeletePublicationRequest'
+      responses:
+        '204':
+          description: Publication deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 components:
   parameters:
     Cursor:
@@ -429,6 +487,36 @@ components:
         neighborhoodId:
           type: [string, 'null']
           format: uuid
+    EditPublicationRequest:
+      type: object
+      required: [title, body, scope, version]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        body:
+          type: string
+          minLength: 1
+          maxLength: 20000
+        scope:
+          type: string
+          enum: [LOCAL, GLOBAL]
+        neighborhoodId:
+          type: [string, 'null']
+          format: uuid
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+    DeletePublicationRequest:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
     Publication:
       type: object
       required: [id, type, title, body, scope, authorId, lifecycle, createdAt, updatedAt, version]
