@@ -8,9 +8,27 @@ servers:
     description: Same-origin deployment
 tags:
   - name: Auth
+  - name: Catalog
+  - name: Members
   - name: Feed
   - name: Publications
 paths:
+  /api/v1/auth/csrf:
+    get:
+      operationId: getCsrfToken
+      tags: [Auth]
+      summary: Get the browser CSRF token
+      responses:
+        '200':
+          description: CSRF token for state-changing browser requests
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token:
+                    type: string
   /api/v1/auth/sessions:
     post:
       operationId: createSession
@@ -60,6 +78,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FeedPage'
+  /api/v1/catalog/neighborhoods:
+    get:
+      operationId: listNeighborhoods
+      tags: [Catalog]
+      summary: List available neighborhoods
+      responses:
+        '200':
+          description: Neighborhood catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Neighborhood'
+  /api/v1/members/me:
+    get:
+      operationId: getCurrentMember
+      tags: [Members]
+      summary: Read the current member profile
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Current member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/members/me/onboarding:
+    put:
+      operationId: updateMemberOnboarding
+      tags: [Members]
+      summary: Set the current member neighborhood
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequest'
+      responses:
+        '200':
+          description: Updated member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/v1/publications:
     post:
       operationId: createPublication
@@ -177,6 +249,38 @@ components:
           $ref: '#/components/schemas/Uuid'
         expiresAt:
           $ref: '#/components/schemas/Instant'
+    Neighborhood:
+      type: object
+      required: [id, slug, name]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        slug:
+          type: string
+        name:
+          type: string
+    Member:
+      type: object
+      required: [id, nickname]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        nickname:
+          type: string
+        bio:
+          type: [string, 'null']
+        neighborhoodId:
+          type: [string, 'null']
+          format: uuid
+    OnboardingRequest:
+      type: object
+      required: [neighborhoodId]
+      properties:
+        bio:
+          type: string
+          maxLength: 500
+        neighborhoodId:
+          $ref: '#/components/schemas/Uuid'
     CreatePublicationRequest:
       type: object
       required: [title, body, scope]

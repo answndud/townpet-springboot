@@ -42,6 +42,11 @@ class DatabaseBaselineTest {
       assertThat(tableExists(statement, "spring_session")).isTrue();
       assertThat(tableExists(statement, "spring_session_attributes")).isTrue();
       assertThat(tableExists(statement, "event_publication")).isTrue();
+      assertThat(tableExists(statement, "member_account")).isTrue();
+      assertThat(tableExists(statement, "identity_credential")).isTrue();
+      assertThat(tableExists(statement, "neighborhood")).isTrue();
+      assertThat(queryInt(statement, "SELECT COUNT(*) FROM neighborhood"))
+          .isGreaterThanOrEqualTo(2);
       assertThat(tableExists(statement, "flyway_schema_history")).isTrue();
     }
   }
@@ -70,6 +75,13 @@ class DatabaseBaselineTest {
                 + table
                 + "'")) {
       return resultSet.next();
+    }
+  }
+
+  private static int queryInt(Statement statement, String sql) throws SQLException {
+    try (ResultSet resultSet = statement.executeQuery(sql)) {
+      resultSet.next();
+      return resultSet.getInt(1);
     }
   }
 }
