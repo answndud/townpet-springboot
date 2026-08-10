@@ -48,15 +48,21 @@
 - 검증: `./gradlew clean check`, `corepack pnpm -C frontend install --frozen-lockfile && corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend build`, `./scripts/frontend-backend-smoke.sh` 통과.
 - 보고서: [`docs/report/evolution/EV-007-p1-7-quality-gate.md`](docs/report/evolution/EV-007-p1-7-quality-gate.md), [`docs/report/knowledge/ci-quality-gates.md`](docs/report/knowledge/ci-quality-gates.md)
 
+### P2.1a - Identity·Member·Catalog thin vertical slice를 연결한다
+
+- 결과: V002 identity/member/catalog schema, Spring Session JDBC·BCrypt·Cookie CSRF 인증, login/current member/onboarding/catalog API와 React login form을 연결했다. 17개 모듈을 한 번에 확장하지 않고 핵심 흐름만 먼저 검증했다.
+- 검증: `./gradlew clean check migrationTest`, `corepack pnpm -C frontend install --frozen-lockfile && corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend build && corepack pnpm -C frontend test:e2e`, `./scripts/frontend-backend-smoke.sh` 통과.
+- 보고서: [`docs/report/evolution/EV-008-p2-1a-identity-member-catalog.md`](docs/report/evolution/EV-008-p2-1a-identity-member-catalog.md), [`docs/report/knowledge/spring-session-csrf-auth.md`](docs/report/knowledge/spring-session-csrf-auth.md)
+
 ## Active
 
 ### P2 - Domain별 vertical slice로 Write Owner를 Spring으로 옮긴다
 
-1. P2.1 - Identity·Member·Catalog 인증 vertical slice를 완성한다
-   - 파일: `src/main/java/com/townpet/identity/**`, `src/main/java/com/townpet/member/**`, `src/main/java/com/townpet/catalog/**`, `frontend/src/features/auth/**`
-   - 변경: Credentials, Kakao·Naver link, PostgreSQL session, CSRF, onboarding, neighborhood와 profile을 구현한다. GuestPrincipal·관리 자격·step-up, deny-by-default staff role과 demo account seed를 포함한다.
+1. P2.1b - Identity vertical slice를 harden하고 onboarding parity를 닫는다
+   - 파일: `src/main/java/com/townpet/identity/**`, `src/main/java/com/townpet/member/**`, `src/main/java/com/townpet/catalog/**`, `frontend/src/LoginPage.tsx`, `frontend/e2e/auth-parity.spec.ts`
+   - 변경: password validation/reset·verification, session revoke/logout, pet onboarding, demo account seed, deny-by-default member/staff policy와 legacy auth differential row를 추가한다. OAuth는 provider stub contract로만 검증한다.
    - 검증: `./gradlew check integrationTest --tests '*Identity*' --tests '*Member*' && corepack pnpm -C frontend test:e2e -- auth-parity.spec.ts`
-   - 완료: login·logout·session revoke·account link·guest management·onboarding이 differential·IDOR·CSRF test를 통과하고 identity 관련 legacy write를 제거한다.
+   - 완료: login·logout·session revoke·onboarding·member/profile IDOR·CSRF가 실제 Spring session과 parity fixture에서 통과하고 P2.1 전체 범위를 닫는다.
 
 2. P2.2 - Publication·Media 작성·상세 vertical slice를 완성한다
    - 파일: `src/main/java/com/townpet/publication/**`, `src/main/java/com/townpet/media/**`, `frontend/src/features/publication/**`, `src/main/resources/db/migration/V1*__publication_media.sql`
