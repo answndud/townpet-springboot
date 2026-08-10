@@ -9,6 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import jakarta.servlet.http.Cookie;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,6 +99,47 @@ class RelationshipControllerTest {
     mockMvc
         .perform(get("/api/v1/members/{id}/relationship", UUID.randomUUID()).cookie(viewer))
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void concurrentFollowRequestsStayUniqueAndPrincipalStateIsIsolated() throws Exception {
+    Cookie viewer = login("demo-member-1@townpet.local");
+    Cookie target = login("demo-member-2@townpet.local");
+    UUID targetId = memberId(target);
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+    try {
+      Future<Integer> first = executor.submit(() -> relationshipStatus(viewer, targetId));
+      Future<Integer> second = executor.submit(() -> relationshipStatus(viewer, targetId));
+      org.assertj.core.api.Assertions.assertThat(first.get()).isEqualTo(200);
+      org.assertj.core.api.Assertions.assertThat(second.get()).isEqualTo(200);
+    } finally {
+      executor.shutdownNow();
+    }
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject("SELECT COUNT(*) FROM relationship_follow", Integer.class))
+        .isEqualTo(1);
+    mockMvc
+        .perform(
+            get(
+                    "/api/v1/members/{id}/relationship",
+                    UUID.fromString("00000000-0000-4000-8000-000000000201"))
+                .cookie(target))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.following").value(false))
+        .andExpect(jsonPath("$.blocking").value(false));
+  }
+
+  private int relationshipStatus(Cookie session, UUID targetId) throws Exception {
+    return mockMvc
+        .perform(
+            put("/api/v1/members/{id}/relationship", targetId)
+                .cookie(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"following\":true,\"blocking\":false}"))
+        .andReturn()
+        .getResponse()
+        .getStatus();
   }
 
   private void set(Cookie session, UUID targetId, boolean following, boolean blocking)

@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.7 - relationship 경합과 조회 IDOR 회귀를 검증한다
-   - 파일: `src/main/java/com/townpet/relationship/**`, `src/main/java/com/townpet/publication/**`, `src/test/java/com/townpet/relationship/**`, `src/test/java/com/townpet/publication/**`
-   - 변경: follow/block 동시 요청에서 unique 제약과 상태 전이가 깨지지 않는지 검증하고, 차단·팔로우 주체/대상 UUID를 바꾼 feed·상세·relationship 요청이 다른 회원 상태를 노출하지 않는 회귀 테스트를 추가한다.
-   - 검증: `./gradlew integrationTest --tests '*Relationship*' --tests '*Publication*' && corepack pnpm -C frontend test:e2e:auth -- relationship-management.spec.ts`
-   - 완료: 반복·동시 mutation이 중복 원장이나 상충 상태를 만들지 않고, 모든 관계·publication 조회 결과가 authenticated principal 기준으로 격리된다.
+1. P2.8 - 댓글·reaction·bookmark에도 block 정책을 확장한다
+   - 파일: `src/main/java/com/townpet/engagement/**`, `src/main/java/com/townpet/relationship/api/**`, `api/openapi/townpet.yaml`, `src/test/java/com/townpet/engagement/**`
+   - 변경: 차단 작성자의 publication에 대한 댓글 작성·reaction·bookmark 변경을 일관되게 거부하고, 기존 원장 상태 조회도 viewer policy와 맞춘다. engagement가 relationship 내부 구현 대신 공개 block API만 사용하도록 유지한다.
+   - 검증: `./gradlew integrationTest --tests '*Engagement*' --tests '*Relationship*' openApiValidate && corepack pnpm -C frontend test:e2e:auth -- comment-management.spec.ts reaction-management.spec.ts bookmark-management.spec.ts`
+   - 완료: 차단 전후 모든 engagement mutation과 상태 조회가 같은 authorization policy를 적용하고, 비회원·다른 회원·GLOBAL 공개 경로에는 기존 의미가 보존된다.
 
 ## Backlog
 
