@@ -130,4 +130,9 @@ class PublicationEntity {
     this.lifecycle = PublicationLifecycle.DELETED;
     this.updatedAt = changedAt;
   }
+
+  void restore(Instant changedAt) {
+    this.lifecycle = PublicationLifecycle.ACTIVE;
+    this.updatedAt = changedAt;
+  }
 }

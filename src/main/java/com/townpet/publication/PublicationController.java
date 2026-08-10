@@ -92,13 +92,33 @@ class PublicationController {
       @PathVariable UUID publicationId,
       @Valid @RequestBody DeletePublicationRequest request) {
     try {
-      publications.delete(memberId(principal), publicationId, request.version());
-      return ResponseEntity.noContent().build();
+      PublicationEntity publication =
+          publications.delete(memberId(principal), publicationId, request.version());
+      return ResponseEntity.noContent().eTag("\"" + publication.getVersion() + "\"").build();
     } catch (PublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (PublicationOwnershipException exception) {
       throw new ResponseStatusException(
           HttpStatus.FORBIDDEN, "Only the author can delete this publication");
+    } catch (PublicationVersionConflictException
+        | ObjectOptimisticLockingFailureException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication has changed");
+    }
+  }
+
+  @PostMapping("/{publicationId}/restore")
+  PublicationResponse restore(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID publicationId,
+      @Valid @RequestBody RestorePublicationRequest request) {
+    try {
+      return toResponse(
+          publications.restore(memberId(principal), publicationId, request.version()));
+    } catch (PublicationNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (PublicationOwnershipException exception) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Only the author can restore this publication");
     } catch (PublicationVersionConflictException
         | ObjectOptimisticLockingFailureException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication has changed");
@@ -152,6 +172,8 @@ class PublicationController {
       @NotNull @Min(0) Long version) {}
 
   record DeletePublicationRequest(@NotNull @Min(0) Long version) {}
+
+  record RestorePublicationRequest(@NotNull @Min(0) Long version) {}
 
   record PublicationResponse(
       UUID id,
