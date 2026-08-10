@@ -261,7 +261,7 @@ components:
           type: string
     Member:
       type: object
-      required: [id, nickname]
+      required: [id, nickname, pets]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
@@ -272,6 +272,10 @@ components:
         neighborhoodId:
           type: [string, 'null']
           format: uuid
+        pets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pet'
     OnboardingRequest:
       type: object
       required: [neighborhoodId]
@@ -281,6 +285,33 @@ components:
           maxLength: 500
         neighborhoodId:
           $ref: '#/components/schemas/Uuid'
+        pets:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/PetRequest'
+    PetRequest:
+      type: object
+      required: [name, species]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        species:
+          type: string
+          minLength: 1
+          maxLength: 20
+    Pet:
+      type: object
+      required: [id, name, species]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        name:
+          type: string
+        species:
+          type: string
     CreatePublicationRequest:
       type: object
       required: [title, body, scope]

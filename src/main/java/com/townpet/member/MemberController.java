@@ -1,5 +1,9 @@
 package com.townpet.member;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
@@ -18,23 +22,27 @@ import org.springframework.web.server.ResponseStatusException;
 public class MemberController {
   private final MemberRepository members;
   private final MemberProfileRepository profiles;
+  private final MemberPetRepository pets;
 
-  public MemberController(MemberRepository members, MemberProfileRepository profiles) {
+  public MemberController(
+      MemberRepository members, MemberProfileRepository profiles, MemberPetRepository pets) {
     this.members = members;
     this.profiles = profiles;
+    this.pets = pets;
   }
 
   @GetMapping
   MemberResponse getCurrentMember(@AuthenticationPrincipal UserDetails principal) {
     MemberEntity member = findMember(principal);
     MemberProfileEntity profile = profiles.findByMemberId(member.getId()).orElse(null);
-    return toResponse(member, profile);
+    return toResponse(member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
   }
 
   @PutMapping("/onboarding")
   @Transactional
   MemberResponse updateOnboarding(
-      @AuthenticationPrincipal UserDetails principal, @RequestBody OnboardingRequest request) {
+      @AuthenticationPrincipal UserDetails principal,
+      @Valid @RequestBody OnboardingRequest request) {
     MemberEntity member = findMember(principal);
     if (request.neighborhoodId() == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "neighborhoodId is required");
@@ -52,7 +60,16 @@ public class MemberController {
                     new MemberProfileEntity(
                         member.getId(), request.bio(), request.neighborhoodId()));
     profiles.save(profile);
-    return toResponse(member, profile);
+    pets.deleteAllByMemberId(member.getId());
+    List<MemberPetEntity> savedPets =
+        request.pets().stream()
+            .map(
+                pet ->
+                    new MemberPetEntity(
+                        UUID.randomUUID(), member.getId(), pet.name(), pet.species()))
+            .toList();
+    pets.saveAll(savedPets);
+    return toResponse(member, profile, savedPets);
   }
 
   private MemberEntity findMember(UserDetails principal) {
@@ -68,16 +85,35 @@ public class MemberController {
   }
 
   private static MemberResponse toResponse(
-      MemberEntity member, @Nullable MemberProfileEntity profile) {
+      MemberEntity member, @Nullable MemberProfileEntity profile, List<MemberPetEntity> pets) {
     return new MemberResponse(
         member.getId(),
         member.getNickname(),
         profile == null ? null : profile.getBio(),
-        profile == null ? null : profile.getNeighborhoodId());
+        profile == null ? null : profile.getNeighborhoodId(),
+        pets.stream()
+            .map(pet -> new PetResponse(pet.getId(), pet.getName(), pet.getSpecies()))
+            .toList());
   }
 
-  record OnboardingRequest(String bio, UUID neighborhoodId) {}
+  record OnboardingRequest(
+      @Size(max = 500) String bio,
+      UUID neighborhoodId,
+      @Size(max = 10) List<@Valid PetRequest> pets) {
+    OnboardingRequest {
+      pets = pets == null ? List.of() : List.copyOf(pets);
+    }
+  }
+
+  record PetRequest(
+      @NotBlank @Size(max = 40) String name, @NotBlank @Size(max = 20) String species) {}
 
   record MemberResponse(
-      UUID id, String nickname, @Nullable String bio, @Nullable UUID neighborhoodId) {}
+      UUID id,
+      String nickname,
+      @Nullable String bio,
+      @Nullable UUID neighborhoodId,
+      List<PetResponse> pets) {}
+
+  record PetResponse(UUID id, String name, String species) {}
 }

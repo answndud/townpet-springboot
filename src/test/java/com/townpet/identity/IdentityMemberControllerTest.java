@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.townpet.catalog.NeighborhoodEntity;
 import com.townpet.catalog.NeighborhoodRepository;
 import com.townpet.member.MemberEntity;
+import com.townpet.member.MemberPetRepository;
 import com.townpet.member.MemberRepository;
 import java.util.Objects;
 import java.util.UUID;
@@ -43,11 +44,13 @@ class IdentityMemberControllerTest {
   @Autowired MemberRepository members;
   @Autowired CredentialRepository credentials;
   @Autowired NeighborhoodRepository neighborhoods;
+  @Autowired MemberPetRepository pets;
   @Autowired PasswordEncoder passwordEncoder;
 
   @BeforeEach
   void seedMember() {
     credentials.deleteAll();
+    pets.deleteAll();
     members.deleteAll();
     neighborhoods.deleteAll();
     neighborhoods.save(new NeighborhoodEntity(NEIGHBORHOOD_ID, "seoul-mapogu", "서울 마포구"));
@@ -82,6 +85,42 @@ class IdentityMemberControllerTest {
   }
 
   @Test
+  void onboardingReplacesOwnedPetsAndReturnsThem() throws Exception {
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    org.springframework.mock.web.MockHttpSession session =
+        (org.springframework.mock.web.MockHttpSession)
+            Objects.requireNonNull(login.getRequest().getSession(false));
+
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                    "/api/v1/members/me/onboarding")
+                .session(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"bio\":\"산책을 좋아해요\",\"neighborhoodId\":\""
+                        + NEIGHBORHOOD_ID
+                        + "\",\"pets\":[{\"name\":\"Mango\",\"species\":\"DOG\"}]}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.pets[0].name").value("Mango"))
+        .andExpect(jsonPath("$.pets[0].species").value("DOG"));
+
+    mockMvc
+        .perform(get("/api/v1/members/me").session(session))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.pets.length()").value(1));
+  }
+
+  @Test
   void stateChangingRequestWithoutCsrfIsRejected() throws Exception {
     mockMvc
         .perform(
@@ -89,6 +128,33 @@ class IdentityMemberControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
         .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void logoutInvalidatesCurrentSession() throws Exception {
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    org.springframework.mock.web.MockHttpSession session =
+        (org.springframework.mock.web.MockHttpSession)
+            Objects.requireNonNull(login.getRequest().getSession(false));
+
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(
+                    "/api/v1/auth/sessions/current")
+                .session(session)
+                .with(csrf()))
+        .andExpect(status().isNoContent());
+    mockMvc
+        .perform(get("/api/v1/members/me").session(session))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test

@@ -54,13 +54,19 @@
 - 검증: `./gradlew clean check migrationTest`, `corepack pnpm -C frontend install --frozen-lockfile && corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend build && corepack pnpm -C frontend test:e2e`, `./scripts/frontend-backend-smoke.sh` 통과.
 - 보고서: [`docs/report/evolution/EV-008-p2-1a-identity-member-catalog.md`](docs/report/evolution/EV-008-p2-1a-identity-member-catalog.md), [`docs/report/knowledge/spring-session-csrf-auth.md`](docs/report/knowledge/spring-session-csrf-auth.md)
 
+### P2.1b-1 - Session revoke와 Member onboarding pet slice를 harden한다
+
+- 결과: 반려동물 entity/repository와 회원 소유 목록 교체를 onboarding transaction에 연결하고, 현재 회원 응답·React profile·logout을 추가했다. CSRF token cookie를 명시적으로 보장하고 입력 길이·목록 개수 validation을 적용했다.
+- 검증: `./gradlew test --tests '*IdentityMemberControllerTest'` 통과. 전체 `clean check`, OpenAPI, frontend와 smoke는 다음 slice 종료 gate에서 다시 실행한다.
+- 보고서: [`docs/report/evolution/EV-009-p2-1b-session-onboarding.md`](docs/report/evolution/EV-009-p2-1b-session-onboarding.md), [`docs/report/knowledge/member-onboarding-and-session-revoke.md`](docs/report/knowledge/member-onboarding-and-session-revoke.md)
+
 ## Active
 
 ### P2 - Domain별 vertical slice로 Write Owner를 Spring으로 옮긴다
 
-1. P2.1b - Identity vertical slice를 harden하고 onboarding parity를 닫는다
+1. P2.1b-2 - Identity 정책과 demo onboarding parity를 닫는다
    - 파일: `src/main/java/com/townpet/identity/**`, `src/main/java/com/townpet/member/**`, `src/main/java/com/townpet/catalog/**`, `frontend/src/LoginPage.tsx`, `frontend/e2e/auth-parity.spec.ts`
-   - 변경: password validation/reset·verification, session revoke/logout, pet onboarding, demo account seed, deny-by-default member/staff policy와 legacy auth differential row를 추가한다. OAuth는 provider stub contract로만 검증한다.
+   - 변경: password reset·verification, demo account seed/lifecycle, deny-by-default member/staff policy와 legacy auth differential row를 추가한다. OAuth는 provider stub contract로만 검증한다. P2.1b-1의 logout·pet onboarding 회귀를 유지한다.
    - 검증: `./gradlew check integrationTest --tests '*Identity*' --tests '*Member*' && corepack pnpm -C frontend test:e2e -- auth-parity.spec.ts`
    - 완료: login·logout·session revoke·onboarding·member/profile IDOR·CSRF가 실제 Spring session과 parity fixture에서 통과하고 P2.1 전체 범위를 닫는다.
 

@@ -4,7 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -38,7 +40,15 @@ public class SessionController {
   }
 
   @GetMapping("/csrf")
-  CsrfResponse csrf(CsrfToken token) {
+  CsrfResponse csrf(CsrfToken token, HttpServletResponse response) {
+    response.addHeader(
+        HttpHeaders.SET_COOKIE,
+        ResponseCookie.from("XSRF-TOKEN", token.getToken())
+            .path("/")
+            .httpOnly(false)
+            .sameSite("Lax")
+            .build()
+            .toString());
     return new CsrfResponse(token.getToken());
   }
 
