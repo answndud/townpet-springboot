@@ -1,6 +1,7 @@
 package com.townpet.engagement;
 
 import com.townpet.publication.api.PublicationAccess;
+import com.townpet.relationship.api.BlockDirectory;
 import java.util.UUID;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -12,15 +13,18 @@ class ReactionService {
 
   private final ReactionRepository reactions;
   private final PublicationAccess publications;
+  private final BlockDirectory blocks;
 
-  ReactionService(ReactionRepository reactions, PublicationAccess publications) {
+  ReactionService(
+      ReactionRepository reactions, PublicationAccess publications, BlockDirectory blocks) {
     this.reactions = reactions;
     this.publications = publications;
+    this.blocks = blocks;
   }
 
   @Transactional(readOnly = true)
   ReactionState state(UUID publicationId, @Nullable UUID memberId) {
-    requireActivePublication(publicationId);
+    requireAccessiblePublication(publicationId, memberId);
     boolean active =
         memberId != null
             && reactions
@@ -31,7 +35,7 @@ class ReactionService {
 
   @Transactional
   ReactionState set(UUID memberId, UUID publicationId, boolean active) {
-    requireActivePublication(publicationId);
+    requireAccessiblePublication(publicationId, memberId);
     var existing =
         reactions.findByPublicationIdAndAuthorMemberIdAndType(publicationId, memberId, TYPE);
     if (active && existing.isEmpty()) {
@@ -42,8 +46,12 @@ class ReactionService {
     return new ReactionState(active, reactions.countByPublicationIdAndType(publicationId, TYPE));
   }
 
-  private void requireActivePublication(UUID publicationId) {
-    if (!publications.existsActive(publicationId)) {
+  private void requireAccessiblePublication(UUID publicationId, @Nullable UUID viewerMemberId) {
+    UUID authorId =
+        publications
+            .activeAuthorMemberId(publicationId)
+            .orElseThrow(ReactionPublicationNotFoundException::new);
+    if (viewerMemberId != null && blocks.isBlocked(viewerMemberId, authorId)) {
       throw new ReactionPublicationNotFoundException();
     }
   }
