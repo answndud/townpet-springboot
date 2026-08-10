@@ -23,6 +23,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -37,6 +38,7 @@ import org.springframework.test.web.servlet.MvcResult;
       "spring.modulith.events.jdbc.schema-initialization.enabled=true"
     })
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class IdentityMemberControllerTest {
   private static final UUID MEMBER_ID = UUID.fromString("00000000-0000-4000-8000-000000000001");
   private static final UUID NEIGHBORHOOD_ID =
@@ -49,7 +51,7 @@ class IdentityMemberControllerTest {
   @Autowired EmailVerificationTokenRepository emailVerificationTokens;
   @Autowired AuthAuditRepository authAudits;
   @Autowired PasswordResetService passwordResets;
-  @Autowired EmailVerificationService emailVerifications;
+  @Autowired LocalAccountTokenCapture accountTokens;
   @Autowired JdbcIndexedSessionRepository sessions;
   @Autowired NeighborhoodRepository neighborhoods;
   @Autowired MemberPetRepository pets;
@@ -60,6 +62,7 @@ class IdentityMemberControllerTest {
     authAudits.deleteAll();
     passwordResetTokens.deleteAll();
     emailVerificationTokens.deleteAll();
+    accountTokens.clear();
     credentials.deleteAll();
     pets.deleteAll();
     members.deleteAll();
@@ -198,7 +201,15 @@ class IdentityMemberControllerTest {
     Cookie session = sessionCookie(login);
     org.assertj.core.api.Assertions.assertThat(sessions.findByPrincipalName(MEMBER_ID.toString()))
         .isNotEmpty();
-    String token = passwordResets.request("mango@example.com").orElseThrow();
+    mockMvc
+        .perform(
+            post("/api/v1/auth/password-resets")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"mango@example.com\"}"))
+        .andExpect(status().isAccepted());
+    String token =
+        accountTokens.find(AccountTokenPurpose.PASSWORD_RESET, "mango@example.com").orElseThrow();
 
     org.assertj.core.api.Assertions.assertThat(passwordResetTokens.findAll())
         .singleElement()
@@ -266,11 +277,19 @@ class IdentityMemberControllerTest {
         .andExpect(status().isAccepted());
 
     org.assertj.core.api.Assertions.assertThat(passwordResetTokens.count()).isZero();
+    org.assertj.core.api.Assertions.assertThat(
+            accountTokens.find(AccountTokenPurpose.PASSWORD_RESET, "unknown@example.com"))
+        .isEmpty();
+    org.assertj.core.api.Assertions.assertThat(
+            accountTokens.find(AccountTokenPurpose.PASSWORD_RESET, "locked@townpet.local"))
+        .isEmpty();
   }
 
   @Test
   void passwordResetRejectsWeakPassword() throws Exception {
-    String token = passwordResets.request("mango@example.com").orElseThrow();
+    passwordResets.request("mango@example.com");
+    String token =
+        accountTokens.find(AccountTokenPurpose.PASSWORD_RESET, "mango@example.com").orElseThrow();
     mockMvc
         .perform(
             post("/api/v1/auth/password-resets/confirmations")
@@ -299,7 +318,17 @@ class IdentityMemberControllerTest {
 
   @Test
   void emailVerificationUsesHashedSingleUseToken() throws Exception {
-    String token = emailVerifications.request("mango@example.com").orElseThrow();
+    mockMvc
+        .perform(
+            post("/api/v1/auth/email-verifications")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"mango@example.com\"}"))
+        .andExpect(status().isAccepted());
+    String token =
+        accountTokens
+            .find(AccountTokenPurpose.EMAIL_VERIFICATION, "mango@example.com")
+            .orElseThrow();
 
     org.assertj.core.api.Assertions.assertThat(emailVerificationTokens.findAll())
         .singleElement()
@@ -351,6 +380,12 @@ class IdentityMemberControllerTest {
         .andExpect(status().isAccepted());
 
     org.assertj.core.api.Assertions.assertThat(emailVerificationTokens.count()).isZero();
+    org.assertj.core.api.Assertions.assertThat(
+            accountTokens.find(AccountTokenPurpose.EMAIL_VERIFICATION, "unknown@example.com"))
+        .isEmpty();
+    org.assertj.core.api.Assertions.assertThat(
+            accountTokens.find(AccountTokenPurpose.EMAIL_VERIFICATION, "mango@example.com"))
+        .isEmpty();
   }
 
   @Test
