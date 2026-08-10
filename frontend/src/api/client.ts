@@ -66,6 +66,11 @@ export type Comment = {
   version: number;
 };
 
+export type Reaction = {
+  active: boolean;
+  count: number;
+};
+
 export type CreatePublicationInput = {
   title: string;
   body: string;
@@ -256,6 +261,22 @@ export const publicationApi = {
         method: "DELETE",
         headers: jsonHeaders,
         body: JSON.stringify({ version }),
+      },
+    );
+  },
+  reaction(publicationId: string, signal?: AbortSignal) {
+    return apiFetch<Reaction>(
+      `/api/v1/publications/${encodeURIComponent(publicationId)}/reaction`,
+      { signal },
+    );
+  },
+  setReaction(publicationId: string, active: boolean) {
+    return mutate<Reaction>(
+      `/api/v1/publications/${encodeURIComponent(publicationId)}/reaction`,
+      {
+        method: "PUT",
+        headers: jsonHeaders,
+        body: JSON.stringify({ active }),
       },
     );
   },
