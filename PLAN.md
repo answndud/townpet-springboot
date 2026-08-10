@@ -6,14 +6,14 @@
 
 ## Active
 
-1. P2.1 - Email verification과 auth parity를 닫는다
+1. P2.1 - OAuth provider stub과 browser auth parity를 닫는다
    - 파일: `src/main/java/com/townpet/identity/**`, `api/openapi/townpet.yaml`, `frontend/src/features/auth/**`, `frontend/e2e/auth-parity.spec.ts`
-   - 변경: email verification token과 OAuth provider stub 계약을 추가한다. Demo identity 변경 금지, member/profile IDOR와 login·logout·password reset·onboarding differential E2E를 연결한다.
+   - 변경: Kakao·Naver OAuth provider stub 계약과 delivery stub을 추가한다. Demo identity 변경 금지, member/profile IDOR와 login·logout·password reset·email verification·onboarding E2E를 연결한다.
    - 검증: `./gradlew clean check migrationTest --tests '*Identity*' --tests '*Member*' && corepack pnpm -C frontend test:e2e -- auth-parity.spec.ts`
    - 완료: credentials login·logout·reset·verification·onboarding·role·IDOR·CSRF가 JDBC session과 합성 fixture에서 통과하고 실제 signup/OAuth는 꺼져 있다.
 
 2. P2.2 - Publication·Media 작성과 상세 여정을 연결한다
-   - 파일: `src/main/java/com/townpet/publication/**`, `src/main/java/com/townpet/media/**`, `src/main/resources/db/migration/V005__*.sql`, `frontend/src/features/publication/**`
+   - 파일: `src/main/java/com/townpet/publication/**`, `src/main/java/com/townpet/media/**`, `src/main/resources/db/migration/V006__*.sql`, `frontend/src/features/publication/**`
    - 변경: publication lifecycle·ownership·LOCAL/GLOBAL scope와 upload/finalize/orphan lifecycle을 한 vertical slice로 구현하고 기존 작성·상세 UI를 연결한다.
    - 검증: `./gradlew integrationTest --tests '*Publication*' --tests '*Media*' && corepack pnpm -C frontend test:e2e -- publication-parity.spec.ts upload-parity.spec.ts`
    - 완료: 회원·guest 작성, 수정·삭제, direct URL, metadata와 media cleanup이 Spring API만 사용한다.

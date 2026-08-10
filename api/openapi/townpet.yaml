@@ -97,6 +97,40 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /api/v1/auth/email-verifications:
+    post:
+      operationId: requestEmailVerification
+      tags: [Auth]
+      summary: Request email verification without revealing account state
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationRequest'
+      responses:
+        '202':
+          description: Request accepted whether or not verification is required
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/v1/auth/email-verifications/confirmations:
+    post:
+      operationId: confirmEmailVerification
+      tags: [Auth]
+      summary: Consume an email verification token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerificationConfirmation'
+      responses:
+        '204':
+          description: Email verified
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /api/v1/feed:
     get:
       operationId: getFeed
@@ -304,6 +338,22 @@ components:
           format: password
           minLength: 10
           maxLength: 72
+    EmailVerificationRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+    EmailVerificationConfirmation:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          minLength: 32
+          maxLength: 128
     Neighborhood:
       type: object
       required: [id, slug, name]

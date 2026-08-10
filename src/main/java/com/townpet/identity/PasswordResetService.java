@@ -1,13 +1,7 @@
 package com.townpet.identity;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -21,7 +15,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class PasswordResetService {
-  private static final SecureRandom RANDOM = new SecureRandom();
   private static final Pattern STRONG_PASSWORD =
       Pattern.compile(
           "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])(?!.*(.)\\1{3,}).{10,72}$");
@@ -69,9 +62,10 @@ public class PasswordResetService {
     Instant now = Instant.now();
     UUID memberId = credential.orElseThrow().getMemberId();
     tokens.deleteConsumedOrExpired(memberId, now);
-    String rawToken = createToken();
+    String rawToken = SecureToken.create();
     tokens.save(
-        new PasswordResetTokenEntity(memberId, hashToken(rawToken), now.plus(1, ChronoUnit.HOURS)));
+        new PasswordResetTokenEntity(
+            memberId, SecureToken.hash(rawToken), now.plus(1, ChronoUnit.HOURS)));
     return Optional.of(rawToken);
   }
 
@@ -81,7 +75,7 @@ public class PasswordResetService {
     Instant now = Instant.now();
     PasswordResetTokenEntity token =
         tokens
-            .findByTokenHashAndUsedAtIsNullAndExpiresAtAfter(hashToken(rawToken), now)
+            .findByTokenHashAndUsedAtIsNullAndExpiresAtAfter(SecureToken.hash(rawToken), now)
             .orElseThrow(
                 () ->
                     new ResponseStatusException(
@@ -101,22 +95,6 @@ public class PasswordResetService {
     tokens.flush();
     tokens.deleteConsumedOrExpired(credential.getMemberId(), now);
     sessionRevocation.revokeAll(credential.getMemberId());
-  }
-
-  static String hashToken(String token) {
-    try {
-      return HexFormat.of()
-          .formatHex(
-              MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
-    } catch (NoSuchAlgorithmException exception) {
-      throw new IllegalStateException("SHA-256 is unavailable", exception);
-    }
-  }
-
-  private static String createToken() {
-    byte[] bytes = new byte[32];
-    RANDOM.nextBytes(bytes);
-    return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
   }
 
   private static void validatePassword(String password) {
