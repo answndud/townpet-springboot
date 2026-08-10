@@ -2,8 +2,10 @@ package com.townpet.publication;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -228,6 +230,114 @@ class PublicationControllerTest {
         .andExpect(status().isBadRequest());
   }
 
+  @Test
+  void authorEditsAndDeletesWhileOwnershipAndVersionAreEnforced() throws Exception {
+    Cookie author = login("demo-member-1@townpet.local");
+    Cookie otherMember = login("demo-member-2@townpet.local");
+    MvcResult created =
+        mockMvc
+            .perform(
+                post("/api/v1/publications")
+                    .cookie(author)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "title": "수정 전 제목",
+                          "body": "수정 전 본문",
+                          "scope": "GLOBAL"
+                        }
+                        """))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String publicationId =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(created.getResponse().getContentAsString())
+            .path("id")
+            .asText();
+
+    mockMvc
+        .perform(
+            put("/api/v1/publications/{publicationId}", publicationId)
+                .cookie(otherMember)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"title":"가로챈 제목","body":"가로챈 본문","scope":"GLOBAL","version":0}
+                    """))
+        .andExpect(status().isForbidden());
+
+    mockMvc
+        .perform(
+            put("/api/v1/publications/{publicationId}", publicationId)
+                .cookie(author)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"title":"수정한 제목","body":"수정한 본문","scope":"GLOBAL","version":0}
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("수정한 제목"))
+        .andExpect(jsonPath("$.body").value("수정한 본문"))
+        .andExpect(jsonPath("$.version").value(1));
+
+    mockMvc
+        .perform(
+            put("/api/v1/publications/{publicationId}", publicationId)
+                .cookie(author)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {"title":"오래된 수정","body":"덮어쓰면 안 됨","scope":"GLOBAL","version":0}
+                    """))
+        .andExpect(status().isConflict());
+
+    mockMvc
+        .perform(
+            delete("/api/v1/publications/{publicationId}", publicationId)
+                .cookie(otherMember)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":1}"))
+        .andExpect(status().isForbidden());
+
+    mockMvc
+        .perform(
+            delete("/api/v1/publications/{publicationId}", publicationId)
+                .cookie(author)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":0}"))
+        .andExpect(status().isConflict());
+
+    mockMvc
+        .perform(
+            delete("/api/v1/publications/{publicationId}", publicationId)
+                .cookie(author)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":1}"))
+        .andExpect(status().isNoContent());
+
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}", publicationId))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(get("/api/v1/feed").queryParam("audience", "GLOBAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(0));
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT lifecycle FROM publication WHERE id = ?",
+                String.class,
+                UUID.fromString(publicationId)))
+        .isEqualTo("DELETED");
+  }
+
   private void insertPublication(
       UUID id,
       String title,
@@ -251,6 +361,10 @@ class PublicationControllerTest {
   }
 
   private Cookie login() throws Exception {
+    return login("demo-member-1@townpet.local");
+  }
+
+  private Cookie login(String email) throws Exception {
     MvcResult login =
         mockMvc
             .perform(
@@ -258,8 +372,7 @@ class PublicationControllerTest {
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"email\":\"demo-member-1@townpet.local\","
-                            + "\"password\":\"townpet-demo-123!\"}"))
+                        "{\"email\":\"" + email + "\"," + "\"password\":\"townpet-demo-123!\"}"))
             .andExpect(status().isCreated())
             .andReturn();
     return Objects.requireNonNull(login.getResponse().getCookie("SESSION"));
