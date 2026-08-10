@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.1 - React 작성·상세 화면을 Spring API에 연결한다
-   - 파일: `frontend/src/features/publication/**`, `frontend/src/App.tsx`, `frontend/e2e/publication-parity.spec.ts`
-   - 변경: 기존 TownPet의 글 작성·상세 구조와 responsive 감각을 유지하면서 FREE_BOARD 회원 여정을 공통 API client에 연결한다.
-   - 검증: `corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e:auth -- publication-parity.spec.ts`
-   - 완료: demo 회원이 desktop·mobile에서 글을 작성하고 생성된 direct URL을 새로 열어 같은 내용을 확인한다.
+1. P2.1 - 공개·회원 Publication 피드를 연결한다
+   - 파일: `src/main/java/com/townpet/publication/**`, `api/openapi/townpet.yaml`, `frontend/src/features/publication/**`, `frontend/e2e/feed-parity.spec.ts`
+   - 변경: `ACTIVE` 전체 글과 로그인 회원 대표 동네 글을 stable cursor로 조회하고 기존 TownPet 카드 밀도의 `/feed`, `/feed/guest` 화면에 연결한다.
+   - 검증: `./gradlew integrationTest --tests '*Publication*' && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e:auth -- feed-parity.spec.ts`
+   - 완료: 방문자는 전체 글, 회원은 전체·자기 동네 글을 desktop·mobile 피드에서 보고 다음 cursor로 중복 없이 이동한다.
 
 ## Backlog
 
