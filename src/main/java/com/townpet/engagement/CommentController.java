@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,10 +32,13 @@ class CommentController {
   }
 
   @GetMapping
-  CommentListResponse list(@PathVariable UUID publicationId) {
+  CommentListResponse list(
+      @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal) {
     try {
       return new CommentListResponse(
-          comments.list(publicationId).stream().map(CommentController::toResponse).toList());
+          comments.list(publicationId, viewerMemberId(principal)).stream()
+              .map(CommentController::toResponse)
+              .toList());
     } catch (CommentPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
@@ -72,12 +76,22 @@ class CommentController {
     }
   }
 
-  private static UUID memberId(UserDetails principal) {
+  @Nullable
+  private static UUID viewerMemberId(@Nullable UserDetails principal) {
+    if (principal == null) return null;
     try {
       return UUID.fromString(principal.getUsername());
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
     }
+  }
+
+  private static UUID memberId(UserDetails principal) {
+    UUID memberId = viewerMemberId(principal);
+    if (memberId == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+    }
+    return memberId;
   }
 
   private static CommentResponse toResponse(CommentEntity comment) {
