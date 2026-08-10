@@ -45,7 +45,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
-    implementation("org.springframework.session:spring-session-jdbc")
+    implementation("org.springframework.boot:spring-boot-starter-session-jdbc")
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("org.springframework.modulith:spring-modulith-events-jdbc")
     implementation("org.springframework.modulith:spring-modulith-events-jackson")

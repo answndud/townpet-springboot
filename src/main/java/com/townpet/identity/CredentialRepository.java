@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CredentialRepository extends JpaRepository<CredentialEntity, UUID> {
   Optional<CredentialEntity> findByEmailIgnoreCase(String email);
+
+  Optional<CredentialEntity> findByMemberId(UUID memberId);
 }

@@ -63,6 +63,40 @@ paths:
           description: Session revoked
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/v1/auth/password-resets:
+    post:
+      operationId: requestPasswordReset
+      tags: [Auth]
+      summary: Request a password reset without revealing account existence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '202':
+          description: Request accepted whether or not the account exists
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/v1/auth/password-resets/confirmations:
+    post:
+      operationId: confirmPasswordReset
+      tags: [Auth]
+      summary: Consume a reset token and revoke the member sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmation'
+      responses:
+        '204':
+          description: Password reset and sessions revoked
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /api/v1/feed:
     get:
       operationId: getFeed
@@ -249,6 +283,27 @@ components:
           $ref: '#/components/schemas/Uuid'
         expiresAt:
           $ref: '#/components/schemas/Instant'
+    PasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 320
+    PasswordResetConfirmation:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token:
+          type: string
+          minLength: 32
+          maxLength: 128
+        newPassword:
+          type: string
+          format: password
+          minLength: 10
+          maxLength: 72
     Neighborhood:
       type: object
       required: [id, slug, name]
@@ -416,6 +471,12 @@ components:
             $ref: '#/components/schemas/ProblemDetail'
     Unauthorized:
       description: Authentication required
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Authenticated actor is not allowed to perform this action
       content:
         application/problem+json:
           schema:

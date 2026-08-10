@@ -50,6 +50,8 @@ public class SecurityConfig {
                     .requestMatchers(
                         "/actuator/health", "/api/v1/auth/csrf", "/api/v1/auth/sessions")
                     .permitAll()
+                    .requestMatchers("/api/v1/auth/password-resets/**")
+                    .permitAll()
                     .requestMatchers("/api/v1/catalog/**")
                     .permitAll()
                     .requestMatchers("/api/v1/operations/**")
