@@ -193,9 +193,8 @@ components:
           type: string
           enum: [LOCAL, GLOBAL]
         neighborhoodId:
-          oneOf:
-            - $ref: '#/components/schemas/Uuid'
-            - type: 'null'
+          type: [string, 'null']
+          format: uuid
     Publication:
       type: object
       required: [id, title, body, scope, authorId, createdAt, version]
@@ -212,9 +211,8 @@ components:
         authorId:
           $ref: '#/components/schemas/Uuid'
         neighborhoodId:
-          oneOf:
-            - $ref: '#/components/schemas/Uuid'
-            - type: 'null'
+          type: [string, 'null']
+          format: uuid
         createdAt:
           $ref: '#/components/schemas/Instant'
         version:
@@ -226,9 +224,7 @@ components:
       required: [hasNext]
       properties:
         nextCursor:
-          oneOf:
-            - type: string
-            - type: 'null'
+          type: [string, 'null']
         hasNext:
           type: boolean
     FeedPage:
