@@ -4,6 +4,8 @@ import OnboardingPage from "./OnboardingPage";
 import PasswordResetPage from "./PasswordResetPage";
 import ProfilePage from "./ProfilePage";
 import VerifyEmailPage from "./VerifyEmailPage";
+import PublicationCreatePage from "./features/publication/PublicationCreatePage";
+import PublicationDetailPage from "./features/publication/PublicationDetailPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -121,6 +123,8 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/posts/new" element={<PublicationCreatePage />} />
+        <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />
         <Route path="*" element={<PlaceholderPage />} />
       </Routes>
     </div>

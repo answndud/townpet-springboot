@@ -16,6 +16,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
+if [[ "${1:-}" == "--" ]]; then
+  shift
+fi
+
 docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" up --detach --wait
 
 gradle_args=(bootRun "--args=--spring.profiles.active=e2e")
@@ -64,6 +68,17 @@ fi
 
 corepack pnpm -C frontend exec playwright test --config e2e/auth.config.ts "$@"
 
+verify_auth_evidence=false
+verify_publication_evidence=false
+if (( $# == 0 )); then
+  verify_auth_evidence=true
+  verify_publication_evidence=true
+fi
+for test_filter in "$@"; do
+  [[ "${test_filter}" == *"auth-parity"* ]] && verify_auth_evidence=true
+  [[ "${test_filter}" == *"publication-parity"* ]] && verify_publication_evidence=true
+done
+
 session_count="$(
   docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" \
     exec -T postgres psql -U postgres -d townpet -tAc \
@@ -74,8 +89,21 @@ audit_count="$(
     exec -T postgres psql -U postgres -d townpet -tAc \
     "SELECT COUNT(*) FROM identity_auth_audit WHERE action IN ('PASSWORD_RESET', 'EMAIL_VERIFIED')"
 )"
-if (( session_count < 2 || audit_count < 4 )); then
+publication_count="$(
+  docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" \
+    exec -T postgres psql -U postgres -d townpet -tAc \
+    "SELECT COUNT(*) FROM publication WHERE type = 'FREE_BOARD' AND lifecycle = 'ACTIVE'"
+)"
+if (( session_count < 2 )); then
+  echo "Expected JDBC session evidence, got sessions=${session_count}" >&2
+  exit 1
+fi
+if [[ "${verify_auth_evidence}" == true ]] && (( audit_count < 4 )); then
   echo "Expected JDBC session and auth audit evidence, got sessions=${session_count}, audits=${audit_count}" >&2
   exit 1
 fi
-echo "JDBC evidence verified: sessions=${session_count}, auth_audits=${audit_count}"
+if [[ "${verify_publication_evidence}" == true ]] && (( publication_count < 2 )); then
+  echo "Expected PostgreSQL publication evidence, got publications=${publication_count}" >&2
+  exit 1
+fi
+echo "PostgreSQL evidence verified: sessions=${session_count}, auth_audits=${audit_count}, publications=${publication_count}"

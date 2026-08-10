@@ -110,10 +110,10 @@ pages:
     spring: pending
   - path: /posts/new
     legacy: true
-    spring: pending
+    spring: verified
   - path: /posts/{id}
     legacy: true
-    spring: pending
+    spring: verified
   - path: /posts/{id}/edit
     legacy: true
     spring: pending
