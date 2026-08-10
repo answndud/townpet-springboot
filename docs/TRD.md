@@ -36,7 +36,6 @@ flowchart LR
     C --> S["Spring Boot modular monolith"]
     S --> PG["PostgreSQL 18 + PostGIS"]
     S --> R2["Cloudflare R2"]
-    S --> OAUTH["Kakao·Naver OAuth"]
     S --> MAIL["Transactional email provider"]
     S --> OBS["Grafana Alloy"]
     OBS --> GC["외부 관측 backend"]
@@ -44,7 +43,7 @@ flowchart LR
     PG --> B["Encrypted WAL·backup in R2"]
 ```
 
-Trust boundary는 Browser, public reverse proxy, application, database·object storage, 외부 identity·email, staff operations로 구분한다. Browser 입력과 외부 webhook·provider 응답은 모두 신뢰하지 않으며 application module API와 database constraint를 함께 통과해야 한다.
+Trust boundary는 Browser, public reverse proxy, application, database·object storage, 외부 email, staff operations로 구분한다. Browser 입력과 외부 email provider 응답은 모두 신뢰하지 않으며 application module API와 database constraint를 함께 통과해야 한다.
 
 ## 4. Repository 목표 구조
 
@@ -94,7 +93,7 @@ townpet-springboot/
 
 | Module | 책임 | 소유 데이터 | 대표 동기 의존 |
 |---|---|---|---|
-| `identity` | credential, OAuth link, session, verification, staff identity | credential, oauth_link, session, verification_token | member |
+| `identity` | credential, session, email verification·account recovery, staff identity | credential, session, verification_token, password_reset_token | member |
 | `member` | 회원 profile, onboarding, neighborhood, preference | member, member_profile, member_neighborhood | catalog |
 | `catalog` | neighborhood, community, breed, pet type 기준 정보 | neighborhood, community, breed, pet_type | 없음 |
 | `publication` | 공통 게시 내용, scope, author, lifecycle, effective visibility | publication, publication_image_ref, visibility_restriction | identity, member, catalog |
@@ -204,16 +203,17 @@ POST   /api/v1/operations/projections/{projection}:rebuild
 - Cookie는 opaque session ID, `HttpOnly`, `Secure`, 적절한 `SameSite`와 제한 path를 사용한다.
 - Login 성공 시 session fixation protection을 수행한다.
 - CSRF token은 React client와 명시적으로 교환하고 모든 state-changing browser request에 검증한다.
-- Session은 PostgreSQL 원장에 저장하고 비밀번호 변경·credential unlink·sanction 시 관련 session을 즉시 revoke한다.
+- Session은 PostgreSQL 원장에 저장하고 비밀번호 변경·재설정·sanction 시 관련 session을 즉시 revoke한다.
 - Browser JWT를 발급하지 않는다.
 
-### 9.2 Credentials·OAuth
+### 9.2 Credentials·Account Recovery
 
 - Password는 Spring Security의 검증된 adaptive password encoder와 versioned parameter를 사용한다.
-- Kakao·Naver provider identity는 `(provider, providerSubject)` unique key다.
-- Email 일치만으로 계정을 자동 병합하지 않는다.
-- Account link·unlink는 authenticated session, recent reauthentication과 last-login-method guard를 요구한다.
-- Showcase profile에서는 public OAuth·signup entry를 끄고 local·CI provider stub으로 contract를 검증한다.
+- 이메일 인증과 비밀번호 재설정 token은 raw 값을 한 번만 전달하고 hash·만료·사용 상태만 저장한다.
+- 요청 응답으로 계정 존재 여부나 이메일 인증 상태를 노출하지 않는다.
+- Password reset 성공 시 해당 회원의 기존 session을 폐기한다.
+- Showcase profile에서는 public signup을 끄고 고정 Credentials demo 계정만 제공한다.
+- Kakao·Naver 인증과 social account link·unlink는 구현하지 않는다. 필요가 확인되면 provider 계약, 계정 충돌 정책과 보안 검증을 별도 ADR로 설계한다.
 
 ### 9.3 Guest
 
@@ -477,7 +477,7 @@ Domain 완료는 다음을 모두 요구한다.
 
 ## 17. Showcase Production
 
-- Public signup·real OAuth disabled
+- Public signup disabled; Kakao·Naver auth is outside the current product scope
 - 고정 MEMBER demo 계정 3개 이상과 제한된 MODERATOR 계정
 - 일반 credentials API·Spring Session을 그대로 사용
 - Demo identity·password·role 변경 금지
@@ -536,7 +536,7 @@ Scaffold 전에는 위 명령이 아직 존재하지 않는다. 최초 implement
 ## 19. Security Verification
 
 - Session fixation·revocation·CSRF·cookie test
-- OAuth account collision·link·unlink test
+- Credentials login·email verification·password reset·session revocation test
 - Guest credential brute-force·step-up replay test
 - IDOR matrix: actor·role·owner·state·block·restriction 조합
 - Upload content type·polyglot·size·pixel·orphan test

@@ -204,7 +204,8 @@ apiRoutes:
   - path: /api/auth/password/setup
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: excluded
+    decision: ADR-0040
   - path: /api/auth/register
     methods: [POST]
     legacy: true
@@ -212,11 +213,13 @@ apiRoutes:
   - path: /api/auth/social-accounts/{provider}
     methods: [DELETE]
     legacy: true
-    spring: pending
+    spring: excluded
+    decision: ADR-0040
   - path: /api/auth/social-dev/link
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: excluded
+    decision: ADR-0040
   - path: /api/auth/verify/confirm
     methods: [POST]
     legacy: true
@@ -377,4 +380,3 @@ apiRoutes:
     methods: [GET]
     legacy: true
     spring: pending
-

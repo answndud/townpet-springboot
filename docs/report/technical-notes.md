@@ -47,8 +47,7 @@
 
 ## 현재 학습·증거의 빈틈
 
-- password reset·email verification delivery provider stub
-- OAuth collision/link/unlink를 실제 provider 없이 검증하는 stub contract
+- password reset·email verification token의 실제 전달 경계와 운영 실패 처리
 - publication transaction과 media lifecycle
 - event retry/idempotency, concurrency mutation, jOOQ read model
 - 성능 수치, query plan, backup/restore와 배포 관측 evidence

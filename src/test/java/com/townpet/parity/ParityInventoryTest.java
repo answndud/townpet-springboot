@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 class ParityInventoryTest {
 
   private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
+  private static final Set<String> SPRING_STATUSES =
+      Set.of("pending", "adapter", "spring-owned", "verified", "excluded");
 
   @Test
   void capturesTheLegacyPageAndApiInventory() throws IOException {
@@ -38,7 +40,11 @@ class ParityInventoryTest {
       assertThat(path).startsWith("/api/");
       assertThat(route.path("methods")).isNotEmpty();
       assertThat(route.path("legacy").asBoolean()).isTrue();
-      assertThat(route.path("spring").asText()).isEqualTo("pending");
+      String springStatus = route.path("spring").asText();
+      assertThat(SPRING_STATUSES).contains(springStatus);
+      if (springStatus.equals("excluded")) {
+        assertThat(route.path("decision").asText()).startsWith("ADR-");
+      }
     }
   }
 

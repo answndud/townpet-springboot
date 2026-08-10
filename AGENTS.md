@@ -29,7 +29,7 @@ P1 application foundation과 P2 Identity·Member·Catalog의 초기 vertical sli
 - Module 간 JPA association, entity·repository·controller DTO 노출과 순환 의존을 금지한다. 공개 application API, 식별자 또는 event로 연결한다.
 - 비동기 후속 처리는 Spring Modulith Event Publication Registry와 PostgreSQL을 사용하며 consumer는 idempotent하게 만든다.
 - Redis, Kafka, Elasticsearch, Kubernetes, microservice는 실측 요구와 새 ADR 없이는 추가하지 않는다.
-- 공개 배포는 합성 demo data만 쓰는 portfolio sandbox다. 실제 공개 가입·실 OAuth·개인정보 수집을 켜지 않는다.
+- 공개 배포는 합성 demo data만 쓰는 portfolio sandbox다. 실제 공개 가입·개인정보 수집을 켜지 않는다. Kakao·Naver 인증은 현재 제품 범위가 아니다.
 
 ## 4. 구현 방식
 
@@ -91,7 +91,7 @@ P1 application foundation과 P2 Identity·Member·Catalog의 초기 vertical sli
 - Staff는 deny-by-default RBAC와 resource ownership을 함께 검사한다.
 - LostFound 정확 위치·연락 증거는 암호화하고 공개 응답·log·projection에는 근사 정보만 둔다.
 - 실제 Legacy data를 fixture로 commit하지 않는다. Invalid migration row는 quarantine하고 조용히 버리지 않는다.
-- Credential, session, OAuth token, 관리 자격, 정확 위치와 개인정보를 log·trace·metric·error에 남기지 않는다.
+- Credential, session, account recovery token, 관리 자격, 정확 위치와 개인정보를 log·trace·metric·error에 남기지 않는다.
 
 ## 8. 검증
 

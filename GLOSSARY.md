@@ -124,13 +124,13 @@ TownPet에서 공개 또는 제한 공개되는 모든 게시물의 공통 식�
 
 인증 상태를 서버 저장소에 보관하고 브라우저에는 상태를 직접 담지 않은 opaque identifier만 cookie로 전달하는 방식이다.
 
-## 인증 수단
+## Credentials
 
-Credentials 비밀번호, Kakao 또는 Naver 계정처럼 한 회원 identity가 로그인에 사용할 수 있도록 명시적으로 연결한 credential 또는 provider account다.
+회원이 검증된 이메일과 비밀번호로 로그인하는 현재 TownPet의 유일한 인증 방식이다. Kakao·Naver 같은 social provider 인증은 현재 제품 범위가 아니다.
 
 ## 세션 폐기
 
-로그아웃, 비밀번호 변경, 인증 수단 연결 해제 또는 관리자 조치 후 기존 session identifier를 더 이상 인증에 사용할 수 없게 만드는 작업이다.
+로그아웃, 비밀번호 변경·재설정 또는 관리자 조치 후 기존 session identifier를 더 이상 인증에 사용할 수 없게 만드는 작업이다.
 
 ## CSRF 계약
 

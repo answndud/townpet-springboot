@@ -28,7 +28,7 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 
 ### 4.2 회원
 
-- Credentials, Kakao 또는 Naver 인증 수단으로 로그인한다.
+- 이메일과 비밀번호 Credentials로 로그인한다.
 - 동네·관심 정보를 설정하고 게시물·댓글·반응·북마크·신고·알림 기능을 사용한다.
 - 자기 콘텐츠와 구조화 게시물의 상태를 허용된 범위에서 관리한다.
 
@@ -83,6 +83,7 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 - Next.js, Node.js server runtime, Prisma와 NextAuth를 최종 production에 남기지 않는다.
 - 기존 UI를 새 디자인으로 전면 교체하지 않는다.
 - 공고에 나온 기술 이름을 사용했다는 사실만을 portfolio 성과로 삼지 않는다.
+- Kakao·Naver 회원가입·로그인과 social account 연결·해제는 현재 제품 범위에 포함하지 않는다. 실제 필요가 확인될 때 별도 요구사항과 ADR로 도입한다.
 
 ## 7. 핵심 사용자 여정
 
@@ -90,9 +91,9 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 
 방문자는 홈, 지역 landing, guest feed와 guest search에서 공개 가능한 콘텐츠를 탐색하고 direct URL 새로고침과 공유 링크로 같은 화면에 도달한다.
 
-### J-02 인증과 계정 연결
+### J-02 인증과 계정 보안
 
-회원은 Credentials 또는 social provider로 로그인하고, 명시적 확인을 거쳐 Kakao·Naver 인증 수단을 기존 회원 identity에 연결·해제한다. 로그아웃·비밀번호 변경·제재 시 기존 session이 폐기된다.
+회원은 Credentials로 로그인하고 이메일 인증과 비밀번호 재설정을 사용한다. 로그아웃·비밀번호 변경·재설정·제재 시 관련 session이 폐기된다.
 
 ### J-03 지역·전체 피드
 
@@ -131,9 +132,9 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 ### 8.1 Identity·Member·Relationship
 
 - FR-ID-01: Browser 인증은 opaque HttpOnly session cookie를 사용하고 CSRF를 검증해야 한다.
-- FR-ID-02: Credentials, Kakao와 Naver는 하나의 회원에 연결 가능한 별도 인증 수단이어야 한다.
-- FR-ID-03: 계정 연결은 email 문자열 일치만으로 자동 수행하지 않고 현재 인증·재인증과 충돌 확인을 요구해야 한다.
-- FR-ID-04: 로그아웃, 비밀번호 변경, 인증 수단 해제와 관리자 조치는 관련 session을 즉시 폐기해야 한다.
+- FR-ID-02: 회원 로그인은 검증된 이메일과 adaptive hash로 보호된 비밀번호 Credentials를 사용해야 한다.
+- FR-ID-03: 이메일 인증과 비밀번호 재설정 요청은 계정 존재 여부를 노출하지 않고 만료되는 일회성 token을 사용해야 한다.
+- FR-ID-04: 로그아웃, 비밀번호 변경·재설정과 관리자 조치는 관련 session을 즉시 폐기해야 한다.
 - FR-ID-05: Guest write는 GuestPrincipal과 콘텐츠 관리 자격을 사용하고 IP·fingerprint는 abuse signal일 뿐 소유권 근거가 아니어야 한다.
 - FR-ID-06: Follow·block 관계는 feed, search, detail과 interaction authorization에 일관되게 반영돼야 한다.
 - FR-ID-07: Staff 역할은 MEMBER, MODERATOR, OPERATOR, ADMIN 책임을 분리하고 위험 작업에 재인증·MFA·사유·audit를 요구해야 한다.
@@ -211,13 +212,13 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 
 ## 9. Showcase 요구사항
 
-- DEMO-01: 공개 가입과 실제 Kakao·Naver OAuth는 showcase에서 비활성화한다.
+- DEMO-01: 공개 가입은 showcase에서 비활성화하고 Credentials demo 계정만 제공한다.
 - DEMO-02: 최소 3개 MEMBER demo 계정과 제한된 MODERATOR demo 계정을 제공한다.
-- DEMO-03: Demo account의 password, email, social link, role과 account lifecycle 변경을 금지한다.
+- DEMO-03: Demo account의 password, email, role과 account lifecycle 변경을 금지한다.
 - DEMO-04: Demo actor가 만든 콘텐츠와 media는 매일 scoped reset으로 versioned seed 상태에 복구한다.
 - DEMO-05: ADMIN, OPERATOR와 emergency credential은 공개하지 않는다.
 - DEMO-06: 실제 개인정보·주소·계좌를 입력하지 말 것과 reset 시간을 작성 지점에 표시한다.
-- DEMO-07: Signup·OAuth·staff flow는 provider stub과 E2E evidence로 검증하고 민감정보를 제거한 결과를 portfolio에 제공한다.
+- DEMO-07: 공개 환경에서 꺼진 signup과 staff flow는 local·CI 자동화로 검증하고 민감정보를 제거한 결과를 portfolio에 제공한다.
 
 ## 10. 비기능 요구사항
 

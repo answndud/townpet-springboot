@@ -47,7 +47,7 @@ backend, frontend, integration smoke, browser E2E를 계층으로 나눴다. smo
 비밀번호 reset에서 전체 session revoke를 구현하며 더 근본적인 누락을 발견했다. `spring-session-jdbc` library와 session table만 있었고 Boot 4의 JDBC session auto-configuration starter가 없어 기존 테스트는 servlet memory session을 사용하고 있었다. 의존성을 `spring-boot-starter-session-jdbc`로 바꾸고 테스트도 `MockHttpSession` 직접 전달 대신 실제 `SESSION` cookie와 JDBC repository를 확인하도록 수정했다. Reset token은 SHA-256 hash·1시간 만료·1회 사용·optimistic version으로 저장하고, 성공 시 password 변경·audit·모든 JDBC session 삭제를 한 transaction 경계에서 수행한다.
 
 - 근거: `482428d`, `c1f6155`, `461d4ad`, Flyway V004, `IdentityMemberControllerTest`
-- 현재 한계: email verification, OAuth provider stub, demo scoped reset과 전체 auth parity는 아직 완료되지 않았다.
+- 현재 한계: token 전달 경계, demo scoped reset과 전체 Credentials auth parity는 아직 완료되지 않았다.
 
 ## 면접에서 강조할 핵심
 
