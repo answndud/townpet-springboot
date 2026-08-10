@@ -116,7 +116,7 @@ pages:
     spring: verified
   - path: /posts/{id}/edit
     legacy: true
-    spring: pending
+    spring: verified
   - path: /posts/{id}/guest
     legacy: true
     spring: pending

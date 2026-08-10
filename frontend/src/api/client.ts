@@ -62,6 +62,10 @@ export type CreatePublicationInput = {
   neighborhoodId?: string;
 };
 
+export type EditPublicationInput = CreatePublicationInput & {
+  version: number;
+};
+
 export type FeedPage = {
   items: Publication[];
   page: {
@@ -198,6 +202,20 @@ export const publicationApi = {
   detail(publicationId: string, signal?: AbortSignal) {
     return apiFetch<Publication>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
       signal,
+    });
+  },
+  edit(publicationId: string, input: EditPublicationInput) {
+    return mutate<Publication>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
+      method: "PUT",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    });
+  },
+  delete(publicationId: string, version: number) {
+    return mutate<void>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
+      method: "DELETE",
+      headers: jsonHeaders,
+      body: JSON.stringify({ version }),
     });
   },
   feed({

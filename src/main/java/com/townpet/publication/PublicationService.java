@@ -39,6 +39,52 @@ class PublicationService {
     return publications.findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE);
   }
 
+  @Transactional
+  PublicationEntity edit(
+      UUID memberId,
+      UUID publicationId,
+      long expectedVersion,
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      String title,
+      String body) {
+    PublicationEntity publication = ownedActivePublication(memberId, publicationId);
+    requireCurrentVersion(publication, expectedVersion);
+    MemberPublicationContext member =
+        members
+            .findPublicationContext(memberId)
+            .orElseThrow(() -> new PublicationPolicyException("Member does not exist"));
+    UUID resolvedNeighborhoodId = resolveNeighborhood(member, scope, neighborhoodId);
+    publication.edit(
+        scope, resolvedNeighborhoodId, title.trim(), body.trim(), java.time.Instant.now());
+    return publications.saveAndFlush(publication);
+  }
+
+  @Transactional
+  void delete(UUID memberId, UUID publicationId, long expectedVersion) {
+    PublicationEntity publication = ownedActivePublication(memberId, publicationId);
+    requireCurrentVersion(publication, expectedVersion);
+    publication.delete(java.time.Instant.now());
+    publications.saveAndFlush(publication);
+  }
+
+  private PublicationEntity ownedActivePublication(UUID memberId, UUID publicationId) {
+    PublicationEntity publication =
+        publications
+            .findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
+            .orElseThrow(PublicationNotFoundException::new);
+    if (!publication.getAuthorMemberId().equals(memberId)) {
+      throw new PublicationOwnershipException();
+    }
+    return publication;
+  }
+
+  private static void requireCurrentVersion(PublicationEntity publication, long expectedVersion) {
+    if (publication.getVersion() != expectedVersion) {
+      throw new PublicationVersionConflictException();
+    }
+  }
+
   @Nullable
   private static UUID resolveNeighborhood(
       MemberPublicationContext member,
@@ -63,3 +109,9 @@ final class PublicationPolicyException extends RuntimeException {
     super(message);
   }
 }
+
+final class PublicationNotFoundException extends RuntimeException {}
+
+final class PublicationOwnershipException extends RuntimeException {}
+
+final class PublicationVersionConflictException extends RuntimeException {}

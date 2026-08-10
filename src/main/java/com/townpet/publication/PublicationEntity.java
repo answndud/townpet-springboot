@@ -112,4 +112,22 @@ class PublicationEntity {
   long getVersion() {
     return version;
   }
+
+  void edit(
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      String title,
+      String body,
+      Instant changedAt) {
+    this.scope = scope;
+    this.neighborhoodId = neighborhoodId;
+    this.title = title;
+    this.body = body;
+    this.updatedAt = changedAt;
+  }
+
+  void delete(Instant changedAt) {
+    this.lifecycle = PublicationLifecycle.DELETED;
+    this.updatedAt = changedAt;
+  }
 }

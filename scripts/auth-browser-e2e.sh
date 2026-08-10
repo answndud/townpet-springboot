@@ -70,6 +70,7 @@ corepack pnpm -C frontend exec playwright test --config e2e/auth.config.ts "$@"
 
 verify_auth_evidence=false
 verify_publication_evidence=false
+verify_deleted_publication_evidence=false
 if (( $# == 0 )); then
   verify_auth_evidence=true
   verify_publication_evidence=true
@@ -78,6 +79,7 @@ for test_filter in "$@"; do
   [[ "${test_filter}" == *"auth-parity"* ]] && verify_auth_evidence=true
   [[ "${test_filter}" == *"publication-parity"* ]] && verify_publication_evidence=true
   [[ "${test_filter}" == *"feed-parity"* ]] && verify_publication_evidence=true
+  [[ "${test_filter}" == *"publication-management"* ]] && verify_deleted_publication_evidence=true
 done
 
 session_count="$(
@@ -95,6 +97,11 @@ publication_count="$(
     exec -T postgres psql -U postgres -d townpet -tAc \
     "SELECT COUNT(*) FROM publication WHERE type = 'FREE_BOARD' AND lifecycle = 'ACTIVE'"
 )"
+deleted_publication_count="$(
+  docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" \
+    exec -T postgres psql -U postgres -d townpet -tAc \
+    "SELECT COUNT(*) FROM publication WHERE type = 'FREE_BOARD' AND lifecycle = 'DELETED'"
+)"
 if (( session_count < 2 )); then
   echo "Expected JDBC session evidence, got sessions=${session_count}" >&2
   exit 1
@@ -107,4 +114,8 @@ if [[ "${verify_publication_evidence}" == true ]] && (( publication_count < 2 ))
   echo "Expected PostgreSQL publication evidence, got publications=${publication_count}" >&2
   exit 1
 fi
-echo "PostgreSQL evidence verified: sessions=${session_count}, auth_audits=${audit_count}, publications=${publication_count}"
+if [[ "${verify_deleted_publication_evidence}" == true ]] && (( deleted_publication_count < 2 )); then
+  echo "Expected lifecycle deletion evidence, got deleted_publications=${deleted_publication_count}" >&2
+  exit 1
+fi
+echo "PostgreSQL evidence verified: sessions=${session_count}, auth_audits=${audit_count}, publications=${publication_count}, deleted_publications=${deleted_publication_count}"

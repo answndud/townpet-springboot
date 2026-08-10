@@ -6,6 +6,7 @@ import ProfilePage from "./ProfilePage";
 import VerifyEmailPage from "./VerifyEmailPage";
 import PublicationCreatePage from "./features/publication/PublicationCreatePage";
 import PublicationDetailPage from "./features/publication/PublicationDetailPage";
+import PublicationEditPage from "./features/publication/PublicationEditPage";
 import PublicationFeedPage from "./features/publication/PublicationFeedPage";
 
 const TOPIC_LINKS = [
@@ -126,6 +127,7 @@ export default function App() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/posts/new" element={<PublicationCreatePage />} />
+        <Route path="/posts/:publicationId/edit" element={<PublicationEditPage />} />
         <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />
         <Route path="/feed" element={<PublicationFeedPage memberView />} />
         <Route path="/feed/guest" element={<PublicationFeedPage memberView={false} />} />

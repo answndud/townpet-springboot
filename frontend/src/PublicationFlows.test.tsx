@@ -31,6 +31,7 @@ function publication() {
 afterEach(() => {
   document.cookie = "XSRF-TOKEN=; Max-Age=0; path=/";
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("Publication journeys", () => {
@@ -122,5 +123,86 @@ describe("Publication journeys", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "존재하지 않거나 삭제된 게시글입니다.",
     );
+  });
+
+  it("lets the author edit and delete with the loaded publication version", async () => {
+    let currentPublication = publication();
+    const fetchMock = vi.fn<typeof fetch>((input, init) => {
+      const path = String(input);
+      if (path.endsWith("/api/v1/members/me")) {
+        return Promise.resolve(
+          response({
+            id: currentPublication.authorId,
+            nickname: "demo-member-1",
+            bio: null,
+            neighborhoodId: "00000000-0000-4000-8000-000000000101",
+            pets: [],
+          }),
+        );
+      }
+      if (path.endsWith("/api/v1/catalog/neighborhoods")) {
+        return Promise.resolve(
+          response([
+            {
+              id: "00000000-0000-4000-8000-000000000101",
+              slug: "seoul-mapogu",
+              name: "서울 마포구",
+            },
+          ]),
+        );
+      }
+      if (path.endsWith("/api/v1/auth/csrf")) {
+        return Promise.resolve(response({ token: "csrf-token" }));
+      }
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}`) && init?.method === "PUT") {
+        currentPublication = {
+          ...currentPublication,
+          title: "수정한 산책 정보",
+          body: "수정한 공원 정보입니다.",
+          version: 1,
+        };
+        return Promise.resolve(response(currentPublication));
+      }
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}`) && init?.method === "DELETE") {
+        return Promise.resolve(response(undefined, 204));
+      }
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}`)) {
+        return Promise.resolve(response(currentPublication));
+      }
+      if (path.includes("/api/v1/feed?")) {
+        return Promise.resolve(response({ items: [], page: { nextCursor: null, hasNext: false } }));
+      }
+      return Promise.reject(new Error(`Unexpected request: ${path}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    document.cookie = "XSRF-TOKEN=csrf-token; path=/";
+
+    render(
+      <MemoryRouter initialEntries={[`/posts/${PUBLICATION_ID}/edit`]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "게시글 수정" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("제목"), { target: { value: "수정한 산책 정보" } });
+    fireEvent.change(screen.getByLabelText("본문"), { target: { value: "수정한 공원 정보입니다." } });
+    fireEvent.click(screen.getByRole("button", { name: "변경 사항 저장" }));
+
+    expect(await screen.findByRole("heading", { name: "수정한 산책 정보" })).toBeInTheDocument();
+    const editCall = fetchMock.mock.calls.find(([, init]) => init?.method === "PUT");
+    expect(editCall?.[1]?.body).toBe(
+      JSON.stringify({
+        title: "수정한 산책 정보",
+        body: "수정한 공원 정보입니다.",
+        scope: "GLOBAL",
+        version: 0,
+      }),
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "삭제" }));
+    expect(await screen.findByRole("heading", { name: "내 동네와 전체 새 글" })).toBeInTheDocument();
+    const deleteCall = fetchMock.mock.calls.find(([, init]) => init?.method === "DELETE");
+    expect(deleteCall?.[1]?.body).toBe(JSON.stringify({ version: 1 }));
   });
 });
