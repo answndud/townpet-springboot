@@ -55,6 +55,17 @@ export type Publication = {
   version: number;
 };
 
+export type Comment = {
+  id: string;
+  publicationId: string;
+  authorId: string;
+  body: string;
+  lifecycle: "ACTIVE" | "DELETED";
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+};
+
 export type CreatePublicationInput = {
   title: string;
   body: string;
@@ -64,6 +75,10 @@ export type CreatePublicationInput = {
 
 export type EditPublicationInput = CreatePublicationInput & {
   version: number;
+};
+
+export type CreateCommentInput = {
+  body: string;
 };
 
 export type FeedPage = {
@@ -217,6 +232,32 @@ export const publicationApi = {
       headers: jsonHeaders,
       body: JSON.stringify({ version }),
     });
+  },
+  comments(publicationId: string, signal?: AbortSignal) {
+    return apiFetch<{ items: Comment[] }>(
+      `/api/v1/publications/${encodeURIComponent(publicationId)}/comments`,
+      { signal },
+    );
+  },
+  createComment(publicationId: string, input: CreateCommentInput) {
+    return mutate<Comment>(
+      `/api/v1/publications/${encodeURIComponent(publicationId)}/comments`,
+      {
+        method: "POST",
+        headers: jsonHeaders,
+        body: JSON.stringify(input),
+      },
+    );
+  },
+  deleteComment(publicationId: string, commentId: string, version: number) {
+    return mutate<void>(
+      `/api/v1/publications/${encodeURIComponent(publicationId)}/comments/${encodeURIComponent(commentId)}`,
+      {
+        method: "DELETE",
+        headers: jsonHeaders,
+        body: JSON.stringify({ version }),
+      },
+    );
   },
   feed({
     audience = "VIEWER",
