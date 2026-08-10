@@ -23,13 +23,21 @@ public class CredentialEntity {
   @Column(nullable = false)
   private boolean enabled = true;
 
+  @Column(nullable = false, length = 30)
+  private String role = "MEMBER";
+
   protected CredentialEntity() {}
 
   public CredentialEntity(UUID memberId, String email, String passwordHash) {
+    this(memberId, email, passwordHash, "MEMBER");
+  }
+
+  public CredentialEntity(UUID memberId, String email, String passwordHash, String role) {
     this.id = UUID.randomUUID();
     this.memberId = memberId;
     this.email = email;
     this.passwordHash = passwordHash;
+    this.role = role;
   }
 
   public UUID getMemberId() {
@@ -46,5 +54,9 @@ public class CredentialEntity {
 
   public boolean isEnabled() {
     return enabled;
+  }
+
+  public String getRole() {
+    return role;
   }
 }

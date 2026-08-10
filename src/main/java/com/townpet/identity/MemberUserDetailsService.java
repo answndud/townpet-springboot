@@ -23,7 +23,7 @@ public class MemberUserDetailsService implements UserDetailsService {
     return User.withUsername(credential.getMemberId().toString())
         .password(credential.getPasswordHash())
         .disabled(!credential.isEnabled())
-        .roles("MEMBER")
+        .roles(credential.getRole())
         .build();
   }
 }
