@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgis/postgis:18-3.6
+    platform: linux/amd64
+    container_name: townpet-postgres
+    environment:
+      POSTGRES_DB: townpet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_local_admin
+      TOWNPET_APP_PASSWORD: townpet_local_dev
+    ports:
+      - "54329:5432"
+    volumes:
+      - townpet-postgres-data:/var/lib/postgresql
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d townpet"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: townpet-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: townpet_minio
+      MINIO_ROOT_PASSWORD: townpet_minio_local
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - townpet-minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  townpet-postgres-data:
+  townpet-minio-data:

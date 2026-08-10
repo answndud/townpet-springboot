@@ -18,6 +18,8 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 | `interview/gaps.md` | 아직 근거가 약하거나 답하지 못하는 질문 | 첫 slice부터 유지 |
 | [`evolution/EV-001-p1-1-build-foundation.md`](evolution/EV-001-p1-1-build-foundation.md) | 첫 build foundation의 선택·실패·해결 chronology | P1.1 완료 |
 | [`knowledge/java-gradle-spring-foundation.md`](knowledge/java-gradle-spring-foundation.md) | Java toolchain·Wrapper·Spring context·quality gate | P1.1 완료 |
+| [`evolution/EV-002-p1-2-database-baseline.md`](evolution/EV-002-p1-2-database-baseline.md) | PostgreSQL·Flyway·Compose baseline의 문제·해결 chronology | P1.2 완료 |
+| [`knowledge/postgres-flyway-baseline.md`](knowledge/postgres-flyway-baseline.md) | extension·권한·migration·session/event schema 개념 | P1.2 완료 |
 
 ## 기능 Coverage
 
@@ -31,5 +33,6 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 |---|---|---|---|---|---|---|
 | Java 25·Gradle Wrapper | [`../TRD.md`](../TRD.md), ADR 결정 | P1.1 build | Java 21/26 환경 차이, Wrapper 재현성 | `./gradlew clean check` | [`knowledge/java-gradle-spring-foundation.md`](knowledge/java-gradle-spring-foundation.md) | evidenced |
 | Spring Boot·Modulith foundation | [`../TRD.md`](../TRD.md) | application context·event registry | serializer·schema 초기화 | context test·verification tasks | [`evolution/EV-001-p1-1-build-foundation.md`](evolution/EV-001-p1-1-build-foundation.md) | evidenced |
+| PostgreSQL·PostGIS·Flyway | [`../TRD.md`](../TRD.md), ADR 결정 | Compose·V001·Testcontainers | extension 권한, schema authority, ARM image | migration test·bootRun·health·DB query | [`evolution/EV-002-p1-2-database-baseline.md`](evolution/EV-002-p1-2-database-baseline.md) | evidenced |
 
 준비도는 `captured → understood → evidenced → rehearsed` 순서로만 올린다.
