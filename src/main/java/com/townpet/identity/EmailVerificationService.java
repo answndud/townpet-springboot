@@ -2,7 +2,6 @@ package com.townpet.identity;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,32 +13,33 @@ public class EmailVerificationService {
   private final CredentialRepository credentials;
   private final EmailVerificationTokenRepository tokens;
   private final AuthAuditRepository audit;
+  private final AccountTokenDelivery delivery;
 
   public EmailVerificationService(
       CredentialRepository credentials,
       EmailVerificationTokenRepository tokens,
-      AuthAuditRepository audit) {
+      AuthAuditRepository audit,
+      AccountTokenDelivery delivery) {
     this.credentials = credentials;
     this.tokens = tokens;
     this.audit = audit;
+    this.delivery = delivery;
   }
 
   @Transactional
-  public Optional<String> request(String email) {
-    Optional<CredentialEntity> credential = credentials.findByEmailIgnoreCase(email.trim());
-    if (credential.isEmpty()
-        || credential.orElseThrow().isLifecycleLocked()
-        || credential.orElseThrow().isEmailVerified()) {
-      return Optional.empty();
+  public void request(String email) {
+    CredentialEntity credential = credentials.findByEmailIgnoreCase(email.trim()).orElse(null);
+    if (credential == null || credential.isLifecycleLocked() || credential.isEmailVerified()) {
+      return;
     }
 
     Instant now = Instant.now();
-    UUID memberId = credential.orElseThrow().getMemberId();
+    UUID memberId = credential.getMemberId();
     String rawToken = SecureToken.create();
     tokens.save(
         new EmailVerificationTokenEntity(
             memberId, SecureToken.hash(rawToken), now.plus(1, ChronoUnit.HOURS)));
-    return Optional.of(rawToken);
+    delivery.deliver(AccountTokenPurpose.EMAIL_VERIFICATION, credential.getEmail(), rawToken);
   }
 
   @Transactional
