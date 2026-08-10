@@ -87,11 +87,19 @@ class ReactionControllerTest {
     assertCount(1);
     setReaction(publicationId, other, true, 2);
     setReaction(publicationId, author, false, 1);
+    assertCount(1);
     mockMvc
         .perform(get("/api/v1/publications/{publicationId}/reaction", publicationId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.active").value(false))
         .andExpect(jsonPath("$.count").value(1));
+    setReaction(publicationId, other, false, 0);
+    assertCount(0);
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/reaction", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(false))
+        .andExpect(jsonPath("$.count").value(0));
 
     mockMvc
         .perform(

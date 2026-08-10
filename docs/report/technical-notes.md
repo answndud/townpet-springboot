@@ -33,6 +33,7 @@
 - Engagement는 `PublicationAccess.activeAuthorMemberId`와 `BlockDirectory`를 함께 사용해 publication 작성자 차단 정책을 재확인한다. 차단 회원의 댓글 목록·작성, reaction·bookmark 상태 조회·변경은 모두 `404`로 수렴하고, 비회원 공개 읽기는 유지해 UI별 정책 차이를 만들지 않는다.
 - V012는 세 engagement 원장에 PostgreSQL `BEFORE INSERT` guard를 추가한다. 애플리케이션 정책 조회와 block 전환 사이에 경합이 생겨도 차단된 actor의 새 원장 삽입은 DB에서 거부되며, 서비스는 이를 publication-not-found 정책 오류로 변환한다. 캐시는 도입하지 않아 별도 무효화나 stale state가 없다.
 - block 해제 뒤에는 같은 authenticated principal이 댓글·reaction·bookmark를 다시 생성할 수 있어야 한다. `BlockedEngagementPolicyTest.unblockingRestoresEngagementCreationForTheSameMember`는 해제 요청 후 세 API가 성공하고 각 source row가 하나씩만 생성되는지 확인해, 차단 중 거부 정책과 해제 후 복구 정책이 분리되지 않도록 한다.
+- engagement 상태 검증은 HTTP 응답만 보지 않고 source row와 다시 읽은 요약을 함께 확인한다. 댓글 삭제는 row를 `DELETED`로 남기되 목록에서 제외하고, reaction·bookmark 비활성화는 원장을 제거해 count/active가 0 또는 false로 돌아가도록 `CommentControllerTest`, `ReactionControllerTest`, `BookmarkControllerTest`에서 검증한다.
 - Spring Modulith는 module/cycle을, ArchUnit은 내부 package와 type 노출 규칙을 검사한다.
 - OpenAPI는 HTTP transport의 source of truth다. Java·TypeScript transport 코드는 생성하지만 aggregate·entity·repository는 생성하지 않는다.
 - ProblemDetail은 status와 기계 판독 code, traceId, field error를 한 오류 계약으로 묶는다.

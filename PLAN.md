@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.11 - engagement 상태와 원장 row의 일관성을 검증한다
+1. P2.12 - engagement read model과 삭제 lifecycle 경계를 검증한다
    - 파일: `src/main/java/com/townpet/engagement/**`, `src/test/java/com/townpet/engagement/**`, `frontend/e2e/**`
-   - 변경: 댓글·reaction·bookmark의 생성·비활성화·삭제 전이가 source row와 목록/상태 요약에 같은 의미로 반영되는 회귀 테스트를 보강한다.
+   - 변경: 댓글·reaction·bookmark 조회가 삭제·비활성화된 source row를 다시 노출하지 않고, 새로고침 후에도 viewer별 active/count 요약을 유지하는 회귀 테스트를 보강한다.
    - 검증: `./gradlew integrationTest --tests '*Engagement*' && corepack pnpm -C frontend test:e2e:auth -- comment-management.spec.ts reaction-management.spec.ts bookmark-management.spec.ts`
-   - 완료: 각 engagement API의 응답 상태, 원장 row 개수, viewer별 active/count 값이 전이마다 일치하고 새로고침 후에도 유지된다.
+   - 완료: 댓글 목록과 세 engagement 상태 요약이 source row lifecycle/활성 상태와 일치하며, 전이 후 직접 조회와 브라우저 새로고침 결과가 동일하다.
 
 ## Backlog
 
