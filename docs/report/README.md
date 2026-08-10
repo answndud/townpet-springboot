@@ -2,7 +2,7 @@
 
 이 디렉터리는 TownPet Springboot를 개발하면서 얻은 제품 이해, 기술 지식, 문제 해결 과정과 면접 답변을 실제 evidence에 연결해 축적한다. 운영 원칙과 작성 형식은 [`../../AGENTS.md`](../../AGENTS.md)의 `면접·학습 보고서 운영`을 따른다.
 
-현재는 application scaffold 이전이므로 보고서 체계만 생성했다. 구현·실험·측정 근거가 생기는 `PLAN.md` P1.1부터 필요한 문서를 점진적으로 추가한다. 아직 하지 않은 작업을 경험처럼 작성하지 않는다.
+P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구현·실험·측정 근거가 생기는 slice마다 필요한 문서를 점진적으로 추가한다. 아직 하지 않은 작업을 경험처럼 작성하지 않는다.
 
 ## Document Index
 
@@ -16,6 +16,8 @@
 | `interview/question-bank.md` | 30초·2분·deep-dive 답변과 꼬리 질문 | evidence 축적 후 생성 |
 | `interview/story-bank.md` | 문제 해결·실패·trade-off 사례 | evolution에서 선별 |
 | `interview/gaps.md` | 아직 근거가 약하거나 답하지 못하는 질문 | 첫 slice부터 유지 |
+| [`evolution/EV-001-p1-1-build-foundation.md`](evolution/EV-001-p1-1-build-foundation.md) | 첫 build foundation의 선택·실패·해결 chronology | P1.1 완료 |
+| [`knowledge/java-gradle-spring-foundation.md`](knowledge/java-gradle-spring-foundation.md) | Java toolchain·Wrapper·Spring context·quality gate | P1.1 완료 |
 
 ## 기능 Coverage
 
@@ -27,6 +29,7 @@
 
 | 개념 | 도입 출처 | 적용 위치 | 대안·Failure mode | Evidence | Report | 준비도 |
 |---|---|---|---|---|---|---|
-| 목표 기술 전체 | [`../TRD.md`](../TRD.md), [`../../ADR.md`](../../ADR.md) | 설계 단계 | ADR에 기록 | 구현 evidence 없음 | 미작성 | captured |
+| Java 25·Gradle Wrapper | [`../TRD.md`](../TRD.md), ADR 결정 | P1.1 build | Java 21/26 환경 차이, Wrapper 재현성 | `./gradlew clean check` | [`knowledge/java-gradle-spring-foundation.md`](knowledge/java-gradle-spring-foundation.md) | evidenced |
+| Spring Boot·Modulith foundation | [`../TRD.md`](../TRD.md) | application context·event registry | serializer·schema 초기화 | context test·verification tasks | [`evolution/EV-001-p1-1-build-foundation.md`](evolution/EV-001-p1-1-build-foundation.md) | evidenced |
 
 준비도는 `captured → understood → evidenced → rehearsed` 순서로만 올린다.

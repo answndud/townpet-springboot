@@ -4,41 +4,43 @@
 
 기준 commit `7d8f6d0bd22dedd82350c05142823ab2d101574d`의 TownPet 49개 page·55개 API를 Java 25, Spring Boot 4.1, React·Vite와 PostgreSQL 18로 재아키텍처한다. 완료 시 Next.js·Prisma·NextAuth server runtime 없이 공개 showcase가 동작하고, parity·migration·성능·배포·복구 증거가 자동 검증된다.
 
+## Completed
+
+### P1.1 - Gradle·Spring Boot repository skeleton 생성
+
+- 결과: Gradle 9.7 Wrapper, Java 25 toolchain, Spring Boot 4.1.0, Spring Modulith 2.1.0, MVC·Security·Validation·JPA·jOOQ·Flyway·Session JDBC·Actuator·Testcontainers 기반과 Spotless·Error Prone·NullAway·JaCoCo gate를 구성했다.
+- 검증: `./gradlew --version && ./gradlew clean check`, `./gradlew integrationTest modulithTest migrationTest performanceTest` 통과. 네 개 verification task가 실제 Gradle task로 등록된 것도 확인했다.
+- 보고서: [`docs/report/evolution/EV-001-p1-1-build-foundation.md`](docs/report/evolution/EV-001-p1-1-build-foundation.md), [`docs/report/knowledge/java-gradle-spring-foundation.md`](docs/report/knowledge/java-gradle-spring-foundation.md)
+
 ## Active
 
 ### P1 - 재현 가능한 Spring·React 기반과 동등성 하네스를 만든다
 
-1. P1.1 - Gradle·Spring Boot repository skeleton을 생성한다
-   - 파일: `settings.gradle.kts`, `build.gradle.kts`, `gradle/wrapper/**`, `src/main/java/com/townpet/TownPetApplication.java`
-   - 변경: Java 25 toolchain, Spring Boot 4.1, Spring Modulith 2.1, MVC, Security, Validation, JPA, jOOQ, Flyway, Session JDBC, Actuator와 Testcontainers dependency를 고정한다. `test`, `integrationTest`, `modulithTest`, `migrationTest`, `performanceTest` task와 Spotless·Error Prone·NullAway·JaCoCo 기본 gate를 만든다.
-   - 검증: `./gradlew --version && ./gradlew clean check`
-   - 완료: Gradle Wrapper만으로 Java 25 build와 빈 Spring context test가 통과하고 system Gradle·JDK에 의존하지 않는다.
-
-2. P1.2 - PostgreSQL·PostGIS·MinIO local runtime과 최초 Flyway migration을 추가한다
+1. P1.2 - PostgreSQL·PostGIS·MinIO local runtime과 최초 Flyway migration을 추가한다
    - 파일: `deploy/compose/local.yml`, `src/main/resources/application.yml`, `src/main/resources/db/migration/V001__platform_baseline.sql`, `src/test/java/com/townpet/platform/DatabaseBaselineTest.java`
    - 변경: PostgreSQL 18·PostGIS 3.6·MinIO service, least-privilege application role, UUIDv7·extension·session·event publication 기반 schema와 Testcontainers connection을 구성한다. Hibernate는 `ddl-auto=validate`, timezone은 UTC로 강제한다.
    - 검증: `docker compose -f deploy/compose/local.yml config && ./gradlew migrationTest integrationTest`
    - 완료: 빈 PostgreSQL 18에서 Flyway가 재현되고 PostGIS·UUIDv7·Spring Session·Modulith event table과 권한 검사가 통과한다.
 
-3. P1.3 - 17개 Application Module 경계와 architecture 문서를 코드로 검증한다
+2. P1.3 - 17개 Application Module 경계와 architecture 문서를 코드로 검증한다
    - 파일: `src/main/java/com/townpet/*/package-info.java`, `src/test/java/com/townpet/architecture/ModularityTest.java`, `src/test/java/com/townpet/architecture/LayerRulesTest.java`, `docs/architecture/module-map.md`
    - 변경: ADR-0011의 17개 module과 named interface를 선언하고 entity·repository·web DTO의 외부 참조, module cycle과 common business type을 ArchUnit·Spring Modulith로 금지한다. Module diagram을 test에서 생성한다.
    - 검증: `./gradlew modulithTest`
    - 완료: 모든 module이 detection되고 허용하지 않은 dependency·JPA association·repository 노출이 build를 실패시킨다.
 
-4. P1.4 - OpenAPI code generation과 ProblemDetail contract를 만든다
+3. P1.4 - OpenAPI code generation과 ProblemDetail contract를 만든다
    - 파일: `api/openapi/townpet.yaml`, `build.gradle.kts`, `src/main/java/com/townpet/common/web/GlobalProblemHandler.java`, `src/test/java/com/townpet/contract/OpenApiContractTest.java`
    - 변경: `/api/v1`, UUID·UTC·KRW·cursor·idempotency·version·ProblemDetail 공통 schema를 정의하고 Java transport interface·DTO와 TypeScript client generation task를 연결한다. Generated domain·JPA code를 금지한다.
    - 검증: `./gradlew openApiValidate openApiGenerate checkGeneratedSources contractTest`
    - 완료: 같은 OpenAPI에서 Java·TypeScript가 생성되고 재생성 diff와 breaking contract가 CI를 실패시킨다.
 
-5. P1.5 - React·Vite shell과 기존 URL·visual parity 하네스를 만든다
+4. P1.5 - React·Vite shell과 기존 URL·visual parity 하네스를 만든다
    - 파일: `frontend/package.json`, `frontend/vite.config.ts`, `frontend/src/**`, `frontend/e2e/parity-shell.spec.ts`
    - 변경: React 19, TypeScript, Vite, React Router와 generated API client를 구성한다. 기존 global style·layout·header·font·static asset을 선별 복사하고 49개 URL inventory, dual-target Playwright project와 visual baseline 규칙을 만든다.
    - 검증: `corepack pnpm -C frontend install --frozen-lockfile && corepack pnpm -C frontend lint && corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e -- parity-shell.spec.ts`
    - 완료: Vite dev와 Spring HTML shell에서 기준 URL이 열리고 desktop·mobile shell snapshot이 legacy baseline과 승인된 threshold 안에서 일치한다.
 
-6. P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
+5. P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
    - 파일: `docs/parity/matrix.md`, `migration/fixtures/logical-fixture.yaml`, `src/test/java/com/townpet/parity/**`, `frontend/e2e/parity.config.ts`
    - 변경: 49 page·55 API를 actor, fixture, 권한, 상태, error, responsive, accessibility, SEO, migration과 test ID에 연결한다. UUID·time·signed URL을 normalize하는 legacy/Spring differential runner를 만든다.
    - 검증: `./gradlew parityInventoryTest && corepack pnpm -C frontend test:e2e --project=parity-smoke`
