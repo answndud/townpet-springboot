@@ -8,6 +8,37 @@ export type ProblemDetail = {
   fieldErrors?: Array<{ field: string; message: string }>;
 };
 
+export type Session = {
+  memberId: string;
+  expiresAt: string;
+};
+
+export type Neighborhood = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
+export type Pet = {
+  id: string;
+  name: string;
+  species: string;
+};
+
+export type Member = {
+  id: string;
+  nickname: string;
+  bio: string | null;
+  neighborhoodId: string | null;
+  pets: Pet[];
+};
+
+export type OnboardingInput = {
+  bio: string;
+  neighborhoodId: string;
+  pets: Array<{ name: string; species: string }>;
+};
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -18,7 +49,7 @@ export class ApiError extends Error {
   }
 }
 
-/** Transport seam for the generated OpenAPI client; feature code never builds URLs directly. */
+/** Transport seam for the generated OpenAPI client; feature code never builds API URLs directly. */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const method = init?.method?.toUpperCase() ?? "GET";
   const csrf = document.cookie
@@ -27,26 +58,100 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     ?.split("=")[1];
   const response = await fetch(path, {
     credentials: "include",
+    ...init,
     headers: {
       accept: "application/json",
-      ...(method !== "GET" && method !== "HEAD" && csrf ? { "X-XSRF-TOKEN": decodeURIComponent(csrf) } : {}),
+      ...(method !== "GET" && method !== "HEAD" && csrf
+        ? { "X-XSRF-TOKEN": decodeURIComponent(csrf) }
+        : {}),
       ...init?.headers,
     },
-    ...init,
   });
+  const body = await response.text();
 
   if (!response.ok) {
-    const problem = (await response.json()) as ProblemDetail;
+    let problem: ProblemDetail = {};
+    if (body) {
+      try {
+        problem = JSON.parse(body) as ProblemDetail;
+      } catch {
+        problem = { detail: body };
+      }
+    }
     throw new ApiError(response.status, problem);
   }
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
-  return (await response.json()) as T;
+  return (body ? JSON.parse(body) : undefined) as T;
 }
 
 export async function getCsrfToken(): Promise<string> {
   const response = await apiFetch<{ token: string }>("/api/v1/auth/csrf");
   return response.token;
 }
+
+async function mutate<T>(path: string, init: RequestInit): Promise<T> {
+  await getCsrfToken();
+  return apiFetch<T>(path, init);
+}
+
+const jsonHeaders = { "content-type": "application/json" };
+
+export const authApi = {
+  login(email: string, password: string) {
+    return mutate<Session>("/api/v1/auth/sessions", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ email: email.trim(), password }),
+    });
+  },
+  logout() {
+    return mutate<void>("/api/v1/auth/sessions/current", { method: "DELETE" });
+  },
+  requestPasswordReset(email: string) {
+    return mutate<void>("/api/v1/auth/password-resets", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ email: email.trim() }),
+    });
+  },
+  confirmPasswordReset(token: string, newPassword: string) {
+    return mutate<void>("/api/v1/auth/password-resets/confirmations", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ token: token.trim(), newPassword }),
+    });
+  },
+  requestEmailVerification(email: string) {
+    return mutate<void>("/api/v1/auth/email-verifications", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ email: email.trim() }),
+    });
+  },
+  confirmEmailVerification(token: string) {
+    return mutate<void>("/api/v1/auth/email-verifications/confirmations", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ token: token.trim() }),
+    });
+  },
+};
+
+export const memberApi = {
+  current(signal?: AbortSignal) {
+    return apiFetch<Member>("/api/v1/members/me", { signal });
+  },
+  updateOnboarding(input: OnboardingInput) {
+    return mutate<Member>("/api/v1/members/me/onboarding", {
+      method: "PUT",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    });
+  },
+};
+
+export const catalogApi = {
+  neighborhoods(signal?: AbortSignal) {
+    return apiFetch<Neighborhood[]>("/api/v1/catalog/neighborhoods", { signal });
+  },
+};

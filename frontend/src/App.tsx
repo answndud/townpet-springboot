@@ -1,6 +1,9 @@
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import LoginPage from "./LoginPage";
+import OnboardingPage from "./OnboardingPage";
+import PasswordResetPage from "./PasswordResetPage";
 import ProfilePage from "./ProfilePage";
+import VerifyEmailPage from "./VerifyEmailPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -114,6 +117,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/password/reset" element={<PasswordResetPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<PlaceholderPage />} />
       </Routes>

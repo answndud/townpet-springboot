@@ -1,28 +1,31 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { apiFetch, getCsrfToken } from "./api/client";
-
-type Member = {
-  nickname: string;
-  bio: string | null;
-  pets: Array<{ id: string; name: string; species: string }>;
-};
+import { Link, useNavigate } from "react-router-dom";
+import { authApi, memberApi } from "./api/client";
+import type { Member } from "./api/client";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [member, setMember] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    apiFetch<Member>("/api/v1/members/me")
+    memberApi
+      .current()
       .then(setMember)
       .catch(() => setError("로그인이 만료되었습니다."));
   }, []);
 
   async function logout() {
-    await getCsrfToken();
-    await apiFetch<void>("/api/v1/auth/sessions/current", { method: "DELETE" });
-    navigate("/login");
+    setLoggingOut(true);
+    setError(null);
+    try {
+      await authApi.logout();
+      navigate("/login");
+    } catch {
+      setError("로그아웃 요청을 처리하지 못했습니다.");
+      setLoggingOut(false);
+    }
   }
 
   if (error) {
@@ -48,7 +51,14 @@ export default function ProfilePage() {
             <ul>{member.pets.map((pet) => <li key={pet.id}>{pet.name} · {pet.species}</li>)}</ul>
           </>
         ) : null}
-        <button className="button button-soft" onClick={logout} disabled={!member}>로그아웃</button>
+        <div className="profile-actions">
+          <Link className="button button-soft" to="/onboarding">
+            내 동네 설정
+          </Link>
+          <button className="button button-soft" onClick={logout} disabled={!member || loggingOut}>
+            {loggingOut ? "로그아웃 중..." : "로그아웃"}
+          </button>
+        </div>
       </section>
     </main>
   );

@@ -45,15 +45,51 @@ h1, h2, p { margin: 0; }
 .surface-card { border: 1px solid #d9e5f7; border-radius: 12px; background: #fff; padding: 22px; box-shadow: 0 10px 24px rgba(30, 63, 116, .05); }
 .surface-card h1, .surface-card h2 { margin-top: 10px; color: #10284a; line-height: 1.35; }
 .surface-card p { margin-top: 10px; color: #5a7397; font-size: 14px; line-height: 1.7; }
-.placeholder-page { min-height: calc(100vh - 52px); display: grid; place-items: center; }
+.placeholder-page, .auth-page { min-height: calc(100vh - 52px); display: grid; place-items: center; }
 .placeholder-page .surface-card { width: min(100%, 600px); }
-.login-card { max-width: 480px; }
-.login-form { display: grid; gap: 14px; margin-top: 22px; }
-.login-form label { display: grid; gap: 6px; color: #315484; font-size: 13px; font-weight: 700; }
-.login-form input { min-height: 42px; border: 1px solid #cbdcf5; border-radius: 8px; background: #f8fbff; padding: 0 12px; color: #1e3f74; font: inherit; }
-.login-form input:focus { outline: 2px solid rgba(78,137,216,.22); border-color: #4e89d8; }
-.login-form button { border: 0; cursor: pointer; font: inherit; }
-.login-form button:disabled { cursor: wait; opacity: .65; }
+.auth-card { width: min(100%, 620px); }
+.auth-heading { padding-bottom: 20px; border-bottom: 1px solid #dbe6f5; }
+.auth-heading h1, .onboarding-heading h1 { margin-top: 10px; color: #10284a; font-size: clamp(1.7rem, 4vw, 2.35rem); letter-spacing: -.035em; }
+.auth-heading p, .onboarding-heading p { margin-top: 8px; color: #5a7397; font-size: 14px; line-height: 1.7; }
+.auth-form { display: grid; gap: 14px; margin-top: 20px; }
+.auth-form label, .onboarding-form label { display: grid; gap: 7px; color: #315484; font-size: 13px; font-weight: 700; }
+.auth-form input, .onboarding-form input, .onboarding-form select, .onboarding-form textarea { width: 100%; min-height: 44px; border: 1px solid #cbdcf5; border-radius: 8px; background: #f8fbff; padding: 9px 12px; color: #1e3f74; font: inherit; }
+.auth-form input:focus, .onboarding-form input:focus, .onboarding-form select:focus, .onboarding-form textarea:focus { outline: 2px solid rgba(78,137,216,.22); border-color: #4e89d8; }
+.auth-form button, .onboarding-form button, .demo-credential button, .profile-actions button { cursor: pointer; font: inherit; }
+.auth-form button:disabled, .onboarding-form button:disabled, .demo-credential button:disabled, .profile-actions button:disabled { cursor: wait; opacity: .65; }
+.field-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #315484; font-size: 13px; font-weight: 700; }
+.field-heading a { color: #5a7397; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.password-field { display: flex; gap: 8px; }
+.password-field input { flex: 1; min-width: 0; }
+.password-toggle { flex: 0 0 auto; min-width: 64px; padding-inline: 12px; }
+.form-notice { color: #9a6700 !important; font-size: 12px !important; }
+.form-success { border: 1px solid #c9e6d2; border-radius: 8px; background: #f6fff8; padding: 10px 12px; color: #18713a !important; font-size: 12px !important; line-height: 1.6; }
+.form-success a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.demo-credential { display: grid; gap: 8px; margin-top: 20px; border: 1px solid #dbe6f5; border-radius: 10px; background: #f7faff; padding: 14px; }
+.demo-credential strong { color: #173963; font-size: 13px; }
+.demo-credential p { margin-top: 3px; color: #5a7397; font-size: 12px; line-height: 1.55; }
+.demo-credential code { overflow-wrap: anywhere; color: #315b9a; font-size: 12px; }
+.demo-credential .button { justify-self: start; min-height: 38px; padding-inline: 14px; font-size: 12px; }
+.auth-links { justify-content: center; gap: 18px; margin-top: 18px; }
+.auth-links a { padding: 0; color: #315b9a; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.auth-steps { display: grid; gap: 22px; }
+.auth-step + .auth-step { border-top: 1px solid #dbe6f5; padding-top: 22px; }
+.auth-step h2, .form-section h2 { color: #173963; font-size: 17px; }
+.auth-step div > p, .form-section div > p { margin-top: 5px; color: #5a7397; font-size: 12px; line-height: 1.6; }
+.onboarding-page { max-width: 860px; }
+.onboarding-heading { padding: 18px 0 24px; }
+.onboarding-form { display: grid; gap: 16px; }
+.form-section { display: grid; gap: 18px; }
+.onboarding-form textarea { min-height: 104px; resize: vertical; }
+.field-help { justify-self: end; color: #6a82a4; font-size: 11px; font-weight: 500; }
+.section-heading-row { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.section-heading-row .button { flex: 0 0 auto; min-height: 38px; padding-inline: 14px; font-size: 12px; }
+.pet-drafts { display: grid; gap: 12px; }
+.pet-draft { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(120px, .8fr) auto; align-items: end; gap: 10px; margin: 0; border: 1px solid #dbe6f5; border-radius: 10px; padding: 12px; }
+.pet-draft legend { padding-inline: 4px; color: #486894; font-size: 11px; font-weight: 700; }
+.text-button { min-height: 42px; border: 0; background: transparent; padding-inline: 8px; color: #b42318; font-size: 12px; font-weight: 700; }
+.onboarding-submit { justify-self: end; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .profile-card ul { padding-left: 1.25rem; text-align: left; color: #315484; line-height: 1.8; }
 .form-error { color: #b42318 !important; font-size: 13px !important; }
 .back-link { display: inline-flex; margin-top: 18px; color: #315b9a; font-size: 13px; font-weight: 700; }
@@ -68,4 +104,11 @@ h1, h2, p { margin: 0; }
   .topic-list { justify-content: flex-start; margin-top: 10px; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
   .topic-chip { flex: 0 0 auto; }
   .preview-grid { grid-template-columns: 1fr; }
+  .auth-card { padding: 18px; }
+  .password-field { align-items: stretch; }
+  .section-heading-row { display: grid; }
+  .section-heading-row .button { justify-self: start; }
+  .pet-draft { grid-template-columns: 1fr; }
+  .text-button { justify-self: start; min-height: 32px; padding: 0; }
+  .onboarding-submit { width: 100%; }
 }
