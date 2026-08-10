@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.10 - block 해제 후 engagement 복구 흐름을 검증한다
-   - 파일: `src/main/java/com/townpet/engagement/**`, `src/main/java/com/townpet/relationship/**`, `src/test/java/com/townpet/engagement/**`, `src/test/java/com/townpet/relationship/**`
-   - 변경: block 해제 후 새 댓글·reaction·bookmark가 정상 생성되는지, 차단 중 기존 원장과 해제 후 새 원장의 상태가 viewer별로 일관되는지 회귀 테스트를 추가한다.
-   - 검증: `./gradlew integrationTest --tests '*Engagement*' --tests '*Relationship*' && corepack pnpm -C frontend test:e2e:auth -- comment-management.spec.ts reaction-management.spec.ts bookmark-management.spec.ts`
-   - 완료: block 해제 전에는 engagement가 거부되고 해제 후에는 정상 허용되며, 기존 차단 회원·비회원·작성자 principal의 상태가 서로 섞이지 않는다.
+1. P2.11 - engagement 상태와 원장 row의 일관성을 검증한다
+   - 파일: `src/main/java/com/townpet/engagement/**`, `src/test/java/com/townpet/engagement/**`, `frontend/e2e/**`
+   - 변경: 댓글·reaction·bookmark의 생성·비활성화·삭제 전이가 source row와 목록/상태 요약에 같은 의미로 반영되는 회귀 테스트를 보강한다.
+   - 검증: `./gradlew integrationTest --tests '*Engagement*' && corepack pnpm -C frontend test:e2e:auth -- comment-management.spec.ts reaction-management.spec.ts bookmark-management.spec.ts`
+   - 완료: 각 engagement API의 응답 상태, 원장 row 개수, viewer별 active/count 값이 전이마다 일치하고 새로고침 후에도 유지된다.
 
 ## Backlog
 

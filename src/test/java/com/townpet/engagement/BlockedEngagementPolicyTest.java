@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import jakarta.servlet.http.Cookie;
@@ -134,6 +135,56 @@ class BlockedEngagementPolicyTest {
     mockMvc
         .perform(get("/api/v1/publications/{id}/bookmark", PUBLICATION_ID))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  void unblockingRestoresEngagementCreationForTheSameMember() throws Exception {
+    Cookie viewer = login("demo-member-2@townpet.local");
+    mockMvc
+        .perform(
+            put("/api/v1/members/{id}/relationship", AUTHOR_ID)
+                .cookie(viewer)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"following\":false,\"blocking\":false}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.blocking").value(false));
+
+    mockMvc
+        .perform(
+            post("/api/v1/publications/{id}/comments", PUBLICATION_ID)
+                .cookie(viewer)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"body\":\"차단 해제 후 댓글\"}"))
+        .andExpect(status().isCreated());
+    mockMvc
+        .perform(
+            put("/api/v1/publications/{id}/reaction", PUBLICATION_ID)
+                .cookie(viewer)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"active\":true}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(true));
+    mockMvc
+        .perform(
+            put("/api/v1/publications/{id}/bookmark", PUBLICATION_ID)
+                .cookie(viewer)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"active\":true}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(true));
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject("SELECT COUNT(*) FROM engagement_comment", Integer.class))
+        .isEqualTo(1);
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject("SELECT COUNT(*) FROM engagement_reaction", Integer.class))
+        .isEqualTo(1);
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject("SELECT COUNT(*) FROM engagement_bookmark", Integer.class))
+        .isEqualTo(1);
   }
 
   private Cookie login(String email) throws Exception {
