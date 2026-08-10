@@ -140,6 +140,17 @@ class CommentControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"version\":1}"))
         .andExpect(status().isNoContent());
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject(
+                "SELECT lifecycle FROM engagement_comment WHERE id = ?",
+                String.class,
+                UUID.fromString(firstCommentId)))
+        .isEqualTo("DELETED");
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(1))
+        .andExpect(jsonPath("$.items[0].id").value(secondCommentId));
 
     String otherPublicationId = createPublication(actors.author());
     mockMvc

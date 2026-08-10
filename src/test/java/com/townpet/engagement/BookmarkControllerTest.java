@@ -94,6 +94,18 @@ class BookmarkControllerTest {
             jdbc.queryForObject("SELECT COUNT(*) FROM engagement_bookmark", Integer.class))
         .isEqualTo(0);
     mockMvc
+        .perform(get("/api/v1/publications/{id}/bookmark", publicationId).cookie(author))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(false));
+    setBookmark(publicationId, author, true);
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject("SELECT COUNT(*) FROM engagement_bookmark", Integer.class))
+        .isEqualTo(1);
+    mockMvc
+        .perform(get("/api/v1/publications/{id}/bookmark", publicationId).cookie(author))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.active").value(true));
+    mockMvc
         .perform(
             delete("/api/v1/publications/{id}", publicationId)
                 .cookie(author)
