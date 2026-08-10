@@ -12,6 +12,7 @@ import com.townpet.catalog.NeighborhoodRepository;
 import com.townpet.member.MemberEntity;
 import com.townpet.member.MemberPetRepository;
 import com.townpet.member.MemberRepository;
+import jakarta.servlet.http.Cookie;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.session.jdbc.JdbcIndexedSessionRepository;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -43,12 +45,18 @@ class IdentityMemberControllerTest {
   @Autowired MockMvc mockMvc;
   @Autowired MemberRepository members;
   @Autowired CredentialRepository credentials;
+  @Autowired PasswordResetTokenRepository passwordResetTokens;
+  @Autowired AuthAuditRepository authAudits;
+  @Autowired PasswordResetService passwordResets;
+  @Autowired JdbcIndexedSessionRepository sessions;
   @Autowired NeighborhoodRepository neighborhoods;
   @Autowired MemberPetRepository pets;
   @Autowired PasswordEncoder passwordEncoder;
 
   @BeforeEach
   void seedMember() {
+    authAudits.deleteAll();
+    passwordResetTokens.deleteAll();
     credentials.deleteAll();
     pets.deleteAll();
     members.deleteAll();
@@ -73,12 +81,10 @@ class IdentityMemberControllerTest {
             .andExpect(jsonPath("$.memberId").value(MEMBER_ID.toString()))
             .andReturn();
 
-    org.springframework.mock.web.MockHttpSession session =
-        (org.springframework.mock.web.MockHttpSession)
-            Objects.requireNonNull(login.getRequest().getSession(false));
+    Cookie session = sessionCookie(login);
 
     mockMvc
-        .perform(get("/api/v1/members/me").session(session))
+        .perform(get("/api/v1/members/me").cookie(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(MEMBER_ID.toString()))
         .andExpect(jsonPath("$.nickname").value("mango-user"));
@@ -95,15 +101,13 @@ class IdentityMemberControllerTest {
                     .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
             .andExpect(status().isCreated())
             .andReturn();
-    org.springframework.mock.web.MockHttpSession session =
-        (org.springframework.mock.web.MockHttpSession)
-            Objects.requireNonNull(login.getRequest().getSession(false));
+    Cookie session = sessionCookie(login);
 
     mockMvc
         .perform(
             org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
                     "/api/v1/members/me/onboarding")
-                .session(session)
+                .cookie(session)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -115,7 +119,7 @@ class IdentityMemberControllerTest {
         .andExpect(jsonPath("$.pets[0].species").value("DOG"));
 
     mockMvc
-        .perform(get("/api/v1/members/me").session(session))
+        .perform(get("/api/v1/members/me").cookie(session))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.pets.length()").value(1));
   }
@@ -141,20 +145,16 @@ class IdentityMemberControllerTest {
                     .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
             .andExpect(status().isCreated())
             .andReturn();
-    org.springframework.mock.web.MockHttpSession session =
-        (org.springframework.mock.web.MockHttpSession)
-            Objects.requireNonNull(login.getRequest().getSession(false));
+    Cookie session = sessionCookie(login);
 
     mockMvc
         .perform(
             org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(
                     "/api/v1/auth/sessions/current")
-                .session(session)
+                .cookie(session)
                 .with(csrf()))
         .andExpect(status().isNoContent());
-    mockMvc
-        .perform(get("/api/v1/members/me").session(session))
-        .andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/api/v1/members/me").cookie(session)).andExpect(status().isUnauthorized());
   }
 
   @Test
@@ -174,13 +174,127 @@ class IdentityMemberControllerTest {
                     .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
             .andExpect(status().isCreated())
             .andReturn();
-    org.springframework.mock.web.MockHttpSession session =
-        (org.springframework.mock.web.MockHttpSession)
-            Objects.requireNonNull(login.getRequest().getSession(false));
+    Cookie session = sessionCookie(login);
 
     mockMvc
-        .perform(get("/api/v1/operations/demo-reset").session(session))
+        .perform(get("/api/v1/operations/demo-reset").cookie(session))
         .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void passwordResetUsesHashedSingleUseTokenAndRevokesSession() throws Exception {
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    Cookie session = sessionCookie(login);
+    org.assertj.core.api.Assertions.assertThat(sessions.findByPrincipalName(MEMBER_ID.toString()))
+        .isNotEmpty();
+    String token = passwordResets.request("mango@example.com").orElseThrow();
+
+    org.assertj.core.api.Assertions.assertThat(passwordResetTokens.findAll())
+        .singleElement()
+        .extracting(PasswordResetTokenEntity::getTokenHash)
+        .isEqualTo(PasswordResetService.hashToken(token))
+        .isNotEqualTo(token);
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/password-resets/confirmations")
+                .cookie(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + token + "\",\"newPassword\":\"Changed!2026\"}"))
+        .andExpect(status().isNoContent());
+
+    mockMvc.perform(get("/api/v1/members/me").cookie(session)).andExpect(status().isUnauthorized());
+    org.assertj.core.api.Assertions.assertThat(sessions.findByPrincipalName(MEMBER_ID.toString()))
+        .isEmpty();
+    mockMvc
+        .perform(
+            post("/api/v1/auth/sessions")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+        .andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/sessions")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"mango@example.com\",\"password\":\"Changed!2026\"}"))
+        .andExpect(status().isCreated());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/password-resets/confirmations")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + token + "\",\"newPassword\":\"Another!2026\"}"))
+        .andExpect(status().isBadRequest());
+    org.assertj.core.api.Assertions.assertThat(authAudits.count()).isEqualTo(1);
+  }
+
+  @Test
+  void resetRequestDoesNotRevealUnknownOrLockedAccounts() throws Exception {
+    UUID demoId = UUID.fromString("00000000-0000-4000-8000-000000000099");
+    members.save(new MemberEntity(demoId, "locked-demo"));
+    credentials.save(
+        new CredentialEntity(
+            demoId, "locked@townpet.local", passwordEncoder.encode("Locked!2026"), "MEMBER", true));
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/password-resets")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"unknown@example.com\"}"))
+        .andExpect(status().isAccepted());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/password-resets")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"locked@townpet.local\"}"))
+        .andExpect(status().isAccepted());
+
+    org.assertj.core.api.Assertions.assertThat(passwordResetTokens.count()).isZero();
+  }
+
+  @Test
+  void passwordResetRejectsWeakPassword() throws Exception {
+    String token = passwordResets.request("mango@example.com").orElseThrow();
+    mockMvc
+        .perform(
+            post("/api/v1/auth/password-resets/confirmations")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + token + "\",\"newPassword\":\"weakpassword\"}"))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void passwordResetRejectsExpiredToken() throws Exception {
+    String token = "expired-reset-token-expired-reset-token";
+    java.time.Instant now = java.time.Instant.now();
+    passwordResetTokens.save(
+        new PasswordResetTokenEntity(
+            MEMBER_ID,
+            PasswordResetService.hashToken(token),
+            now.minusSeconds(7200),
+            now.minusSeconds(3600)));
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/password-resets/confirmations")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + token + "\",\"newPassword\":\"Changed!2026\"}"))
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -189,5 +303,9 @@ class IdentityMemberControllerTest {
         .perform(get("/api/v1/auth/csrf"))
         .andExpect(status().isOk())
         .andExpect(cookie().exists("XSRF-TOKEN"));
+  }
+
+  private static Cookie sessionCookie(MvcResult login) {
+    return Objects.requireNonNull(login.getResponse().getCookie("SESSION"));
   }
 }
