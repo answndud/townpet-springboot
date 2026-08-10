@@ -97,6 +97,11 @@ spotless {
 }
 
 val testSourceSet = sourceSets.named("test")
+sourceSets {
+    test {
+        resources.srcDir(layout.projectDirectory.dir("docs"))
+    }
+}
 val openApiSpec = layout.projectDirectory.file("api/openapi/townpet.yaml").asFile.absolutePath
 
 tasks.named<GenerateTask>("openApiGenerate") {
@@ -177,11 +182,17 @@ tasks.named("contractTest") {
         includeTestsMatching("com.townpet.contract.*")
     }
 }
+registerVerificationTestTask("parityInventoryTest", "Runs legacy page and API inventory tests.")
+tasks.named<Test>("parityInventoryTest") {
+    filter {
+        includeTestsMatching("com.townpet.parity.*")
+    }
+}
 
 tasks.named("check") {
     dependsOn(tasks.named("spotlessCheck"))
     dependsOn(tasks.named("jacocoTestReport"))
-    dependsOn("openApiValidate", "contractTest")
+    dependsOn("openApiValidate", "contractTest", "parityInventoryTest")
 }
 
 tasks.named<JacocoReport>("jacocoTestReport") {

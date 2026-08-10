@@ -36,21 +36,22 @@
 - 검증: `corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend build && corepack pnpm -C frontend test:e2e` 통과. 4개 E2E(2 journeys × 2 viewports)가 통과했다.
 - 보고서: [`docs/parity/shell.md`](docs/parity/shell.md), [`docs/report/evolution/EV-005-p1-5-vite-shell.md`](docs/report/evolution/EV-005-p1-5-vite-shell.md), [`docs/report/knowledge/react-vite-parity.md`](docs/report/knowledge/react-vite-parity.md)
 
+### P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
+
+- 결과: legacy 49 page·55 API route file과 HTTP method를 `docs/parity/matrix.yaml`에 고정하고, guest/member/staff logical fixture, Java inventory test, UUID·timestamp·signed URL normalization을 추가했다.
+- 검증: `JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home ./gradlew parityInventoryTest`와 `corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend build` 통과. parity inventory도 `clean check` gate에 연결했다.
+- 보고서: [`docs/report/evolution/EV-006-p1-6-parity-inventory.md`](docs/report/evolution/EV-006-p1-6-parity-inventory.md), [`docs/report/knowledge/parity-differential-testing.md`](docs/report/knowledge/parity-differential-testing.md)
+
 ## Active
 
 ### P1 - 재현 가능한 Spring·React 기반과 동등성 하네스를 만든다
 
-1. P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
+1. P1.7 - Frontend·backend 통합 smoke와 CI quality gate를 연결한다
    - 파일: `docs/parity/matrix.md`, `migration/fixtures/logical-fixture.yaml`, `src/test/java/com/townpet/parity/**`, `frontend/e2e/parity.config.ts`
    - 변경: 49 page·55 API를 actor, fixture, 권한, 상태, error, responsive, accessibility, SEO, migration과 test ID에 연결한다. UUID·time·signed URL을 normalize하는 legacy/Spring differential runner를 만든다.
    - 검증: `./gradlew parityInventoryTest && corepack pnpm -C frontend test:e2e --project=parity-smoke`
    - 완료: 누락 page·API와 test 없는 핵심 여정이 report에 실패로 표시되고 동일 fixture의 의미 결과를 양쪽 target에서 비교할 수 있다.
 
-2. P1.7 - Frontend·backend 통합 smoke와 CI quality gate를 연결한다
-   - 파일: `.github/workflows/**`, `src/test/java/com/townpet/smoke/**`, `frontend/e2e/**`
-   - 변경: frontend·Spring Boot smoke와 계층형 CI quality gate를 연결한다.
-   - 검증: `./gradlew clean check && corepack pnpm -C frontend lint && corepack pnpm -C frontend test`
-   - 완료: fresh clone에서 backend·frontend의 최소 검증과 contract/architecture gate가 한 명령으로 재현된다.
 
 
 
