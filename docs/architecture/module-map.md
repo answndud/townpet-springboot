@@ -32,6 +32,7 @@ flowchart LR
   notification -. events .-> identity
   notification -. events .-> member
   media --> identity
+  media --> publication
   operations -. public APIs .-> publication
   operations -. public APIs .-> discovery
 ```
