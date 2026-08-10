@@ -58,6 +58,7 @@ class BookmarkControllerTest {
 
   @BeforeEach
   void resetState() {
+    jdbc.update("DELETE FROM relationship_block");
     jdbc.update("DELETE FROM engagement_bookmark");
     jdbc.update("DELETE FROM publication");
   }
