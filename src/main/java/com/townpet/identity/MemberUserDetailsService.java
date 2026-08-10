@@ -22,7 +22,7 @@ public class MemberUserDetailsService implements UserDetailsService {
             .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
     return User.withUsername(credential.getMemberId().toString())
         .password(credential.getPasswordHash())
-        .disabled(!credential.isEnabled())
+        .disabled(!credential.isEnabled() || !credential.isEmailVerified())
         .roles(credential.getRole())
         .build();
   }

@@ -23,8 +23,32 @@ describe("TownPet Vite shell", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("heading", { name: "TownPet 로그인" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "로그인" })).toBeInTheDocument();
     expect(screen.getByLabelText("이메일")).toHaveAttribute("type", "email");
     expect(screen.getByLabelText("비밀번호")).toHaveAttribute("type", "password");
+    expect(screen.getAllByRole("link", { name: "비밀번호 재설정" })).toHaveLength(2);
+    for (const link of screen.getAllByRole("link", { name: "비밀번호 재설정" })) {
+      expect(link).toHaveAttribute("href", "/password/reset");
+    }
+    expect(screen.queryByRole("link", { name: "회원가입" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/카카오|네이버/)).not.toBeInTheDocument();
+  });
+
+  it("renders the reset and verification routes", () => {
+    const { unmount } = render(
+      <MemoryRouter initialEntries={["/password/reset"]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("heading", { name: "비밀번호 재설정" })).toBeInTheDocument();
+    unmount();
+
+    render(
+      <MemoryRouter initialEntries={["/verify-email"]}>
+        <App />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("heading", { name: "이메일 인증" })).toBeInTheDocument();
   });
 });

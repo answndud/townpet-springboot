@@ -33,7 +33,7 @@ paths:
     post:
       operationId: createSession
       tags: [Auth]
-      summary: Create a local development session
+      summary: Create a Credentials browser session
       requestBody:
         required: true
         content:
@@ -309,6 +309,7 @@ components:
           type: string
           format: password
           minLength: 8
+          maxLength: 72
     SessionResponse:
       type: object
       required: [memberId, expiresAt]

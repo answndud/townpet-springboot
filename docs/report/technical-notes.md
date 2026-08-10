@@ -38,6 +38,7 @@
 - 브라우저에는 opaque session identifier만 두고 SecurityContext는 Spring Session JDBC에 저장한다. 로그인 시 session을 먼저 만든 뒤 ID를 교체해 fixation을 방어한다.
 - CSRF token은 `XSRF-TOKEN` cookie와 응답 body로 전달하고 React가 변경 요청의 `X-XSRF-TOKEN` header로 돌려준다.
 - logout은 cookie UI만 바꾸는 것이 아니라 서버 session을 invalidate한다. 같은 session으로 보호 API를 다시 호출해 401을 확인한다.
+- Credentials 로그인은 `email_verified_at`이 설정된 계정만 허용한다. 미인증·비활성·잘못된 비밀번호는 계정 상태를 노출하지 않도록 같은 `401` 응답으로 처리한다.
 - Spring Session은 core library와 table만으로 활성화되지 않는다. Boot 4의 JDBC starter가 repository/filter auto-configuration을 제공하며, 테스트는 `SESSION` cookie와 repository row를 직접 확인한다.
 - Password reset과 email verification token은 raw 값을 한 번만 전달하고 DB에는 SHA-256 hash, expiry와 optimistic version만 저장한다. Reset 성공은 credential·audit·token과 해당 principal의 JDBC session을 함께 변경하고, email verification 성공은 같은 이메일의 token을 모두 제거한다.
 - Request service는 raw token을 반환하지 않고 `AccountTokenDelivery` 경계로 넘긴다. `local`·`test` profile만 메모리 capture를 사용하며 다른 환경에 adapter가 없으면 `503`과 transaction rollback으로 전달할 수 없는 token row를 남기지 않는다.
