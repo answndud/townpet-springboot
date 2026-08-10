@@ -1,0 +1,77 @@
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Editors and IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.fleet/
+.project
+.classpath
+.settings/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+secrets/
+**/secrets/
+
+# Java, JVM and Gradle
+.gradle/
+build/
+**/build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# Frontend dependencies and build output
+node_modules/
+**/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+frontend/.turbo/
+
+# Browser test output
+frontend/playwright-report/
+frontend/test-results/
+playwright-report/
+test-results/
+
+# Logs and package-manager diagnostics
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local runtime data
+.tmp/
+tmp/
+data/
+deploy/data/
+**/.cache/
+
+# Infrastructure local state
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl.backup
+*.retry
+
+# Test and coverage artifacts
+.coverage
+coverage/
+jacoco.exec
+reports/
