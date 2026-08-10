@@ -62,3 +62,26 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: corepack enable
       - run: ./scripts/frontend-backend-smoke.sh
+
+  credentials-browser:
+    name: Credentials browser integration
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+        working-directory: frontend
+      - run: corepack pnpm exec playwright install --with-deps chromium
+        working-directory: frontend
+      - run: corepack pnpm -C frontend test:e2e:auth
