@@ -142,6 +142,25 @@ h1, h2, p { margin: 0; }
 .publication-author-row strong { color: #173963; font-size: 13px; }
 .publication-author-row p { margin-top: 2px; color: #6a82a4; font-size: 11px; }
 .publication-body { min-height: 180px; max-width: 760px; padding: 24px 0 12px; color: #233f67; font-size: 15px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+.publication-comments { margin-top: 14px; padding: 20px 24px; }
+.publication-comments-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #dbe6f5; padding-bottom: 14px; }
+.publication-comments-heading h2 { margin-top: 5px; color: #173963; font-size: 18px; }
+.publication-comments-state, .publication-login-prompt { padding: 18px 0 4px; color: #6a82a4; font-size: 13px; }
+.publication-comment-list { display: grid; }
+.publication-comment { border-bottom: 1px solid #e3ecf8; padding: 15px 0; }
+.publication-comment:last-child { border-bottom: 0; }
+.publication-comment-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: #6a82a4; font-size: 11px; }
+.publication-comment-meta strong { color: #315484; }
+.publication-comment-meta time { margin-right: auto; }
+.publication-comment-meta .text-button { min-height: 24px; color: #a11f2d; font-size: 11px; }
+.publication-comment p { margin-top: 8px; color: #233f67; font-size: 13px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.publication-comment-form { display: grid; gap: 8px; margin-top: 12px; border-top: 1px solid #dbe6f5; padding-top: 16px; }
+.publication-comment-form label { display: grid; gap: 7px; color: #315484; font-size: 13px; font-weight: 700; }
+.publication-comment-form textarea { min-height: 96px; resize: vertical; border: 1px solid #cbdcf5; border-radius: 8px; background: #f8fbff; padding: 9px 12px; color: #1e3f74; font: inherit; line-height: 1.6; }
+.publication-comment-form textarea:focus { outline: 2px solid rgba(78,137,216,.22); border-color: #4e89d8; }
+.publication-comment-submit { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.publication-comment-submit .button { min-height: 36px; padding-inline: 14px; font-size: 12px; }
+.publication-login-prompt a { color: #315b9a; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .publication-state-page { min-height: calc(100vh - 52px); display: grid; place-items: center; }
 .publication-state-page .surface-card { width: min(100%, 620px); }
 .publication-state-page h1 { margin-top: 10px; color: #10284a; }
@@ -204,6 +223,8 @@ h1, h2, p { margin: 0; }
   .publication-submit-row .button { min-width: 112px; }
   .publication-detail-card { padding: 18px 16px; }
   .publication-body { padding-top: 20px; }
+  .publication-comments { padding: 18px 16px; }
+  .publication-comments-heading { align-items: flex-start; }
   .feed-page { padding-inline: 12px; }
   .feed-hero { align-items: end; padding: 15px; }
   .feed-hero p:not(.eyebrow) { font-size: 12px; }
