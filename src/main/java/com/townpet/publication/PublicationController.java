@@ -50,9 +50,10 @@ class PublicationController {
   }
 
   @GetMapping("/{publicationId}")
-  PublicationResponse get(@PathVariable UUID publicationId) {
+  PublicationResponse get(
+      @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal) {
     return publications
-        .findVisible(publicationId)
+        .findVisible(publicationId, viewerMemberId(principal))
         .map(PublicationController::toResponse)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
@@ -104,12 +105,22 @@ class PublicationController {
     }
   }
 
-  private static UUID memberId(UserDetails principal) {
+  @Nullable
+  private static UUID viewerMemberId(@Nullable UserDetails principal) {
+    if (principal == null) return null;
     try {
       return UUID.fromString(principal.getUsername());
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
     }
+  }
+
+  private static UUID memberId(UserDetails principal) {
+    UUID memberId = viewerMemberId(principal);
+    if (memberId == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+    }
+    return memberId;
   }
 
   private static PublicationResponse toResponse(PublicationEntity publication) {
