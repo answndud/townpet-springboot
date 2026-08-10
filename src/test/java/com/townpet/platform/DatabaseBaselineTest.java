@@ -51,6 +51,7 @@ class DatabaseBaselineTest {
       assertThat(columnDataType(statement, "email_verification_token", "token_hash"))
           .isEqualTo("character varying");
       assertThat(tableExists(statement, "identity_auth_audit")).isTrue();
+      assertThat(tableExists(statement, "publication")).isTrue();
       assertThat(columnExists(statement, "identity_credential", "role")).isTrue();
       assertThat(columnExists(statement, "identity_credential", "lifecycle_locked")).isTrue();
       assertThat(columnExists(statement, "identity_credential", "email_verified_at")).isTrue();
