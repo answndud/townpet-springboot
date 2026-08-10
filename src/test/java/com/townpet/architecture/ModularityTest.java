@@ -10,26 +10,6 @@ import org.springframework.modulith.core.ApplicationModules;
 
 class ModularityTest {
 
-  private static final Set<String> EXPECTED_MODULES =
-      Set.of(
-          "identity",
-          "member",
-          "catalog",
-          "publication",
-          "engagement",
-          "localguide",
-          "marketplace",
-          "care",
-          "welfare",
-          "lostfound",
-          "gathering",
-          "relationship",
-          "trustsafety",
-          "discovery",
-          "notification",
-          "media",
-          "operations");
-
   @Test
   void detectsTheAcceptedModuleMap() {
     ApplicationModules modules = ApplicationModules.of(TownPetApplication.class);
@@ -39,7 +19,27 @@ class ModularityTest {
             .map(module -> module.getIdentifier().toString())
             .collect(Collectors.toSet());
 
-    assertThat(detected).containsExactlyInAnyOrderElementsOf(EXPECTED_MODULES);
+    assertThat(detected)
+        .containsExactlyInAnyOrderElementsOf(
+            Set.of(
+                "common",
+                "identity",
+                "member",
+                "catalog",
+                "publication",
+                "engagement",
+                "localguide",
+                "marketplace",
+                "care",
+                "welfare",
+                "lostfound",
+                "gathering",
+                "relationship",
+                "trustsafety",
+                "discovery",
+                "notification",
+                "media",
+                "operations"));
   }
 
   @Test

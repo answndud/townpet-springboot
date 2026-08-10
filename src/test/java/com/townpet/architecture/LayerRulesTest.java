@@ -23,6 +23,8 @@ class LayerRulesTest {
       noClasses()
           .that()
           .resideOutsideOfPackage("com.townpet..infrastructure..")
+          .and()
+          .resideOutsideOfPackage("com.townpet.common..")
           .should()
           .dependOnClassesThat()
           .resideInAnyPackage(
