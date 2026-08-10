@@ -62,6 +62,14 @@ export type CreatePublicationInput = {
   neighborhoodId?: string;
 };
 
+export type FeedPage = {
+  items: Publication[];
+  page: {
+    nextCursor: string | null;
+    hasNext: boolean;
+  };
+};
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -191,5 +199,20 @@ export const publicationApi = {
     return apiFetch<Publication>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
       signal,
     });
+  },
+  feed({
+    audience = "VIEWER",
+    cursor,
+    limit = 20,
+    signal,
+  }: {
+    audience?: "GLOBAL" | "VIEWER";
+    cursor?: string;
+    limit?: number;
+    signal?: AbortSignal;
+  } = {}) {
+    const search = new URLSearchParams({ audience, limit: String(limit) });
+    if (cursor) search.set("cursor", cursor);
+    return apiFetch<FeedPage>(`/api/v1/feed?${search}`, { signal });
   },
 };

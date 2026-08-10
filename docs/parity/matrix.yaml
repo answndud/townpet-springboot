@@ -71,10 +71,10 @@ pages:
     spring: pending
   - path: /feed
     legacy: true
-    spring: pending
+    spring: verified
   - path: /feed/guest
     legacy: true
-    spring: pending
+    spring: verified
   - path: /guides/{guideSlug}
     legacy: true
     spring: pending
@@ -248,7 +248,7 @@ apiRoutes:
   - path: /api/feed/guest
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/feed/personalization
     methods: [POST]
     legacy: true

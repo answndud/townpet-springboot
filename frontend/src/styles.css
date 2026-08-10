@@ -142,6 +142,33 @@ h1, h2, p { margin: 0; }
 .publication-state-page .surface-card { width: min(100%, 620px); }
 .publication-state-page h1 { margin-top: 10px; color: #10284a; }
 .publication-state-page .button { margin-top: 16px; }
+.feed-page { max-width: 980px; }
+.feed-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid #d9e5f7; border-radius: 12px; background: rgba(255,255,255,.84); padding: 18px 20px; }
+.feed-hero h1 { margin-top: 6px; color: #10284a; font-size: clamp(1.6rem, 4vw, 2rem); letter-spacing: -.035em; }
+.feed-hero p:not(.eyebrow) { max-width: 660px; margin-top: 7px; color: #4f678d; font-size: 13px; line-height: 1.65; }
+.feed-hero .button { flex: 0 0 auto; min-height: 40px; padding-inline: 16px; font-size: 12px; }
+.feed-view-tabs { display: flex; gap: 4px; margin-top: 12px; border-bottom: 1px solid #d8e4f6; }
+.feed-view-tabs a { min-height: 38px; padding: 0 14px; color: #5a7397; font-size: 12px; font-weight: 700; }
+.feed-view-tabs a.active { border-bottom: 2px solid #3567b5; color: #285a9f; text-decoration: none; }
+.feed-error { margin-top: 12px; border: 1px solid #f0c9cf; border-radius: 8px; background: #fff7f7; padding: 10px 12px; }
+.feed-list { margin-top: 12px; padding: 0; overflow: hidden; }
+.feed-item { display: grid; gap: 7px; border-bottom: 1px solid #e3ecf8; padding: 15px 18px; transition: background-color .16s ease; }
+.feed-item:hover { background: #fbfdff; }
+.feed-item:last-of-type { border-bottom: 0; }
+.feed-item-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.feed-item-chips .publication-chip { min-height: 23px; padding-inline: 8px; font-size: 10px; }
+.feed-item-title { width: fit-content; max-width: 100%; }
+.feed-item-title h2 { color: #10284a; font-size: 16px; line-height: 1.45; letter-spacing: -.015em; overflow-wrap: anywhere; transition: color .16s ease; }
+.feed-item-title:hover h2 { color: #2f5da4; text-decoration: underline; text-underline-offset: 3px; }
+.feed-item-excerpt { overflow: hidden; color: #4c6488; font-size: 13px; line-height: 1.55; text-overflow: ellipsis; white-space: nowrap; }
+.feed-item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: #7187a7; font-size: 11px; }
+.feed-load-more { display: flex; justify-content: center; border-top: 1px solid #dbe6f5; background: #f8fbff; padding: 12px; }
+.feed-load-more .button { min-height: 38px; padding-inline: 24px; font-size: 12px; }
+.feed-load-more .button:disabled { cursor: wait; opacity: .65; }
+.feed-empty { margin-top: 12px; text-align: center; }
+.feed-empty h2 { color: #173963; font-size: 18px; }
+.feed-empty p { margin-top: 7px; }
+.feed-empty .button { margin-top: 16px; }
 @media (max-width: 640px) {
   .header-inner { padding: 8px 12px; }
   .brand img { height: 32px; }
@@ -173,4 +200,11 @@ h1, h2, p { margin: 0; }
   .publication-submit-row .button { min-width: 112px; }
   .publication-detail-card { padding: 18px 16px; }
   .publication-body { padding-top: 20px; }
+  .feed-page { padding-inline: 12px; }
+  .feed-hero { align-items: end; padding: 15px; }
+  .feed-hero p:not(.eyebrow) { font-size: 12px; }
+  .feed-hero .button { padding-inline: 13px; }
+  .feed-view-tabs a { flex: 1; justify-content: center; }
+  .feed-item { padding: 13px 14px; }
+  .feed-item-title h2 { font-size: 15px; }
 }

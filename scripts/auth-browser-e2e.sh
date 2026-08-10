@@ -77,6 +77,7 @@ fi
 for test_filter in "$@"; do
   [[ "${test_filter}" == *"auth-parity"* ]] && verify_auth_evidence=true
   [[ "${test_filter}" == *"publication-parity"* ]] && verify_publication_evidence=true
+  [[ "${test_filter}" == *"feed-parity"* ]] && verify_publication_evidence=true
 done
 
 session_count="$(
