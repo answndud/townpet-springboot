@@ -69,6 +69,7 @@ class PublicationControllerTest {
 
   @BeforeEach
   void resetPublicationState() {
+    jdbc.update("DELETE FROM relationship_block");
     jdbc.update("DELETE FROM publication");
     jdbc.update("DELETE FROM member_profile WHERE member_id = ?", MEMBER_ID);
     jdbc.update(
@@ -228,6 +229,35 @@ class PublicationControllerTest {
     mockMvc
         .perform(get("/api/v1/feed").queryParam("cursor", "not-a-cursor"))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void blockHidesAuthorFromViewerFeedAndDetailButNotGlobalGuestReads() throws Exception {
+    UUID publicationId = UUID.fromString("00000000-0000-4000-8000-000000000306");
+    insertPublication(publicationId, "차단 작성자 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:06:00Z");
+    UUID viewerId = UUID.fromString("00000000-0000-4000-8000-000000000202");
+    jdbc.update(
+        "INSERT INTO relationship_block (id, blocker_member_id, blocked_member_id, created_at) "
+            + "VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+        UUID.fromString("00000000-0000-4000-8000-000000000406"),
+        viewerId,
+        MEMBER_ID);
+
+    Cookie viewer = login("demo-member-2@townpet.local");
+    mockMvc
+        .perform(get("/api/v1/feed").cookie(viewer).queryParam("audience", "VIEWER"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(0));
+    mockMvc
+        .perform(get("/api/v1/feed").cookie(viewer).queryParam("audience", "GLOBAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].id").value(publicationId.toString()));
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}", publicationId).cookie(viewer))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}", publicationId))
+        .andExpect(status().isOk());
   }
 
   @Test
