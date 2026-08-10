@@ -54,6 +54,7 @@ h1, h2, p { margin: 0; }
 .login-form input:focus { outline: 2px solid rgba(78,137,216,.22); border-color: #4e89d8; }
 .login-form button { border: 0; cursor: pointer; font: inherit; }
 .login-form button:disabled { cursor: wait; opacity: .65; }
+.profile-card ul { padding-left: 1.25rem; text-align: left; color: #315484; line-height: 1.8; }
 .form-error { color: #b42318 !important; font-size: 13px !important; }
 .back-link { display: inline-flex; margin-top: 18px; color: #315b9a; font-size: 13px; font-weight: 700; }
 @media (max-width: 640px) {
