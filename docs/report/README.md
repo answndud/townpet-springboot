@@ -1,62 +1,45 @@
-# TownPet 면접·학습 보고서
+# TownPet 포트폴리오 보고서
 
-이 디렉터리는 TownPet Springboot를 개발하면서 얻은 제품 이해, 기술 지식, 문제 해결 과정과 면접 답변을 실제 evidence에 연결해 축적한다. 운영 원칙과 작성 형식은 [`../../AGENTS.md`](../../AGENTS.md)의 `면접·학습 보고서 운영`을 따른다.
+이 폴더는 구현 내역을 모두 보관하는 작업 일지가 아니다. 면접에서 설명할 가치가 있는 설계 판단, 실제로 겪은 문제, 검증 근거만 선별해 유지한다. 제품 요구사항은 [`../PRD.md`](../PRD.md), 기술 경계는 [`../TRD.md`](../TRD.md), 결정 자체는 [`../../ADR.md`](../../ADR.md), 현재 작업은 [`../../PLAN.md`](../../PLAN.md)가 기준이다.
 
-P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구현·실험·측정 근거가 생기는 slice마다 필요한 문서를 점진적으로 추가한다. 아직 하지 않은 작업을 경험처럼 작성하지 않는다.
+## 읽는 순서
 
-## Document Index
+1. [`engineering-story.md`](engineering-story.md): 어떤 순서로 기반을 만들었고 실제 실패에서 무엇을 바꿨는지
+2. [`technical-notes.md`](technical-notes.md): 현재 코드에서 설명할 수 있는 핵심 Java·Spring·DB·보안·테스트 지식
+3. 구현 범위와 전체 architecture는 canonical 문서와 [`../architecture/module-map.md`](../architecture/module-map.md), [`../parity/matrix.md`](../parity/matrix.md)를 참고한다.
 
-| 문서 | 목적 | 상태 |
+별도 interview question bank는 P2 핵심 도메인 구현 후 만든다. 지금 만들면 아직 구현하지 않은 기능을 경험처럼 암기하거나 같은 설명을 복제할 가능성이 크다.
+
+## 문서화 기준
+
+다음 중 하나에 해당할 때만 기존 문서를 갱신한다.
+
+- 테스트·운영·측정에서 예상과 다른 결과가 나왔고 재사용 가능한 원인을 찾았다.
+- 보안, transaction, module/data ownership처럼 면접에서 반드시 설명해야 할 경계가 실제 코드로 구현됐다.
+- 두 개 이상의 현실적인 대안을 비교하고 선택했으며 trade-off가 남는다.
+- 성능·복구·migration·동시성 결과처럼 수치나 재현 명령이 생겼다.
+- 큰 사용자 여정 또는 PLAN phase가 닫혀 전체 구조 설명이 달라졌다.
+
+다음은 별도로 기록하지 않는다.
+
+- 단순 CRUD, DTO·파일 목록, formatting, dependency 추가
+- 테스트가 통과했다는 사실만 있는 작업
+- PLAN 완료 항목이나 commit message의 반복
+- 공식 문서 일반론, 아직 구현하지 않은 미래 설계
+- 같은 내용을 evolution·knowledge·interview 문서에 다시 쓰는 것
+
+새 파일은 기존 두 문서에 자연스럽게 넣을 수 없고, 독립적으로 반복해서 참고할 주제일 때만 만든다. 한 작업이 끝날 때마다 문서를 만드는 규칙은 없다.
+
+## 현재 근거 지도
+
+| 설명할 주제 | 직접 근거 | 상태 |
 |---|---|---|
-| `project-overview.md` | 제품·사용자·핵심 여정과 전체 구조 설명 | 근거 발생 시 생성 |
-| `feature-map.md` | 기능·정책·module/API·data·test 연결 | parity inventory와 함께 생성 |
-| `architecture-walkthrough.md` | 대표 요청·transaction·event·failure 흐름 | 기반 구현 후 생성 |
-| `evolution/EV-NNN-<slug>.md` | 한계·대안·개선·검증의 실제 chronology | 사건 발생 시 생성 |
-| `knowledge/<topic>.md` | 프로젝트에 적용한 기술 개념과 failure mode | 개념 사용 시 생성 |
-| `interview/question-bank.md` | 30초·2분·deep-dive 답변과 꼬리 질문 | evidence 축적 후 생성 |
-| `interview/story-bank.md` | 문제 해결·실패·trade-off 사례 | evolution에서 선별 |
-| `interview/gaps.md` | 아직 근거가 약하거나 답하지 못하는 질문 | 첫 slice부터 유지 |
-| [`evolution/EV-001-p1-1-build-foundation.md`](evolution/EV-001-p1-1-build-foundation.md) | 첫 build foundation의 선택·실패·해결 chronology | P1.1 완료 |
-| [`knowledge/java-gradle-spring-foundation.md`](knowledge/java-gradle-spring-foundation.md) | Java toolchain·Wrapper·Spring context·quality gate | P1.1 완료 |
-| [`evolution/EV-002-p1-2-database-baseline.md`](evolution/EV-002-p1-2-database-baseline.md) | PostgreSQL·Flyway·Compose baseline의 문제·해결 chronology | P1.2 완료 |
-| [`knowledge/postgres-flyway-baseline.md`](knowledge/postgres-flyway-baseline.md) | extension·권한·migration·session/event schema 개념 | P1.2 완료 |
-| [`evolution/EV-003-p1-3-module-boundaries.md`](evolution/EV-003-p1-3-module-boundaries.md) | 17개 모듈 경계와 architecture 검증의 문제·선택·증거 | P1.3 완료 |
-| [`knowledge/spring-modulith-architecture.md`](knowledge/spring-modulith-architecture.md) | Spring Modulith·ArchUnit과 모듈 경계 면접 노트 | P1.3 완료 |
-| [`evolution/EV-004-p1-4-openapi-contract.md`](evolution/EV-004-p1-4-openapi-contract.md) | OpenAPI 생성·검증과 ProblemDetail contract의 선택·증거 | P1.4 완료 |
-| [`knowledge/openapi-problemdetail.md`](knowledge/openapi-problemdetail.md) | contract-first·RFC 9457 오류 계약 면접 노트 | P1.4 완료 |
-| [`evolution/EV-005-p1-5-vite-shell.md`](evolution/EV-005-p1-5-vite-shell.md) | React·Vite shell 이식과 UI parity smoke의 선택·증거 | P1.5 완료 |
-| [`knowledge/react-vite-parity.md`](knowledge/react-vite-parity.md) | shell-first·Vite·responsive parity 면접 노트 | P1.5 완료 |
-| [`evolution/EV-006-p1-6-parity-inventory.md`](evolution/EV-006-p1-6-parity-inventory.md) | 49 page·55 API inventory와 differential 기반의 선택·증거 | P1.6 완료 |
-| [`knowledge/parity-differential-testing.md`](knowledge/parity-differential-testing.md) | matrix·fixture·normalize 비교 면접 노트 | P1.6 완료 |
-| [`evolution/EV-007-p1-7-quality-gate.md`](evolution/EV-007-p1-7-quality-gate.md) | 통합 smoke와 계층형 CI gate의 실패·선택·증거 | P1.7 완료 |
-| [`knowledge/ci-quality-gates.md`](knowledge/ci-quality-gates.md) | backend/frontend/browser quality gate 면접 노트 | P1.7 완료 |
-| [`evolution/EV-008-p2-1a-identity-member-catalog.md`](evolution/EV-008-p2-1a-identity-member-catalog.md) | 첫 Identity·Member·Catalog vertical slice의 실패·구현·증거 | P2.1a 완료 |
-| [`knowledge/spring-session-csrf-auth.md`](knowledge/spring-session-csrf-auth.md) | session·CSRF·principal 경계 면접 노트 | P2.1a 완료 |
-| [`evolution/EV-009-p2-1b-session-onboarding.md`](evolution/EV-009-p2-1b-session-onboarding.md) | session revoke와 반려동물 onboarding hardening의 선택·증거 | P2.1b 진행 |
-| [`knowledge/member-onboarding-and-session-revoke.md`](knowledge/member-onboarding-and-session-revoke.md) | 회원 소유 데이터 transaction·logout revoke 면접 노트 | P2.1b 진행 |
-| [`evolution/EV-010-p2-1b-demo-roles.md`](evolution/EV-010-p2-1b-demo-roles.md) | 합성 demo identity와 deny-by-default role hardening의 선택·증거 | P2.1b 진행 |
-| [`knowledge/demo-identity-and-rbac.md`](knowledge/demo-identity-and-rbac.md) | BCrypt demo seed·RBAC·401/403 면접 노트 | P2.1b 진행 |
+| 재현 가능한 Java·Spring 기반 | `build.gradle.kts`, Wrapper, `clean check` | evidenced |
+| PostgreSQL schema authority와 권한 분리 | Flyway V001~V003, Compose, `DatabaseBaselineTest` | evidenced |
+| Modular monolith 경계 | module package, Modulith·ArchUnit tests | evidenced |
+| OpenAPI·React/Vite·parity gate | OpenAPI spec/generator, parity matrix, Vitest·Playwright·smoke | evidenced |
+| Session·CSRF·회원 onboarding·RBAC | Identity/Member code, MockMvc security tests | evidenced |
+| 비밀번호 lifecycle·OAuth stub·전체 auth parity | 아직 구현 중 | captured |
+| 게시·미디어 이후 핵심 도메인 | 아직 구현 전 | captured |
 
-## 기능 Coverage
-
-| Actor·Journey | Domain rule | API·Data | Test evidence | Report | 준비도 |
-|---|---|---|---|---|---|
-| 전체 기준선 | [`../PRD.md`](../PRD.md)와 parity matrix에서 추적 예정 | 미구현 | 미구현 | 미작성 | captured |
-
-## 기술 Coverage
-
-| 개념 | 도입 출처 | 적용 위치 | 대안·Failure mode | Evidence | Report | 준비도 |
-|---|---|---|---|---|---|---|
-| Java 25·Gradle Wrapper | [`../TRD.md`](../TRD.md), ADR 결정 | P1.1 build | Java 21/26 환경 차이, Wrapper 재현성 | `./gradlew clean check` | [`knowledge/java-gradle-spring-foundation.md`](knowledge/java-gradle-spring-foundation.md) | evidenced |
-| Spring Boot·Modulith foundation | [`../TRD.md`](../TRD.md) | application context·event registry | serializer·schema 초기화 | context test·verification tasks | [`evolution/EV-001-p1-1-build-foundation.md`](evolution/EV-001-p1-1-build-foundation.md) | evidenced |
-| PostgreSQL·PostGIS·Flyway | [`../TRD.md`](../TRD.md), ADR 결정 | Compose·V001·Testcontainers | extension 권한, schema authority, ARM image | migration test·bootRun·health·DB query | [`evolution/EV-002-p1-2-database-baseline.md`](evolution/EV-002-p1-2-database-baseline.md) | evidenced |
-| Spring Modulith·ArchUnit | ADR-0011 | 17개 package 경계·architecture tests | 물리 multi-project, shared business common | `./gradlew modulithTest` | [`knowledge/spring-modulith-architecture.md`](knowledge/spring-modulith-architecture.md) | evidenced |
-| OpenAPI·ProblemDetail | ADR-0012 | `api/openapi/townpet.yaml`, generated Java/TypeScript, global handler | controller code-first, 수동 DTO | `openApiValidate`, `contractTest` | [`knowledge/openapi-problemdetail.md`](knowledge/openapi-problemdetail.md) | evidenced |
-| React·Vite shell·Playwright | ADR-0001, ADR-0012 | `frontend/src`, shell E2E | Next.js server runtime 복제, 한 번에 전체 UI 이식 | `pnpm typecheck`, `pnpm test`, `pnpm test:e2e` | [`knowledge/react-vite-parity.md`](knowledge/react-vite-parity.md) | evidenced |
-| Parity inventory·differential | ADR-0001, ADR-0012 | `docs/parity/matrix.yaml`, `ParityInventoryTest`, `normalizePayload` | raw JSON 비교, 기억 기반 route 추적 | `parityInventoryTest`, normalization tests | [`knowledge/parity-differential-testing.md`](knowledge/parity-differential-testing.md) | evidenced |
-| CI quality gate·integration smoke | ADR-0014 | `.github/workflows`, `scripts/frontend-backend-smoke.sh` | 단일 거대 workflow, preview-only 검증 | backend/frontend gate·smoke·browser smoke | [`knowledge/ci-quality-gates.md`](knowledge/ci-quality-gates.md) | evidenced |
-| Spring Session·CSRF·Identity | ADR-0009, ADR-0010 | V002, SecurityConfig, session/member tests | JWT browser storage, CSRF 제외 | IdentityMemberControllerTest, smoke | [`knowledge/spring-session-csrf-auth.md`](knowledge/spring-session-csrf-auth.md) | evidenced |
-| Member onboarding·session revoke | PRD FR-ID-04, TRD 9장 | MemberController, member_pet, profile UI | child CRUD 분리, cookie-only logout | onboarding/logout MockMvc tests | [`knowledge/member-onboarding-and-session-revoke.md`](knowledge/member-onboarding-and-session-revoke.md) | evidenced |
-| Demo identity·RBAC | PRD DEMO-01~03, NFR-SEC-02 | V003, CredentialEntity, SecurityConfig | 공개 signup, role 없는 authenticated 운영 API | migration + 403 authorization tests | [`knowledge/demo-identity-and-rbac.md`](knowledge/demo-identity-and-rbac.md) | evidenced |
-
-준비도는 `captured → understood → evidenced → rehearsed` 순서로만 올린다.
+`evidenced`는 코드와 재현 가능한 test/migration이 있을 때만 사용한다. 면접 답변을 실제로 연습한 뒤에만 별도 `rehearsed` 상태를 도입한다.
