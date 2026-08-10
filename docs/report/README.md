@@ -28,6 +28,8 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 | [`knowledge/react-vite-parity.md`](knowledge/react-vite-parity.md) | shell-first·Vite·responsive parity 면접 노트 | P1.5 완료 |
 | [`evolution/EV-006-p1-6-parity-inventory.md`](evolution/EV-006-p1-6-parity-inventory.md) | 49 page·55 API inventory와 differential 기반의 선택·증거 | P1.6 완료 |
 | [`knowledge/parity-differential-testing.md`](knowledge/parity-differential-testing.md) | matrix·fixture·normalize 비교 면접 노트 | P1.6 완료 |
+| [`evolution/EV-007-p1-7-quality-gate.md`](evolution/EV-007-p1-7-quality-gate.md) | 통합 smoke와 계층형 CI gate의 실패·선택·증거 | P1.7 완료 |
+| [`knowledge/ci-quality-gates.md`](knowledge/ci-quality-gates.md) | backend/frontend/browser quality gate 면접 노트 | P1.7 완료 |
 
 ## 기능 Coverage
 
@@ -46,5 +48,6 @@ P1.1 application scaffold와 첫 검증 기록이 추가됐다. 이후에도 구
 | OpenAPI·ProblemDetail | ADR-0012 | `api/openapi/townpet.yaml`, generated Java/TypeScript, global handler | controller code-first, 수동 DTO | `openApiValidate`, `contractTest` | [`knowledge/openapi-problemdetail.md`](knowledge/openapi-problemdetail.md) | evidenced |
 | React·Vite shell·Playwright | ADR-0001, ADR-0012 | `frontend/src`, shell E2E | Next.js server runtime 복제, 한 번에 전체 UI 이식 | `pnpm typecheck`, `pnpm test`, `pnpm test:e2e` | [`knowledge/react-vite-parity.md`](knowledge/react-vite-parity.md) | evidenced |
 | Parity inventory·differential | ADR-0001, ADR-0012 | `docs/parity/matrix.yaml`, `ParityInventoryTest`, `normalizePayload` | raw JSON 비교, 기억 기반 route 추적 | `parityInventoryTest`, normalization tests | [`knowledge/parity-differential-testing.md`](knowledge/parity-differential-testing.md) | evidenced |
+| CI quality gate·integration smoke | ADR-0014 | `.github/workflows`, `scripts/frontend-backend-smoke.sh` | 단일 거대 workflow, preview-only 검증 | backend/frontend gate·smoke·browser smoke | [`knowledge/ci-quality-gates.md`](knowledge/ci-quality-gates.md) | evidenced |
 
 준비도는 `captured → understood → evidenced → rehearsed` 순서로만 올린다.
