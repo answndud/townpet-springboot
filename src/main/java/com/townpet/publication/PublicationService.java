@@ -70,11 +70,25 @@ class PublicationService {
   }
 
   @Transactional
-  void delete(UUID memberId, UUID publicationId, long expectedVersion) {
+  PublicationEntity delete(UUID memberId, UUID publicationId, long expectedVersion) {
     PublicationEntity publication = ownedActivePublication(memberId, publicationId);
     requireCurrentVersion(publication, expectedVersion);
     publication.delete(java.time.Instant.now());
-    publications.saveAndFlush(publication);
+    return publications.saveAndFlush(publication);
+  }
+
+  @Transactional
+  PublicationEntity restore(UUID memberId, UUID publicationId, long expectedVersion) {
+    PublicationEntity publication =
+        publications
+            .findByIdAndLifecycle(publicationId, PublicationLifecycle.DELETED)
+            .orElseThrow(PublicationNotFoundException::new);
+    if (!publication.getAuthorMemberId().equals(memberId)) {
+      throw new PublicationOwnershipException();
+    }
+    requireCurrentVersion(publication, expectedVersion);
+    publication.restore(java.time.Instant.now());
+    return publications.saveAndFlush(publication);
   }
 
   private PublicationEntity ownedActivePublication(UUID memberId, UUID publicationId) {

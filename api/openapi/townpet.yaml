@@ -309,6 +309,38 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /api/v1/publications/{publicationId}/restore:
+    post:
+      operationId: restorePublication
+      tags: [Publications]
+      summary: Restore an owned deleted publication
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestorePublicationRequest'
+      responses:
+        '200':
+          description: Publication restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /api/v1/publications/{publicationId}/comments:
     get:
       operationId: listPublicationComments
@@ -725,6 +757,14 @@ components:
           format: int64
           minimum: 0
     DeletePublicationRequest:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+    RestorePublicationRequest:
       type: object
       required: [version]
       properties:
