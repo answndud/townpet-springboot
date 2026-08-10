@@ -52,6 +52,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/api/v1/auth/password-resets/**")
                     .permitAll()
+                    .requestMatchers("/api/v1/auth/email-verifications/**")
+                    .permitAll()
                     .requestMatchers("/api/v1/catalog/**")
                     .permitAll()
                     .requestMatchers("/api/v1/operations/**")

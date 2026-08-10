@@ -38,8 +38,8 @@
 | PostgreSQL schema authority와 권한 분리 | Flyway V001~V003, Compose, `DatabaseBaselineTest` | evidenced |
 | Modular monolith 경계 | module package, Modulith·ArchUnit tests | evidenced |
 | OpenAPI·React/Vite·parity gate | OpenAPI spec/generator, parity matrix, Vitest·Playwright·smoke | evidenced |
-| Session·CSRF·회원 onboarding·RBAC·password reset | Identity/Member code, V004, JDBC session security tests | evidenced |
-| Email verification·OAuth stub·전체 auth parity | 아직 구현 중 | captured |
+| Session·CSRF·onboarding·RBAC·password/email lifecycle | Identity code, V004~V005, JDBC session security tests | evidenced |
+| OAuth stub·전체 auth parity | 아직 구현 중 | captured |
 | 게시·미디어 이후 핵심 도메인 | 아직 구현 전 | captured |
 
 `evidenced`는 코드와 재현 가능한 test/migration이 있을 때만 사용한다. 면접 답변을 실제로 연습한 뒤에만 별도 `rehearsed` 상태를 도입한다.

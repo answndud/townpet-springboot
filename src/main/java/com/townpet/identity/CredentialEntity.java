@@ -4,7 +4,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
+import org.springframework.lang.Nullable;
 
 @Entity
 @Table(name = "identity_credential")
@@ -28,6 +30,8 @@ public class CredentialEntity {
 
   @Column(nullable = false)
   private boolean lifecycleLocked;
+
+  @Nullable private Instant emailVerifiedAt;
 
   protected CredentialEntity() {}
 
@@ -78,5 +82,16 @@ public class CredentialEntity {
       throw new IllegalStateException("Credential lifecycle is locked");
     }
     this.passwordHash = passwordHash;
+  }
+
+  public boolean isEmailVerified() {
+    return emailVerifiedAt != null;
+  }
+
+  public void verifyEmail(Instant verifiedAt) {
+    if (lifecycleLocked) {
+      throw new IllegalStateException("Credential lifecycle is locked");
+    }
+    this.emailVerifiedAt = verifiedAt;
   }
 }

@@ -46,8 +46,10 @@ class IdentityMemberControllerTest {
   @Autowired MemberRepository members;
   @Autowired CredentialRepository credentials;
   @Autowired PasswordResetTokenRepository passwordResetTokens;
+  @Autowired EmailVerificationTokenRepository emailVerificationTokens;
   @Autowired AuthAuditRepository authAudits;
   @Autowired PasswordResetService passwordResets;
+  @Autowired EmailVerificationService emailVerifications;
   @Autowired JdbcIndexedSessionRepository sessions;
   @Autowired NeighborhoodRepository neighborhoods;
   @Autowired MemberPetRepository pets;
@@ -57,6 +59,7 @@ class IdentityMemberControllerTest {
   void seedMember() {
     authAudits.deleteAll();
     passwordResetTokens.deleteAll();
+    emailVerificationTokens.deleteAll();
     credentials.deleteAll();
     pets.deleteAll();
     members.deleteAll();
@@ -200,7 +203,7 @@ class IdentityMemberControllerTest {
     org.assertj.core.api.Assertions.assertThat(passwordResetTokens.findAll())
         .singleElement()
         .extracting(PasswordResetTokenEntity::getTokenHash)
-        .isEqualTo(PasswordResetService.hashToken(token))
+        .isEqualTo(SecureToken.hash(token))
         .isNotEqualTo(token);
 
     mockMvc
@@ -283,10 +286,7 @@ class IdentityMemberControllerTest {
     java.time.Instant now = java.time.Instant.now();
     passwordResetTokens.save(
         new PasswordResetTokenEntity(
-            MEMBER_ID,
-            PasswordResetService.hashToken(token),
-            now.minusSeconds(7200),
-            now.minusSeconds(3600)));
+            MEMBER_ID, SecureToken.hash(token), now.minusSeconds(7200), now.minusSeconds(3600)));
 
     mockMvc
         .perform(
@@ -294,6 +294,79 @@ class IdentityMemberControllerTest {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"token\":\"" + token + "\",\"newPassword\":\"Changed!2026\"}"))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void emailVerificationUsesHashedSingleUseToken() throws Exception {
+    String token = emailVerifications.request("mango@example.com").orElseThrow();
+
+    org.assertj.core.api.Assertions.assertThat(emailVerificationTokens.findAll())
+        .singleElement()
+        .extracting(EmailVerificationTokenEntity::getTokenHash)
+        .isEqualTo(SecureToken.hash(token))
+        .isNotEqualTo(token);
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/email-verifications/confirmations")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + token + "\"}"))
+        .andExpect(status().isNoContent());
+
+    org.assertj.core.api.Assertions.assertThat(
+            credentials.findByEmailIgnoreCase("mango@example.com").orElseThrow().isEmailVerified())
+        .isTrue();
+    org.assertj.core.api.Assertions.assertThat(emailVerificationTokens.count()).isZero();
+    org.assertj.core.api.Assertions.assertThat(authAudits.count()).isEqualTo(1);
+    mockMvc
+        .perform(
+            post("/api/v1/auth/email-verifications/confirmations")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + token + "\"}"))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void verificationRequestDoesNotRevealUnknownOrVerifiedAccounts() throws Exception {
+    CredentialEntity credential = credentials.findByMemberId(MEMBER_ID).orElseThrow();
+    credential.verifyEmail(java.time.Instant.now());
+    credentials.save(credential);
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/email-verifications")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"unknown@example.com\"}"))
+        .andExpect(status().isAccepted());
+    mockMvc
+        .perform(
+            post("/api/v1/auth/email-verifications")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"mango@example.com\"}"))
+        .andExpect(status().isAccepted());
+
+    org.assertj.core.api.Assertions.assertThat(emailVerificationTokens.count()).isZero();
+  }
+
+  @Test
+  void emailVerificationRejectsExpiredToken() throws Exception {
+    String token = "expired-verify-token-expired-verify-token";
+    java.time.Instant now = java.time.Instant.now();
+    emailVerificationTokens.save(
+        new EmailVerificationTokenEntity(
+            MEMBER_ID, SecureToken.hash(token), now.minusSeconds(7200), now.minusSeconds(3600)));
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/email-verifications/confirmations")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"" + token + "\"}"))
         .andExpect(status().isBadRequest());
   }
 

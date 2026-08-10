@@ -45,9 +45,11 @@ class DatabaseBaselineTest {
       assertThat(tableExists(statement, "member_account")).isTrue();
       assertThat(tableExists(statement, "identity_credential")).isTrue();
       assertThat(tableExists(statement, "password_reset_token")).isTrue();
+      assertThat(tableExists(statement, "email_verification_token")).isTrue();
       assertThat(tableExists(statement, "identity_auth_audit")).isTrue();
       assertThat(columnExists(statement, "identity_credential", "role")).isTrue();
       assertThat(columnExists(statement, "identity_credential", "lifecycle_locked")).isTrue();
+      assertThat(columnExists(statement, "identity_credential", "email_verified_at")).isTrue();
       assertThat(
               queryInt(
                   statement, "SELECT COUNT(*) FROM identity_credential WHERE role = 'MODERATOR'"))
@@ -56,6 +58,11 @@ class DatabaseBaselineTest {
               queryInt(
                   statement,
                   "SELECT COUNT(*) FROM identity_credential WHERE lifecycle_locked = TRUE"))
+          .isEqualTo(4);
+      assertThat(
+              queryInt(
+                  statement,
+                  "SELECT COUNT(*) FROM identity_credential WHERE email_verified_at IS NOT NULL"))
           .isEqualTo(4);
       assertThat(tableExists(statement, "neighborhood")).isTrue();
       assertThat(queryInt(statement, "SELECT COUNT(*) FROM neighborhood"))
