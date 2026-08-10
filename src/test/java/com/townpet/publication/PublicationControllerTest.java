@@ -351,7 +351,8 @@ class PublicationControllerTest {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"version\":1}"))
-        .andExpect(status().isNoContent());
+        .andExpect(status().isNoContent())
+        .andExpect(header().string("ETag", "\"2\""));
 
     mockMvc
         .perform(get("/api/v1/publications/{publicationId}", publicationId))
@@ -366,6 +367,29 @@ class PublicationControllerTest {
                 String.class,
                 UUID.fromString(publicationId)))
         .isEqualTo("DELETED");
+
+    mockMvc
+        .perform(
+            post("/api/v1/publications/{publicationId}/restore", publicationId)
+                .cookie(otherMember)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":2}"))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            post("/api/v1/publications/{publicationId}/restore", publicationId)
+                .cookie(author)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":2}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lifecycle").value("ACTIVE"))
+        .andExpect(jsonPath("$.version").value(3));
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("수정한 제목"));
   }
 
   private void insertPublication(
