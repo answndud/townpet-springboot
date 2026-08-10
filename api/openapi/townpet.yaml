@@ -341,6 +341,85 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /api/v1/media/uploads:
+    post:
+      operationId: createMediaUpload
+      tags: [Media]
+      summary: Create an owned upload asset metadata row
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMediaUploadRequest'
+      responses:
+        '200':
+          description: Upload metadata created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaUpload'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/media/uploads/{assetId}/finalize:
+    post:
+      operationId: finalizeMediaUpload
+      tags: [Media]
+      summary: Finalize an owned upload after object verification
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/AssetId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalizeMediaUploadRequest'
+      responses:
+        '200':
+          description: Upload finalized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaUpload'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/media/uploads/{assetId}/attachments/publications/{publicationId}:
+    post:
+      operationId: attachMediaToPublication
+      tags: [Media]
+      summary: Attach a finalized owned asset to an active owned publication
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/AssetId'
+        - $ref: '#/components/parameters/PublicationId'
+      responses:
+        '200':
+          description: Media attached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaUpload'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /api/v1/publications/{publicationId}/comments:
     get:
       operationId: listPublicationComments
@@ -581,6 +660,12 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/Uuid'
+    AssetId:
+      name: assetId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -772,6 +857,54 @@ components:
           type: integer
           format: int64
           minimum: 0
+    CreateMediaUploadRequest:
+      type: object
+      required: [checksumSha256, contentType, byteSize]
+      properties:
+        checksumSha256:
+          type: string
+          pattern: '^[a-fA-F0-9]{64}$'
+        contentType:
+          type: string
+          maxLength: 120
+        byteSize:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 10485760
+    FinalizeMediaUploadRequest:
+      type: object
+      required: [checksumSha256]
+      properties:
+        checksumSha256:
+          type: string
+          pattern: '^[a-fA-F0-9]{64}$'
+    MediaUpload:
+      type: object
+      required: [id, objectKey, checksumSha256, contentType, byteSize, status, expiresAt, version]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        objectKey:
+          type: string
+        checksumSha256:
+          type: string
+        contentType:
+          type: string
+        byteSize:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [UPLOADING, READY, ATTACHED, ABANDONED]
+        publicationId:
+          type: [string, 'null']
+          format: uuid
+        expiresAt:
+          $ref: '#/components/schemas/Instant'
+        version:
+          type: integer
+          format: int64
     CreateCommentRequest:
       type: object
       required: [body]
