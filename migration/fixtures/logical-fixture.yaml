@@ -1,0 +1,27 @@
+version: 1
+name: parity-smoke
+description: Stable logical actors and records shared by legacy/Spring differential tests.
+clock: 2026-01-01T00:00:00Z
+actors:
+  guest:
+    auth: anonymous
+  member:
+    auth: session
+    memberId: 00000000-0000-4000-8000-000000000001
+  staff:
+    auth: session
+    memberId: 00000000-0000-4000-8000-000000000002
+records:
+  neighborhood:
+    id: 00000000-0000-4000-8000-000000000101
+    slug: seoul-mapogu
+  publication:
+    id: 00000000-0000-4000-8000-000000000201
+    title: 산책하기 좋은 동네 정보
+    scope: LOCAL
+    author: member
+normalization:
+  replaceUuid: <uuid>
+  replaceTimestamp: <timestamp>
+  replaceSignedUrl: <signed-url>
+  ignoredFields: [traceId, requestId, generatedAt]
