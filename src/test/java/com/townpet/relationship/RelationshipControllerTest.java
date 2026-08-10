@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import jakarta.servlet.http.Cookie;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -129,6 +130,49 @@ class RelationshipControllerTest {
         .andExpect(jsonPath("$.blocking").value(false));
   }
 
+  @Test
+  void concurrentFollowAndBlockRequestsNeverLeaveBothRelationshipRows() throws Exception {
+    Cookie viewer = login("demo-member-1@townpet.local");
+    Cookie target = login("demo-member-2@townpet.local");
+    UUID targetId = memberId(target);
+    CountDownLatch start = new CountDownLatch(1);
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+    try {
+      Future<Integer> follow =
+          executor.submit(
+              () -> {
+                start.await();
+                return relationshipStatus(viewer, targetId);
+              });
+      Future<Integer> block =
+          executor.submit(
+              () -> {
+                start.await();
+                return relationshipBlockStatus(viewer, targetId);
+              });
+      start.countDown();
+      org.assertj.core.api.Assertions.assertThat(follow.get()).isEqualTo(200);
+      org.assertj.core.api.Assertions.assertThat(block.get()).isEqualTo(200);
+    } finally {
+      executor.shutdownNow();
+    }
+    Integer followRows =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM relationship_follow WHERE follower_member_id = ? AND followed_member_id = ?",
+            Integer.class,
+            memberId(viewer),
+            targetId);
+    Integer blockRows =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM relationship_block WHERE blocker_member_id = ? AND blocked_member_id = ?",
+            Integer.class,
+            memberId(viewer),
+            targetId);
+    int followCount = Objects.requireNonNull(followRows);
+    int blockCount = Objects.requireNonNull(blockRows);
+    org.assertj.core.api.Assertions.assertThat(followCount + blockCount).isEqualTo(1);
+  }
+
   private int relationshipStatus(Cookie session, UUID targetId) throws Exception {
     return mockMvc
         .perform(
@@ -137,6 +181,19 @@ class RelationshipControllerTest {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"following\":true,\"blocking\":false}"))
+        .andReturn()
+        .getResponse()
+        .getStatus();
+  }
+
+  private int relationshipBlockStatus(Cookie session, UUID targetId) throws Exception {
+    return mockMvc
+        .perform(
+            put("/api/v1/members/{id}/relationship", targetId)
+                .cookie(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"following\":false,\"blocking\":true}"))
         .andReturn()
         .getResponse()
         .getStatus();
