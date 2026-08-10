@@ -75,6 +75,7 @@ verify_deleted_publication_evidence=false
 verify_comment_evidence=false
 verify_reaction_evidence=false
 verify_bookmark_evidence=false
+verify_relationship_evidence=false
 if (( $# == 0 )); then
   verify_auth_evidence=true
   verify_publication_evidence=true
@@ -87,6 +88,7 @@ for test_filter in "$@"; do
   [[ "${test_filter}" == *"comment-management"* ]] && verify_comment_evidence=true
   [[ "${test_filter}" == *"reaction-management"* ]] && verify_reaction_evidence=true
   [[ "${test_filter}" == *"bookmark-management"* ]] && verify_bookmark_evidence=true
+  [[ "${test_filter}" == *"relationship-management"* ]] && verify_relationship_evidence=true
 done
 
 session_count="$(
@@ -124,8 +126,18 @@ bookmark_count="$(
     exec -T postgres psql -U postgres -d townpet -tAc \
     "SELECT COUNT(*) FROM engagement_bookmark"
 )"
+follow_count="$(
+  docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" \
+    exec -T postgres psql -U postgres -d townpet -tAc \
+    "SELECT COUNT(*) FROM relationship_follow"
+)"
+block_count="$(
+  docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" \
+    exec -T postgres psql -U postgres -d townpet -tAc \
+    "SELECT COUNT(*) FROM relationship_block"
+)"
 required_session_count=2
-if [[ "${verify_comment_evidence}" == true || "${verify_reaction_evidence}" == true || "${verify_bookmark_evidence}" == true ]] \
+if [[ "${verify_comment_evidence}" == true || "${verify_reaction_evidence}" == true || "${verify_bookmark_evidence}" == true || "${verify_relationship_evidence}" == true ]] \
   && [[ "${verify_publication_evidence}" == false ]] \
   && [[ "${verify_deleted_publication_evidence}" == false ]]; then
   required_session_count=1
@@ -158,4 +170,8 @@ if [[ "${verify_bookmark_evidence}" == true ]] && (( bookmark_count != 0 )); the
   echo "Expected final bookmark toggle state to be empty, got bookmarks=${bookmark_count}" >&2
   exit 1
 fi
-echo "PostgreSQL evidence verified: sessions=${session_count}, auth_audits=${audit_count}, publications=${publication_count}, deleted_publications=${deleted_publication_count}, active_comments=${comment_count}, reactions=${reaction_count}, bookmarks=${bookmark_count}"
+if [[ "${verify_relationship_evidence}" == true ]] && (( follow_count != 0 || block_count != 0 )); then
+  echo "Expected final relationship toggle state to be empty, got follows=${follow_count}, blocks=${block_count}" >&2
+  exit 1
+fi
+echo "PostgreSQL evidence verified: sessions=${session_count}, auth_audits=${audit_count}, publications=${publication_count}, deleted_publications=${deleted_publication_count}, active_comments=${comment_count}, reactions=${reaction_count}, bookmarks=${bookmark_count}, follows=${follow_count}, blocks=${block_count}"

@@ -471,6 +471,53 @@ paths:
           $ref: '#/components/responses/NotFound'
         '400':
           $ref: '#/components/responses/BadRequest'
+  /api/v1/members/{targetMemberId}/relationship:
+    get:
+      operationId: getMemberRelationship
+      tags: [Relationship]
+      summary: Read the current member relationship state
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/TargetMemberId'
+      responses:
+        '200':
+          description: Relationship state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relationship'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: setMemberRelationship
+      tags: [Relationship]
+      summary: Set follow or block state for another member
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/TargetMemberId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetRelationshipRequest'
+      responses:
+        '200':
+          description: Updated relationship state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relationship'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   parameters:
     Cursor:
@@ -490,6 +537,12 @@ components:
         minimum: 1
         maximum: 50
         default: 20
+    TargetMemberId:
+      name: targetMemberId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Uuid'
     PublicationId:
       name: publicationId
       in: path
@@ -753,6 +806,22 @@ components:
       required: [active]
       properties:
         active:
+          type: boolean
+    SetRelationshipRequest:
+      type: object
+      required: [following, blocking]
+      properties:
+        following:
+          type: boolean
+        blocking:
+          type: boolean
+    Relationship:
+      type: object
+      required: [following, blocking]
+      properties:
+        following:
+          type: boolean
+        blocking:
           type: boolean
     Publication:
       type: object

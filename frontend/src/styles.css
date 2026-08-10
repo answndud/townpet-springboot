@@ -146,6 +146,7 @@ h1, h2, p { margin: 0; }
 .reaction-button { display: inline-flex; min-height: 36px; align-items: center; gap: 6px; border: 1px solid #cbdcf5; border-radius: 18px; background: #f8fbff; padding: 0 14px; color: #315b9a; font: inherit; font-size: 12px; font-weight: 800; text-decoration: none; }
 .reaction-button:hover, .reaction-button.active { border-color: #e7a6b4; background: #fff1f4; color: #b4234d; }
 .bookmark-button:hover, .bookmark-button.active { border-color: #9bbbe8; background: #edf5ff; color: #245da5; }
+.relationship-button:hover { border-color: #9bbbe8; background: #edf5ff; color: #245da5; }
 .reaction-button:disabled { cursor: wait; opacity: .6; }
 .publication-reaction-help { color: #6a82a4; font-size: 11px; }
 .publication-comments { margin-top: 14px; padding: 20px 24px; }

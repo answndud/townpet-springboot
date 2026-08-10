@@ -6,6 +6,7 @@ import {
   publicationApi,
   type Comment,
   type Bookmark,
+  type Relationship,
   type Publication,
   type Reaction,
 } from "../../api/client";
@@ -39,6 +40,8 @@ export default function PublicationDetailPage() {
   const [bookmark, setBookmark] = useState<Bookmark>({ active: false });
   const [bookmarkLoading, setBookmarkLoading] = useState(true);
   const [bookmarkSubmitting, setBookmarkSubmitting] = useState(false);
+  const [relationship, setRelationship] = useState<Relationship>({ following: false, blocking: false });
+  const [relationshipSubmitting, setRelationshipSubmitting] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -51,6 +54,7 @@ export default function PublicationDetailPage() {
     setReactionLoading(true);
     setBookmark({ active: false });
     setBookmarkLoading(true);
+    setRelationship({ following: false, blocking: false });
     publicationApi
       .detail(publicationId, controller.signal)
       .then(setPublication)
@@ -96,6 +100,18 @@ export default function PublicationDetailPage() {
     return () => controller.abort();
   }, [publicationId]);
 
+  useEffect(() => {
+    if (!publication || !viewerId || viewerId === publication.authorId) return;
+    const controller = new AbortController();
+    publicationApi
+      .relationship(publication.authorId, controller.signal)
+      .then(setRelationship)
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+      });
+    return () => controller.abort();
+  }, [publication, viewerId]);
+
   async function setPublicationReaction() {
     if (!publication || reactionSubmitting) return;
     setReactionSubmitting(true);
@@ -123,6 +139,22 @@ export default function PublicationDetailPage() {
       }
     } finally {
       setBookmarkSubmitting(false);
+    }
+  }
+
+  async function setPublicationRelationship(next: "following" | "blocking") {
+    if (!publication || relationshipSubmitting || viewerId === publication.authorId) return;
+    setRelationshipSubmitting(true);
+    const following = next === "following" ? !relationship.following : relationship.following;
+    const blocking = next === "blocking" ? !relationship.blocking : relationship.blocking;
+    try {
+      setRelationship(await publicationApi.setRelationship(publication.authorId, following, blocking));
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        navigate(`/login?next=/posts/${publication.id}`, { replace: true });
+      }
+    } finally {
+      setRelationshipSubmitting(false);
     }
   }
 
@@ -285,6 +317,30 @@ export default function PublicationDetailPage() {
             </Link>
           )}
           <span className="publication-reaction-help">나만 볼 수 있게 저장합니다.</span>
+          {viewerId && viewerId !== publication.authorId ? (
+            <>
+              <button
+                className="reaction-button relationship-button"
+                type="button"
+                aria-label={relationship.following ? "팔로우 취소" : "팔로우"}
+                aria-pressed={relationship.following}
+                disabled={relationshipSubmitting}
+                onClick={() => setPublicationRelationship("following")}
+              >
+                {relationship.following ? "팔로잉" : "팔로우"}
+              </button>
+              <button
+                className={relationship.blocking ? "reaction-button relationship-button active" : "reaction-button relationship-button"}
+                type="button"
+                aria-label={relationship.blocking ? "차단 해제" : "차단"}
+                aria-pressed={relationship.blocking}
+                disabled={relationshipSubmitting}
+                onClick={() => setPublicationRelationship("blocking")}
+              >
+                {relationship.blocking ? "차단 해제" : "차단"}
+              </button>
+            </>
+          ) : null}
         </div>
       </article>
       <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading">
