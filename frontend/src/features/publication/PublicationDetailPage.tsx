@@ -5,6 +5,7 @@ import {
   memberApi,
   publicationApi,
   type Comment,
+  type Bookmark,
   type Publication,
   type Reaction,
 } from "../../api/client";
@@ -35,6 +36,9 @@ export default function PublicationDetailPage() {
   const [reaction, setReaction] = useState<Reaction>({ active: false, count: 0 });
   const [reactionLoading, setReactionLoading] = useState(true);
   const [reactionSubmitting, setReactionSubmitting] = useState(false);
+  const [bookmark, setBookmark] = useState<Bookmark>({ active: false });
+  const [bookmarkLoading, setBookmarkLoading] = useState(true);
+  const [bookmarkSubmitting, setBookmarkSubmitting] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -45,6 +49,8 @@ export default function PublicationDetailPage() {
     setCommentError(null);
     setReaction({ active: false, count: 0 });
     setReactionLoading(true);
+    setBookmark({ active: false });
+    setBookmarkLoading(true);
     publicationApi
       .detail(publicationId, controller.signal)
       .then(setPublication)
@@ -73,6 +79,13 @@ export default function PublicationDetailPage() {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
       })
       .finally(() => setReactionLoading(false));
+    publicationApi
+      .bookmark(publicationId, controller.signal)
+      .then(setBookmark)
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+      })
+      .finally(() => setBookmarkLoading(false));
     memberApi
       .current(controller.signal)
       .then((member) => setViewerId(member.id))
@@ -95,6 +108,21 @@ export default function PublicationDetailPage() {
       }
     } finally {
       setReactionSubmitting(false);
+    }
+  }
+
+  async function setPublicationBookmark() {
+    if (!publication || bookmarkSubmitting) return;
+    setBookmarkSubmitting(true);
+    try {
+      const next = await publicationApi.setBookmark(publication.id, !bookmark.active);
+      setBookmark(next);
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        navigate(`/login?next=/posts/${publication.id}`, { replace: true });
+      }
+    } finally {
+      setBookmarkSubmitting(false);
     }
   }
 
@@ -240,6 +268,23 @@ export default function PublicationDetailPage() {
             </Link>
           )}
           <span className="publication-reaction-help">회원당 한 번만 표시됩니다.</span>
+          {viewerId ? (
+            <button
+              className={bookmark.active ? "reaction-button bookmark-button active" : "reaction-button bookmark-button"}
+              type="button"
+              aria-label={bookmark.active ? "저장 취소" : "저장"}
+              aria-pressed={bookmark.active}
+              disabled={bookmarkLoading || bookmarkSubmitting}
+              onClick={setPublicationBookmark}
+            >
+              <span aria-hidden="true">🔖</span> 저장
+            </button>
+          ) : (
+            <Link className="reaction-button bookmark-button" to={`/login?next=/posts/${publication.id}`}>
+              <span aria-hidden="true">🔖</span> 저장
+            </Link>
+          )}
+          <span className="publication-reaction-help">나만 볼 수 있게 저장합니다.</span>
         </div>
       </article>
       <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading">
