@@ -18,33 +18,34 @@
 - 검증: `docker compose -f deploy/compose/local.yml config`, Compose 두 서비스 healthy, `./gradlew migrationTest`, `./gradlew bootRun`, `/actuator/health` `UP`, `flyway_schema_history` version `001` 확인.
 - 보고서: [`docs/report/evolution/EV-002-p1-2-database-baseline.md`](docs/report/evolution/EV-002-p1-2-database-baseline.md), [`docs/report/knowledge/postgres-flyway-baseline.md`](docs/report/knowledge/postgres-flyway-baseline.md)
 
+### P1.3 - 17개 Application Module 경계와 architecture 문서를 코드로 검증한다
+
+- 결과: ADR-0011의 17개 bounded context와 `api` named interface를 package 선언으로 추가하고, Spring Modulith cycle/dependency 검증과 ArchUnit 내부 계층 노출 규칙을 구성했다. Mermaid module map과 면접용 evolution/knowledge report를 추가했다.
+- 검증: `JAVA_HOME=/opt/homebrew/opt/openjdk@25/libexec/openjdk.jdk/Contents/Home ./gradlew modulithTest --no-daemon` 통과. 17개 module detection, Spring context, migration test와 architecture rules가 모두 통과했다.
+- 보고서: [`docs/report/evolution/EV-003-p1-3-module-boundaries.md`](docs/report/evolution/EV-003-p1-3-module-boundaries.md), [`docs/report/knowledge/spring-modulith-architecture.md`](docs/report/knowledge/spring-modulith-architecture.md)
+
 ## Active
 
 ### P1 - 재현 가능한 Spring·React 기반과 동등성 하네스를 만든다
 
-1. P1.3 - 17개 Application Module 경계와 architecture 문서를 코드로 검증한다
-   - 파일: `src/main/java/com/townpet/*/package-info.java`, `src/test/java/com/townpet/architecture/ModularityTest.java`, `src/test/java/com/townpet/architecture/LayerRulesTest.java`, `docs/architecture/module-map.md`
-   - 변경: ADR-0011의 17개 module과 named interface를 선언하고 entity·repository·web DTO의 외부 참조, module cycle과 common business type을 ArchUnit·Spring Modulith로 금지한다. Module diagram을 test에서 생성한다.
-   - 검증: `./gradlew modulithTest`
-   - 완료: 모든 module이 detection되고 허용하지 않은 dependency·JPA association·repository 노출이 build를 실패시킨다.
-
-2. P1.4 - OpenAPI code generation과 ProblemDetail contract를 만든다
+1. P1.4 - OpenAPI code generation과 ProblemDetail contract를 만든다
    - 파일: `api/openapi/townpet.yaml`, `build.gradle.kts`, `src/main/java/com/townpet/common/web/GlobalProblemHandler.java`, `src/test/java/com/townpet/contract/OpenApiContractTest.java`
    - 변경: `/api/v1`, UUID·UTC·KRW·cursor·idempotency·version·ProblemDetail 공통 schema를 정의하고 Java transport interface·DTO와 TypeScript client generation task를 연결한다. Generated domain·JPA code를 금지한다.
    - 검증: `./gradlew openApiValidate openApiGenerate checkGeneratedSources contractTest`
    - 완료: 같은 OpenAPI에서 Java·TypeScript가 생성되고 재생성 diff와 breaking contract가 CI를 실패시킨다.
 
-3. P1.5 - React·Vite shell과 기존 URL·visual parity 하네스를 만든다
+2. P1.5 - React·Vite shell과 기존 URL·visual parity 하네스를 만든다
    - 파일: `frontend/package.json`, `frontend/vite.config.ts`, `frontend/src/**`, `frontend/e2e/parity-shell.spec.ts`
    - 변경: React 19, TypeScript, Vite, React Router와 generated API client를 구성한다. 기존 global style·layout·header·font·static asset을 선별 복사하고 49개 URL inventory, dual-target Playwright project와 visual baseline 규칙을 만든다.
    - 검증: `corepack pnpm -C frontend install --frozen-lockfile && corepack pnpm -C frontend lint && corepack pnpm -C frontend typecheck && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e -- parity-shell.spec.ts`
    - 완료: Vite dev와 Spring HTML shell에서 기준 URL이 열리고 desktop·mobile shell snapshot이 legacy baseline과 승인된 threshold 안에서 일치한다.
 
-4. P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
+3. P1.6 - Page·API·data parity matrix와 differential runner를 생성한다
    - 파일: `docs/parity/matrix.md`, `migration/fixtures/logical-fixture.yaml`, `src/test/java/com/townpet/parity/**`, `frontend/e2e/parity.config.ts`
    - 변경: 49 page·55 API를 actor, fixture, 권한, 상태, error, responsive, accessibility, SEO, migration과 test ID에 연결한다. UUID·time·signed URL을 normalize하는 legacy/Spring differential runner를 만든다.
    - 검증: `./gradlew parityInventoryTest && corepack pnpm -C frontend test:e2e --project=parity-smoke`
    - 완료: 누락 page·API와 test 없는 핵심 여정이 report에 실패로 표시되고 동일 fixture의 의미 결과를 양쪽 target에서 비교할 수 있다.
+
 
 ### P2 - Domain별 vertical slice로 Write Owner를 Spring으로 옮긴다
 
