@@ -428,6 +428,49 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/v1/publications/{publicationId}/bookmark:
+    get:
+      tags: [Engagement]
+      summary: Read the current member bookmark state
+      operationId: getPublicationBookmark
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+      responses:
+        '200':
+          description: Bookmark state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bookmark'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Engagement]
+      summary: Set or clear the current member bookmark
+      operationId: setPublicationBookmark
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetBookmarkRequest'
+      responses:
+        '200':
+          description: Updated bookmark state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bookmark'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 components:
   parameters:
     Cursor:
@@ -699,6 +742,18 @@ components:
           type: integer
           format: int64
           minimum: 0
+    SetBookmarkRequest:
+      type: object
+      required: [active]
+      properties:
+        active:
+          type: boolean
+    Bookmark:
+      type: object
+      required: [active]
+      properties:
+        active:
+          type: boolean
     Publication:
       type: object
       required: [id, type, title, body, scope, authorId, lifecycle, createdAt, updatedAt, version]

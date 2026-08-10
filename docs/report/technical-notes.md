@@ -26,10 +26,11 @@
 - Publication 변경 명령의 actor는 session principal에서만 가져오며 `authorMemberId`와 일치해야 한다. Client가 읽은 `version`을 먼저 비교하고 JPA `@Version`이 검사 이후의 경합도 감지해 stale write를 `409`로 반환한다. 삭제는 row 제거가 아니라 `ACTIVE → DELETED` lifecycle 전이이며 상세와 피드가 같은 상태 조건으로 즉시 제외한다.
 - Engagement의 일반 Comment는 `publicationId` 값만 저장하고 publication 모듈의 `PublicationAccess` 공개 API로 부모의 `ACTIVE` 여부만 확인한다. 댓글 작성자 ID는 인증 principal에서만 가져오며, 목록은 `createdAt + id` 오름차순으로 고정하고 삭제는 댓글 자체의 `ACTIVE → DELETED` 전이로 처리한다.
 - Reaction은 삭제 lifecycle 대신 원장 row의 존재 여부로 `LIKE` 활성 상태를 표현한다. `(publicationId, authorMemberId, type)` unique constraint와 명시적인 `active` PUT을 함께 사용해 같은 요청을 반복해도 중복 row나 상태 반전이 생기지 않으며, count와 현재 회원 상태는 같은 transaction 경계에서 반환한다.
+- Bookmark는 reaction count와 분리된 회원별 저장 원장이다. `(publicationId, memberId)` unique constraint와 명시적인 `active` PUT으로 상태를 멱등하게 바꾸고, 상세 GET은 비회원도 `active=false`를 읽을 수 있지만 변경은 session principal만 허용한다. 삭제된 publication은 `PublicationAccess`에서 차단하며, `V010`, `BookmarkControllerTest`, `bookmark-management.spec.ts`가 이 경계를 검증한다.
 - Spring Modulith는 module/cycle을, ArchUnit은 내부 package와 type 노출 규칙을 검사한다.
 - OpenAPI는 HTTP transport의 source of truth다. Java·TypeScript transport 코드는 생성하지만 aggregate·entity·repository는 생성하지 않는다.
 - ProblemDetail은 status와 기계 판독 code, traceId, field error를 한 오류 계약으로 묶는다.
-- 근거: `MemberDirectory`, `PublicationService`, `PublicationFeed`, `PublicationAccess`, `CommentService`, `ReactionService`, V007~V009, `PublicationControllerTest`, `CommentControllerTest`, `ReactionControllerTest`, `feed-parity.spec.ts`, `publication-management.spec.ts`, `comment-management.spec.ts`, `reaction-management.spec.ts`, `ModularityTest`, `LayerRulesTest`, `api/openapi/townpet.yaml`, `OpenApiContractTest`
+- 근거: `MemberDirectory`, `PublicationService`, `PublicationFeed`, `PublicationAccess`, `CommentService`, `ReactionService`, `BookmarkService`, V007~V010, `PublicationControllerTest`, `CommentControllerTest`, `ReactionControllerTest`, `BookmarkControllerTest`, `feed-parity.spec.ts`, `publication-management.spec.ts`, `comment-management.spec.ts`, `reaction-management.spec.ts`, `bookmark-management.spec.ts`, `ModularityTest`, `LayerRulesTest`, `api/openapi/townpet.yaml`, `OpenApiContractTest`
 
 ## React·Vite와 parity
 

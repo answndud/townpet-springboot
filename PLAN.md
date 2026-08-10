@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.4 - 회원 자유글 bookmark toggle 여정을 연결한다
-   - 파일: `src/main/resources/db/migration/V010__engagement_bookmark.sql`, `src/main/java/com/townpet/engagement/**`, `api/openapi/townpet.yaml`, `frontend/src/features/publication/PublicationDetailPage.tsx`
-   - 변경: ACTIVE publication에 회원당 하나의 bookmark를 저장·해제하는 API와 database unique constraint를 추가한다. 삭제 게시글·비회원 요청을 거부하고 내 저장 목록의 최소 조회 상태를 제공한다.
-   - 검증: `./gradlew integrationTest --tests '*Bookmark*' openApiValidate && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e:auth -- bookmark-management.spec.ts`
-   - 완료: 로그인 회원은 상세에서 bookmark를 켜고 끌 수 있으며 새로고침 후 상태가 유지되고, 동일 회원 중복 생성·삭제 게시글 대상 변경·비회원 변경은 거부된다.
+1. P2.5 - 회원 자유글 follow/block 정책의 첫 경계를 연결한다
+   - 파일: `src/main/resources/db/migration/V011__relationship_follow_block.sql`, `src/main/java/com/townpet/relationship/**`, `api/openapi/townpet.yaml`, `frontend/src/features/publication/PublicationDetailPage.tsx`
+   - 변경: 회원 간 follow와 block 원장을 분리하고 자기 자신 대상·중복 요청·비회원 변경을 거부한다. 상세 화면에서는 작성자에 대한 follow/block 상태만 제공하고 publication 조회 정책과 연결할 최소 공개 API를 만든다.
+   - 검증: `./gradlew integrationTest --tests '*Relationship*' openApiValidate && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e:auth -- relationship-management.spec.ts`
+   - 완료: 로그인 회원은 다른 회원을 follow/block할 수 있고 새로고침 후 상태가 유지되며, 자기 자신·중복·비회원·삭제 대상 요청이 명확한 오류로 거부된다.
 
 ## Backlog
 
