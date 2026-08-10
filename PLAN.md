@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.1 - Password lifecycle과 auth parity를 닫는다
-   - 파일: `src/main/java/com/townpet/identity/**`, `src/main/resources/db/migration/V004__*.sql`, `api/openapi/townpet.yaml`, `frontend/e2e/auth-parity.spec.ts`
-   - 변경: reset·verification token의 hash/expiry/single-use와 session revoke를 구현한다. Demo identity 변경 금지, member/profile IDOR, OAuth provider stub 계약과 login·logout·onboarding differential E2E를 추가한다.
+1. P2.1 - Email verification과 auth parity를 닫는다
+   - 파일: `src/main/java/com/townpet/identity/**`, `api/openapi/townpet.yaml`, `frontend/src/features/auth/**`, `frontend/e2e/auth-parity.spec.ts`
+   - 변경: email verification token과 OAuth provider stub 계약을 추가한다. Demo identity 변경 금지, member/profile IDOR와 login·logout·password reset·onboarding differential E2E를 연결한다.
    - 검증: `./gradlew clean check migrationTest --tests '*Identity*' --tests '*Member*' && corepack pnpm -C frontend test:e2e -- auth-parity.spec.ts`
-   - 완료: credentials login·logout·reset·verification·onboarding·role·IDOR·CSRF가 Spring session과 합성 fixture에서 통과하고 실제 signup/OAuth는 꺼져 있다.
+   - 완료: credentials login·logout·reset·verification·onboarding·role·IDOR·CSRF가 JDBC session과 합성 fixture에서 통과하고 실제 signup/OAuth는 꺼져 있다.
 
 2. P2.2 - Publication·Media 작성과 상세 여정을 연결한다
    - 파일: `src/main/java/com/townpet/publication/**`, `src/main/java/com/townpet/media/**`, `src/main/resources/db/migration/V005__*.sql`, `frontend/src/features/publication/**`

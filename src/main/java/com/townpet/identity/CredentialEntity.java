@@ -26,6 +26,9 @@ public class CredentialEntity {
   @Column(nullable = false, length = 30)
   private String role = "MEMBER";
 
+  @Column(nullable = false)
+  private boolean lifecycleLocked;
+
   protected CredentialEntity() {}
 
   public CredentialEntity(UUID memberId, String email, String passwordHash) {
@@ -33,11 +36,17 @@ public class CredentialEntity {
   }
 
   public CredentialEntity(UUID memberId, String email, String passwordHash, String role) {
+    this(memberId, email, passwordHash, role, false);
+  }
+
+  public CredentialEntity(
+      UUID memberId, String email, String passwordHash, String role, boolean lifecycleLocked) {
     this.id = UUID.randomUUID();
     this.memberId = memberId;
     this.email = email;
     this.passwordHash = passwordHash;
     this.role = role;
+    this.lifecycleLocked = lifecycleLocked;
   }
 
   public UUID getMemberId() {
@@ -58,5 +67,16 @@ public class CredentialEntity {
 
   public String getRole() {
     return role;
+  }
+
+  public boolean isLifecycleLocked() {
+    return lifecycleLocked;
+  }
+
+  public void changePassword(String passwordHash) {
+    if (lifecycleLocked) {
+      throw new IllegalStateException("Credential lifecycle is locked");
+    }
+    this.passwordHash = passwordHash;
   }
 }

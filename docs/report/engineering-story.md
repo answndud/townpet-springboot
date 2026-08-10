@@ -44,8 +44,10 @@ backend, frontend, integration smoke, browser E2E를 계층으로 나눴다. smo
 
 다음 단계에서 profile과 반려동물 목록을 한 transaction으로 저장하고 logout 뒤 같은 session이 401이 되는지 검증했다. CSRF cookie가 test 실행 순서에 따라 누락되는 현상은 token endpoint가 cookie 계약을 명시적으로 응답하도록 고쳤다. 공개 showcase는 실제 signup 대신 합성 MEMBER 3개와 MODERATOR 1개를 hash-only migration으로 만들고 운영 prefix를 role로 제한했다.
 
-- 근거: `482428d`, `c1f6155`, `461d4ad`, `IdentityMemberControllerTest`
-- 현재 한계: password reset·verification, OAuth provider stub, demo scoped reset과 전체 auth parity는 아직 완료되지 않았다.
+비밀번호 reset에서 전체 session revoke를 구현하며 더 근본적인 누락을 발견했다. `spring-session-jdbc` library와 session table만 있었고 Boot 4의 JDBC session auto-configuration starter가 없어 기존 테스트는 servlet memory session을 사용하고 있었다. 의존성을 `spring-boot-starter-session-jdbc`로 바꾸고 테스트도 `MockHttpSession` 직접 전달 대신 실제 `SESSION` cookie와 JDBC repository를 확인하도록 수정했다. Reset token은 SHA-256 hash·1시간 만료·1회 사용·optimistic version으로 저장하고, 성공 시 password 변경·audit·모든 JDBC session 삭제를 한 transaction 경계에서 수행한다.
+
+- 근거: `482428d`, `c1f6155`, `461d4ad`, Flyway V004, `IdentityMemberControllerTest`
+- 현재 한계: email verification, OAuth provider stub, demo scoped reset과 전체 auth parity는 아직 완료되지 않았다.
 
 ## 면접에서 강조할 핵심
 
