@@ -3,6 +3,7 @@ package com.townpet.identity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -60,6 +61,8 @@ public class SecurityConfig {
                   .requestMatchers("/api/v1/auth/email-verifications/**")
                   .permitAll()
                   .requestMatchers("/api/v1/catalog/**")
+                  .permitAll()
+                  .requestMatchers(HttpMethod.GET, "/api/v1/publications/**")
                   .permitAll()
                   .requestMatchers("/api/v1/operations/**")
                   .hasRole("MODERATOR")

@@ -21,10 +21,11 @@
 ## Modular monolith와 API 계약
 
 - 모듈은 기술 layer가 아니라 변경 이유와 data write ownership으로 나눈다. 다른 모듈의 JPA entity/repository 대신 식별자, 공개 application API 또는 event를 사용한다.
+- Publication은 작성자 UUID만 소유하고 Member의 공개 `MemberDirectory`로 현재 대표 동네를 확인한다. `LOCAL/GLOBAL`과 동네 필드의 구조적 일관성은 DB 제약으로, 실제 회원 동네 소유권은 transaction 안의 application policy로 검증한다.
 - Spring Modulith는 module/cycle을, ArchUnit은 내부 package와 type 노출 규칙을 검사한다.
 - OpenAPI는 HTTP transport의 source of truth다. Java·TypeScript transport 코드는 생성하지만 aggregate·entity·repository는 생성하지 않는다.
 - ProblemDetail은 status와 기계 판독 code, traceId, field error를 한 오류 계약으로 묶는다.
-- 근거: `ModularityTest`, `LayerRulesTest`, `api/openapi/townpet.yaml`, `OpenApiContractTest`
+- 근거: `MemberDirectory`, `PublicationService`, V007, `PublicationControllerTest`, `ModularityTest`, `LayerRulesTest`, `api/openapi/townpet.yaml`, `OpenApiContractTest`
 
 ## React·Vite와 parity
 
@@ -51,7 +52,7 @@
 ## 현재 학습·증거의 빈틈
 
 - 실제 email provider adapter, transaction 이후 durable delivery와 retry·bounce 처리
-- publication transaction과 media lifecycle
+- publication 수정·삭제·복구와 media lifecycle
 - event retry/idempotency, concurrency mutation, jOOQ read model
 - 성능 수치, query plan, backup/restore와 배포 관측 evidence
 

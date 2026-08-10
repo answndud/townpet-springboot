@@ -207,8 +207,6 @@ paths:
       summary: Create a publication
       security:
         - sessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -425,7 +423,7 @@ components:
         title:
           type: string
           minLength: 1
-          maxLength: 160
+          maxLength: 120
         body:
           type: string
           minLength: 1
@@ -438,10 +436,13 @@ components:
           format: uuid
     Publication:
       type: object
-      required: [id, title, body, scope, authorId, createdAt, version]
+      required: [id, type, title, body, scope, authorId, lifecycle, createdAt, updatedAt, version]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
+        type:
+          type: string
+          enum: [FREE_BOARD]
         title:
           type: string
         body:
@@ -454,7 +455,12 @@ components:
         neighborhoodId:
           type: [string, 'null']
           format: uuid
+        lifecycle:
+          type: string
+          enum: [ACTIVE, DELETED]
         createdAt:
+          $ref: '#/components/schemas/Instant'
+        updatedAt:
           $ref: '#/components/schemas/Instant'
         version:
           type: integer

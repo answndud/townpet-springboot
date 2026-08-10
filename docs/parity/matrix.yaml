@@ -312,7 +312,7 @@ apiRoutes:
   - path: /api/posts/{id}
     methods: [GET, PATCH, DELETE]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/posts/{id}/share
     methods: [POST]
     legacy: true
@@ -328,7 +328,7 @@ apiRoutes:
   - path: /api/posts
     methods: [GET, POST]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/posts/suggestions
     methods: [GET]
     legacy: true
