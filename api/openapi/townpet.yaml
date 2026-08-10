@@ -309,6 +309,82 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /api/v1/publications/{publicationId}/comments:
+    get:
+      operationId: listPublicationComments
+      tags: [Engagement]
+      summary: List active comments for an active publication
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+      responses:
+        '200':
+          description: Comments in stable creation order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentList'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      operationId: createPublicationComment
+      tags: [Engagement]
+      summary: Create a member comment
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/publications/{publicationId}/comments/{commentId}:
+    delete:
+      operationId: deletePublicationComment
+      tags: [Engagement]
+      summary: Delete an owned active comment
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: '#/components/parameters/PublicationId'
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Uuid'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteCommentRequest'
+      responses:
+        '204':
+          description: Comment deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 components:
   parameters:
     Cursor:
@@ -517,6 +593,53 @@ components:
           type: integer
           format: int64
           minimum: 0
+    CreateCommentRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 5000
+    DeleteCommentRequest:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+    Comment:
+      type: object
+      required: [id, publicationId, authorId, body, lifecycle, createdAt, updatedAt, version]
+      properties:
+        id:
+          $ref: '#/components/schemas/Uuid'
+        publicationId:
+          $ref: '#/components/schemas/Uuid'
+        authorId:
+          $ref: '#/components/schemas/Uuid'
+        body:
+          type: string
+        lifecycle:
+          type: string
+          enum: [ACTIVE, DELETED]
+        createdAt:
+          $ref: '#/components/schemas/Instant'
+        updatedAt:
+          $ref: '#/components/schemas/Instant'
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+    CommentList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
     Publication:
       type: object
       required: [id, type, title, body, scope, authorId, lifecycle, createdAt, updatedAt, version]

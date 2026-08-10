@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ApiError, memberApi, publicationApi, type Publication } from "../../api/client";
+import {
+  ApiError,
+  memberApi,
+  publicationApi,
+  type Comment,
+  type Publication,
+} from "../../api/client";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -20,11 +26,19 @@ export default function PublicationDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentBody, setCommentBody] = useState("");
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     setPublication(null);
     setError(null);
+    setComments([]);
+    setCommentsLoading(true);
+    setCommentError(null);
     publicationApi
       .detail(publicationId, controller.signal)
       .then(setPublication)
@@ -36,6 +50,16 @@ export default function PublicationDetailPage() {
             : "게시글을 불러오지 못했습니다.",
         );
       });
+    publicationApi
+      .comments(publicationId, controller.signal)
+      .then((result) => setComments(result.items))
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+        if (!(requestError instanceof ApiError && requestError.status === 404)) {
+          setCommentError("댓글을 불러오지 못했습니다.");
+        }
+      })
+      .finally(() => setCommentsLoading(false));
     memberApi
       .current(controller.signal)
       .then((member) => setViewerId(member.id))
@@ -45,6 +69,45 @@ export default function PublicationDetailPage() {
       });
     return () => controller.abort();
   }, [publicationId]);
+
+  async function createComment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!publication || !commentBody.trim() || commentSubmitting) return;
+    setCommentSubmitting(true);
+    setCommentError(null);
+    try {
+      const created = await publicationApi.createComment(publication.id, {
+        body: commentBody.trim(),
+      });
+      setComments((current) => [...current, created]);
+      setCommentBody("");
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        navigate(`/login?next=/posts/${publication.id}#comments`, { replace: true });
+      } else if (requestError instanceof ApiError && requestError.status === 404) {
+        setCommentError("삭제되었거나 댓글을 작성할 수 없는 게시글입니다.");
+      } else {
+        setCommentError("댓글을 등록하지 못했습니다.");
+      }
+    } finally {
+      setCommentSubmitting(false);
+    }
+  }
+
+  async function deleteComment(comment: Comment) {
+    if (!publication || !window.confirm("이 댓글을 삭제할까요?")) return;
+    setCommentError(null);
+    try {
+      await publicationApi.deleteComment(publication.id, comment.id, comment.version);
+      setComments((current) => current.filter((item) => item.id !== comment.id));
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 409) {
+        setCommentError("다른 곳에서 댓글이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");
+      } else {
+        setCommentError("댓글을 삭제하지 못했습니다.");
+      }
+    }
+  }
 
   async function deletePublication() {
     if (!publication || !window.confirm("이 게시글을 삭제할까요? 삭제 후에는 공개되지 않습니다.")) {
@@ -132,6 +195,62 @@ export default function PublicationDetailPage() {
         </header>
         <div className="publication-body">{publication.body}</div>
       </article>
+      <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading">
+        <div className="publication-comments-heading">
+          <div>
+            <p className="eyebrow">COMMUNITY</p>
+            <h2 id="comments-heading">댓글 {comments.length}</h2>
+          </div>
+          <span className="publication-chip">작성자만 삭제</span>
+        </div>
+        {commentError ? <p className="form-error publication-error" role="alert">{commentError}</p> : null}
+        {commentsLoading ? (
+          <p className="publication-comments-state" role="status">댓글을 불러오는 중...</p>
+        ) : comments.length === 0 ? (
+          <p className="publication-comments-state">첫 번째 댓글을 남겨 보세요.</p>
+        ) : (
+          <div className="publication-comment-list">
+            {comments.map((comment) => (
+              <article className="publication-comment" key={comment.id}>
+                <div className="publication-comment-meta">
+                  <strong>TownPet 회원</strong>
+                  <time dateTime={comment.createdAt}>{formatDate(comment.createdAt)}</time>
+                  {viewerId === comment.authorId ? (
+                    <button className="text-button" type="button" onClick={() => deleteComment(comment)}>
+                      삭제
+                    </button>
+                  ) : null}
+                </div>
+                <p>{comment.body}</p>
+              </article>
+            ))}
+          </div>
+        )}
+        {viewerId ? (
+          <form className="publication-comment-form" onSubmit={createComment} noValidate>
+            <label>
+              댓글
+              <textarea
+                aria-label="댓글"
+                maxLength={5000}
+                value={commentBody}
+                onChange={(event) => setCommentBody(event.target.value)}
+                placeholder="반려생활에 도움이 되는 이야기를 남겨 주세요."
+              />
+            </label>
+            <div className="publication-comment-submit">
+              <span className="field-help">{commentBody.length.toLocaleString()}/5,000</span>
+              <button className="button button-primary" type="submit" disabled={commentSubmitting || !commentBody.trim()}>
+                {commentSubmitting ? "등록 중..." : "댓글 등록"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p className="publication-login-prompt">
+            <Link to={`/login?next=/posts/${publication.id}#comments`}>로그인</Link>하면 댓글을 남길 수 있어요.
+          </p>
+        )}
+      </section>
     </main>
   );
 }

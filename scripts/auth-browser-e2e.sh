@@ -49,7 +49,8 @@ if ! curl --fail --silent http://127.0.0.1:8080/actuator/health >/dev/null; then
   exit 1
 fi
 
-corepack pnpm -C frontend exec vite --host 127.0.0.1 >"${FRONTEND_LOG}" 2>&1 &
+cd "${ROOT_DIR}/frontend"
+corepack pnpm exec vite --host 127.0.0.1 >"${FRONTEND_LOG}" 2>&1 &
 frontend_pid=$!
 for _ in {1..30}; do
   if curl --fail --silent http://127.0.0.1:5173/ >/dev/null; then
@@ -66,11 +67,12 @@ if ! curl --fail --silent http://127.0.0.1:5173/ >/dev/null; then
   exit 1
 fi
 
-corepack pnpm -C frontend exec playwright test --config e2e/auth.config.ts "$@"
+corepack pnpm exec playwright test --config e2e/auth.config.ts "$@"
 
 verify_auth_evidence=false
 verify_publication_evidence=false
 verify_deleted_publication_evidence=false
+verify_comment_evidence=false
 if (( $# == 0 )); then
   verify_auth_evidence=true
   verify_publication_evidence=true
@@ -80,6 +82,7 @@ for test_filter in "$@"; do
   [[ "${test_filter}" == *"publication-parity"* ]] && verify_publication_evidence=true
   [[ "${test_filter}" == *"feed-parity"* ]] && verify_publication_evidence=true
   [[ "${test_filter}" == *"publication-management"* ]] && verify_deleted_publication_evidence=true
+  [[ "${test_filter}" == *"comment-management"* ]] && verify_comment_evidence=true
 done
 
 session_count="$(
@@ -102,7 +105,18 @@ deleted_publication_count="$(
     exec -T postgres psql -U postgres -d townpet -tAc \
     "SELECT COUNT(*) FROM publication WHERE type = 'FREE_BOARD' AND lifecycle = 'DELETED'"
 )"
-if (( session_count < 2 )); then
+comment_count="$(
+  docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" \
+    exec -T postgres psql -U postgres -d townpet -tAc \
+    "SELECT COUNT(*) FROM engagement_comment"
+)"
+required_session_count=2
+if [[ "${verify_comment_evidence}" == true ]] \
+  && [[ "${verify_publication_evidence}" == false ]] \
+  && [[ "${verify_deleted_publication_evidence}" == false ]]; then
+  required_session_count=1
+fi
+if (( session_count < required_session_count )); then
   echo "Expected JDBC session evidence, got sessions=${session_count}" >&2
   exit 1
 fi
@@ -118,4 +132,8 @@ if [[ "${verify_deleted_publication_evidence}" == true ]] && (( deleted_publicat
   echo "Expected lifecycle deletion evidence, got deleted_publications=${deleted_publication_count}" >&2
   exit 1
 fi
-echo "PostgreSQL evidence verified: sessions=${session_count}, auth_audits=${audit_count}, publications=${publication_count}, deleted_publications=${deleted_publication_count}"
+if [[ "${verify_comment_evidence}" == true ]] && (( comment_count < 1 )); then
+  echo "Expected comment evidence, got active_comments=${comment_count}" >&2
+  exit 1
+fi
+echo "PostgreSQL evidence verified: sessions=${session_count}, auth_audits=${audit_count}, publications=${publication_count}, deleted_publications=${deleted_publication_count}, active_comments=${comment_count}"

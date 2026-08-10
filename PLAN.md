@@ -6,15 +6,15 @@
 
 ## Active
 
-1. P2.2 - 회원 자유글 댓글 작성·조회·삭제 여정을 연결한다
-   - 파일: `src/main/resources/db/migration/V008__engagement_comment.sql`, `src/main/java/com/townpet/engagement/**`, `api/openapi/townpet.yaml`, `frontend/src/features/publication/PublicationDetailPage.tsx`
-   - 변경: ACTIVE publication에 회원 댓글을 작성하고 stable 순서로 조회하며 작성자만 lifecycle 삭제하는 API를 추가한다. 삭제 게시글에는 새 댓글을 거부하고 댓글 작성자 ID를 request에서 받지 않는다.
-   - 검증: `./gradlew integrationTest --tests '*Comment*' openApiValidate && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e:auth -- comment-management.spec.ts`
-   - 완료: 로그인 회원은 공개 가능한 글의 댓글을 작성·조회·삭제하고, 비회원 작성과 타인 삭제 및 삭제 게시글 대상 작성은 거부되며 새로고침 후에도 결과가 유지된다.
+1. P2.3 - 회원 자유글 reaction toggle 여정을 연결한다
+   - 파일: `src/main/resources/db/migration/V009__engagement_reaction.sql`, `src/main/java/com/townpet/engagement/**`, `api/openapi/townpet.yaml`, `frontend/src/features/publication/PublicationDetailPage.tsx`
+   - 변경: ACTIVE publication에 회원당 하나의 reaction을 생성·해제하는 API와 database unique constraint를 추가한다. 삭제 게시글·비회원 요청을 거부하고 반복 toggle 요청이 중복 row를 만들지 않게 한다.
+   - 검증: `./gradlew integrationTest --tests '*Reaction*' openApiValidate && corepack pnpm -C frontend test && corepack pnpm -C frontend test:e2e:auth -- reaction-management.spec.ts`
+   - 완료: 로그인 회원은 상세에서 reaction을 켜고 끌 수 있으며 새로고침 후 상태가 유지되고, 동일 회원 중복 생성·삭제 게시글 대상 변경·비회원 변경은 거부된다.
 
 ## Backlog
 
-- Engagement·Relationship: reaction/bookmark/follow/block와 동시성·IDOR
+- Engagement·Relationship: bookmark/follow/block와 동시성·IDOR
 - Publication 복구·GuestPrincipal 관리 credential과 Media lifecycle
 - LostFound: PostGIS 근사 위치, 암호화한 정확 증거, 제보·해결 lifecycle
 - Marketplace와 LocalGuide·Welfare·Care·Gathering 구조화 domain parity

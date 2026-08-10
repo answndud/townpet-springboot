@@ -1,0 +1,110 @@
+package com.townpet.engagement;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestController
+@RequestMapping("/api/v1/publications/{publicationId}/comments")
+class CommentController {
+  private final CommentService comments;
+
+  CommentController(CommentService comments) {
+    this.comments = comments;
+  }
+
+  @GetMapping
+  CommentListResponse list(@PathVariable UUID publicationId) {
+    try {
+      return new CommentListResponse(
+          comments.list(publicationId).stream().map(CommentController::toResponse).toList());
+    } catch (CommentPublicationNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @PostMapping
+  ResponseEntity<CommentResponse> create(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID publicationId,
+      @Valid @RequestBody CreateCommentRequest request) {
+    try {
+      CommentEntity comment = comments.create(memberId(principal), publicationId, request.body());
+      return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(comment));
+    } catch (CommentPublicationNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @DeleteMapping("/{commentId}")
+  ResponseEntity<Void> delete(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID publicationId,
+      @PathVariable UUID commentId,
+      @Valid @RequestBody DeleteCommentRequest request) {
+    try {
+      comments.delete(memberId(principal), publicationId, commentId, request.version());
+      return ResponseEntity.noContent().build();
+    } catch (CommentNotFoundException | CommentPublicationNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (CommentOwnershipException exception) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Only the author can delete this comment");
+    } catch (CommentVersionConflictException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Comment has changed");
+    }
+  }
+
+  private static UUID memberId(UserDetails principal) {
+    try {
+      return UUID.fromString(principal.getUsername());
+    } catch (IllegalArgumentException exception) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
+    }
+  }
+
+  private static CommentResponse toResponse(CommentEntity comment) {
+    return new CommentResponse(
+        comment.getId(),
+        comment.getPublicationId(),
+        comment.getAuthorMemberId(),
+        comment.getBody(),
+        comment.getLifecycle(),
+        comment.getCreatedAt(),
+        comment.getUpdatedAt(),
+        comment.getVersion());
+  }
+
+  record CommentListResponse(List<CommentResponse> items) {}
+
+  record CreateCommentRequest(@NotBlank @Size(max = 5000) String body) {}
+
+  record DeleteCommentRequest(@NotNull @Min(0) Long version) {}
+
+  record CommentResponse(
+      UUID id,
+      UUID publicationId,
+      UUID authorId,
+      String body,
+      CommentLifecycle lifecycle,
+      Instant createdAt,
+      Instant updatedAt,
+      long version) {}
+}
