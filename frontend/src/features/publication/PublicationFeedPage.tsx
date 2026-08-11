@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   memberApi,
@@ -30,6 +30,8 @@ function formatFeedDate(value: string) {
 
 export default function PublicationFeedPage({ memberView }: PublicationFeedPageProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get("q") ?? "";
   const [member, setMember] = useState<Member | null>(null);
   const [items, setItems] = useState<Publication[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -49,6 +51,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
       memberRequest,
       publicationApi.feed({
         audience: memberView ? "VIEWER" : "GLOBAL",
+        query,
         signal: controller.signal,
       }),
     ])
@@ -77,7 +80,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
       active = false;
       controller.abort();
     };
-  }, [memberView, navigate]);
+  }, [memberView, navigate, query]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
@@ -87,6 +90,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
       const page = await publicationApi.feed({
         audience: memberView ? "VIEWER" : "GLOBAL",
         cursor: nextCursor,
+        query,
       });
       setItems((current) => {
         const existingIds = new Set(current.map((item) => item.id));
@@ -126,6 +130,26 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
         </Link>
       </header>
 
+      <form
+        className="feed-search surface-card"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const value = String(new FormData(event.currentTarget).get("q") ?? "").trim();
+          setSearchParams(value ? { q: value } : {});
+        }}
+      >
+        <label>
+          게시글 검색
+          <input name="q" defaultValue={query} placeholder="제목·내용을 검색해 주세요" />
+        </label>
+        <button className="button button-soft" type="submit">검색</button>
+        {query ? (
+          <button className="button button-soft" type="button" onClick={() => setSearchParams({})}>
+            초기화
+          </button>
+        ) : null}
+      </form>
+
       <nav className="feed-view-tabs" aria-label="피드 보기 전환">
         <Link className={memberView ? "active" : ""} to="/feed">내 피드</Link>
         <Link className={!memberView ? "active" : ""} to="/feed/guest">전체 공개</Link>
@@ -134,8 +158,8 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
       {error ? <p className="form-error feed-error" role="alert">{error}</p> : null}
       {items.length === 0 ? (
         <section className="surface-card feed-empty">
-          <h2>아직 표시할 글이 없습니다</h2>
-          <p>첫 번째 반려생활 이야기를 나눠 보세요.</p>
+          <h2>{query ? "검색 결과가 없습니다" : "아직 표시할 글이 없습니다"}</h2>
+          <p>{query ? "다른 검색어로 다시 시도해 보세요." : "첫 번째 반려생활 이야기를 나눠 보세요."}</p>
           <Link className="button button-soft" to={memberView ? "/posts/new" : "/login?next=/posts/new"}>
             글 작성하기
           </Link>
