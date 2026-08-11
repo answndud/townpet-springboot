@@ -16,7 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/v1/publications/{publicationId}/reaction")
+@RequestMapping({
+  "/api/v1/publications/{publicationId}/reaction",
+  "/api/posts/{publicationId}/reaction"
+})
 class ReactionController {
   private final ReactionService reactions;
 

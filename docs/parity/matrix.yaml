@@ -294,7 +294,7 @@ apiRoutes:
   - path: /api/posts/{id}/comments
     methods: [GET, POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/posts/{id}/content
     methods: [GET]
     legacy: true
@@ -310,7 +310,7 @@ apiRoutes:
   - path: /api/posts/{id}/reaction
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/posts/{id}
     methods: [GET, PATCH, DELETE]
     legacy: true
