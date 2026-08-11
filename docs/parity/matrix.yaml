@@ -68,7 +68,7 @@ pages:
     spring: adapter
   - path: /corrections/new
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /feed
     legacy: true
     spring: verified
@@ -246,7 +246,7 @@ apiRoutes:
   - path: /api/corrections
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/feed/guest
     methods: [GET]
     legacy: true
@@ -254,11 +254,11 @@ apiRoutes:
   - path: /api/feed/personalization
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/guest/step-up
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/health
     methods: [GET]
     legacy: true
@@ -270,7 +270,7 @@ apiRoutes:
   - path: /api/lounges/breeds/{breedCode}/groupbuys
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/lounges/breeds/{breedCode}/posts
     methods: [GET]
     legacy: true
@@ -338,7 +338,7 @@ apiRoutes:
   - path: /api/profile/audience-segments
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/reports/{id}
     methods: [PATCH]
     legacy: true

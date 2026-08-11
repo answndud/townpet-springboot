@@ -146,6 +146,7 @@ export default function App() {
         <Route path="/bookmarks" element={<PersonalPostsPage saved />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/search/guest" element={<SearchPage guest />} />
+        <Route path="/corrections/new" element={<PublicationCreatePage />} />
         <Route path="/best" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/boards/adoption" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/towns/:townSlug" element={<PublicationFeedPage memberView={false} />} />
