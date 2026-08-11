@@ -382,4 +382,4 @@ apiRoutes:
   - path: /api/viewer-shell
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
