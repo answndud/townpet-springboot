@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/v1/trust-reports")
+@RequestMapping({"/api/v1/trust-reports", "/api/reports"})
 class TrustReportController {
   private final TrustReportRepository reports;
 
