@@ -12,4 +12,6 @@ interface PublicationRepository extends JpaRepository<PublicationEntity, UUID> {
 
   List<PublicationEntity> findByAuthorMemberIdAndLifecycleOrderByCreatedAtDesc(
       UUID authorMemberId, PublicationLifecycle lifecycle);
+
+  List<PublicationEntity> findByAuthorMemberId(UUID authorMemberId);
 }

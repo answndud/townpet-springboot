@@ -2,5 +2,6 @@ package com.townpet.publication;
 
 enum PublicationLifecycle {
   ACTIVE,
-  DELETED
+  DELETED,
+  HIDDEN
 }
