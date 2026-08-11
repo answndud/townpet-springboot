@@ -69,6 +69,10 @@ public class CredentialEntity {
     return enabled;
   }
 
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+
   public String getRole() {
     return role;
   }

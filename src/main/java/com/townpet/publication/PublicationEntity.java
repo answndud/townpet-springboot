@@ -135,4 +135,14 @@ class PublicationEntity {
     this.lifecycle = PublicationLifecycle.ACTIVE;
     this.updatedAt = changedAt;
   }
+
+  void hide(Instant changedAt) {
+    this.lifecycle = PublicationLifecycle.HIDDEN;
+    this.updatedAt = changedAt;
+  }
+
+  void makeVisible(Instant changedAt) {
+    this.lifecycle = PublicationLifecycle.ACTIVE;
+    this.updatedAt = changedAt;
+  }
 }
