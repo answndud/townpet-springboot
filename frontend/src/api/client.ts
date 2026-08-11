@@ -103,6 +103,28 @@ export type FeedPage = {
   };
 };
 
+export type MarketplaceListingKind = "SELL" | "RENT" | "SHARE";
+export type MarketplaceListingStatus = "AVAILABLE" | "RESERVED" | "COMPLETED" | "CANCELLED";
+export type MarketplaceListing = {
+  id: string;
+  ownerMemberId: string;
+  kind: MarketplaceListingKind;
+  status: MarketplaceListingStatus;
+  title: string;
+  description: string;
+  priceKrw: number | null;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+};
+
+export type CreateMarketplaceListingInput = {
+  kind: MarketplaceListingKind;
+  title: string;
+  description: string;
+  priceKrw: number | null;
+};
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -335,5 +357,42 @@ export const publicationApi = {
     const search = new URLSearchParams({ audience, limit: String(limit) });
     if (cursor) search.set("cursor", cursor);
     return apiFetch<FeedPage>(`/api/v1/feed?${search}`, { signal });
+  },
+};
+
+export const marketplaceApi = {
+  list(kind?: MarketplaceListingKind, limit = 20, signal?: AbortSignal) {
+    const search = new URLSearchParams({ limit: String(limit) });
+    if (kind) search.set("kind", kind);
+    return apiFetch<MarketplaceListing[]>(`/api/v1/marketplace/listings?${search}`, { signal });
+  },
+  detail(listingId: string, signal?: AbortSignal) {
+    return apiFetch<MarketplaceListing>(
+      `/api/v1/marketplace/listings/${encodeURIComponent(listingId)}`,
+      { signal },
+    );
+  },
+  create(input: CreateMarketplaceListingInput) {
+    return mutate<MarketplaceListing>('/api/v1/marketplace/listings', {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    });
+  },
+  update(listingId: string, input: CreateMarketplaceListingInput & { version: number }) {
+    return mutate<MarketplaceListing>(
+      `/api/v1/marketplace/listings/${encodeURIComponent(listingId)}`,
+      { method: "PATCH", headers: jsonHeaders, body: JSON.stringify(input) },
+    );
+  },
+  changeStatus(listingId: string, status: MarketplaceListingStatus, version: number) {
+    return mutate<MarketplaceListing>(
+      `/api/v1/marketplace/listings/${encodeURIComponent(listingId)}/status`,
+      {
+        method: "PATCH",
+        headers: jsonHeaders,
+        body: JSON.stringify({ status, version }),
+      },
+    );
   },
 };
