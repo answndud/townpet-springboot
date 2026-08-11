@@ -362,7 +362,7 @@ apiRoutes:
   - path: /api/security/csp-report
     methods: [GET, POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/upload/client
     methods: [POST]
     legacy: true
