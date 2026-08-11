@@ -503,6 +503,11 @@ export const guestApi = {
       body: JSON.stringify(input),
     });
   },
+  createComment(publicationId: string, input: { password: string; body: string; parentCommentId?: string }) {
+    return mutate<{ id: string }>(`/api/guest/posts/${encodeURIComponent(publicationId)}/comments`, {
+      method: "POST", headers: jsonHeaders, body: JSON.stringify(input),
+    });
+  },
 };
 
 export const marketplaceApi = {
