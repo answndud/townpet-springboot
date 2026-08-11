@@ -275,6 +275,8 @@ export const memberApi = {
   profile(memberId: string, signal?: AbortSignal) {
     return apiFetch<PublicMember>(`/api/v1/members/${encodeURIComponent(memberId)}`, { signal });
   },
+  myPosts(signal?: AbortSignal) { return apiFetch<Publication[]>("/api/v1/publications/mine", { signal }); },
+  bookmarks(signal?: AbortSignal) { return apiFetch<string[]>("/api/v1/members/me/bookmarks", { signal }); },
   updateOnboarding(input: OnboardingInput) {
     return mutate<Member>("/api/v1/members/me/onboarding", {
       method: "PUT",

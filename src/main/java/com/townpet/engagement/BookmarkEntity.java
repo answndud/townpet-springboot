@@ -27,6 +27,18 @@ class BookmarkEntity {
 
   protected BookmarkEntity() {}
 
+  UUID getPublicationId() {
+    return publicationId;
+  }
+
+  UUID getMemberId() {
+    return memberId;
+  }
+
+  Instant getCreatedAt() {
+    return createdAt;
+  }
+
   BookmarkEntity(UUID publicationId, UUID memberId) {
     this.id = UuidV7.randomUuid();
     this.publicationId = publicationId;

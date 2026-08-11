@@ -2,6 +2,7 @@ package com.townpet.engagement;
 
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
@@ -44,6 +45,13 @@ class BookmarkService {
       existing.ifPresent(bookmarks::delete);
     }
     return new BookmarkState(active);
+  }
+
+  @Transactional(readOnly = true)
+  List<UUID> list(UUID memberId) {
+    return bookmarks.findAllByMemberIdOrderByCreatedAtDesc(memberId).stream()
+        .map(BookmarkEntity::getPublicationId)
+        .toList();
   }
 
   private void requireAccessiblePublication(UUID publicationId, @Nullable UUID viewerMemberId) {
