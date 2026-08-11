@@ -162,7 +162,7 @@ apiRoutes:
   - path: /api/acquisition/events
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/admin/auth-audits/export
     methods: [GET]
     legacy: true
