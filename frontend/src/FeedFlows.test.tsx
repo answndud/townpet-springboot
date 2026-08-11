@@ -63,7 +63,7 @@ describe("Publication feed journeys", () => {
     expect(await screen.findByRole("heading", { name: "두 번째 전체 글" })).toBeInTheDocument();
     expect(screen.getAllByRole("article")).toHaveLength(2);
     expect(fetchMock).toHaveBeenLastCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&cursor=next-page",
+      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&cursor=next-page",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -102,7 +102,7 @@ describe("Publication feed journeys", () => {
     expect(screen.getByDisplayValue("산책")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "초기화" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&query=%EC%82%B0%EC%B1%85",
+      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&query=%EC%82%B0%EC%B1%85",
       expect.objectContaining({ credentials: "include" }),
     );
   });

@@ -33,6 +33,7 @@ export default function PublicationDetailPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentBody, setCommentBody] = useState("");
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [reaction, setReaction] = useState<Reaction>({ active: false, count: 0 });
@@ -43,6 +44,7 @@ export default function PublicationDetailPage() {
   const [bookmarkSubmitting, setBookmarkSubmitting] = useState(false);
   const [relationship, setRelationship] = useState<Relationship>({ following: false, blocking: false });
   const [relationshipSubmitting, setRelationshipSubmitting] = useState(false);
+  const [shareSubmitting, setShareSubmitting] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -167,9 +169,11 @@ export default function PublicationDetailPage() {
     try {
       const created = await publicationApi.createComment(publication.id, {
         body: commentBody.trim(),
+        ...(replyingTo ? { parentCommentId: replyingTo.id } : {}),
       });
       setComments((current) => [...current, created]);
       setCommentBody("");
+      setReplyingTo(null);
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) {
         navigate(`/login?next=/posts/${publication.id}#comments`, { replace: true });
@@ -230,6 +234,27 @@ export default function PublicationDetailPage() {
     }
   }
 
+  async function sharePublication() {
+    if (!publication || shareSubmitting) return;
+    setShareSubmitting(true);
+    try {
+      const result = await publicationApi.share(publication.id);
+      const shareUrl = `${window.location.origin}${result.path}`;
+      if (navigator.share) {
+        await navigator.share({ title: publication.title, url: shareUrl });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        setMutationError("게시글 링크를 클립보드에 복사했습니다.");
+      }
+    } catch (requestError) {
+      if (!(requestError instanceof DOMException && requestError.name === "AbortError")) {
+        setMutationError("게시글 링크를 공유하지 못했습니다.");
+      }
+    } finally {
+      setShareSubmitting(false);
+    }
+  }
+
   if (error) {
     return (
       <main className="page publication-page publication-state-page">
@@ -270,6 +295,9 @@ export default function PublicationDetailPage() {
             </>
           ) : null}
           <Link className="button button-soft" to="/posts/new">새 글 작성</Link>
+          <button className="button button-soft" type="button" disabled={shareSubmitting} onClick={sharePublication}>
+            {shareSubmitting ? "공유 중..." : "공유"}
+          </button>
           {viewerId && viewerId !== publication.authorId ? <button className="button button-soft" type="button" onClick={reportPublication}>신고</button> : null}
         </div>
       </div>
@@ -380,7 +408,13 @@ export default function PublicationDetailPage() {
                       삭제
                     </button>
                   ) : null}
+                  {viewerId ? (
+                    <button className="text-button" type="button" onClick={() => setReplyingTo(comment)}>
+                      답글
+                    </button>
+                  ) : null}
                 </div>
+                {comment.parentCommentId ? <span className="publication-comment-reply-label">답글</span> : null}
                 <p>{comment.body}</p>
               </article>
             ))}
@@ -388,6 +422,12 @@ export default function PublicationDetailPage() {
         )}
         {viewerId ? (
           <form className="publication-comment-form" onSubmit={createComment} noValidate>
+            {replyingTo ? (
+              <div className="publication-replying">
+                <span>{replyingTo.body.slice(0, 60)}에 답글 작성 중</span>
+                <button className="text-button" type="button" onClick={() => setReplyingTo(null)}>취소</button>
+              </div>
+            ) : null}
             <label>
               댓글
               <textarea

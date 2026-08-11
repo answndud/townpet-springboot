@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.lang.Nullable;
 
 @Entity
 @Table(name = "engagement_comment")
@@ -21,6 +22,8 @@ class CommentEntity {
 
   @Column(nullable = false)
   private UUID authorMemberId;
+
+  @Nullable private UUID parentCommentId;
 
   @Column(nullable = false, length = 5000)
   private String body;
@@ -39,10 +42,11 @@ class CommentEntity {
 
   protected CommentEntity() {}
 
-  CommentEntity(UUID publicationId, UUID authorMemberId, String body) {
+  CommentEntity(UUID publicationId, UUID authorMemberId, @Nullable UUID parentCommentId, String body) {
     this.id = UuidV7.randomUuid();
     this.publicationId = publicationId;
     this.authorMemberId = authorMemberId;
+    this.parentCommentId = parentCommentId;
     this.body = body;
     this.lifecycle = CommentLifecycle.ACTIVE;
     this.createdAt = Instant.now();
@@ -69,6 +73,11 @@ class CommentEntity {
 
   UUID getAuthorMemberId() {
     return authorMemberId;
+  }
+
+  @Nullable
+  UUID getParentCommentId() {
+    return parentCommentId;
   }
 
   String getBody() {
