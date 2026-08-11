@@ -148,7 +148,7 @@ pages:
     spring: verified
   - path: /towns/{townSlug}
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /towns/{townSlug}/{sectionSlug}
     legacy: true
     spring: adapter
