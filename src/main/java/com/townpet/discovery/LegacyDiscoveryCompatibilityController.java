@@ -3,7 +3,6 @@ package com.townpet.discovery;
 import com.townpet.member.api.MemberDirectory;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -47,11 +46,6 @@ class LegacyDiscoveryCompatibilityController {
       segments.add("LOCAL");
     }
     return new AudienceResponse(List.copyOf(segments));
-  }
-
-  @PostMapping("/api/guest/step-up")
-  ResponseEntity<Void> stepUp(@RequestBody(required = false) Object ignored) {
-    return ResponseEntity.noContent().build();
   }
 
   record AudienceResponse(List<String> segments) {}
