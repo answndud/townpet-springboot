@@ -122,6 +122,7 @@ class LostFoundAlertController {
   private static AlertResponse toResponse(LostFoundAlertService.AlertView alert) {
     return new AlertResponse(
         alert.id(),
+        alert.reporterMemberId(),
         alert.kind(),
         alert.status(),
         alert.title(),
@@ -151,6 +152,7 @@ class LostFoundAlertController {
 
   record AlertResponse(
       UUID id,
+      UUID reporterMemberId,
       LostFoundAlertKind kind,
       LostFoundAlertStatus status,
       String title,
