@@ -53,6 +53,33 @@ class MarketplaceListingControllerTest {
   @Autowired MockMvc mockMvc;
 
   @Test
+  void groupBuyCompatibilityUsesMarketplaceLifecycle() throws Exception {
+    Cookie member = login("demo-member-1@townpet.local");
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/api/lounges/breeds/golden/groupbuys")
+                    .cookie(member)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"title\":\"Golden food group buy\",\"description\":\"Shared order\",\"priceKrw\":32000}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.kind").value("GROUP_BUY"))
+            .andExpect(jsonPath("$.status").value("AVAILABLE"))
+            .andReturn();
+    String id =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(result.getResponse().getContentAsString())
+            .path("id")
+            .asText();
+    mockMvc
+        .perform(get("/api/lounges/breeds/golden/groupbuys"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(id));
+  }
+
+  @Test
   void memberCreatesSellListingAndSharePricePolicyIsRejected() throws Exception {
     Cookie member = login("demo-member-1@townpet.local");
     MvcResult result =

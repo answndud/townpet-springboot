@@ -13,6 +13,7 @@ const KIND_LABELS: Record<MarketplaceListingKind, string> = {
   SELL: "판매",
   RENT: "대여",
   SHARE: "나눔",
+  GROUP_BUY: "공동구매",
 };
 const STATUS_LABELS: Record<MarketplaceListingStatus, string> = {
   AVAILABLE: "판매 중",
@@ -146,10 +147,10 @@ export function MarketplaceDetailPage() {
   );
 }
 
-export function MarketplaceFormPage({ edit = false }: { edit?: boolean }) {
+export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { edit?: boolean; initialKind?: MarketplaceListingKind }) {
   const { listingId = "" } = useParams();
   const navigate = useNavigate();
-  const [kind, setKind] = useState<MarketplaceListingKind>("SELL");
+  const [kind, setKind] = useState<MarketplaceListingKind>(initialKind);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
