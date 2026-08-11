@@ -68,6 +68,8 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers("/api/acquisition/events")
                   .permitAll()
+                  .requestMatchers("/api/guest/step-up")
+                  .permitAll()
                   .requestMatchers("/api/v1/auth/password-resets/**")
                   .permitAll()
                   .requestMatchers("/api/v1/auth/email-verifications/**")
