@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi, memberApi } from "./api/client";
 import type { Member } from "./api/client";
@@ -8,11 +8,21 @@ export default function ProfilePage() {
   const [member, setMember] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [savingVisibility, setSavingVisibility] = useState(false);
+  const [visibilitySaved, setVisibilitySaved] = useState(false);
+  const [showPublicPosts, setShowPublicPosts] = useState(true);
+  const [showPublicComments, setShowPublicComments] = useState(true);
+  const [showPublicPets, setShowPublicPets] = useState(true);
 
   useEffect(() => {
     memberApi
       .current()
-      .then(setMember)
+      .then((current) => {
+        setMember(current);
+        setShowPublicPosts(current.showPublicPosts);
+        setShowPublicComments(current.showPublicComments);
+        setShowPublicPets(current.showPublicPets);
+      })
       .catch(() => setError("로그인이 만료되었습니다."));
   }, []);
 
@@ -25,6 +35,28 @@ export default function ProfilePage() {
     } catch {
       setError("로그아웃 요청을 처리하지 못했습니다.");
       setLoggingOut(false);
+    }
+  }
+
+  async function saveVisibility(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!member) return;
+    setSavingVisibility(true);
+    setVisibilitySaved(false);
+    setError(null);
+    try {
+      const updated = await memberApi.updateProfile({
+        bio: member.bio ?? "",
+        showPublicPosts,
+        showPublicComments,
+        showPublicPets,
+      });
+      setMember(updated);
+      setVisibilitySaved(true);
+    } catch {
+      setError("공개 범위 설정을 저장하지 못했습니다.");
+    } finally {
+      setSavingVisibility(false);
     }
   }
 
@@ -53,6 +85,14 @@ export default function ProfilePage() {
             </div>
             <h2>반려동물</h2>
             <ul>{member.pets.map((pet) => <li key={pet.id}>{pet.name} · {pet.species}</li>)}</ul>
+            <form className="form-section" onSubmit={saveVisibility}>
+              <h2>공개 범위</h2>
+              <label><input type="checkbox" checked={showPublicPosts} onChange={(event) => setShowPublicPosts(event.target.checked)} /> 게시글 공개</label>
+              <label><input type="checkbox" checked={showPublicComments} onChange={(event) => setShowPublicComments(event.target.checked)} /> 댓글 활동 공개</label>
+              <label><input type="checkbox" checked={showPublicPets} onChange={(event) => setShowPublicPets(event.target.checked)} /> 반려동물 공개</label>
+              {visibilitySaved ? <p className="form-success" role="status">공개 범위가 저장되었습니다.</p> : null}
+              <button className="button button-soft" type="submit" disabled={savingVisibility}>{savingVisibility ? "저장 중..." : "공개 범위 저장"}</button>
+            </form>
           </>
         ) : null}
         <div className="profile-actions">

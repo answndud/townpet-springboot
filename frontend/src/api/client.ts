@@ -32,6 +32,9 @@ export type Member = {
   bio: string | null;
   neighborhoodId: string | null;
   pets: Pet[];
+  showPublicPosts: boolean;
+  showPublicComments: boolean;
+  showPublicPets: boolean;
 };
 
 export type PublicMember = Member;
@@ -280,6 +283,13 @@ export const memberApi = {
   bookmarks(signal?: AbortSignal) { return apiFetch<string[]>("/api/v1/members/me/bookmarks", { signal }); },
   updateOnboarding(input: OnboardingInput) {
     return mutate<Member>("/api/v1/members/me/onboarding", {
+      method: "PUT",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    });
+  },
+  updateProfile(input: { bio: string; showPublicPosts: boolean; showPublicComments: boolean; showPublicPets: boolean }) {
+    return mutate<Member>("/api/v1/members/me/profile", {
       method: "PUT",
       headers: jsonHeaders,
       body: JSON.stringify(input),
