@@ -881,10 +881,13 @@ components:
           pattern: '^[a-fA-F0-9]{64}$'
     MediaUpload:
       type: object
-      required: [id, objectKey, checksumSha256, contentType, byteSize, status, expiresAt, version]
+      required: [id, uploadUrl, objectKey, checksumSha256, contentType, byteSize, status, expiresAt, version]
       properties:
         id:
           $ref: '#/components/schemas/Uuid'
+        uploadUrl:
+          type: string
+          format: uri
         objectKey:
           type: string
         checksumSha256:
