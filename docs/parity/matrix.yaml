@@ -14,7 +14,7 @@ pages:
     spring: pending
   - path: /admin
     legacy: true
-    spring: pending
+    spring: verified
   - path: /admin/auth-audits
     legacy: true
     spring: pending
@@ -38,7 +38,7 @@ pages:
     spring: pending
   - path: /admin/ops
     legacy: true
-    spring: pending
+    spring: verified
   - path: /admin/personalization
     legacy: true
     spring: pending
