@@ -110,6 +110,17 @@ public class PublicationFeed {
       @Nullable String encodedCursor,
       int limit,
       @Nullable String searchQuery) {
+    return list(viewerMemberId, includeViewerNeighborhood, encodedCursor, limit, searchQuery, null);
+  }
+
+  @Transactional(readOnly = true)
+  public Page list(
+      @Nullable UUID viewerMemberId,
+      boolean includeViewerNeighborhood,
+      @Nullable String encodedCursor,
+      int limit,
+      @Nullable String searchQuery,
+      @Nullable String scopeFilter) {
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
     UUID viewerNeighborhoodId =
         viewerMemberId == null || !includeViewerNeighborhood
@@ -122,6 +133,13 @@ public class PublicationFeed {
     Condition visible = SCOPE.eq("GLOBAL");
     if (viewerNeighborhoodId != null) {
       visible = visible.or(SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId)));
+    }
+    if (scopeFilter != null && !scopeFilter.isBlank()) {
+      if (scopeFilter.equalsIgnoreCase("LOCAL")) {
+        visible = SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId));
+      } else if (scopeFilter.equalsIgnoreCase("GLOBAL")) {
+        visible = SCOPE.eq("GLOBAL");
+      }
     }
     Condition condition = LIFECYCLE.eq("ACTIVE").and(visible);
     if (searchQuery != null && !searchQuery.isBlank()) {

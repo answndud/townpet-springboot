@@ -32,6 +32,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
+  const scope = memberView && searchParams.get("scope") === "LOCAL" ? "LOCAL" : "ALL";
   const [member, setMember] = useState<Member | null>(null);
   const [items, setItems] = useState<Publication[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -52,6 +53,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
       publicationApi.feed({
         audience: memberView ? "VIEWER" : "GLOBAL",
         query,
+        scope,
         signal: controller.signal,
       }),
     ])
@@ -80,7 +82,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
       active = false;
       controller.abort();
     };
-  }, [memberView, navigate, query]);
+  }, [memberView, navigate, query, scope]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
@@ -91,6 +93,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
         audience: memberView ? "VIEWER" : "GLOBAL",
         cursor: nextCursor,
         query,
+        scope,
       });
       setItems((current) => {
         const existingIds = new Set(current.map((item) => item.id));
@@ -154,6 +157,25 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
         <Link className={memberView ? "active" : ""} to="/feed">내 피드</Link>
         <Link className={!memberView ? "active" : ""} to="/feed/guest">전체 공개</Link>
       </nav>
+
+      {memberView ? (
+        <div className="feed-scope-tabs" role="group" aria-label="게시글 범위">
+          <button
+            className={scope === "ALL" ? "market-filter active" : "market-filter"}
+            type="button"
+            onClick={() => setSearchParams(query ? { q: query } : {})}
+          >
+            전체
+          </button>
+          <button
+            className={scope === "LOCAL" ? "market-filter active" : "market-filter"}
+            type="button"
+            onClick={() => setSearchParams(query ? { q: query, scope: "LOCAL" } : { scope: "LOCAL" })}
+          >
+            내 동네
+          </button>
+        </div>
+      ) : null}
 
       {error ? <p className="form-error feed-error" role="alert">{error}</p> : null}
       {items.length === 0 ? (
