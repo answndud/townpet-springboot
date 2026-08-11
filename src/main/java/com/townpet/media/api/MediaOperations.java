@@ -8,5 +8,6 @@ public interface MediaOperations {
 
   CleanupReport cleanupExpiredUploads(Instant now);
 
-  record CleanupReport(int candidateCount, long candidateBytes, int deletedCount, Instant observedAt) {}
+  record CleanupReport(
+      int candidateCount, long candidateBytes, int deletedCount, Instant observedAt) {}
 }

@@ -17,7 +17,8 @@ class LostFoundExactLocationService {
 
   @Transactional
   Optional<ExactLocation> getForAlertOwner(UUID sightingId, UUID viewerMemberId) {
-    return jdbc.query(
+    return jdbc
+        .query(
             "SELECT s.id, ST_Y(s.exact_location::geometry) AS latitude, "
                 + "ST_X(s.exact_location::geometry) AS longitude "
                 + "FROM lost_found_sighting_report s "

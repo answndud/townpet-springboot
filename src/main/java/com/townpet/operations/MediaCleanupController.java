@@ -17,8 +17,7 @@ class MediaCleanupController {
   }
 
   @PostMapping("/uploads/cleanup")
-  MediaOperations.CleanupReport cleanup(
-      @RequestParam(defaultValue = "true") boolean dryRun) {
+  MediaOperations.CleanupReport cleanup(@RequestParam(defaultValue = "true") boolean dryRun) {
     Instant now = Instant.now();
     return dryRun ? media.inspectExpiredUploads(now) : media.cleanupExpiredUploads(now);
   }

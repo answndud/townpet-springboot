@@ -3,8 +3,8 @@ package com.townpet.lostfound;
 import com.townpet.common.UuidV7;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -63,7 +63,8 @@ class LostFoundSightingService {
 
   @Transactional(readOnly = true)
   Optional<SightingView> find(UUID id) {
-    return jdbc.query(
+    return jdbc
+        .query(
             "SELECT id, alert_id, reporter_member_id, seen_at, description, "
                 + "ST_Y(approx_location::geometry) AS latitude, "
                 + "ST_X(approx_location::geometry) AS longitude, created_at "

@@ -1,7 +1,7 @@
 package com.townpet.media;
 
-import com.townpet.publication.api.PublicationAccess;
 import com.townpet.media.api.MediaOperations;
+import com.townpet.publication.api.PublicationAccess;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -74,7 +74,10 @@ class MediaService implements MediaOperations {
     expired.forEach(asset -> storage.delete(asset.getObjectKey()));
     assets.deleteAll(expired);
     return new CleanupReport(
-        expired.size(), expired.stream().mapToLong(UploadAssetEntity::getByteSize).sum(), expired.size(), now);
+        expired.size(),
+        expired.stream().mapToLong(UploadAssetEntity::getByteSize).sum(),
+        expired.size(),
+        now);
   }
 
   @Transactional
