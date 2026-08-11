@@ -378,7 +378,7 @@ apiRoutes:
   - path: /api/users/{id}/relation
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/viewer-shell
     methods: [GET]
     legacy: true
