@@ -45,6 +45,7 @@ export default function PublicationDetailPage() {
   const [relationship, setRelationship] = useState<Relationship>({ following: false, blocking: false });
   const [relationshipSubmitting, setRelationshipSubmitting] = useState(false);
   const [shareSubmitting, setShareSubmitting] = useState(false);
+  const [viewCount, setViewCount] = useState<number | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -60,7 +61,10 @@ export default function PublicationDetailPage() {
     setRelationship({ following: false, blocking: false });
     publicationApi
       .detail(publicationId, controller.signal)
-      .then(setPublication)
+      .then((nextPublication) => {
+        setPublication(nextPublication);
+        void publicationApi.view(publicationId).then((result) => setViewCount(result.viewCount)).catch(() => undefined);
+      })
       .catch((requestError: unknown) => {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
         setError(
@@ -320,6 +324,7 @@ export default function PublicationDetailPage() {
               <p>{formatDate(publication.createdAt)}</p>
             </div>
           </div>
+          {viewCount !== null ? <span className="publication-view-count">조회 {viewCount.toLocaleString("ko-KR")}</span> : null}
         </header>
         <div className="publication-body">{publication.body}</div>
         <div className="publication-reaction-row">
