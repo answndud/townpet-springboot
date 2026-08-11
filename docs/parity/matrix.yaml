@@ -366,11 +366,11 @@ apiRoutes:
   - path: /api/upload/client
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/upload
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/users/{id}/profile-summary
     methods: [GET]
     legacy: true
