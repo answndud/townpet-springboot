@@ -4,6 +4,7 @@ import com.townpet.common.UuidV7;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -80,6 +81,31 @@ class LostFoundSightingService {
             id)
         .stream()
         .findFirst();
+  }
+
+  @Transactional(readOnly = true)
+  List<SightingView> listForAlert(UUID alertId, int limit) {
+    if (alerts.find(alertId).isEmpty()) {
+      throw new LostFoundAlertNotFoundException();
+    }
+    return jdbc.query(
+        "SELECT id, alert_id, reporter_member_id, seen_at, description, "
+            + "ST_Y(approx_location::geometry) AS latitude, "
+            + "ST_X(approx_location::geometry) AS longitude, created_at "
+            + "FROM lost_found_sighting_report WHERE alert_id = ? "
+            + "ORDER BY seen_at DESC, id DESC LIMIT ?",
+        (rs, rowNum) ->
+            new SightingView(
+                rs.getObject("id", UUID.class),
+                rs.getObject("alert_id", UUID.class),
+                rs.getObject("reporter_member_id", UUID.class),
+                rs.getTimestamp("seen_at").toInstant(),
+                rs.getString("description"),
+                rs.getDouble("latitude"),
+                rs.getDouble("longitude"),
+                rs.getTimestamp("created_at").toInstant()),
+        alertId,
+        limit);
   }
 
   record SightingView(
