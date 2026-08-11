@@ -508,6 +508,16 @@ export const guestApi = {
       method: "POST", headers: jsonHeaders, body: JSON.stringify(input),
     });
   },
+  updatePublication(publicationId: string, input: { password: string; title: string; body: string; version: number }) {
+    return mutate<{ id: string; title: string; body: string; version: number }>(`/api/guest/posts/${encodeURIComponent(publicationId)}`, {
+      method: "PATCH", headers: jsonHeaders, body: JSON.stringify(input),
+    });
+  },
+  deletePublication(publicationId: string, input: { password: string; version: number }) {
+    return mutate<void>(`/api/guest/posts/${encodeURIComponent(publicationId)}`, {
+      method: "DELETE", headers: jsonHeaders, body: JSON.stringify(input),
+    });
+  },
 };
 
 export const marketplaceApi = {

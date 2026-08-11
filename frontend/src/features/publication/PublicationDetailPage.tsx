@@ -37,6 +37,10 @@ export default function PublicationDetailPage() {
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentBody, setCommentBody] = useState("");
   const [guestPassword, setGuestPassword] = useState("");
+  const [guestManagePassword, setGuestManagePassword] = useState("");
+  const [guestEditing, setGuestEditing] = useState(false);
+  const [guestTitle, setGuestTitle] = useState("");
+  const [guestBody, setGuestBody] = useState("");
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -67,6 +71,8 @@ export default function PublicationDetailPage() {
       .detail(publicationId, controller.signal)
       .then((nextPublication) => {
         setPublication(nextPublication);
+        setGuestTitle(nextPublication.title);
+        setGuestBody(nextPublication.body);
         void publicationApi.view(publicationId).then((result) => setViewCount(result.viewCount)).catch(() => undefined);
       })
       .catch((requestError: unknown) => {
@@ -231,6 +237,31 @@ export default function PublicationDetailPage() {
     }
   }
 
+  async function updateGuestPublication(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!publication || guestManagePassword.length < 8 || !guestTitle.trim() || !guestBody.trim()) return;
+    try {
+      const updated = await guestApi.updatePublication(publication.id, {
+        password: guestManagePassword, title: guestTitle.trim(), body: guestBody.trim(), version: publication.version,
+      });
+      setPublication((current) => current ? { ...current, title: updated.title, body: updated.body, version: updated.version } : current);
+      setGuestEditing(false);
+      setMutationError("비회원 게시글을 수정했습니다.");
+    } catch (requestError) {
+      setMutationError(requestError instanceof ApiError && requestError.status === 409 ? "다른 곳에서 게시글이 변경되었습니다." : "비회원 게시글을 수정하지 못했습니다.");
+    }
+  }
+
+  async function deleteGuestPublication() {
+    if (!publication || guestManagePassword.length < 8 || !window.confirm("비회원 게시글을 삭제할까요?")) return;
+    try {
+      await guestApi.deletePublication(publication.id, { password: guestManagePassword, version: publication.version });
+      navigate("/feed/guest", { replace: true });
+    } catch (requestError) {
+      setMutationError(requestError instanceof ApiError && requestError.status === 409 ? "다른 곳에서 게시글이 변경되었습니다." : "비회원 게시글을 삭제하지 못했습니다.");
+    }
+  }
+
   async function reportPublication() {
     if (!publication || !window.confirm("이 게시글을 신고할까요?")) return;
     try {
@@ -301,6 +332,10 @@ export default function PublicationDetailPage() {
               </button>
             </>
           ) : null}
+          {guestView ? <>
+            <button className="button button-soft" type="button" onClick={() => setGuestEditing((current) => !current)}>{guestEditing ? "수정 취소" : "비회원 수정"}</button>
+            <button className="button button-danger" type="button" onClick={() => void deleteGuestPublication()}>비회원 삭제</button>
+          </> : null}
           <Link className="button button-soft" to="/posts/new">새 글 작성</Link>
           <button className="button button-soft" type="button" disabled={shareSubmitting} onClick={sharePublication}>
             {shareSubmitting ? "공유 중..." : "공유"}
@@ -329,7 +364,14 @@ export default function PublicationDetailPage() {
           </div>
           {viewCount !== null ? <span className="publication-view-count">조회 {viewCount.toLocaleString("ko-KR")}</span> : null}
         </header>
-        <div className="publication-body">{publication.body}</div>
+        {guestEditing ? (
+          <form className="publication-guest-edit" onSubmit={updateGuestPublication}>
+            <label>관리 비밀번호<input type="password" minLength={8} value={guestManagePassword} onChange={(event) => setGuestManagePassword(event.target.value)} /></label>
+            <label>제목<input value={guestTitle} onChange={(event) => setGuestTitle(event.target.value)} /></label>
+            <label>본문<textarea value={guestBody} onChange={(event) => setGuestBody(event.target.value)} /></label>
+            <button className="button button-primary" type="submit" disabled={guestManagePassword.length < 8}>수정 저장</button>
+          </form>
+        ) : <div className="publication-body">{publication.body}</div>}
         <div className="publication-reaction-row">
           {viewerId ? (
             <button
