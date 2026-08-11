@@ -169,7 +169,8 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const priceKrw = kind === "SHARE" ? null : Number(price);
-    if (!title.trim() || !description.trim() || (kind !== "SHARE" && (!Number.isInteger(priceKrw) || priceKrw < 0))) { setError("제목, 설명과 가격을 확인해 주세요."); return; }
+    const invalidPrice = kind !== "SHARE" && (priceKrw === null || !Number.isInteger(priceKrw) || priceKrw < 0);
+    if (!title.trim() || !description.trim() || invalidPrice) { setError("제목, 설명과 가격을 확인해 주세요."); return; }
     setSubmitting(true); setError(null);
     try {
       const input = { kind, title: title.trim(), description: description.trim(), priceKrw };
