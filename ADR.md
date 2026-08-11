@@ -586,9 +586,9 @@ TownPet은 공통 게시 기능 외에도 인증, 반려동물·동네 프로필
 - module 간 허용 의존성과 synchronous/event interaction matrix를 작성해야 한다.
 - `localguide`와 `welfare` 내부 subtype이 독립 상태 머신으로 커질 경우 split 기준을 정해야 한다.
 
-## ADR-0012 - OpenAPI 3.1 Contract-first REST API를 사용한다
+## ADR-0012 - [Superseded] OpenAPI 3.1 Contract-first REST API를 사용한다
 
-- 상태: accepted
+- 상태: superseded by ADR-0020
 - 날짜: 2026-08-10
 - 근거 유형: explicit
 
@@ -647,6 +647,26 @@ OpenAPI 3.1 문서를 source of truth로 사용하는 `/api/v1/**` REST API를 �
 - OpenAPI generator와 Spring Boot 4 호환 버전을 검증해야 한다.
 - 각 legacy route를 신규 operationId에 매핑하는 compatibility matrix가 필요하다.
 - idempotency record 보존 기간과 응답 재생 범위를 command별로 정해야 한다.
+
+## ADR-0020 - 별도 OpenAPI 계약 파일과 생성 client를 사용하지 않는다
+
+- 상태: accepted
+- 날짜: 2026-08-11
+- 근거 유형: explicit
+
+### Context
+
+혼자 빠르게 기능을 개발하는 현재 단계에서 OpenAPI 파일, generator, 생성 client와 contract gate가 실제 runtime 기능보다 큰 변경·검증 비용을 만들었다. 현재 frontend는 얇은 수동 fetch client를 사용하고 Spring controller DTO가 이미 실제 HTTP 동작의 근거다.
+
+### Decision
+
+`api/openapi/townpet.yaml`, OpenAPI generator와 생성 transport를 제거한다. HTTP 계약은 Spring controller의 request/response DTO와 `frontend/src/api/client.ts`가 직접 소유한다. 별도 OpenAPI 파일을 다시 만들지 않는다.
+
+### Consequences
+
+- 작은 기능 변경에서 계약 파일·생성·drift 검증 비용이 사라진다.
+- 계약 일관성은 controller/integration test와 frontend typecheck로 확인한다.
+- 외부 소비자용 정식 API 문서가 필요해질 때는 실제 운영 요구와 새 ADR 없이는 재도입하지 않는다.
 
 ## ADR-0013 - PostgreSQL Event Publication Registry로 모듈 이벤트를 내구화한다
 

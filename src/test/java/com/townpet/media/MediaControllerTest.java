@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import jakarta.servlet.http.Cookie;
-import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +35,8 @@ import org.testcontainers.utility.MountableFile;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class MediaControllerTest {
   private static final String CHECKSUM =
-      "721c9525ade2ea8903d343ef25cf68b9bf4ab0aad56bb7b01fbe48d09bc7fcf4";
+      "32461d5bd1773012acef0ba15636752949bd7c2ce50f9172159d9f56cf0dd9af";
+  private static final byte[] JPEG_BYTES = {(byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xd9};
 
   @Container
   static final PostgreSQLContainer<?> POSTGRES =
@@ -58,6 +59,7 @@ class MediaControllerTest {
   @Autowired MockMvc mockMvc;
   @Autowired JdbcTemplate jdbc;
   @Autowired LocalObjectStorage storage;
+  @Autowired MediaService media;
 
   @BeforeEach
   void resetState() {
@@ -71,7 +73,7 @@ class MediaControllerTest {
     Cookie other = login("demo-member-2@townpet.local");
     String publicationId = createPublication(author);
     String assetId = createUpload(author);
-    storage.put(objectKey(assetId), "image/jpeg", "media".getBytes(StandardCharsets.UTF_8));
+    storage.put(objectKey(assetId), "image/jpeg", JPEG_BYTES);
 
     mockMvc
         .perform(
@@ -125,7 +127,7 @@ class MediaControllerTest {
         .isEqualTo(1);
 
     String expiredAssetId = createUpload(author);
-    storage.put(objectKey(expiredAssetId), "image/jpeg", "media".getBytes(StandardCharsets.UTF_8));
+    storage.put(objectKey(expiredAssetId), "image/jpeg", JPEG_BYTES);
     jdbc.update(
         "UPDATE upload_asset SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE id = ?",
         UUID.fromString(expiredAssetId));
@@ -143,6 +145,54 @@ class MediaControllerTest {
                 String.class,
                 UUID.fromString(expiredAssetId)))
         .isEqualTo("UPLOADING");
+    org.assertj.core.api.Assertions.assertThat(media.cleanupExpiredUploads(Instant.now()).deletedCount())
+        .isEqualTo(1);
+    org.assertj.core.api.Assertions.assertThat(media.cleanupExpiredUploads(Instant.now()).deletedCount())
+        .isZero();
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM upload_asset WHERE id = ?",
+                Integer.class,
+                UUID.fromString(expiredAssetId)))
+        .isZero();
+  }
+
+  @Test
+  void moderatorCanAuditThenDeleteExpiredUploads() throws Exception {
+    Cookie author = login("demo-member-1@townpet.local");
+    String assetId = createUpload(author);
+    String key = objectKey(assetId);
+    storage.put(key, "image/jpeg", JPEG_BYTES);
+    jdbc.update(
+        "UPDATE upload_asset SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE id = ?",
+        UUID.fromString(assetId));
+
+    jdbc.update(
+        "UPDATE identity_credential SET password_hash = (SELECT password_hash FROM identity_credential WHERE email = ?) WHERE email = ?",
+        "demo-member-1@townpet.local",
+        "demo-moderator@townpet.local");
+    Cookie moderator = login("demo-moderator@townpet.local");
+    mockMvc
+        .perform(
+            post("/api/v1/operations/media/uploads/cleanup")
+                .param("dryRun", "true")
+                .cookie(moderator)
+                .with(csrf()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.candidateCount").value(1))
+        .andExpect(jsonPath("$.deletedCount").value(0));
+    org.assertj.core.api.Assertions.assertThat(storage.inspect(key)).isPresent();
+
+    mockMvc
+        .perform(
+            post("/api/v1/operations/media/uploads/cleanup")
+                .param("dryRun", "false")
+                .cookie(moderator)
+                .with(csrf()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.candidateCount").value(1))
+        .andExpect(jsonPath("$.deletedCount").value(1));
+    org.assertj.core.api.Assertions.assertThat(storage.inspect(key)).isEmpty();
   }
 
   private String createUpload(Cookie session) throws Exception {
@@ -156,7 +206,7 @@ class MediaControllerTest {
                     .content(
                         "{\"checksumSha256\":\""
                             + CHECKSUM
-                            + "\",\"contentType\":\"image/jpeg\",\"byteSize\":5}"))
+                            + "\",\"contentType\":\"image/jpeg\",\"byteSize\":4}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("UPLOADING"))
             .andReturn();

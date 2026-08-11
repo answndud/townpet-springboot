@@ -18,4 +18,7 @@ class UnavailableObjectStorage implements ObjectStoragePort {
   public Optional<StoredObject> inspect(String objectKey) {
     return Optional.empty();
   }
+
+  @Override
+  public void delete(String objectKey) {}
 }
