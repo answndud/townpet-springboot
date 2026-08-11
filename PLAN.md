@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P3-LOSTFOUND - 활성 alert 공개 목록과 kind filter를 연결한다
+1. P3-LOSTFOUND - 활성 alert 공개 목록에 PostGIS 반경 검색을 연결한다
    - 파일: `src/main/java/com/townpet/lostfound/**`, `src/test/java/com/townpet/lostfound/**`
-   - 변경: 종료되지 않은 alert를 최근 목격 시각순으로 조회하고 `LOST/FOUND` 선택 filter와 limit을 제공한다. 공개 응답은 기존처럼 근사 위치만 포함한다.
+   - 변경: 기존 kind·limit 목록에 latitude·longitude·radiusMeters 선택 조건을 추가하고 `ST_DWithin`으로 근처 활성 alert를 조회한다.
    - 검증: `./gradlew integrationTest --tests '*LostFoundAlertControllerTest*'`
-   - 완료: `ACTIVE` alert만 목록에 나오고 kind·limit이 적용되며, 종료된 alert와 정확 위치는 공개 목록에서 제외된다.
+   - 완료: 반경 조건은 세 좌표 파라미터가 모두 있을 때만 적용되고, 일부 누락·범위 초과 요청은 400으로 거부된다.
 
 ## Backlog
 
