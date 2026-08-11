@@ -32,6 +32,7 @@ import PostSightingsPage from "./PostSightingsPage";
 import AdminBreedsPage from "./AdminBreedsPage";
 import BestPage from "./BestPage";
 import AdminPersonalizationPage from "./AdminPersonalizationPage";
+import AdminModeratorCasePage from "./AdminModeratorCasePage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -172,11 +173,11 @@ export default function App() {
         <Route path="/admin/ops" element={<AdminHomePage />} />
         <Route path="/admin/auth-audits" element={<AdminAuthAuditsPage />} />
         <Route path="/admin/breeds" element={<AdminBreedsPage />} />
-        <Route path="/admin/care-feedbacks" element={<AdminHomePage />} />
+        <Route path="/admin/care-feedbacks" element={<AdminModeratorCasePage />} />
         <Route path="/admin/corrections" element={<AdminCorrectionPage />} />
-        <Route path="/admin/hospital-review-flags" element={<AdminHomePage />} />
+        <Route path="/admin/hospital-review-flags" element={<AdminModeratorCasePage />} />
         <Route path="/admin/moderation-logs" element={<AdminModerationLogsPage />} />
-        <Route path="/admin/moderation/direct" element={<AdminHomePage />} />
+        <Route path="/admin/moderation/direct" element={<AdminModeratorCasePage />} />
         <Route path="/admin/personalization" element={<AdminPersonalizationPage />} />
         <Route path="/admin/policies" element={<LegalPage />} />
         <Route path="/guides" element={<LocalCareListPage />} />

@@ -7,8 +7,8 @@
 ## Active
 
 1. G7-PARITY-HARDEN - 전체 parity와 출시 품질을 마무리한다
-   - 현재: matrix의 `pending`은 0개이며, moderator 운영·discovery adapter·댓글 lifecycle·correction API와 legacy shell route를 반영했다.
-   - 남은 범위: `adapter` 항목의 fidelity를 필요한 사용자 여정별로 높이고, 실제 VPS 복구 리허설을 수행한다.
+   - 현재: matrix의 `pending`은 0개이며, moderator 운영 case queue·discovery adapter·댓글 lifecycle·correction API와 legacy shell route를 반영했다.
+   - 남은 범위: `/api/auth/{nextauth}`와 generic board feed adapter의 최종 정책을 정리하고, 실제 VPS 복구·DNS·TLS 리허설을 수행한다.
    - 완료: 구현 범위와 미구현 범위가 matrix에 정확히 표시되고, clean backend gate·frontend gate·Compose config·복구 evidence를 report에서 재현할 수 있다.
 
 ## Backlog
