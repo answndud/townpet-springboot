@@ -122,6 +122,7 @@ export type LocalResource = {
   updatedAt: string;
 };
 export type Gathering = { id: string; hostMemberId: string; title: string; description: string; location: string; startsAt: string; capacity: number; participantCount: number; status: "ACTIVE" | "CANCELLED"; joined: boolean; version: number };
+export type TrustReportReason = "SPAM" | "ABUSE" | "PRIVACY" | "ILLEGAL" | "OTHER";
 
 export type CreatePublicationInput = {
   title: string;
@@ -307,6 +308,10 @@ export const gatheringApi = {
   join(id: string) { return mutate<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}/participants`, { method: "POST", headers: jsonHeaders }); },
   leave(id: string) { return mutate<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}/participants/me`, { method: "DELETE", headers: jsonHeaders }); },
   cancel(id: string) { return mutate<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}/cancel`, { method: "PATCH", headers: jsonHeaders }); },
+};
+
+export const trustApi = {
+  report(input: { targetType: string; targetId: string; reason: TrustReportReason; detail?: string }) { return mutate("/api/v1/trust-reports", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
 };
 
 export const publicationApi = {

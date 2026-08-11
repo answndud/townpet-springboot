@@ -80,6 +80,10 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers("/api/v1/operations/**")
                   .hasRole("MODERATOR")
+                  .requestMatchers(HttpMethod.GET, "/api/v1/trust-reports/**")
+                  .hasRole("MODERATOR")
+                  .requestMatchers(HttpMethod.PATCH, "/api/v1/trust-reports/**")
+                  .hasRole("MODERATOR")
                   .anyRequest()
                   .authenticated();
             })
