@@ -8,18 +8,6 @@ Legacy TownPet의 관찰 가능한 제품 동작을 Java 25·Spring Boot·Postgr
 
 ## Active
 
-### G2 - Identity·Member·Relationship과 공통 shell을 parity 수준으로 완성한다
-
-- 파일: `src/main/java/com/townpet/identity/`, `member/`, `relationship/`, `catalog/`, `frontend/src/{App.tsx,LoginPage.tsx,OnboardingPage.tsx,ProfilePage.tsx,PublicMemberProfilePage.tsx}`, 관련 migration/test
-- 변경:
-  - Credentials 로그인·로그아웃, 이메일 인증, 비밀번호 재설정, session revoke, guest step-up을 Legacy 흐름과 맞춘다.
-  - register/social login은 현재 범위에서 제외하되 화면·API가 잘못된 진입을 만들지 않게 한다.
-  - onboarding, profile, public profile, follow/block, my-posts, bookmarks/saved, neighborhood·breed·community 선택과 viewer shell을 연결한다.
-  - block·제재·ownership 결과가 profile과 저장 콘텐츠에서 일관되게 보이게 한다. 비회원 profile은 차단하고, 상호 차단 대상 profile 은닉은 member↔relationship 순환을 만들지 않는 facade 설계로 후속 연결한다.
-  - 프로필에서 내 작성글·북마크로 이동하고, unauthenticated direct URL은 login redirect를 유지한다.
-- 검증: `./gradlew test --tests '*Identity*' --tests '*Relationship*'`, `./node_modules/.bin/vitest run src/AuthFlows.test.tsx src/App.test.tsx` (workdir `frontend`), auth/profile/bookmark browser journey.
-- 완료: Guest·MEMBER·MODERATOR의 인증·프로필·관계·저장 콘텐츠 여정이 서버와 React 화면에서 Legacy와 같은 의미로 재현되고, 비회원/차단 프로필 노출 회귀 테스트가 있다.
-
 ### G3 - Publication·Engagement·공통 커뮤니티를 완성한다
 
 - 순서: G2 이후
