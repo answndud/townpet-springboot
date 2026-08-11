@@ -50,6 +50,11 @@ class MediaController {
           media.finalizeUpload(memberId(principal), assetId, request.checksumSha256()));
     } catch (MediaAssetNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (MediaObjectNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Uploaded object is missing");
+    } catch (MediaObjectMismatchException exception) {
+      throw new ResponseStatusException(
+          HttpStatus.UNPROCESSABLE_ENTITY, "Uploaded object does not match metadata");
     } catch (MediaAssetStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not finalizable");
     }
@@ -79,9 +84,10 @@ class MediaController {
     }
   }
 
-  private static MediaResponse toResponse(UploadAssetEntity asset) {
+  private MediaResponse toResponse(UploadAssetEntity asset) {
     return new MediaResponse(
         asset.getId(),
+        media.uploadUrl(asset),
         asset.getObjectKey(),
         asset.getChecksumSha256(),
         asset.getContentType(),
@@ -102,6 +108,7 @@ class MediaController {
 
   record MediaResponse(
       UUID id,
+      String uploadUrl,
       String objectKey,
       String checksumSha256,
       String contentType,

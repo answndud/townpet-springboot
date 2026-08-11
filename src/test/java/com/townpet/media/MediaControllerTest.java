@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import jakarta.servlet.http.Cookie;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ import org.testcontainers.utility.MountableFile;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class MediaControllerTest {
   private static final String CHECKSUM =
-      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+      "721c9525ade2ea8903d343ef25cf68b9bf4ab0aad56bb7b01fbe48d09bc7fcf4";
 
   @Container
   static final PostgreSQLContainer<?> POSTGRES =
@@ -56,6 +57,7 @@ class MediaControllerTest {
 
   @Autowired MockMvc mockMvc;
   @Autowired JdbcTemplate jdbc;
+  @Autowired LocalObjectStorage storage;
 
   @BeforeEach
   void resetState() {
@@ -69,6 +71,7 @@ class MediaControllerTest {
     Cookie other = login("demo-member-2@townpet.local");
     String publicationId = createPublication(author);
     String assetId = createUpload(author);
+    storage.put(objectKey(assetId), "image/jpeg", "media".getBytes(StandardCharsets.UTF_8));
 
     mockMvc
         .perform(
@@ -122,6 +125,7 @@ class MediaControllerTest {
         .isEqualTo(1);
 
     String expiredAssetId = createUpload(author);
+    storage.put(objectKey(expiredAssetId), "image/jpeg", "media".getBytes(StandardCharsets.UTF_8));
     jdbc.update(
         "UPDATE upload_asset SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE id = ?",
         UUID.fromString(expiredAssetId));
@@ -152,7 +156,7 @@ class MediaControllerTest {
                     .content(
                         "{\"checksumSha256\":\""
                             + CHECKSUM
-                            + "\",\"contentType\":\"image/jpeg\",\"byteSize\":1024}"))
+                            + "\",\"contentType\":\"image/jpeg\",\"byteSize\":5}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("UPLOADING"))
             .andReturn();
@@ -160,6 +164,14 @@ class MediaControllerTest {
         .readTree(result.getResponse().getContentAsString())
         .path("id")
         .asText();
+  }
+
+  private String objectKey(String assetId) {
+    return Objects.requireNonNull(
+        jdbc.queryForObject(
+            "SELECT object_key FROM upload_asset WHERE id = ?",
+            String.class,
+            UUID.fromString(assetId)));
   }
 
   private String createPublication(Cookie session) throws Exception {
