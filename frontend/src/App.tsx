@@ -24,6 +24,7 @@ import AdminCorrectionPage from "./AdminCorrectionPage";
 import AdminModerationLogsPage from "./AdminModerationLogsPage";
 import CorrectionCreatePage from "./CorrectionCreatePage";
 import AdoptionPage from "./AdoptionPage";
+import TownLandingPage from "./TownLandingPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -154,7 +155,7 @@ export default function App() {
         <Route path="/corrections/new" element={<CorrectionCreatePage />} />
         <Route path="/best" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/boards/adoption" element={<AdoptionPage />} />
-        <Route path="/towns/:townSlug" element={<PublicationFeedPage memberView={false} />} />
+        <Route path="/towns/:townSlug" element={<TownLandingPage />} />
         <Route path="/towns/:townSlug/:sectionSlug" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/lounges/breeds/:breedCode" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/admin/reports" element={<AdminReportsPage />} />

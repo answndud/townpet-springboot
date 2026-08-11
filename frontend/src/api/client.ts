@@ -290,6 +290,9 @@ export const catalogApi = {
   neighborhoods(signal?: AbortSignal) {
     return apiFetch<Neighborhood[]>("/api/v1/catalog/neighborhoods", { signal });
   },
+  neighborhood(slug: string, signal?: AbortSignal) {
+    return apiFetch<Neighborhood>(`/api/v1/catalog/neighborhoods/${encodeURIComponent(slug)}`, { signal });
+  },
 };
 
 export const localResourceApi = {
