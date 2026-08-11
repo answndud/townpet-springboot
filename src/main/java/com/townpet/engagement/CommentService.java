@@ -31,10 +31,15 @@ class CommentService {
   }
 
   @Transactional
-  CommentEntity create(UUID memberId, UUID publicationId, String body) {
+  CommentEntity create(UUID memberId, UUID publicationId, @Nullable UUID parentCommentId, String body) {
     requireAccessiblePublication(publicationId, memberId);
+    if (parentCommentId != null) {
+      CommentEntity parent = comments.findByIdAndLifecycle(parentCommentId, CommentLifecycle.ACTIVE)
+          .orElseThrow(CommentNotFoundException::new);
+      if (!parent.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
+    }
     try {
-      return comments.saveAndFlush(new CommentEntity(publicationId, memberId, body.trim()));
+      return comments.saveAndFlush(new CommentEntity(publicationId, memberId, parentCommentId, body.trim()));
     } catch (DataAccessException exception) {
       throw new CommentPublicationNotFoundException();
     }

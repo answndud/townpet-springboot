@@ -96,6 +96,7 @@ export type Comment = {
   id: string;
   publicationId: string;
   authorId: string;
+  parentCommentId: string | null;
   body: string;
   lifecycle: "ACTIVE" | "DELETED";
   createdAt: string;
@@ -145,6 +146,7 @@ export type EditPublicationInput = CreatePublicationInput & {
 
 export type CreateCommentInput = {
   body: string;
+  parentCommentId?: string;
 };
 
 export type FeedPage = {
@@ -378,6 +380,11 @@ export const publicationApi = {
       body: JSON.stringify({ version }),
     });
   },
+  share(publicationId: string) {
+    return mutate<{ path: string }>(`/api/posts/${encodeURIComponent(publicationId)}/share`, {
+      method: "POST",
+    });
+  },
   comments(publicationId: string, signal?: AbortSignal) {
     return apiFetch<{ items: Comment[] }>(
       `/api/v1/publications/${encodeURIComponent(publicationId)}/comments`,
@@ -458,14 +465,16 @@ export const publicationApi = {
     limit = 20,
     signal,
     query,
+    scope = "ALL",
   }: {
     audience?: "GLOBAL" | "VIEWER";
     cursor?: string;
     limit?: number;
     signal?: AbortSignal;
     query?: string;
+    scope?: "ALL" | "GLOBAL" | "LOCAL";
   } = {}) {
-    const search = new URLSearchParams({ audience, limit: String(limit) });
+    const search = new URLSearchParams({ audience, limit: String(limit), scope });
     if (cursor) search.set("cursor", cursor);
     if (query) search.set("query", query);
     return apiFetch<FeedPage>(`/api/v1/feed?${search}`, { signal });

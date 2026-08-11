@@ -39,8 +39,9 @@ class FeedController {
       @AuthenticationPrincipal @Nullable UserDetails principal,
       @RequestParam(defaultValue = "VIEWER") FeedAudience audience,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
-      @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit) {
-    return listFeed(principal, audience, cursor, limit, null);
+      @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
+      @RequestParam(defaultValue = "ALL") FeedScope scope) {
+    return listFeed(principal, audience, cursor, limit, null, scope);
   }
 
   @GetMapping(params = "query")
@@ -49,8 +50,9 @@ class FeedController {
       @RequestParam(defaultValue = "VIEWER") FeedAudience audience,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
-      @RequestParam @Size(max = 80) String query) {
-    return listFeed(principal, audience, cursor, limit, query);
+      @RequestParam @Size(max = 80) String query,
+      @RequestParam(defaultValue = "ALL") FeedScope scope) {
+    return listFeed(principal, audience, cursor, limit, query, scope);
   }
 
   private FeedResponse listFeed(
@@ -58,11 +60,12 @@ class FeedController {
       FeedAudience audience,
       @Nullable String cursor,
       int limit,
-      @Nullable String query) {
+      @Nullable String query,
+      FeedScope scope) {
     try {
       PublicationFeed.Page page =
           publications.list(
-              memberId(principal), audience == FeedAudience.VIEWER, cursor, limit, query);
+              memberId(principal), audience == FeedAudience.VIEWER, cursor, limit, query, scope.name());
       return new FeedResponse(
           page.items().stream().map(FeedController::toResponse).toList(),
           new PageInfo(page.nextCursor(), page.hasNext()));
@@ -118,5 +121,11 @@ class FeedController {
   enum FeedAudience {
     GLOBAL,
     VIEWER
+  }
+
+  enum FeedScope {
+    ALL,
+    GLOBAL,
+    LOCAL
   }
 }
