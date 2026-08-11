@@ -4,6 +4,7 @@ import OnboardingPage from "./OnboardingPage";
 import PasswordResetPage from "./PasswordResetPage";
 import ProfilePage from "./ProfilePage";
 import VerifyEmailPage from "./VerifyEmailPage";
+import PublicMemberProfilePage from "./PublicMemberProfilePage";
 import PublicationCreatePage from "./features/publication/PublicationCreatePage";
 import PublicationDetailPage from "./features/publication/PublicationDetailPage";
 import PublicationEditPage from "./features/publication/PublicationEditPage";
@@ -129,6 +130,7 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/members/:memberId" element={<PublicMemberProfilePage />} />
         <Route path="/posts/new" element={<PublicationCreatePage />} />
         <Route path="/posts/:publicationId/edit" element={<PublicationEditPage />} />
         <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />

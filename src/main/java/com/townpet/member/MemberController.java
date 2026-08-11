@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/v1/members/me")
+@RequestMapping("/api/v1/members")
 public class MemberController {
   private final MemberRepository members;
   private final MemberProfileRepository profiles;
@@ -31,14 +31,27 @@ public class MemberController {
     this.pets = pets;
   }
 
-  @GetMapping
+  @GetMapping("/me")
   MemberResponse getCurrentMember(@AuthenticationPrincipal UserDetails principal) {
+    if (principal == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+    }
     MemberEntity member = findMember(principal);
     MemberProfileEntity profile = profiles.findByMemberId(member.getId()).orElse(null);
     return toResponse(member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
   }
 
-  @PutMapping("/onboarding")
+  @GetMapping("/{memberId}")
+  MemberResponse getMember(@org.springframework.web.bind.annotation.PathVariable UUID memberId) {
+    MemberEntity member =
+        members
+            .findById(memberId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    MemberProfileEntity profile = profiles.findByMemberId(member.getId()).orElse(null);
+    return toResponse(member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
+  }
+
+  @PutMapping("/me/onboarding")
   @Transactional
   MemberResponse updateOnboarding(
       @AuthenticationPrincipal UserDetails principal,

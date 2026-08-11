@@ -276,7 +276,7 @@ export default function PublicationDetailPage() {
           <div className="publication-author-row">
             <span className="publication-avatar" aria-hidden="true">T</span>
             <div>
-              <strong>TownPet 회원</strong>
+              <Link to={`/members/${publication.authorId}`}><strong>TownPet 회원</strong></Link>
               <p>{formatDate(publication.createdAt)}</p>
             </div>
           </div>
