@@ -107,7 +107,8 @@ pages:
     spring: verified
   - path: /password/setup
     legacy: true
-    spring: pending
+    spring: excluded
+    decision: ADR-0040
   - path: /posts/new
     legacy: true
     spring: verified
@@ -131,7 +132,8 @@ pages:
     spring: verified
   - path: /register
     legacy: true
-    spring: pending
+    spring: excluded
+    decision: ADR-0040
   - path: /saved
     legacy: true
     spring: verified
