@@ -106,6 +106,8 @@ public class SecurityConfig {
                   .hasRole("MODERATOR")
                   .requestMatchers("/api/admin/reports/**")
                   .hasRole("MODERATOR")
+                  .requestMatchers("/api/admin/auth-audits/**")
+                  .hasRole("MODERATOR")
                   .requestMatchers("/api/metrics/web-vitals", "/api/v1/operations/web-vitals")
                   .permitAll()
                   .requestMatchers(

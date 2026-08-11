@@ -31,4 +31,12 @@ public class AuthAuditEntity {
   public UUID getMemberId() {
     return memberId;
   }
+
+  public String getAction() {
+    return action;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
 }
