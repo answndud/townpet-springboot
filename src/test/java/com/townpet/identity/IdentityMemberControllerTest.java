@@ -221,6 +221,9 @@ class IdentityMemberControllerTest {
   @Test
   void unauthenticatedMemberAccessIsRejectedAndCatalogIsPublic() throws Exception {
     mockMvc.perform(get("/api/v1/members/me")).andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(get("/api/v1/members/{memberId}", MEMBER_ID))
+        .andExpect(status().isUnauthorized());
     mockMvc.perform(get("/api/v1/catalog/neighborhoods")).andExpect(status().isOk());
   }
 

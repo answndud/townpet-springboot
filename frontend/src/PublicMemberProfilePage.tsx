@@ -19,6 +19,10 @@ export default function PublicMemberProfilePage() {
       .then(setProfile)
       .catch((requestError: unknown) => {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+        if (requestError instanceof ApiError && requestError.status === 401) {
+          navigate(`/login?next=/users/${encodeURIComponent(memberId)}`, { replace: true });
+          return;
+        }
         setError(requestError instanceof ApiError && requestError.status === 404 ? "존재하지 않는 회원입니다." : "프로필을 불러오지 못했습니다.");
       });
     memberApi.current(controller.signal)
@@ -31,7 +35,7 @@ export default function PublicMemberProfilePage() {
       })
       .catch(() => setViewer(null));
     return () => controller.abort();
-  }, [memberId]);
+  }, [memberId, navigate]);
 
   async function toggle(kind: "following" | "blocking") {
     if (!relationship || saving) return;

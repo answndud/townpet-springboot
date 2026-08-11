@@ -81,8 +81,6 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/gatherings/**")
                   .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/members/*")
-                  .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/publications/**")
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/posts/**")

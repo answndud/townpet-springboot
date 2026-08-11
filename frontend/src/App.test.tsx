@@ -1,7 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("TownPet Vite shell", () => {
   it("renders the legacy home identity and primary journeys", () => {
@@ -50,5 +52,20 @@ describe("TownPet Vite shell", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("heading", { name: "이메일 인증" })).toBeInTheDocument();
+  });
+
+  it("redirects an unauthenticated public profile URL to credentials login", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }))),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/users/00000000-0000-4000-8000-000000000202"]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "로그인" })).toBeInTheDocument();
   });
 });
