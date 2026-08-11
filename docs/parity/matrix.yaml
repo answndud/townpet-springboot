@@ -298,11 +298,11 @@ apiRoutes:
   - path: /api/posts/{id}/content
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/posts/{id}/detail
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/posts/{id}/lost-found-share.svg
     methods: [GET]
     legacy: true
