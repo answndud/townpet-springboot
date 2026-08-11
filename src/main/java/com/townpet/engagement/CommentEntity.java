@@ -54,6 +54,11 @@ class CommentEntity {
     this.updatedAt = changedAt;
   }
 
+  void edit(String nextBody, Instant changedAt) {
+    this.body = nextBody.trim();
+    this.updatedAt = changedAt;
+  }
+
   UUID getId() {
     return id;
   }
