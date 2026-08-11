@@ -17,8 +17,11 @@ import org.springframework.lang.Nullable;
 class PublicationEntity {
   @Id private UUID id;
 
-  @Column(nullable = false)
+  @Nullable
+  @Column
   private UUID authorMemberId;
+
+  @Nullable private UUID guestAuthorId;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 40)
@@ -68,12 +71,32 @@ class PublicationEntity {
     this.updatedAt = createdAt;
   }
 
+  static PublicationEntity forGuest(UUID guestAuthorId, String title, String body) {
+    PublicationEntity publication = new PublicationEntity();
+    publication.id = UuidV7.randomUuid();
+    publication.guestAuthorId = guestAuthorId;
+    publication.type = PublicationType.FREE_BOARD;
+    publication.scope = PublicationScope.GLOBAL;
+    publication.title = title.trim();
+    publication.body = body.trim();
+    publication.lifecycle = PublicationLifecycle.ACTIVE;
+    publication.createdAt = Instant.now();
+    publication.updatedAt = publication.createdAt;
+    return publication;
+  }
+
   UUID getId() {
     return id;
   }
 
+  @Nullable
   UUID getAuthorMemberId() {
     return authorMemberId;
+  }
+
+  @Nullable
+  UUID getGuestAuthorId() {
+    return guestAuthorId;
   }
 
   PublicationType getType() {

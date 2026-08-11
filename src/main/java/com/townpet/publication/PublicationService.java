@@ -2,6 +2,7 @@ package com.townpet.publication;
 
 import com.townpet.member.api.MemberDirectory;
 import com.townpet.member.api.MemberDirectory.MemberPublicationContext;
+import com.townpet.publication.api.GuestDirectory;
 import com.townpet.publication.api.PublicationModeration;
 import com.townpet.relationship.api.BlockDirectory;
 import java.util.List;
@@ -16,12 +17,14 @@ class PublicationService implements PublicationModeration {
   private final PublicationRepository publications;
   private final MemberDirectory members;
   private final BlockDirectory blocks;
+  private final GuestDirectory guests;
 
   PublicationService(
-      PublicationRepository publications, MemberDirectory members, BlockDirectory blocks) {
+      PublicationRepository publications, MemberDirectory members, BlockDirectory blocks, GuestDirectory guests) {
     this.publications = publications;
     this.members = members;
     this.blocks = blocks;
+    this.guests = guests;
   }
 
   @Transactional
@@ -47,7 +50,36 @@ class PublicationService implements PublicationModeration {
         .filter(
             publication ->
                 viewerMemberId == null
+                    || publication.getAuthorMemberId() == null
                     || !blocks.isBlocked(viewerMemberId, publication.getAuthorMemberId()));
+  }
+
+  @Transactional
+  PublicationEntity createGuest(UUID guestPublicId, String password, String title, String body) {
+    GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
+    return publications.save(PublicationEntity.forGuest(guest.internalId(), title, body));
+  }
+
+  @Transactional
+  PublicationEntity editGuest(UUID guestPublicId, String password, UUID publicationId, long expectedVersion, String title, String body) {
+    GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
+    PublicationEntity publication = publications.findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
+        .orElseThrow(PublicationNotFoundException::new);
+    if (!guest.internalId().equals(publication.getGuestAuthorId())) throw new PublicationOwnershipException();
+    requireCurrentVersion(publication, expectedVersion);
+    publication.edit(PublicationScope.GLOBAL, null, title.trim(), body.trim(), java.time.Instant.now());
+    return publications.saveAndFlush(publication);
+  }
+
+  @Transactional
+  void deleteGuest(UUID guestPublicId, String password, UUID publicationId, long expectedVersion) {
+    GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
+    PublicationEntity publication = publications.findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
+        .orElseThrow(PublicationNotFoundException::new);
+    if (!guest.internalId().equals(publication.getGuestAuthorId())) throw new PublicationOwnershipException();
+    requireCurrentVersion(publication, expectedVersion);
+    publication.delete(java.time.Instant.now());
+    publications.saveAndFlush(publication);
   }
 
   @Transactional(readOnly = true)
@@ -108,7 +140,7 @@ class PublicationService implements PublicationModeration {
         publications
             .findByIdAndLifecycle(publicationId, PublicationLifecycle.DELETED)
             .orElseThrow(PublicationNotFoundException::new);
-    if (!publication.getAuthorMemberId().equals(memberId)) {
+    if (!memberId.equals(publication.getAuthorMemberId())) {
       throw new PublicationOwnershipException();
     }
     requireCurrentVersion(publication, expectedVersion);
@@ -121,7 +153,7 @@ class PublicationService implements PublicationModeration {
         publications
             .findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
             .orElseThrow(PublicationNotFoundException::new);
-    if (!publication.getAuthorMemberId().equals(memberId)) {
+    if (!memberId.equals(publication.getAuthorMemberId())) {
       throw new PublicationOwnershipException();
     }
     return publication;
