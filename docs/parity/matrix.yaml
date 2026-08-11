@@ -250,7 +250,7 @@ apiRoutes:
   - path: /api/feed/guest
     methods: [GET]
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /api/feed/personalization
     methods: [POST]
     legacy: true
@@ -262,11 +262,11 @@ apiRoutes:
   - path: /api/health
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/home/feed
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/lounges/breeds/{breedCode}/groupbuys
     methods: [POST]
     legacy: true
@@ -282,11 +282,11 @@ apiRoutes:
   - path: /api/neighborhoods
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/notifications
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/ops/web-vitals/summary
     methods: [GET]
     legacy: true
@@ -354,7 +354,7 @@ apiRoutes:
   - path: /api/search/guest
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/search/log
     methods: [POST]
     legacy: true
