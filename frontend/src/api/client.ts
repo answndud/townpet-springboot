@@ -33,6 +33,8 @@ export type Member = {
   pets: Pet[];
 };
 
+export type PublicMember = Member;
+
 export type OnboardingInput = {
   bio: string;
   neighborhoodId: string;
@@ -254,6 +256,9 @@ export const authApi = {
 export const memberApi = {
   current(signal?: AbortSignal) {
     return apiFetch<Member>("/api/v1/members/me", { signal });
+  },
+  profile(memberId: string, signal?: AbortSignal) {
+    return apiFetch<PublicMember>(`/api/v1/members/${encodeURIComponent(memberId)}`, { signal });
   },
   updateOnboarding(input: OnboardingInput) {
     return mutate<Member>("/api/v1/members/me/onboarding", {
