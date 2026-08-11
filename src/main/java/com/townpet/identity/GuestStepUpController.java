@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/guest")
-class GuestStepUpController {
-  static final String GUEST_COOKIE = "TOWNPET_GUEST_ID";
+public class GuestStepUpController {
+  public static final String GUEST_COOKIE = "TOWNPET_GUEST_ID";
   static final String STEP_UP_COOKIE = "TOWNPET_STEP_UP";
   private final GuestStepUpService steps;
 
