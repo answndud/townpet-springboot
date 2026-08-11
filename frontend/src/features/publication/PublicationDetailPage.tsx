@@ -1,7 +1,8 @@
 import { type FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
+  guestApi,
   memberApi,
   publicationApi,
   trustApi,
@@ -25,6 +26,8 @@ function formatDate(value: string) {
 export default function PublicationDetailPage() {
   const { publicationId = "" } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const guestView = location.pathname.endsWith("/guest");
   const [publication, setPublication] = useState<Publication | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -33,6 +36,7 @@ export default function PublicationDetailPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentBody, setCommentBody] = useState("");
+  const [guestPassword, setGuestPassword] = useState("");
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -171,10 +175,9 @@ export default function PublicationDetailPage() {
     setCommentSubmitting(true);
     setCommentError(null);
     try {
-      const created = await publicationApi.createComment(publication.id, {
-        body: commentBody.trim(),
-        ...(replyingTo ? { parentCommentId: replyingTo.id } : {}),
-      });
+      const created = guestView
+        ? await guestApi.createComment(publication.id, { password: guestPassword, body: commentBody.trim(), ...(replyingTo ? { parentCommentId: replyingTo.id } : {}) }) as Comment
+        : await publicationApi.createComment(publication.id, { body: commentBody.trim(), ...(replyingTo ? { parentCommentId: replyingTo.id } : {}) });
       setComments((current) => [...current, created]);
       setCommentBody("");
       setReplyingTo(null);
@@ -425,8 +428,9 @@ export default function PublicationDetailPage() {
             ))}
           </div>
         )}
-        {viewerId ? (
+        {viewerId || guestView ? (
           <form className="publication-comment-form" onSubmit={createComment} noValidate>
+            {guestView && !viewerId ? <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} /></label> : null}
             {replyingTo ? (
               <div className="publication-replying">
                 <span>{replyingTo.body.slice(0, 60)}에 답글 작성 중</span>
@@ -445,7 +449,7 @@ export default function PublicationDetailPage() {
             </label>
             <div className="publication-comment-submit">
               <span className="field-help">{commentBody.length.toLocaleString()}/5,000</span>
-              <button className="button button-primary" type="submit" disabled={commentSubmitting || !commentBody.trim()}>
+              <button className="button button-primary" type="submit" disabled={commentSubmitting || !commentBody.trim() || (guestView && !viewerId && guestPassword.length < 8)}>
                 {commentSubmitting ? "등록 중..." : "댓글 등록"}
               </button>
             </div>
