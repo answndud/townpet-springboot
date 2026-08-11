@@ -174,19 +174,19 @@ apiRoutes:
   - path: /api/admin/moderation/posts/{id}/visibility
     methods: [PATCH]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/admin/moderation/users/hide-content
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/admin/moderation/users/restore-content
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/admin/moderation/users/sanction
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/auth/{nextauth}
     methods: [GET, POST]
     legacy: true
@@ -346,7 +346,7 @@ apiRoutes:
   - path: /api/reports/bulk
     methods: [PATCH]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/reports
     methods: [POST]
     legacy: true

@@ -2,6 +2,7 @@ package com.townpet.publication;
 
 import com.townpet.member.api.MemberDirectory;
 import com.townpet.member.api.MemberDirectory.MemberPublicationContext;
+import com.townpet.publication.api.PublicationModeration;
 import com.townpet.relationship.api.BlockDirectory;
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-class PublicationService {
+class PublicationService implements PublicationModeration {
   private final PublicationRepository publications;
   private final MemberDirectory members;
   private final BlockDirectory blocks;
@@ -53,6 +54,23 @@ class PublicationService {
   List<PublicationEntity> mine(UUID memberId) {
     return publications.findByAuthorMemberIdAndLifecycleOrderByCreatedAtDesc(
         memberId, PublicationLifecycle.ACTIVE);
+  }
+
+  @Override
+  @Transactional
+  public int setAuthorContentVisibility(UUID authorMemberId, boolean visible) {
+    List<PublicationEntity> owned = publications.findByAuthorMemberId(authorMemberId);
+    java.time.Instant changedAt = java.time.Instant.now();
+    owned.forEach(
+        publication -> {
+          if (visible && publication.getLifecycle() == PublicationLifecycle.HIDDEN) {
+            publication.makeVisible(changedAt);
+          } else if (!visible && publication.getLifecycle() == PublicationLifecycle.ACTIVE) {
+            publication.hide(changedAt);
+          }
+        });
+    publications.saveAll(owned);
+    return owned.size();
   }
 
   @Transactional
