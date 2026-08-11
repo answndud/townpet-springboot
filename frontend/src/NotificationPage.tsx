@@ -1,0 +1,10 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ApiError, notificationApi, type Notification } from "./api/client";
+
+export default function NotificationPage() {
+  const navigate = useNavigate(); const [items, setItems] = useState<Notification[]>([]); const [error, setError] = useState<string | null>(null);
+  useEffect(() => { notificationApi.list().then(setItems).catch((e: unknown) => { if (e instanceof ApiError && e.status === 401) navigate("/login?next=/notifications", { replace: true }); else setError("알림을 불러오지 못했습니다."); }); }, [navigate]);
+  async function read(item: Notification) { if (item.readAt) return; const updated = await notificationApi.markRead(item.id); setItems((current) => current.map((candidate) => candidate.id === item.id ? updated : candidate)); }
+  return <main className="page notification-page"><section className="localcare-hero"><p className="eyebrow">NOTIFICATIONS</p><h1>알림</h1><p>내 활동과 TownPet 운영 소식을 확인하세요.</p></section>{error ? <p role="alert">{error}</p> : null}<section className="notification-list">{items.map((item) => <button className={item.readAt ? "surface-card notification-item read" : "surface-card notification-item"} key={item.id} type="button" onClick={() => void read(item)}><span className="publication-chip">{item.type}</span><h2>{item.title}</h2><p>{item.body}</p><small>{new Date(item.createdAt).toLocaleString("ko-KR")}</small></button>)}</section>{!items.length && !error ? <p className="surface-card">새 알림이 없습니다.</p> : null}<Link className="publication-text-link" to="/">홈으로</Link></main>;
+}

@@ -13,6 +13,7 @@ import { MarketplaceDetailPage, MarketplaceFormPage, MarketplaceListPage } from 
 import { LostFoundAlertFormPage, LostFoundDetailPage, LostFoundExactLocationPage, LostFoundListPage, LostFoundSightingFormPage } from "./features/lostfound/LostFoundPages";
 import { LocalCareDetailPage, LocalCareListPage } from "./features/localcare/LocalCarePages";
 import { GatheringCreatePage, GatheringDetailPage, GatheringListPage } from "./features/gathering/GatheringPages";
+import NotificationPage from "./NotificationPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -132,6 +133,7 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/notifications" element={<NotificationPage />} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/gatherings" element={<GatheringListPage />} />

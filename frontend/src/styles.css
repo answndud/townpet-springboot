@@ -308,6 +308,12 @@ h1, h2, p { margin: 0; }
 .gathering-detail dl { display: grid; grid-template-columns: 5rem 1fr; gap: .6rem; margin: 2rem 0; }
 .gathering-detail dt { color: var(--muted-text); }
 .gathering-detail dd { margin: 0; }
+.notification-list { display: grid; gap: .75rem; }
+.notification-item { width: 100%; border: 0; text-align: left; cursor: pointer; }
+.notification-item.read { opacity: .65; }
+.notification-item h2 { margin: .65rem 0 .35rem; }
+.notification-item p { margin: 0 0 .5rem; }
+.notification-item small { color: var(--muted-text); }
 @media (max-width: 760px) { .localcare-grid { grid-template-columns: 1fr; } .localcare-search { align-items: stretch; flex-direction: column; } .localcare-hero { padding: 1.5rem; } }
 @media (max-width: 760px) { .gathering-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
