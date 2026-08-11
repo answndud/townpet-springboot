@@ -1,6 +1,5 @@
 package com.townpet.member;
 
-import com.townpet.relationship.api.BlockDirectory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -24,17 +23,14 @@ public class MemberController {
   private final MemberRepository members;
   private final MemberProfileRepository profiles;
   private final MemberPetRepository pets;
-  private final BlockDirectory blocks;
 
   public MemberController(
       MemberRepository members,
       MemberProfileRepository profiles,
-      MemberPetRepository pets,
-      BlockDirectory blocks) {
+      MemberPetRepository pets) {
     this.members = members;
     this.profiles = profiles;
     this.pets = pets;
-    this.blocks = blocks;
   }
 
   @GetMapping("/me")
@@ -52,16 +48,16 @@ public class MemberController {
       @AuthenticationPrincipal UserDetails principal,
       @org.springframework.web.bind.annotation.PathVariable UUID memberId) {
     UUID viewerId = memberId(principal);
-    if (!viewerId.equals(memberId)
-        && (blocks.isBlocked(viewerId, memberId) || blocks.isBlocked(memberId, viewerId))) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    }
     MemberEntity member =
         members
             .findById(memberId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     MemberProfileEntity profile = profiles.findByMemberId(member.getId()).orElse(null);
-    return toResponse(member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
+    List<MemberPetEntity> visiblePets =
+        viewerId.equals(memberId) || profile == null || profile.isShowPublicPets()
+            ? pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId())
+            : List.of();
+    return toResponse(member, profile, visiblePets);
   }
 
   @PutMapping("/me/onboarding")
@@ -98,6 +94,38 @@ public class MemberController {
     return toResponse(member, profile, savedPets);
   }
 
+  @PutMapping("/me/profile")
+  @Transactional
+  MemberResponse updateProfile(
+      @AuthenticationPrincipal UserDetails principal,
+      @Valid @RequestBody ProfileUpdateRequest request) {
+    MemberEntity member = findMember(principal);
+    MemberProfileEntity profile =
+        profiles
+            .findByMemberId(member.getId())
+            .map(
+                existing -> {
+                  existing.updateVisibility(
+                      request.showPublicPosts(),
+                      request.showPublicComments(),
+                      request.showPublicPets());
+                  if (request.bio() != null) existing.update(request.bio(), existing.getNeighborhoodId());
+                  return existing;
+                })
+            .orElseGet(
+                () -> {
+                  MemberProfileEntity created =
+                      new MemberProfileEntity(member.getId(), request.bio(), null);
+                  created.updateVisibility(
+                      request.showPublicPosts(),
+                      request.showPublicComments(),
+                      request.showPublicPets());
+                  return created;
+                });
+    profiles.save(profile);
+    return toResponse(member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
+  }
+
   private MemberEntity findMember(UserDetails principal) {
     UUID memberId = memberId(principal);
     return members
@@ -119,12 +147,17 @@ public class MemberController {
   }
 
   private static MemberResponse toResponse(
-      MemberEntity member, @Nullable MemberProfileEntity profile, List<MemberPetEntity> pets) {
+      MemberEntity member,
+      @Nullable MemberProfileEntity profile,
+      List<MemberPetEntity> pets) {
     return new MemberResponse(
         member.getId(),
         member.getNickname(),
         profile == null ? null : profile.getBio(),
         profile == null ? null : profile.getNeighborhoodId(),
+        profile == null || profile.isShowPublicPosts(),
+        profile == null || profile.isShowPublicComments(),
+        profile == null || profile.isShowPublicPets(),
         pets.stream()
             .map(pet -> new PetResponse(pet.getId(), pet.getName(), pet.getSpecies()))
             .toList());
@@ -139,6 +172,18 @@ public class MemberController {
     }
   }
 
+  record ProfileUpdateRequest(
+      @Size(max = 500) String bio,
+      Boolean showPublicPosts,
+      Boolean showPublicComments,
+      Boolean showPublicPets) {
+    ProfileUpdateRequest {
+      showPublicPosts = showPublicPosts == null ? true : showPublicPosts;
+      showPublicComments = showPublicComments == null ? true : showPublicComments;
+      showPublicPets = showPublicPets == null ? true : showPublicPets;
+    }
+  }
+
   record PetRequest(
       @NotBlank @Size(max = 40) String name, @NotBlank @Size(max = 20) String species) {}
 
@@ -147,6 +192,9 @@ public class MemberController {
       String nickname,
       @Nullable String bio,
       @Nullable UUID neighborhoodId,
+      boolean showPublicPosts,
+      boolean showPublicComments,
+      boolean showPublicPets,
       List<PetResponse> pets) {}
 
   record PetResponse(UUID id, String name, String species) {}
