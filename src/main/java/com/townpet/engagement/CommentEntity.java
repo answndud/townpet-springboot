@@ -23,6 +23,8 @@ class CommentEntity {
   @Column(nullable = false)
   private UUID authorMemberId;
 
+  @Nullable private UUID guestAuthorId;
+
   @Nullable private UUID parentCommentId;
 
   @Column(nullable = false, length = 5000)
@@ -53,6 +55,19 @@ class CommentEntity {
     this.updatedAt = createdAt;
   }
 
+  static CommentEntity forGuest(UUID publicationId, UUID guestAuthorId, @Nullable UUID parentCommentId, String body) {
+    CommentEntity comment = new CommentEntity();
+    comment.id = UuidV7.randomUuid();
+    comment.publicationId = publicationId;
+    comment.guestAuthorId = guestAuthorId;
+    comment.parentCommentId = parentCommentId;
+    comment.body = body.trim();
+    comment.lifecycle = CommentLifecycle.ACTIVE;
+    comment.createdAt = Instant.now();
+    comment.updatedAt = comment.createdAt;
+    return comment;
+  }
+
   void delete(Instant changedAt) {
     this.lifecycle = CommentLifecycle.DELETED;
     this.updatedAt = changedAt;
@@ -74,6 +89,9 @@ class CommentEntity {
   UUID getAuthorMemberId() {
     return authorMemberId;
   }
+
+  @Nullable
+  UUID getGuestAuthorId() { return guestAuthorId; }
 
   @Nullable
   UUID getParentCommentId() {

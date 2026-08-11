@@ -141,7 +141,7 @@ class CommentController {
   record CommentResponse(
       UUID id,
       UUID publicationId,
-      UUID authorId,
+      @Nullable UUID authorId,
       @Nullable UUID parentCommentId,
       String body,
       CommentLifecycle lifecycle,
