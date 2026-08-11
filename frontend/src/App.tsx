@@ -140,9 +140,11 @@ export default function App() {
         <Route path="/gatherings/new" element={<GatheringCreatePage />} />
         <Route path="/gatherings/:gatheringId" element={<GatheringDetailPage />} />
         <Route path="/members/:memberId" element={<PublicMemberProfilePage />} />
+        <Route path="/users/:memberId" element={<PublicMemberProfilePage />} />
         <Route path="/posts/new" element={<PublicationCreatePage />} />
         <Route path="/posts/:publicationId/edit" element={<PublicationEditPage />} />
         <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />
+        <Route path="/posts/:publicationId/guest" element={<PublicationDetailPage />} />
         <Route path="/feed" element={<PublicationFeedPage memberView />} />
         <Route path="/feed/guest" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/marketplace" element={<MarketplaceListPage />} />
@@ -151,6 +153,7 @@ export default function App() {
         <Route path="/marketplace/:listingId" element={<MarketplaceDetailPage />} />
         <Route path="/lost-found" element={<LostFoundListPage />} />
         <Route path="/lost-found/new" element={<LostFoundAlertFormPage />} />
+        <Route path="/lost/new" element={<LostFoundAlertFormPage />} />
         <Route path="/lost-found/:alertId/sightings/new" element={<LostFoundSightingFormPage />} />
         <Route path="/lost-found/sightings/:sightingId/exact" element={<LostFoundExactLocationPage />} />
         <Route path="/lost-found/:alertId" element={<LostFoundDetailPage />} />
