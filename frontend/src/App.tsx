@@ -17,6 +17,7 @@ import NotificationPage from "./NotificationPage";
 import LegalPage from "./LegalPage";
 import PersonalPostsPage from "./features/publication/PersonalPostsPage";
 import SearchPage from "./features/publication/SearchPage";
+import AdminReportsPage from "./AdminReportsPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -143,6 +144,7 @@ export default function App() {
         <Route path="/saved" element={<PersonalPostsPage saved />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/search/guest" element={<SearchPage guest />} />
+        <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/gatherings" element={<GatheringListPage />} />

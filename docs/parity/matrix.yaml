@@ -47,7 +47,7 @@ pages:
     spring: pending
   - path: /admin/reports
     legacy: true
-    spring: pending
+    spring: verified
   - path: /admin/reports/{id}
     legacy: true
     spring: pending
