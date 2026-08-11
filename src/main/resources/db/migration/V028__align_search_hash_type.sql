@@ -1,0 +1,1 @@
+ALTER TABLE search_event ALTER COLUMN query_hash TYPE VARCHAR(64);
