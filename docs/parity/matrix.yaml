@@ -56,7 +56,7 @@ pages:
     spring: adapter
   - path: /boards/adoption
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /bookmarks
     legacy: true
     spring: verified
