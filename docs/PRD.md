@@ -260,7 +260,7 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 
 1. 원본 page·API·schema·policy·test 행이 parity matrix에 연결됐다.
 2. Flyway schema와 migration ETL·대사가 통과했다.
-3. OpenAPI, Spring application/domain, PostgreSQL persistence와 frontend가 한 vertical slice로 동작한다.
+3. Spring application/domain, PostgreSQL persistence와 frontend가 한 vertical slice로 동작한다.
 4. Authorization·concurrency·error·event·projection test가 통과한다.
 5. Legacy/Spring differential 및 필요한 visual·accessibility test가 통과한다.
 6. 해당 domain의 legacy adapter, Prisma 접근, Next.js route와 임시 flag가 제거됐다.
@@ -292,7 +292,7 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 |---|---|
 | Java·Spring·Gradle | Java 25, Spring Boot 4.1, Spring Modulith, Spring Security, JPA·jOOQ, Gradle 9 |
 | 확장 가능한 구조 | 17개 bounded context, 공개 module API·event, verified dependency graph |
-| 요구사항 분석 | 49 page·55 API parity matrix, PRD, state machine, OpenAPI |
+| 요구사항 분석 | 49 page·55 API parity matrix, PRD, state machine, controller contract |
 | 데이터 모델·API | Publication·domain aggregate, constraint, contract-first REST, ProblemDetail |
 | 성능 최적화 | Query-count, EXPLAIN ANALYZE, Feed·Search projection, controlled load 전후 수치 |
 | 자동화 | Quality gate, migration rehearsal, code generation drift, demo reset, restore drill |

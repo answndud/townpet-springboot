@@ -7,6 +7,9 @@ interface ObjectStoragePort {
   String createUploadUrl(String objectKey, String contentType, long byteSize, Instant expiresAt);
 
   Optional<StoredObject> inspect(String objectKey);
+
+  void delete(String objectKey);
 }
 
-record StoredObject(String contentType, long byteSize, String checksumSha256) {}
+record StoredObject(
+    String contentType, long byteSize, String checksumSha256, String detectedContentType) {}

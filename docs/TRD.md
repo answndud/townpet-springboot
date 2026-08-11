@@ -22,7 +22,7 @@
 - React 19 + TypeScript + Vite, React Router
 - PostgreSQL 18 + PostGIS 3.6
 - Spring Data JPA/Hibernate write model + jOOQ read model
-- Flyway schema authority, OpenAPI 3.1 contract authority
+- Flyway schema authority, controller/request DTO HTTP contract
 - 하나의 Spring Boot deployable과 하나의 PostgreSQL cluster
 - Hetzner CX23 showcase production, Caddy, Cloudflare R2, Grafana Alloy
 - Node.js는 frontend 개발·빌드에만 사용하고 production server에는 존재하지 않음
@@ -58,7 +58,6 @@ townpet-springboot/
 ├── build.gradle.kts
 ├── gradle/
 ├── api/
-│   └── openapi/townpet.yaml
 ├── frontend/
 │   ├── package.json
 │   ├── vite.config.ts
@@ -127,7 +126,7 @@ com.townpet.marketplace/
 
 - Web controller는 authentication, transport validation, use case 호출과 response mapping만 수행한다.
 - Application service가 transaction과 resource authorization 경계다.
-- Domain object는 Spring MVC, JPA annotation과 generated OpenAPI DTO를 알지 않는다. Persistence annotation은 infrastructure entity에 둔다.
+- Domain object는 Spring MVC, JPA annotation과 transport DTO를 알지 않는다. Persistence annotation은 infrastructure entity에 둔다.
 - Module 간 동기 호출은 공개 facade만 사용한다.
 - Commit 이후 side effect는 immutable module event를 우선한다.
 - Eventual consistency로 허용할 수 없는 invariant는 source module의 한 transaction에서 처리한다.
@@ -137,7 +136,7 @@ com.townpet.marketplace/
 - `frontend/`는 React 19, TypeScript, Vite와 React Router를 사용한다.
 - `/Users/alex/project/townpet/app/src/components`, style과 static asset을 선별 이전한다.
 - Next.js page, Server Component, Server Action, Route Handler, NextAuth·Prisma import는 이전하지 않는다.
-- Data access는 generated TypeScript OpenAPI client 한 경계로 통일한다.
+- Data access는 `frontend/src/api/client.ts`의 얇은 fetch 경계로 통일한다.
 - Server state는 endpoint 특성에 맞는 작은 query abstraction으로 관리하며 Redux를 기본 도입하지 않는다.
 - Vite dev server는 `/api/**`를 local Spring Boot로 proxy한다.
 - Production build asset은 Gradle processResources 전에 생성되고 Spring Boot artifact에 포함된다.
@@ -149,8 +148,7 @@ com.townpet.marketplace/
 
 ### 8.1 Source of Truth
 
-- `api/openapi/townpet.yaml`이 HTTP contract의 유일한 source다.
-- OpenAPI 3.1을 사용하고 public API prefix는 `/api/v1`이다.
+- Spring controller와 request/response DTO가 HTTP contract의 source다. public API prefix는 `/api/v1`이다.
 - Java transport interface·DTO와 TypeScript client를 같은 contract에서 생성한다.
 - Domain, JPA entity와 repository는 생성하지 않는다.
 - Generated source를 직접 편집하지 않는다.
@@ -186,13 +184,12 @@ POST   /api/v1/reports
 POST   /api/v1/operations/projections/{projection}:rebuild
 ```
 
-실제 route 이름은 parity inventory와 OpenAPI review에서 확정하되 generic `PATCH status`보다 business action을 우선한다.
+실제 route 이름은 parity inventory와 controller review에서 확정하되 generic `PATCH status`보다 business action을 우선한다.
 
 ### 8.4 Compatibility
 
 - Legacy의 관찰 가능한 의미를 v1 contract에 매핑한다.
 - Domain 용어와 legacy wire 값이 다르면 anti-corruption mapper를 둔다. 예: legacy market `SOLD`와 domain `COMPLETED`.
-- Breaking OpenAPI diff는 PR을 실패시킨다.
 - 승인된 breaking change는 새 API version 또는 명시적 migration window가 필요하다.
 
 ## 9. Identity·Session·Authorization
@@ -402,7 +399,7 @@ flowchart LR
 Domain 완료는 다음을 모두 요구한다.
 
 1. Schema·ETL·reconciliation
-2. OpenAPI·Spring use case·persistence
+2. HTTP controller·Spring use case·persistence
 3. React UI integration
 4. Differential·visual·accessibility test
 5. Legacy adapter·Prisma·Next route 제거
@@ -498,7 +495,7 @@ Domain 완료는 다음을 모두 요구한다.
 - Architecture: Spring Modulith verify + ArchUnit
 - Persistence: PostgreSQL 18 + PostGIS Testcontainers
 - Migration: empty DB, previous snapshot upgrade, ETL rehearsal
-- Contract: OpenAPI validation, generated server/client drift, ProblemDetail
+- Contract: controller/integration validation, frontend typecheck, ProblemDetail
 - Differential: legacy vs Spring logical result
 - Browser: Playwright dual target, visual, accessibility
 - Performance: representative data, query count, EXPLAIN ANALYZE, controlled load

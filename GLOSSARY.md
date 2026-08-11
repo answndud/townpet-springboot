@@ -170,7 +170,7 @@ Application module 목록, 각 책임과 데이터 소유권, 모듈 사이의 �
 
 ## Contract-first API
 
-Controller 구현 전에 OpenAPI 문서로 HTTP 입력, 출력, 오류와 보안 요구를 정의하고 server·client transport 코드를 같은 계약에서 파생하는 방식이다.
+Controller의 request/response DTO와 frontend API client가 HTTP 입력·출력·오류를 직접 정의하고, 별도 계약 파일이나 생성 transport를 두지 않는 방식이다.
 
 ## ProblemDetail
 

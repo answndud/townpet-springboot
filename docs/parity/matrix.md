@@ -7,7 +7,7 @@
 | 대상 | 수량 | source | 현재 상태 | 다음 증거 |
 |---|---:|---|---|---|
 | page | 49 | `townpet/app/src/app/**/page.tsx` | legacy inventory captured | React route + screenshot |
-| API route file | 55 | `townpet/app/src/app/api/**/route.ts` | legacy inventory captured | OpenAPI operation + differential response |
+| API route file | 55 | `townpet/app/src/app/api/**/route.ts` | legacy inventory captured | controller route + differential response |
 | HTTP method | route별 상이 | route export function | inventory에 기록 | status/error/auth test |
 
 ## Matrix contract

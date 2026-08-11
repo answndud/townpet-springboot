@@ -113,7 +113,7 @@ export class ApiError extends Error {
   }
 }
 
-/** Transport seam for the generated OpenAPI client; feature code never builds API URLs directly. */
+/** Small transport seam; feature code keeps endpoint details in one client module. */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const method = init?.method?.toUpperCase() ?? "GET";
   const csrf = document.cookie

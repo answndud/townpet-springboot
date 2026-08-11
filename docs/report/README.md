@@ -37,7 +37,7 @@
 | 재현 가능한 Java·Spring 기반 | `build.gradle.kts`, Wrapper, `clean check` | evidenced |
 | PostgreSQL schema authority와 권한 분리 | Flyway V001~V003, Compose, `DatabaseBaselineTest` | evidenced |
 | Modular monolith 경계 | module package, Modulith·ArchUnit tests | evidenced |
-| OpenAPI·React/Vite·parity gate | OpenAPI spec/generator, parity matrix, Vitest·Playwright·smoke | evidenced |
+| React/Vite·parity gate | frontend API client, parity matrix, Vitest·Playwright·smoke | evidenced |
 | Session·CSRF·onboarding·RBAC·password/email lifecycle | Identity code, V004~V005, JDBC session security tests | evidenced |
 | Credentials 전체 auth parity | PostgreSQL·Spring·Vite Playwright와 JDBC row 대사 | evidenced |
 | 게시·미디어 이후 핵심 도메인 | 아직 구현 전 | captured |

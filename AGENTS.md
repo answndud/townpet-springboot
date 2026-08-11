@@ -15,7 +15,7 @@ Legacy 기준선은 `/Users/alex/project/townpet`의 commit `7d8f6d0bd22dedd8235
 
 ## 2. 현재 상태
 
-P1 application foundation과 P2 Identity·Member·Catalog의 초기 vertical slice가 구현됐다. Gradle/Spring Boot, PostgreSQL·Flyway, Modulith 경계, OpenAPI 생성, React·Vite shell, parity inventory, CI/smoke, session login·logout·onboarding·demo role까지 실제 검증이 있다. 현재 작업과 남은 범위는 `PLAN.md`만 기준으로 삼는다.
+P1 application foundation과 P2 Identity·Member·Catalog의 초기 vertical slice가 구현됐다. Gradle/Spring Boot, PostgreSQL·Flyway, Modulith 경계, React·Vite shell, parity inventory, CI/smoke, session login·logout·onboarding·demo role까지 실제 검증이 있다. 현재 작업과 남은 범위는 `PLAN.md`만 기준으로 삼는다.
 
 ## 3. 고정 기술 경계
 
@@ -25,7 +25,7 @@ P1 application foundation과 P2 Identity·Member·Catalog의 초기 vertical sli
 - PostgreSQL 18·PostGIS 3.6이 source of truth다. Flyway만 schema를 변경하고 Hibernate는 `ddl-auto=validate`를 사용한다.
 - 단순 write/read는 Spring Data JPA, 검증된 복잡 read model은 jOOQ를 사용한다. 사용 근거 없이 같은 조회를 이중 구현하지 않는다.
 - Browser 인증은 Spring Security·Spring Session JDBC와 CSRF를 사용한다. Browser용 JWT를 만들지 않는다.
-- 외부 HTTP 계약은 `api/openapi/townpet.yaml`의 OpenAPI 3.1이다. Transport type만 생성하며 domain·entity·repository는 생성하지 않는다.
+- 외부 HTTP 계약은 Spring controller·request/response DTO와 frontend API client가 직접 소유한다. 별도 OpenAPI 파일·생성 client는 사용하지 않는다.
 - Module 간 JPA association, entity·repository·controller DTO 노출과 순환 의존을 금지한다. 공개 application API, 식별자 또는 event로 연결한다.
 - 비동기 후속 처리는 Spring Modulith Event Publication Registry와 PostgreSQL을 사용하며 consumer는 idempotent하게 만든다.
 - Redis, Kafka, Elasticsearch, Kubernetes, microservice는 실측 요구와 새 ADR 없이는 추가하지 않는다.
@@ -35,14 +35,14 @@ P1 application foundation과 P2 Identity·Member·Catalog의 초기 vertical sli
 
 1. `PLAN.md`의 첫 미완료 slice 하나를 고른다.
 2. 관련 Legacy page·route·validation·schema·test만 읽고 관찰 가능한 계약을 확인한다.
-3. domain/application/data/web/frontend가 연결되는 가장 작은 vertical slice로 구현한다.
+3. domain/application/data/web/frontend가 연결되는 충분히 큰 기능 vertical slice로 구현한다. 기능을 인위적으로 작은 작업으로 분할하지 않는다.
 4. Business rule은 application/domain과 DB constraint에 두고 controller·React component에 숨기지 않는다.
-5. 권한·상태·오류·responsive 동작을 관련 자동 test와 parity matrix에 연결한다.
-6. 변경 범위에 맞는 검증을 실행하고 실제 출력으로 완료 여부를 판정한다.
+5. 권한·상태·오류처럼 실제 회귀 위험이 큰 경계만 필요한 테스트로 확인한다. 테스트 수를 늘리기 위한 테스트와 과도한 contract/e2e 조합을 만들지 않는다.
+6. 구현을 먼저 빠르게 진행하고, 작업 중에는 가장 가까운 최소 검증만 실행한다. 전체 gate는 큰 phase가 끝났거나 배포 직전에 한 번 실행한다.
 7. 중요한 설계 변화나 재사용 가능한 실패가 있을 때만 `docs/report/`의 기존 문서를 갱신한다.
 8. 완료된 slice는 `PLAN.md`에서 제거하고 다음 실행 항목을 맨 앞에 둔다. PLAN을 완료 이력 문서로 사용하지 않는다.
 
-한 commit은 하나의 검증 가능한 결과를 중심으로 작게 유지한다. 혼자 개발하는 프로젝트이므로 사용 사례가 요구하지 않는 interface, 계층, event, 추상화와 운영 구성은 미리 만들지 않는다.
+한 commit은 기능 vertical slice 또는 의미 있는 phase 결과를 중심으로 유지한다. 혼자 개발하는 프로젝트이므로 사용 사례가 요구하지 않는 interface, 계층, event, 추상화와 운영 구성은 미리 만들지 않는다.
 
 ## 5. 문서 운영
 
@@ -78,7 +78,7 @@ P1 application foundation과 P2 Identity·Member·Catalog의 초기 vertical sli
 - `src/main/java/com/townpet/<module>/`: business module. 공개 application API 외 구현은 가능하면 `internal`에 둔다.
 - `src/main/java/com/townpet/common/`: 기술 공통 요소만 둔다. User·Post 같은 business shared model을 만들지 않는다.
 - `src/main/resources/db/migration/`: append-only Flyway migration. 적용된 migration을 수정하지 않는다.
-- `api/openapi/`: HTTP 계약 원본.
+- HTTP 계약은 각 controller와 frontend API 타입에 둔다. 별도 계약 파일을 만들지 않는다.
 - `frontend/src/features/`: 사용자 여정별 UI와 상태. 생성 client 밖에서 wire DTO와 URL을 반복 정의하지 않는다.
 - `migration/`: 재실행 가능한 ETL·mapping·익명 fixture.
 - `deploy/`: Compose, Caddy, IaC, backup·deployment 자동화. Secret을 commit하지 않는다.
@@ -107,6 +107,6 @@ corepack pnpm -C frontend test:e2e
 ./scripts/frontend-backend-smoke.sh
 ```
 
-매 작은 수정마다 전체 gate를 반복할 필요는 없다. 구현 중에는 가장 가까운 test를 실행하고, commit·완료 주장 전에는 변경 위험에 맞는 전체 gate를 fresh run한다. 실행하지 않았거나 실패한 검증은 정확히 보고한다.
+매 작은 수정마다 전체 gate·문서 갱신·브라우저 E2E를 반복하지 않는다. 구현 중에는 컴파일 또는 가장 가까운 기능 테스트 하나만 우선 실행한다. report 문서는 중요한 설계 변화·실패 원인·phase 종료 때만 갱신한다. 전체 gate는 큰 phase 종료 또는 배포 전 한 번 실행한다. 실행하지 않은 검증은 실행했다고 말하지 않는다.
 
-기능 완료는 화면이 열리는 것만 뜻하지 않는다. 해당 slice의 정상·오류·권한·상태가 API/data/frontend로 연결되고 관련 unit/integration/contract/browser/security test가 통과해야 한다. Migration·운영에 영향을 주는 작업만 대사, metric, runbook, rollback·restore evidence를 추가한다. 전체 프로젝트 완료는 parity, legacy 제거, migration, 성능, 배포와 복구 조건을 모두 만족할 때만 주장한다.
+기능 완료는 사용자에게 필요한 정상 흐름과 핵심 실패 경계가 연결된 상태를 뜻한다. 모든 가능한 조합의 테스트·문서·E2E를 만들 필요는 없다. Migration·운영에 영향을 주는 phase만 대사, metric, runbook, rollback·restore evidence를 추가한다. 전체 프로젝트 완료 주장은 별도의 최종 release gate에서만 한다.

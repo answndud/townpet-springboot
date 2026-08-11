@@ -24,7 +24,7 @@ extension 설치는 bootstrap admin, versioned table 변경은 Flyway, runtime D
 
 기능이 쌓이기 전에 package를 write ownership 기준으로 나누고 Spring Modulith와 ArchUnit으로 cycle, entity·repository·web DTO 누출을 검사했다. Gradle multi-project나 microservice로 분리하지 않아 혼자 개발하는 비용을 억제했다.
 
-OpenAPI는 Java controller와 TypeScript client 사이의 transport 계약으로만 사용하고 domain entity를 생성하지 않는다. 이 경계 덕분에 frontend와 backend가 서로 다른 언어여도 wire contract와 business model을 같은 것으로 오해하지 않는다.
+초기에는 OpenAPI 생성 경계를 검토했지만, 실제 frontend는 작은 수동 API client를 사용하고 생성 transport가 기능 개발 속도에 기여하지 않는다는 점을 확인했다. 별도 계약 파일과 generator를 제거하고 controller·request/response DTO를 HTTP 계약의 직접 근거로 남겼다.
 
 - 근거: `a2d5096`, `4fd3776`, module/contract tests
 - 되돌릴 조건: 독립 배포·팀 소유권·실측 부하가 생길 때만 물리 분리를 검토한다.
