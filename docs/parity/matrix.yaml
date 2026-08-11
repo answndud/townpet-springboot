@@ -318,15 +318,15 @@ apiRoutes:
   - path: /api/posts/{id}/share
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/posts/{id}/stats
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/posts/{id}/view
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/posts
     methods: [GET, POST]
     legacy: true
