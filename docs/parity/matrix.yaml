@@ -95,7 +95,7 @@ pages:
     spring: pending
   - path: /my-posts
     legacy: true
-    spring: pending
+    spring: verified
   - path: /notifications
     legacy: true
     spring: verified
@@ -134,7 +134,7 @@ pages:
     spring: pending
   - path: /saved
     legacy: true
-    spring: pending
+    spring: verified
   - path: /search
     legacy: true
     spring: pending

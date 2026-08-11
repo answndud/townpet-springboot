@@ -15,6 +15,7 @@ import { LocalCareDetailPage, LocalCareListPage } from "./features/localcare/Loc
 import { GatheringCreatePage, GatheringDetailPage, GatheringListPage } from "./features/gathering/GatheringPages";
 import NotificationPage from "./NotificationPage";
 import LegalPage from "./LegalPage";
+import PersonalPostsPage from "./features/publication/PersonalPostsPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -137,6 +138,8 @@ export default function App() {
         <Route path="/notifications" element={<NotificationPage />} />
         <Route path="/privacy" element={<LegalPage />} />
         <Route path="/terms" element={<LegalPage />} />
+        <Route path="/my-posts" element={<PersonalPostsPage />} />
+        <Route path="/saved" element={<PersonalPostsPage saved />} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/gatherings" element={<GatheringListPage />} />
