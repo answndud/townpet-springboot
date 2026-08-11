@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Validated
 @RestController
-@RequestMapping("/api/v1/feed")
+@RequestMapping({"/api/v1/feed", "/api/search/guest", "/api/home/feed", "/api/feed/guest"})
 class FeedController {
   private final PublicationFeed publications;
 

@@ -56,6 +56,8 @@ public class SecurityConfig {
               requests
                   .requestMatchers("/actuator/health", "/api/v1/auth/csrf", "/api/v1/auth/sessions")
                   .permitAll()
+                  .requestMatchers("/api/health")
+                  .permitAll()
                   .requestMatchers("/api/v1/auth/password-resets/**")
                   .permitAll()
                   .requestMatchers("/api/v1/auth/email-verifications/**")
