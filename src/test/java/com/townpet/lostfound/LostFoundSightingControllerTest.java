@@ -92,6 +92,12 @@ class LostFoundSightingControllerTest {
             get("/api/v1/lost-found/sightings/{sightingId}/exact-location", sightingId)
                 .cookie(login("demo-member-3@townpet.local")))
         .andExpect(status().isNotFound());
+
+    mockMvc
+        .perform(get("/api/v1/lost-found/alerts/{alertId}/sightings", alertId).param("limit", "5"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(sightingId))
+        .andExpect(jsonPath("$[0].approximateLocation.latitude").value(37.551));
     mockMvc
         .perform(
             patch("/api/v1/lost-found/alerts/{alertId}/status", alertId)
