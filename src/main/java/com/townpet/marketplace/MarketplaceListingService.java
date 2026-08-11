@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -61,6 +62,21 @@ class MarketplaceListingService {
         .stream()
         .findFirst()
         .orElseThrow(MarketplaceListingNotFoundException::new);
+  }
+
+  @Transactional(readOnly = true)
+  List<ListingView> listAvailable(Optional<MarketplaceListingKind> kind, int limit) {
+    String kindClause = kind.isPresent() ? " AND kind = ?" : "";
+    String sql =
+        "SELECT id, owner_member_id, kind, status, title, description, price_krw, "
+            + "created_at, updated_at, version FROM market_listing "
+            + "WHERE status = 'AVAILABLE'"
+            + kindClause
+            + " ORDER BY created_at DESC, id DESC LIMIT ?";
+    List<Object> args = new java.util.ArrayList<>();
+    kind.ifPresent(value -> args.add(value.name()));
+    args.add(limit);
+    return jdbc.query(sql, (rs, rowNum) -> map(rs), args.toArray());
   }
 
   @Transactional

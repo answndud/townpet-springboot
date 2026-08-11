@@ -8,6 +8,7 @@ import PublicationCreatePage from "./features/publication/PublicationCreatePage"
 import PublicationDetailPage from "./features/publication/PublicationDetailPage";
 import PublicationEditPage from "./features/publication/PublicationEditPage";
 import PublicationFeedPage from "./features/publication/PublicationFeedPage";
+import { MarketplaceDetailPage, MarketplaceFormPage, MarketplaceListPage } from "./features/marketplace/MarketplacePages";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -43,6 +44,7 @@ function Header() {
             <NavLink to="/feed">게시판</NavLink>
             <NavLink to="/profile">내 프로필</NavLink>
             <NavLink to="/notifications">알림</NavLink>
+            <NavLink to="/marketplace">거래</NavLink>
             <NavLink to="/login">로그인</NavLink>
           </nav>
         )}
@@ -131,6 +133,10 @@ export default function App() {
         <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />
         <Route path="/feed" element={<PublicationFeedPage memberView />} />
         <Route path="/feed/guest" element={<PublicationFeedPage memberView={false} />} />
+        <Route path="/marketplace" element={<MarketplaceListPage />} />
+        <Route path="/marketplace/new" element={<MarketplaceFormPage />} />
+        <Route path="/marketplace/:listingId/edit" element={<MarketplaceFormPage edit />} />
+        <Route path="/marketplace/:listingId" element={<MarketplaceDetailPage />} />
         <Route path="*" element={<PlaceholderPage />} />
       </Routes>
     </div>

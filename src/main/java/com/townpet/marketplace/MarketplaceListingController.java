@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -44,6 +46,19 @@ class MarketplaceListingController {
     } catch (org.springframework.dao.DataIntegrityViolationException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid listing price policy");
     }
+  }
+
+  @GetMapping
+  List<ListingResponse> list(
+      @org.springframework.web.bind.annotation.RequestParam(required = false)
+          MarketplaceListingKind kind,
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit) {
+    if (limit < 1 || limit > 50) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
+    }
+    return listings.listAvailable(Optional.ofNullable(kind), limit).stream()
+        .map(MarketplaceListingController::toResponse)
+        .toList();
   }
 
   @GetMapping("/{listingId}")
