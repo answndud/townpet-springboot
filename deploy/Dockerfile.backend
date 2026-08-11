@@ -5,6 +5,9 @@ RUN ./gradlew bootJar --no-daemon
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /workspace/build/libs/*.jar /app/townpet.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-jar", "/app/townpet.jar"]
