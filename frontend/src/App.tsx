@@ -14,6 +14,7 @@ import { LostFoundAlertFormPage, LostFoundDetailPage, LostFoundExactLocationPage
 import { LocalCareDetailPage, LocalCareListPage } from "./features/localcare/LocalCarePages";
 import { GatheringCreatePage, GatheringDetailPage, GatheringListPage } from "./features/gathering/GatheringPages";
 import NotificationPage from "./NotificationPage";
+import LegalPage from "./LegalPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -134,6 +135,8 @@ export default function App() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<NotificationPage />} />
+        <Route path="/privacy" element={<LegalPage />} />
+        <Route path="/terms" element={<LegalPage />} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/gatherings" element={<GatheringListPage />} />

@@ -125,7 +125,7 @@ pages:
     spring: pending
   - path: /privacy
     legacy: true
-    spring: pending
+    spring: verified
   - path: /profile
     legacy: true
     spring: verified
@@ -143,7 +143,7 @@ pages:
     spring: pending
   - path: /terms
     legacy: true
-    spring: pending
+    spring: verified
   - path: /towns/{townSlug}
     legacy: true
     spring: pending
