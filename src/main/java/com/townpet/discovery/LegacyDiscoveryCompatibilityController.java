@@ -49,11 +49,6 @@ class LegacyDiscoveryCompatibilityController {
     return new AudienceResponse(List.copyOf(segments));
   }
 
-  @PostMapping("/api/lounges/breeds/{breedCode}/groupbuys")
-  List<Object> groupBuys() {
-    return List.of();
-  }
-
   @PostMapping("/api/guest/step-up")
   ResponseEntity<Void> stepUp(@RequestBody(required = false) Object ignored) {
     return ResponseEntity.noContent().build();

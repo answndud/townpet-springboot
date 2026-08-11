@@ -92,7 +92,7 @@ pages:
     spring: adapter
   - path: /lounges/breeds/{breedCode}/groupbuys/new
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /my-posts
     legacy: true
     spring: verified
@@ -270,7 +270,7 @@ apiRoutes:
   - path: /api/lounges/breeds/{breedCode}/groupbuys
     methods: [POST]
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /api/lounges/breeds/{breedCode}/posts
     methods: [GET]
     legacy: true

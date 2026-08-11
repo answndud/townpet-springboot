@@ -148,7 +148,7 @@ export type FeedPage = {
   };
 };
 
-export type MarketplaceListingKind = "SELL" | "RENT" | "SHARE";
+export type MarketplaceListingKind = "SELL" | "RENT" | "SHARE" | "GROUP_BUY";
 export type MarketplaceListingStatus = "AVAILABLE" | "RESERVED" | "COMPLETED" | "CANCELLED";
 export type MarketplaceListing = {
   id: string;

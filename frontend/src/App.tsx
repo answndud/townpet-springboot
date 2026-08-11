@@ -172,7 +172,7 @@ export default function App() {
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/campaigns/neighborhood-map" element={<LocalCareListPage />} />
         <Route path="/commercial" element={<MarketplaceListPage />} />
-        <Route path="/lounges/breeds/:breedCode/groupbuys/new" element={<MarketplaceFormPage />} />
+        <Route path="/lounges/breeds/:breedCode/groupbuys/new" element={<MarketplaceFormPage initialKind="GROUP_BUY" />} />
         <Route path="/gatherings" element={<GatheringListPage />} />
         <Route path="/gatherings/new" element={<GatheringCreatePage />} />
         <Route path="/gatherings/:gatheringId" element={<GatheringDetailPage />} />
