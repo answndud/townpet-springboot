@@ -78,14 +78,16 @@ class LostFoundAlertService {
       UUID alertId,
       LostFoundAlertStatus nextStatus,
       String resolutionOutcome,
-      String closeReason) {
+      String closeReason,
+      String reopenReason) {
     AlertView current =
         find(alertId).orElseThrow(LostFoundAlertNotFoundException::new);
     if (!current.reporterMemberId().equals(ownerMemberId)) {
       throw new LostFoundAlertOwnershipException();
     }
-    if (current.status() != LostFoundAlertStatus.ACTIVE
-        || nextStatus == LostFoundAlertStatus.ACTIVE) {
+    boolean reopening = nextStatus == LostFoundAlertStatus.ACTIVE;
+    if ((!reopening && current.status() != LostFoundAlertStatus.ACTIVE)
+        || (reopening && current.status() == LostFoundAlertStatus.ACTIVE)) {
       throw new LostFoundAlertStateException();
     }
     if (nextStatus == LostFoundAlertStatus.RESOLVED
@@ -96,18 +98,33 @@ class LostFoundAlertService {
         && (closeReason == null || closeReason.isBlank())) {
       throw new LostFoundAlertStateException();
     }
+    if (reopening && (reopenReason == null || reopenReason.isBlank())) {
+      throw new LostFoundAlertStateException();
+    }
     int updated =
         jdbc.update(
             "UPDATE lost_found_alert SET status = ?, resolution_outcome = ?, close_reason = ?, "
+                + "reopen_reason = ?, "
                 + "updated_at = CURRENT_TIMESTAMP, version = version + 1 "
-                + "WHERE id = ? AND reporter_member_id = ? AND status = 'ACTIVE' AND version = ?",
+                + "WHERE id = ? AND reporter_member_id = ? AND version = ?",
             nextStatus.name(),
             blankToNull(resolutionOutcome),
             blankToNull(closeReason),
+            blankToNull(reopenReason),
             alertId,
             ownerMemberId,
             current.version());
     if (updated != 1) throw new LostFoundAlertStateException();
+    jdbc.update(
+        "INSERT INTO lost_found_alert_status_history "
+            + "(id, alert_id, actor_member_id, from_status, to_status, reason) "
+            + "VALUES (?, ?, ?, ?, ?, ?)",
+        UuidV7.randomUuid(),
+        alertId,
+        ownerMemberId,
+        current.status().name(),
+        nextStatus.name(),
+        blankToNull(reopening ? reopenReason : (nextStatus == LostFoundAlertStatus.RESOLVED ? resolutionOutcome : closeReason)));
     return find(alertId).orElseThrow(LostFoundAlertNotFoundException::new);
   }
 

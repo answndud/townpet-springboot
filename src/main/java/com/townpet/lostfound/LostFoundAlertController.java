@@ -65,7 +65,8 @@ class LostFoundAlertController {
               alertId,
               request.status(),
               request.resolutionOutcome(),
-              request.closeReason()));
+              request.closeReason(),
+              request.reopenReason()));
     } catch (LostFoundAlertNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (LostFoundAlertOwnershipException exception) {
@@ -110,7 +111,8 @@ class LostFoundAlertController {
   record ChangeStatusRequest(
       @NotNull LostFoundAlertStatus status,
       @Size(max = 500) String resolutionOutcome,
-      @Size(max = 500) String closeReason) {}
+      @Size(max = 500) String closeReason,
+      @Size(max = 500) String reopenReason) {}
 
   record AlertResponse(
       UUID id,
