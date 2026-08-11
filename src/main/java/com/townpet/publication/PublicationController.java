@@ -187,7 +187,7 @@ class PublicationController {
       UUID id,
       PublicationType type,
       PublicationScope scope,
-      UUID authorId,
+      @Nullable UUID authorId,
       @Nullable UUID neighborhoodId,
       String title,
       String body,
