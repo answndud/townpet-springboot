@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.16 - object storage adapter와 finalize 검증을 연결한다
-   - 파일: `src/main/java/com/townpet/media/**`, `src/main/java/com/townpet/media/api/**`, `src/test/java/com/townpet/media/**`, `deploy/compose/**`
-   - 변경: presigned upload·object metadata 조회를 storage port로 분리하고, finalize가 실제 object 존재·MIME·magic byte·checksum을 확인하도록 local test adapter를 연결한다.
-   - 검증: `./gradlew integrationTest --tests '*Media*' && ./gradlew check`; storage adapter contract test에서 missing/mismatched object를 거부한다.
-   - 완료: storage provider 교체 없이 media service가 검증된 object만 `READY`로 전환하고, 실패 시 metadata 상태가 `UPLOADING`에 남는다.
+1. P2.17 - media object 검증과 orphan cleanup을 운영 흐름에 연결한다
+   - 파일: `src/main/java/com/townpet/media/**`, `src/test/java/com/townpet/media/**`, `src/main/resources/db/migration/**`, `deploy/compose/**`
+   - 변경: magic byte·MIME allowlist와 만료 `UPLOADING` asset cleanup command를 추가하고, object storage metadata와 `upload_asset` 대사를 반복 실행할 수 있게 한다.
+   - 검증: `./gradlew integrationTest --tests '*Media*' && ./gradlew check`; missing/mismatched object와 cleanup 재실행 contract test를 통과한다.
+   - 완료: 허용되지 않은 파일 형식과 고아 object가 `READY`/`ATTACHED`로 승격되지 않고, cleanup이 idempotent하게 metadata와 object를 함께 정리한다.
 
 ## Backlog
 
