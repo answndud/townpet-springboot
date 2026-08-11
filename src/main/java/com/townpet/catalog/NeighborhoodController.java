@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/catalog")
+@RequestMapping({"/api/v1/catalog", "/api"})
 public class NeighborhoodController {
   private final NeighborhoodRepository neighborhoods;
 
