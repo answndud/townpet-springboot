@@ -74,8 +74,17 @@ class LostFoundAlertService {
   }
 
   @Transactional(readOnly = true)
-  List<AlertView> listActive(Optional<LostFoundAlertKind> kind, int limit) {
+  List<AlertView> listActive(
+      Optional<LostFoundAlertKind> kind,
+      int limit,
+      Optional<Double> latitude,
+      Optional<Double> longitude,
+      Optional<Integer> radiusMeters) {
     String kindClause = kind.isPresent() ? " AND kind = ?" : "";
+    String radiusClause =
+        radiusMeters.isPresent()
+            ? " AND ST_DWithin(approx_location, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography, ?)"
+            : "";
     String sql =
         "SELECT id, reporter_member_id, kind, status, title, description, last_seen_at, "
             + "ST_Y(approx_location::geometry) AS latitude, "
@@ -83,8 +92,17 @@ class LostFoundAlertService {
             + "resolution_outcome, close_reason "
             + "FROM lost_found_alert WHERE status = 'ACTIVE'"
             + kindClause
+            + radiusClause
             + " ORDER BY last_seen_at DESC, id DESC LIMIT ?";
-    Object[] args = kind.isPresent() ? new Object[] {kind.get().name(), limit} : new Object[] {limit};
+    java.util.List<Object> values = new java.util.ArrayList<>();
+    kind.ifPresent(value -> values.add(value.name()));
+    if (radiusMeters.isPresent()) {
+      values.add(longitude.orElseThrow());
+      values.add(latitude.orElseThrow());
+      values.add(radiusMeters.get());
+    }
+    values.add(limit);
+    Object[] args = values.toArray();
     return jdbc.query(sql, (rs, rowNum) -> mapAlert(rs), args);
   }
 

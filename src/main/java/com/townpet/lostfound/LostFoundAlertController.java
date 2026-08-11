@@ -51,11 +51,31 @@ class LostFoundAlertController {
   List<AlertResponse> list(
       @org.springframework.web.bind.annotation.RequestParam(required = false)
           LostFoundAlertKind kind,
-      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit) {
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit,
+      @org.springframework.web.bind.annotation.RequestParam(required = false) Double latitude,
+      @org.springframework.web.bind.annotation.RequestParam(required = false) Double longitude,
+      @org.springframework.web.bind.annotation.RequestParam(required = false) Integer radiusMeters) {
     if (limit < 1 || limit > 50) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
     }
-    return alerts.listActive(Optional.ofNullable(kind), limit).stream()
+    boolean anyRadius = latitude != null || longitude != null || radiusMeters != null;
+    boolean completeRadius = latitude != null && longitude != null && radiusMeters != null;
+    if (anyRadius && !completeRadius) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "radius filter requires all parameters");
+    }
+    if (completeRadius
+        && (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180
+            || radiusMeters < 1 || radiusMeters > 100_000)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid radius filter");
+    }
+    return alerts
+        .listActive(
+            Optional.ofNullable(kind),
+            limit,
+            Optional.ofNullable(latitude),
+            Optional.ofNullable(longitude),
+            Optional.ofNullable(radiusMeters))
+        .stream()
         .map(LostFoundAlertController::toResponse)
         .toList();
   }
