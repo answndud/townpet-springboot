@@ -58,6 +58,8 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers("/api/health")
                   .permitAll()
+                  .requestMatchers("/api/viewer-shell")
+                  .permitAll()
                   .requestMatchers("/api/v1/auth/password-resets/**")
                   .permitAll()
                   .requestMatchers("/api/v1/auth/email-verifications/**")
