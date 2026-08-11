@@ -7,8 +7,9 @@
 ## Active
 
 1. G7-PARITY-HARDEN - 전체 parity와 출시 품질을 마무리한다
-   - 범위: 구현된 route의 responsive/accessibility 확인, 전체 parity inventory·security·deployment evidence를 fresh run한다.
-   - 완료: 구현 범위와 미구현 범위가 matrix에 정확히 표시되고, clean backend gate·frontend gate·Compose config 검증 결과를 report에서 재현할 수 있다.
+   - 현재: matrix의 `pending`은 0개이며, moderator 운영·discovery adapter·댓글 lifecycle·correction API와 legacy shell route를 반영했다.
+   - 남은 범위: `adapter` 항목의 fidelity를 필요한 사용자 여정별로 높이고, 실제 VPS 복구 리허설을 수행한다.
+   - 완료: 구현 범위와 미구현 범위가 matrix에 정확히 표시되고, clean backend gate·frontend gate·Compose config·복구 evidence를 report에서 재현할 수 있다.
 
 ## Backlog
 
