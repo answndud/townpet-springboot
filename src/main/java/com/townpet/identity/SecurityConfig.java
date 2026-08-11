@@ -84,6 +84,8 @@ public class SecurityConfig {
                   .hasRole("MODERATOR")
                   .requestMatchers(HttpMethod.PATCH, "/api/v1/trust-reports/**")
                   .hasRole("MODERATOR")
+                  .requestMatchers("/api/admin/reports/**")
+                  .hasRole("MODERATOR")
                   .anyRequest()
                   .authenticated();
             })
