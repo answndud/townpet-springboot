@@ -185,6 +185,36 @@ class IdentityMemberControllerTest {
   }
 
   @Test
+  void profileVisibilityCanBeUpdatedAndIsReturnedToOwner() throws Exception {
+    verifyCredential();
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    Cookie session = sessionCookie(login);
+
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                    "/api/v1/members/me/profile")
+                .cookie(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"bio\":\"공개 범위 테스트\",\"showPublicPosts\":false,"
+                        + "\"showPublicComments\":true,\"showPublicPets\":false}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.showPublicPosts").value(false))
+        .andExpect(jsonPath("$.showPublicComments").value(true))
+        .andExpect(jsonPath("$.showPublicPets").value(false));
+  }
+
+  @Test
   void stateChangingRequestWithoutCsrfIsRejected() throws Exception {
     mockMvc
         .perform(
