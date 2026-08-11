@@ -39,6 +39,34 @@ export type OnboardingInput = {
   pets: Array<{ name: string; species: string }>;
 };
 
+export type LostFoundAlertKind = "LOST" | "FOUND";
+export type LostFoundAlertStatus = "ACTIVE" | "RESOLVED" | "CLOSED";
+export type LostFoundLocation = { latitude: number; longitude: number };
+export type LostFoundAlert = {
+  id: string;
+  reporterMemberId: string;
+  kind: LostFoundAlertKind;
+  status: LostFoundAlertStatus;
+  title: string;
+  description: string;
+  lastSeenAt: string;
+  approximateLocation: LostFoundLocation;
+  resolutionOutcome: string | null;
+  closeReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+};
+export type LostFoundSighting = {
+  id: string;
+  alertId: string;
+  reporterMemberId: string;
+  seenAt: string;
+  description: string;
+  approximateLocation: LostFoundLocation;
+  createdAt: string;
+};
+
 export type PublicationScope = "LOCAL" | "GLOBAL";
 
 export type Publication = {
@@ -394,5 +422,48 @@ export const marketplaceApi = {
         body: JSON.stringify({ status, version }),
       },
     );
+  },
+};
+
+export const lostFoundApi = {
+  list({ kind, latitude, longitude, radiusMeters, limit = 20, signal }: {
+    kind?: LostFoundAlertKind;
+    latitude?: number;
+    longitude?: number;
+    radiusMeters?: number;
+    limit?: number;
+    signal?: AbortSignal;
+  } = {}) {
+    const search = new URLSearchParams({ limit: String(limit) });
+    if (kind) search.set("kind", kind);
+    if (latitude !== undefined) search.set("latitude", String(latitude));
+    if (longitude !== undefined) search.set("longitude", String(longitude));
+    if (radiusMeters !== undefined) search.set("radiusMeters", String(radiusMeters));
+    return apiFetch<LostFoundAlert[]>(`/api/v1/lost-found/alerts?${search}`, { signal });
+  },
+  detail(alertId: string, signal?: AbortSignal) {
+    return apiFetch<LostFoundAlert>(`/api/v1/lost-found/alerts/${encodeURIComponent(alertId)}`, { signal });
+  },
+  create(input: {
+    kind: LostFoundAlertKind;
+    title: string;
+    description: string;
+    lastSeenAt: string;
+    latitude: number;
+    longitude: number;
+  }) {
+    return mutate<LostFoundAlert>("/api/v1/lost-found/alerts", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) });
+  },
+  changeStatus(alertId: string, input: { status: LostFoundAlertStatus; resolutionOutcome?: string; closeReason?: string; reopenReason?: string }) {
+    return mutate<LostFoundAlert>(`/api/v1/lost-found/alerts/${encodeURIComponent(alertId)}/status`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify(input) });
+  },
+  sightings(alertId: string, limit = 20, signal?: AbortSignal) {
+    return apiFetch<LostFoundSighting[]>(`/api/v1/lost-found/alerts/${encodeURIComponent(alertId)}/sightings?limit=${limit}`, { signal });
+  },
+  createSighting(alertId: string, input: { seenAt: string; description: string; latitude: number; longitude: number; exactLatitude?: number; exactLongitude?: number }) {
+    return mutate<LostFoundSighting>(`/api/v1/lost-found/alerts/${encodeURIComponent(alertId)}/sightings`, { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) });
+  },
+  exactLocation(sightingId: string, signal?: AbortSignal) {
+    return apiFetch<{ sightingId: string; latitude: number; longitude: number }>(`/api/v1/lost-found/sightings/${encodeURIComponent(sightingId)}/exact-location`, { signal });
   },
 };

@@ -9,6 +9,7 @@ import PublicationDetailPage from "./features/publication/PublicationDetailPage"
 import PublicationEditPage from "./features/publication/PublicationEditPage";
 import PublicationFeedPage from "./features/publication/PublicationFeedPage";
 import { MarketplaceDetailPage, MarketplaceFormPage, MarketplaceListPage } from "./features/marketplace/MarketplacePages";
+import { LostFoundAlertFormPage, LostFoundDetailPage, LostFoundExactLocationPage, LostFoundListPage, LostFoundSightingFormPage } from "./features/lostfound/LostFoundPages";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -137,6 +138,11 @@ export default function App() {
         <Route path="/marketplace/new" element={<MarketplaceFormPage />} />
         <Route path="/marketplace/:listingId/edit" element={<MarketplaceFormPage edit />} />
         <Route path="/marketplace/:listingId" element={<MarketplaceDetailPage />} />
+        <Route path="/lost-found" element={<LostFoundListPage />} />
+        <Route path="/lost-found/new" element={<LostFoundAlertFormPage />} />
+        <Route path="/lost-found/:alertId/sightings/new" element={<LostFoundSightingFormPage />} />
+        <Route path="/lost-found/sightings/:sightingId/exact" element={<LostFoundExactLocationPage />} />
+        <Route path="/lost-found/:alertId" element={<LostFoundDetailPage />} />
         <Route path="*" element={<PlaceholderPage />} />
       </Routes>
     </div>
