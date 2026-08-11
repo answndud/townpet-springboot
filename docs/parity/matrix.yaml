@@ -11,40 +11,40 @@ normalization:
 pages:
   - path: /
     legacy: true
-    spring: pending
+    spring: verified
   - path: /admin
     legacy: true
     spring: verified
   - path: /admin/auth-audits
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /admin/breeds
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /admin/care-feedbacks
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /admin/corrections
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /admin/hospital-review-flags
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /admin/moderation-logs
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /admin/moderation/direct
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /admin/ops
     legacy: true
     spring: verified
   - path: /admin/personalization
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /admin/policies
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /admin/reports
     legacy: true
     spring: verified
@@ -123,7 +123,7 @@ pages:
     spring: verified
   - path: /posts/{id}/sightings
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /privacy
     legacy: true
     spring: verified

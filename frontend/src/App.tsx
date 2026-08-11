@@ -156,6 +156,15 @@ export default function App() {
         <Route path="/admin/reports/:reportId" element={<AdminReportsPage />} />
         <Route path="/admin" element={<AdminHomePage />} />
         <Route path="/admin/ops" element={<AdminHomePage />} />
+        <Route path="/admin/auth-audits" element={<AdminHomePage />} />
+        <Route path="/admin/breeds" element={<AdminHomePage />} />
+        <Route path="/admin/care-feedbacks" element={<AdminHomePage />} />
+        <Route path="/admin/corrections" element={<AdminHomePage />} />
+        <Route path="/admin/hospital-review-flags" element={<AdminHomePage />} />
+        <Route path="/admin/moderation-logs" element={<AdminHomePage />} />
+        <Route path="/admin/moderation/direct" element={<AdminHomePage />} />
+        <Route path="/admin/personalization" element={<AdminHomePage />} />
+        <Route path="/admin/policies" element={<LegalPage />} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/campaigns/neighborhood-map" element={<LocalCareListPage />} />
@@ -182,6 +191,7 @@ export default function App() {
         <Route path="/lost-found/:alertId/sightings/new" element={<LostFoundSightingFormPage />} />
         <Route path="/lost-found/sightings/:sightingId/exact" element={<LostFoundExactLocationPage />} />
         <Route path="/lost-found/:alertId" element={<LostFoundDetailPage />} />
+        <Route path="/posts/:publicationId/sightings" element={<LostFoundListPage />} />
         <Route path="*" element={<PlaceholderPage />} />
       </Routes>
     </div>
