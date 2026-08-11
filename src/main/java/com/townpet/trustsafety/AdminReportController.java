@@ -34,6 +34,14 @@ class AdminReportController {
     return response(report);
   }
 
+  @GetMapping("/{id}")
+  TrustReportController.ReportResponse get(@PathVariable UUID id) {
+    return reports
+        .findById(id)
+        .map(AdminReportController::response)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+  }
+
   private static TrustReportController.ReportResponse response(TrustReportEntity r) {
     return new TrustReportController.ReportResponse(
         r.getId(),
