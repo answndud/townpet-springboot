@@ -1,12 +1,11 @@
 package com.townpet.identity;
 
-import com.townpet.operations.ModerationActionEntity;
-import com.townpet.operations.ModerationActionRepository;
 import com.townpet.publication.api.PublicationModeration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,15 +21,13 @@ import org.springframework.web.server.ResponseStatusException;
 @PreAuthorize("hasRole('MODERATOR')")
 class MemberModerationController {
   private final CredentialRepository credentials;
-  private final ModerationActionRepository actions;
+  private final JdbcTemplate jdbc;
   private final PublicationModeration publications;
 
   MemberModerationController(
-      CredentialRepository credentials,
-      ModerationActionRepository actions,
-      PublicationModeration publications) {
+      CredentialRepository credentials, JdbcTemplate jdbc, PublicationModeration publications) {
     this.credentials = credentials;
-    this.actions = actions;
+    this.jdbc = jdbc;
     this.publications = publications;
   }
 
@@ -49,14 +46,8 @@ class MemberModerationController {
     int affected =
         publications.setAuthorContentVisibility(
             request.memberId(), action.equals("RESTORE_CONTENT"));
-    actions.save(
-        new ModerationActionEntity(
-            memberId(principal),
-            request.memberId(),
-            "MEMBER",
-            request.memberId(),
-            action,
-            request.reason()));
+    recordAction(
+        memberId(principal), request.memberId(), request.memberId(), action, request.reason());
     return new Response(credential.getMemberId(), action, affected);
   }
 
@@ -69,14 +60,8 @@ class MemberModerationController {
             .findByMemberId(request.memberId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     credential.setEnabled(false);
-    actions.save(
-        new ModerationActionEntity(
-            memberId(principal),
-            request.memberId(),
-            "MEMBER",
-            request.memberId(),
-            "SANCTION",
-            request.reason()));
+    recordAction(
+        memberId(principal), request.memberId(), request.memberId(), "SANCTION", request.reason());
     return new Response(credential.getMemberId(), "SANCTION", 0);
   }
 
@@ -86,6 +71,18 @@ class MemberModerationController {
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     }
+  }
+
+  private void recordAction(
+      UUID actor, UUID targetMember, UUID targetId, String action, String reason) {
+    jdbc.update(
+        "INSERT INTO moderation_action (id, actor_member_id, target_member_id, target_type, target_id, action, reason) VALUES (?, ?, ?, 'MEMBER', ?, ?, ?)",
+        UUID.randomUUID(),
+        actor,
+        targetMember,
+        targetId,
+        action,
+        reason);
   }
 
   record MemberRequest(@NotNull UUID memberId, String reason) {}
