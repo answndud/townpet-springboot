@@ -4,6 +4,7 @@ import com.townpet.common.UuidV7;
 import java.time.Instant;
 import java.sql.Timestamp;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.Nullable;
@@ -72,6 +73,21 @@ class LostFoundAlertService {
         .findFirst();
   }
 
+  @Transactional(readOnly = true)
+  List<AlertView> listActive(Optional<LostFoundAlertKind> kind, int limit) {
+    String kindClause = kind.isPresent() ? " AND kind = ?" : "";
+    String sql =
+        "SELECT id, reporter_member_id, kind, status, title, description, last_seen_at, "
+            + "ST_Y(approx_location::geometry) AS latitude, "
+            + "ST_X(approx_location::geometry) AS longitude, created_at, updated_at, version, "
+            + "resolution_outcome, close_reason "
+            + "FROM lost_found_alert WHERE status = 'ACTIVE'"
+            + kindClause
+            + " ORDER BY last_seen_at DESC, id DESC LIMIT ?";
+    Object[] args = kind.isPresent() ? new Object[] {kind.get().name(), limit} : new Object[] {limit};
+    return jdbc.query(sql, (rs, rowNum) -> mapAlert(rs), args);
+  }
+
   @Transactional
   AlertView changeStatus(
       UUID ownerMemberId,
@@ -126,6 +142,24 @@ class LostFoundAlertService {
         nextStatus.name(),
         blankToNull(reopening ? reopenReason : (nextStatus == LostFoundAlertStatus.RESOLVED ? resolutionOutcome : closeReason)));
     return find(alertId).orElseThrow(LostFoundAlertNotFoundException::new);
+  }
+
+  private static AlertView mapAlert(java.sql.ResultSet rs) throws java.sql.SQLException {
+    return new AlertView(
+        rs.getObject("id", UUID.class),
+        rs.getObject("reporter_member_id", UUID.class),
+        LostFoundAlertKind.valueOf(rs.getString("kind")),
+        LostFoundAlertStatus.valueOf(rs.getString("status")),
+        rs.getString("title"),
+        rs.getString("description"),
+        rs.getTimestamp("last_seen_at").toInstant(),
+        rs.getDouble("latitude"),
+        rs.getDouble("longitude"),
+        rs.getTimestamp("created_at").toInstant(),
+        rs.getTimestamp("updated_at").toInstant(),
+        rs.getLong("version"),
+        rs.getString("resolution_outcome"),
+        rs.getString("close_reason"));
   }
 
   @Nullable

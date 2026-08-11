@@ -87,6 +87,12 @@ class LostFoundAlertControllerTest {
         .andExpect(jsonPath("$.approximateLocation.longitude").value(126.91));
 
     mockMvc
+        .perform(get("/api/v1/lost-found/alerts").param("kind", "LOST").param("limit", "1"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(id))
+        .andExpect(jsonPath("$[0].status").value("ACTIVE"));
+
+    mockMvc
         .perform(
             patch("/api/v1/lost-found/alerts/{id}/status", id)
                 .cookie(member)

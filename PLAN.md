@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P3-LOSTFOUND - alert lifecycle 재개와 상태 이력을 연결한다
-   - 파일: `src/main/java/com/townpet/lostfound/**`, `src/main/resources/db/migration/**`, `src/test/java/com/townpet/lostfound/**`
-   - 변경: `RESOLVED/CLOSED → ACTIVE` 재개를 owner-only로 허용하고 reopen reason과 모든 상태 전이를 history table에 기록한다.
+1. P3-LOSTFOUND - 활성 alert 공개 목록과 kind filter를 연결한다
+   - 파일: `src/main/java/com/townpet/lostfound/**`, `src/test/java/com/townpet/lostfound/**`
+   - 변경: 종료되지 않은 alert를 최근 목격 시각순으로 조회하고 `LOST/FOUND` 선택 filter와 limit을 제공한다. 공개 응답은 기존처럼 근사 위치만 포함한다.
    - 검증: `./gradlew integrationTest --tests '*LostFoundAlertControllerTest*'`
-   - 완료: 재개 사유 없는 요청은 거부되고, 타인 재개는 차단되며, 상태 전이마다 actor·이전/다음 상태·사유가 저장된다.
+   - 완료: `ACTIVE` alert만 목록에 나오고 kind·limit이 적용되며, 종료된 alert와 정확 위치는 공개 목록에서 제외된다.
 
 ## Backlog
 

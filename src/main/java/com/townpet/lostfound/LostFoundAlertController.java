@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -43,6 +45,19 @@ class LostFoundAlertController {
             request.lastSeenAt(),
             request.latitude(),
             request.longitude()));
+  }
+
+  @GetMapping
+  List<AlertResponse> list(
+      @org.springframework.web.bind.annotation.RequestParam(required = false)
+          LostFoundAlertKind kind,
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit) {
+    if (limit < 1 || limit > 50) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
+    }
+    return alerts.listActive(Optional.ofNullable(kind), limit).stream()
+        .map(LostFoundAlertController::toResponse)
+        .toList();
   }
 
   @GetMapping("/{alertId}")
