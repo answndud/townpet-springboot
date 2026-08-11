@@ -61,6 +61,49 @@ public class PublicationFeed {
   }
 
   @Transactional(readOnly = true)
+  public Page popular(int limit) {
+    if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid popular limit");
+    Table<?> METRIC = table(name("publication_metric")).as("m");
+    Field<UUID> METRIC_ID = field(name("m", "publication_id"), UUID.class);
+    Field<Long> VIEWS = field(name("m", "view_count"), Long.class);
+    List<Item> items =
+        query
+            .select(
+                ID,
+                AUTHOR_ID,
+                TYPE,
+                SCOPE,
+                NEIGHBORHOOD_ID,
+                TITLE,
+                BODY,
+                LIFECYCLE,
+                CREATED_AT,
+                UPDATED_AT,
+                VERSION)
+            .from(PUBLICATION)
+            .leftJoin(METRIC)
+            .on(METRIC_ID.eq(ID))
+            .where(LIFECYCLE.eq("ACTIVE").and(SCOPE.eq("GLOBAL")))
+            .orderBy(VIEWS.desc().nullsLast(), CREATED_AT.desc(), ID.desc())
+            .limit(limit)
+            .fetch(
+                record ->
+                    new Item(
+                        record.get(ID),
+                        record.get(TYPE),
+                        record.get(TITLE),
+                        record.get(BODY),
+                        record.get(SCOPE),
+                        record.get(AUTHOR_ID),
+                        record.get(NEIGHBORHOOD_ID),
+                        record.get(LIFECYCLE),
+                        record.get(CREATED_AT).toInstant(),
+                        record.get(UPDATED_AT).toInstant(),
+                        record.get(VERSION)));
+    return new Page(List.copyOf(items), null, false);
+  }
+
+  @Transactional(readOnly = true)
   public Page list(
       @Nullable UUID viewerMemberId,
       boolean includeViewerNeighborhood,

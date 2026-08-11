@@ -30,6 +30,7 @@ import NeighborhoodMapPage from "./NeighborhoodMapPage";
 import TownSectionPage from "./TownSectionPage";
 import PostSightingsPage from "./PostSightingsPage";
 import AdminBreedsPage from "./AdminBreedsPage";
+import BestPage from "./BestPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -158,7 +159,7 @@ export default function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/search/guest" element={<SearchPage guest />} />
         <Route path="/corrections/new" element={<CorrectionCreatePage />} />
-        <Route path="/best" element={<PublicationFeedPage memberView={false} />} />
+        <Route path="/best" element={<BestPage />} />
         <Route path="/boards/adoption" element={<AdoptionPage />} />
         <Route path="/towns/:townSlug" element={<TownLandingPage />} />
         <Route path="/towns/:townSlug/:sectionSlug" element={<TownSectionPage />} />
