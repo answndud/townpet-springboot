@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -56,6 +57,16 @@ public class PublicationFeed {
       boolean includeViewerNeighborhood,
       @Nullable String encodedCursor,
       int limit) {
+    return list(viewerMemberId, includeViewerNeighborhood, encodedCursor, limit, null);
+  }
+
+  @Transactional(readOnly = true)
+  public Page list(
+      @Nullable UUID viewerMemberId,
+      boolean includeViewerNeighborhood,
+      @Nullable String encodedCursor,
+      int limit,
+      @Nullable String searchQuery) {
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
     UUID viewerNeighborhoodId =
         viewerMemberId == null || !includeViewerNeighborhood
@@ -70,6 +81,10 @@ public class PublicationFeed {
       visible = visible.or(SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId)));
     }
     Condition condition = LIFECYCLE.eq("ACTIVE").and(visible);
+    if (searchQuery != null && !searchQuery.isBlank()) {
+      String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
+      condition = condition.and(TITLE.likeIgnoreCase(term).or(BODY.likeIgnoreCase(term)));
+    }
     if (viewerMemberId != null && includeViewerNeighborhood) {
       Set<UUID> blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
       if (!blockedAuthorIds.isEmpty()) condition = condition.and(AUTHOR_ID.notIn(blockedAuthorIds));
