@@ -38,6 +38,9 @@ export type Member = {
 };
 
 export type PublicMember = Member;
+export type PublicMemberPublication = { id: string; title: string; body: string; scope: PublicationScope; createdAt: string; updatedAt: string };
+export type PublicMemberComment = { id: string; publicationId: string; body: string; createdAt: string };
+export type PublicMemberReaction = { publicationId: string; type: string; createdAt: string };
 
 export type OnboardingInput = {
   bio: string;
@@ -278,6 +281,15 @@ export const memberApi = {
   },
   profile(memberId: string, signal?: AbortSignal) {
     return apiFetch<PublicMember>(`/api/v1/members/${encodeURIComponent(memberId)}`, { signal });
+  },
+  publicPublications(memberId: string, signal?: AbortSignal) {
+    return apiFetch<PublicMemberPublication[]>(`/api/v1/members/${encodeURIComponent(memberId)}/publications`, { signal });
+  },
+  publicComments(memberId: string, signal?: AbortSignal) {
+    return apiFetch<PublicMemberComment[]>(`/api/v1/members/${encodeURIComponent(memberId)}/comments`, { signal });
+  },
+  publicReactions(memberId: string, signal?: AbortSignal) {
+    return apiFetch<PublicMemberReaction[]>(`/api/v1/members/${encodeURIComponent(memberId)}/reactions`, { signal });
   },
   myPosts(signal?: AbortSignal) { return apiFetch<Publication[]>("/api/v1/publications/mine", { signal }); },
   bookmarks(signal?: AbortSignal) { return apiFetch<string[]>("/api/v1/members/me/bookmarks", { signal }); },
