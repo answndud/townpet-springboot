@@ -3,6 +3,7 @@ package com.townpet.publication;
 import com.townpet.member.api.MemberDirectory;
 import com.townpet.member.api.MemberDirectory.MemberPublicationContext;
 import com.townpet.relationship.api.BlockDirectory;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.lang.Nullable;
@@ -46,6 +47,12 @@ class PublicationService {
             publication ->
                 viewerMemberId == null
                     || !blocks.isBlocked(viewerMemberId, publication.getAuthorMemberId()));
+  }
+
+  @Transactional(readOnly = true)
+  List<PublicationEntity> mine(UUID memberId) {
+    return publications.findByAuthorMemberIdAndLifecycleOrderByCreatedAtDesc(
+        memberId, PublicationLifecycle.ACTIVE);
   }
 
   @Transactional

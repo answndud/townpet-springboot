@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +57,13 @@ class PublicationController {
         .findVisible(publicationId, viewerMemberId(principal))
         .map(PublicationController::toResponse)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+  }
+
+  @GetMapping("/mine")
+  List<PublicationResponse> mine(@AuthenticationPrincipal UserDetails principal) {
+    return publications.mine(memberId(principal)).stream()
+        .map(PublicationController::toResponse)
+        .toList();
   }
 
   @PutMapping("/{publicationId}")
