@@ -10,6 +10,7 @@ G1~G6을 큰 사용자 여정으로 연결한 뒤 현재 확인된 출시 준비
 - `frontend/node_modules/.bin/vite build --config vite.config.ts`: production bundle 생성 통과
 - `docker compose -f deploy/compose/portfolio.yml config`: 필요한 환경 변수를 주입한 VPS용 Compose 해석 성공
 - `deploy/Caddyfile`: React history fallback과 `/api` reverse proxy를 단일 public entrypoint로 구성
+- `TOWNPET_DOMAIN`을 설정하면 같은 Caddy 구성이 로컬 `:80` 또는 VPS 도메인의 자동 HTTPS site address로 동작한다.
 - `deploy/backup-postgres.sh`: PostgreSQL custom-format dump 재현 명령 제공
 - `deploy/restore-postgres.sh`: 명시적 `ALLOW_DESTRUCTIVE_RESTORE=YES` 없이는 실행되지 않는 복구 명령 제공
 - 임시 Compose PostgreSQL에서 `backup-postgres.sh`로 dump를 만들고 `restore-postgres.sh`로 복구한 뒤 `SELECT 1` 확인까지 통과했다. 테스트 컨테이너와 volume은 제거했다.
