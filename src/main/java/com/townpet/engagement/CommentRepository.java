@@ -10,4 +10,7 @@ interface CommentRepository extends JpaRepository<CommentEntity, UUID> {
       UUID publicationId, CommentLifecycle lifecycle);
 
   Optional<CommentEntity> findByIdAndLifecycle(UUID id, CommentLifecycle lifecycle);
+
+  List<CommentEntity> findByAuthorMemberIdAndLifecycleOrderByCreatedAtDesc(
+      UUID authorMemberId, CommentLifecycle lifecycle);
 }

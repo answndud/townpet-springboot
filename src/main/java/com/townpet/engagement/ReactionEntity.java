@@ -50,6 +50,10 @@ class ReactionEntity {
     return authorMemberId;
   }
 
+  Instant getCreatedAt() {
+    return createdAt;
+  }
+
   ReactionType getType() {
     return type;
   }

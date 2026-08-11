@@ -43,23 +43,6 @@ public class MemberController {
     return toResponse(member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
   }
 
-  @GetMapping("/{memberId}")
-  MemberResponse getMember(
-      @AuthenticationPrincipal UserDetails principal,
-      @org.springframework.web.bind.annotation.PathVariable UUID memberId) {
-    UUID viewerId = memberId(principal);
-    MemberEntity member =
-        members
-            .findById(memberId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    MemberProfileEntity profile = profiles.findByMemberId(member.getId()).orElse(null);
-    List<MemberPetEntity> visiblePets =
-        viewerId.equals(memberId) || profile == null || profile.isShowPublicPets()
-            ? pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId())
-            : List.of();
-    return toResponse(member, profile, visiblePets);
-  }
-
   @PutMapping("/me/onboarding")
   @Transactional
   MemberResponse updateOnboarding(
