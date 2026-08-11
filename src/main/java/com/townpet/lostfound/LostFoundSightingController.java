@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -53,6 +54,22 @@ class LostFoundSightingController {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (LostFoundAlertStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Alert does not accept sightings");
+    }
+  }
+
+  @GetMapping("/alerts/{alertId}/sightings")
+  List<SightingResponse> list(
+      @PathVariable UUID alertId,
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit) {
+    if (limit < 1 || limit > 50) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
+    }
+    try {
+      return sightings.listForAlert(alertId, limit).stream()
+          .map(LostFoundSightingController::toResponse)
+          .toList();
+    } catch (LostFoundAlertNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
   }
 
