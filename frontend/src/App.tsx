@@ -11,6 +11,7 @@ import PublicationEditPage from "./features/publication/PublicationEditPage";
 import PublicationFeedPage from "./features/publication/PublicationFeedPage";
 import { MarketplaceDetailPage, MarketplaceFormPage, MarketplaceListPage } from "./features/marketplace/MarketplacePages";
 import { LostFoundAlertFormPage, LostFoundDetailPage, LostFoundExactLocationPage, LostFoundListPage, LostFoundSightingFormPage } from "./features/lostfound/LostFoundPages";
+import { LocalCareDetailPage, LocalCareListPage } from "./features/localcare/LocalCarePages";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -130,6 +131,8 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/guides" element={<LocalCareListPage />} />
+        <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/members/:memberId" element={<PublicMemberProfilePage />} />
         <Route path="/posts/new" element={<PublicationCreatePage />} />
         <Route path="/posts/:publicationId/edit" element={<PublicationEditPage />} />
