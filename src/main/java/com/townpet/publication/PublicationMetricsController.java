@@ -21,10 +21,7 @@ class PublicationMetricsController {
   @PostMapping("/view")
   @Transactional
   ViewResponse view(@PathVariable UUID publicationId) {
-    PublicationEntity visible =
-        publications
-            .findVisible(publicationId, null)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    requireVisible(publicationId);
     PublicationMetricEntity metric =
         metrics
             .findById(publicationId)
@@ -36,24 +33,24 @@ class PublicationMetricsController {
   @GetMapping("/stats")
   @Transactional(readOnly = true)
   ViewResponse stats(@PathVariable UUID publicationId) {
-    PublicationEntity visible =
-        publications
-            .findVisible(publicationId, null)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    requireVisible(publicationId);
     return new ViewResponse(
         metrics.findById(publicationId).map(PublicationMetricEntity::getViewCount).orElse(0L));
   }
 
   @PostMapping("/share")
   ShareResponse share(@PathVariable UUID publicationId) {
-    PublicationEntity visible =
-        publications
-            .findVisible(publicationId, null)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    requireVisible(publicationId);
     return new ShareResponse("/posts/" + publicationId);
   }
 
   record ViewResponse(long viewCount) {}
 
   record ShareResponse(String path) {}
+
+  private void requireVisible(UUID publicationId) {
+    if (publications.findVisible(publicationId, null).isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
+  }
 }
