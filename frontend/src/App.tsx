@@ -34,6 +34,7 @@ import AdminBreedsPage from "./AdminBreedsPage";
 import BestPage from "./BestPage";
 import AdminPersonalizationPage from "./AdminPersonalizationPage";
 import AdminModeratorCasePage from "./AdminModeratorCasePage";
+import { CareCreatePage, CareListPage } from "./features/care/CarePages";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -187,6 +188,8 @@ export default function App() {
         <Route path="/commercial" element={<MarketplaceListPage />} />
         <Route path="/lounges/breeds/:breedCode/groupbuys/new" element={<MarketplaceFormPage initialKind="GROUP_BUY" />} />
         <Route path="/gatherings" element={<GatheringListPage />} />
+        <Route path="/care" element={<CareListPage />} />
+        <Route path="/care/new" element={<CareCreatePage />} />
         <Route path="/gatherings/new" element={<GatheringCreatePage />} />
         <Route path="/gatherings/:gatheringId" element={<GatheringDetailPage />} />
         <Route path="/members/:memberId" element={<PublicMemberProfilePage />} />

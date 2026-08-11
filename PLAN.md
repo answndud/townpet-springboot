@@ -8,18 +8,6 @@ Legacy TownPet의 관찰 가능한 제품 동작을 Java 25·Spring Boot·Postgr
 
 ## Active
 
-### G3 - Publication·Engagement·공통 커뮤니티를 완성한다
-
-- 순서: G2 이후
-- 파일: `src/main/java/com/townpet/publication/`, `engagement/`, `frontend/src/features/publication/`, `client.ts`, 관련 migration/test
-- 변경:
-  - home/feed/guest feed, personal posts, board feed와 town section의 pagination·filter·scope·정렬을 맞춘다.
-  - post 작성·수정·삭제·guest 관리, type별 필수 필드와 suggestion, detail·share card·Open Graph를 연결한다.
-  - comment·reply·report, reaction·bookmark·view·summary의 중복·동시성·삭제 정책을 맞춘다.
-  - 직접 URL, 로딩·빈 상태·오류·권한 화면과 모바일 레이아웃을 완성한다.
-- 검증: `./gradlew test --tests '*Publication*' --tests '*Engagement*'`, `corepack pnpm -C frontend test`, publication/comment/feed browser journey.
-- 완료: 커뮤니티의 읽기·작성·수정·상호작용·공유가 Guest/MEMBER/Moderator 권한과 상태 전이를 포함해 end-to-end로 동작한다.
-
 ### G4 - 모든 구조화 도메인과 상태 머신을 완성한다
 
 - 순서: G3 이후
