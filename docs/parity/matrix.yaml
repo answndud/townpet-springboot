@@ -278,7 +278,7 @@ apiRoutes:
   - path: /api/metrics/web-vitals
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/neighborhoods
     methods: [GET]
     legacy: true
@@ -290,7 +290,7 @@ apiRoutes:
   - path: /api/ops/web-vitals/summary
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/posts/{id}/comments
     methods: [GET, POST]
     legacy: true
