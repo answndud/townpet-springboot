@@ -1,5 +1,6 @@
 package com.townpet.discovery;
 
+import com.townpet.member.api.MemberDirectory;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 class LegacyDiscoveryCompatibilityController {
   private final com.townpet.publication.api.PublicationFeed feed;
+  private final MemberDirectory members;
 
-  LegacyDiscoveryCompatibilityController(com.townpet.publication.api.PublicationFeed feed) {
+  LegacyDiscoveryCompatibilityController(
+      com.townpet.publication.api.PublicationFeed feed, MemberDirectory members) {
     this.feed = feed;
+    this.members = members;
   }
 
   @PostMapping("/api/feed/personalization")
@@ -32,8 +36,17 @@ class LegacyDiscoveryCompatibilityController {
   }
 
   @GetMapping("/api/profile/audience-segments")
-  AudienceResponse segments() {
-    return new AudienceResponse(List.of("PUBLIC"));
+  AudienceResponse segments(@AuthenticationPrincipal UserDetails principal) {
+    UUID memberId = requiredMemberId(principal);
+    List<String> segments = new java.util.ArrayList<>(List.of("PUBLIC"));
+    if (members
+            .findPublicationContext(memberId)
+            .map(MemberDirectory.MemberPublicationContext::neighborhoodId)
+            .orElse(null)
+        != null) {
+      segments.add("LOCAL");
+    }
+    return new AudienceResponse(List.copyOf(segments));
   }
 
   @PostMapping("/api/lounges/breeds/{breedCode}/groupbuys")
@@ -72,5 +85,13 @@ class LegacyDiscoveryCompatibilityController {
     } catch (IllegalArgumentException exception) {
       return null;
     }
+  }
+
+  private static UUID requiredMemberId(UserDetails principal) {
+    UUID memberId = memberId((UserDetails) principal);
+    if (memberId == null)
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.UNAUTHORIZED);
+    return memberId;
   }
 }
