@@ -1,6 +1,7 @@
 package com.townpet.engagement;
 
 import com.townpet.publication.api.PublicationAccess;
+import com.townpet.publication.api.GuestDirectory;
 import com.townpet.relationship.api.BlockDirectory;
 import java.time.Instant;
 import java.util.List;
@@ -15,12 +16,26 @@ class CommentService {
   private final CommentRepository comments;
   private final PublicationAccess publications;
   private final BlockDirectory blocks;
+  private final GuestDirectory guests;
 
   CommentService(
-      CommentRepository comments, PublicationAccess publications, BlockDirectory blocks) {
+      CommentRepository comments, PublicationAccess publications, BlockDirectory blocks, GuestDirectory guests) {
     this.comments = comments;
     this.publications = publications;
     this.blocks = blocks;
+    this.guests = guests;
+  }
+
+  @Transactional
+  CommentEntity createGuest(UUID guestPublicId, String password, UUID publicationId, @Nullable UUID parentCommentId, String body) {
+    GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
+    requireAccessiblePublication(publicationId, null);
+    if (parentCommentId != null) {
+      CommentEntity parent = comments.findByIdAndLifecycle(parentCommentId, CommentLifecycle.ACTIVE)
+          .orElseThrow(CommentNotFoundException::new);
+      if (!parent.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
+    }
+    return comments.saveAndFlush(CommentEntity.forGuest(publicationId, guest.internalId(), parentCommentId, body));
   }
 
   @Transactional(readOnly = true)
