@@ -15,7 +15,7 @@ public class NeighborhoodController {
     this.neighborhoods = neighborhoods;
   }
 
-  @GetMapping("/neighborhoods")
+  @GetMapping({"/neighborhoods", "/communities"})
   List<NeighborhoodResponse> listNeighborhoods() {
     return neighborhoods.findAllByOrderByNameAsc().stream()
         .map(

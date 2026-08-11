@@ -242,7 +242,7 @@ apiRoutes:
   - path: /api/communities
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/corrections
     methods: [POST]
     legacy: true
