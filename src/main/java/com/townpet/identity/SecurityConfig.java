@@ -66,6 +66,8 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers("/api/security/csp-report")
                   .permitAll()
+                  .requestMatchers("/api/acquisition/events")
+                  .permitAll()
                   .requestMatchers("/api/v1/auth/password-resets/**")
                   .permitAll()
                   .requestMatchers("/api/v1/auth/email-verifications/**")
