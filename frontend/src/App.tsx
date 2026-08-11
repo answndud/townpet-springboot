@@ -12,6 +12,7 @@ import PublicationFeedPage from "./features/publication/PublicationFeedPage";
 import { MarketplaceDetailPage, MarketplaceFormPage, MarketplaceListPage } from "./features/marketplace/MarketplacePages";
 import { LostFoundAlertFormPage, LostFoundDetailPage, LostFoundExactLocationPage, LostFoundListPage, LostFoundSightingFormPage } from "./features/lostfound/LostFoundPages";
 import { LocalCareDetailPage, LocalCareListPage } from "./features/localcare/LocalCarePages";
+import { GatheringCreatePage, GatheringDetailPage, GatheringListPage } from "./features/gathering/GatheringPages";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -133,6 +134,9 @@ export default function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
+        <Route path="/gatherings" element={<GatheringListPage />} />
+        <Route path="/gatherings/new" element={<GatheringCreatePage />} />
+        <Route path="/gatherings/:gatheringId" element={<GatheringDetailPage />} />
         <Route path="/members/:memberId" element={<PublicMemberProfilePage />} />
         <Route path="/posts/new" element={<PublicationCreatePage />} />
         <Route path="/posts/:publicationId/edit" element={<PublicationEditPage />} />
