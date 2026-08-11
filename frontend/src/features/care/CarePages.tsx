@@ -8,7 +8,12 @@ export function CareListPage() {
   const [items, setItems] = useState<CareRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => { const controller = new AbortController(); careApi.list(controller.signal).then(setItems).catch(() => setError("돌봄 요청을 불러오지 못했습니다.")); return () => controller.abort(); }, []);
-  return <main className="page localcare-page"><section className="localcare-hero"><p className="eyebrow">NEIGHBOR CARE</p><h1>이웃 돌봄 요청</h1><p>결제나 지급을 보장하지 않는 참고 reward로 안전하게 요청을 확인하세요.</p><Link className="button button-primary" to="/care/new">돌봄 요청 작성</Link></section>{error ? <p role="alert">{error}</p> : null}<section className="localcare-grid" aria-label="돌봄 요청 목록">{items.map((item) => <article className="surface-card localcare-card" key={item.id}><span className="publication-chip publication-chip-primary">{statusLabel[item.status]}</span><h2>{item.title}</h2><p>{item.description}</p><small>{item.location} · {new Date(item.startsAt).toLocaleString("ko-KR")}</small>{item.rewardHint ? <small>참고 reward: {item.rewardHint}</small> : null}</article>)}{!items.length && !error ? <p className="surface-card localcare-empty">현재 열린 돌봄 요청이 없습니다.</p> : null}</section></main>;
+  async function apply(item: CareRequest) {
+    const message = window.prompt("지원 메시지를 입력해 주세요.");
+    if (!message?.trim()) return;
+    try { await careApi.apply(item.id, message.trim()); window.alert("지원이 등록되었습니다."); } catch (requestError) { setError(requestError instanceof ApiError && requestError.status === 401 ? "로그인 후 지원할 수 있습니다." : "지원하지 못했습니다."); }
+  }
+  return <main className="page localcare-page"><section className="localcare-hero"><p className="eyebrow">NEIGHBOR CARE</p><h1>이웃 돌봄 요청</h1><p>결제나 지급을 보장하지 않는 참고 reward로 안전하게 요청을 확인하세요.</p><Link className="button button-primary" to="/care/new">돌봄 요청 작성</Link></section>{error ? <p role="alert">{error}</p> : null}<section className="localcare-grid" aria-label="돌봄 요청 목록">{items.map((item) => <article className="surface-card localcare-card" key={item.id}><span className="publication-chip publication-chip-primary">{statusLabel[item.status]}</span><h2>{item.title}</h2><p>{item.description}</p><small>{item.location} · {new Date(item.startsAt).toLocaleString("ko-KR")}</small>{item.rewardHint ? <small>참고 reward: {item.rewardHint}</small> : null}{item.status === "OPEN" ? <button className="button button-soft" type="button" onClick={() => void apply(item)}>돌봄 지원</button> : null}</article>)}{!items.length && !error ? <p className="surface-card localcare-empty">현재 열린 돌봄 요청이 없습니다.</p> : null}</section></main>;
 }
 
 export function CareCreatePage() {
