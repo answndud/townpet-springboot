@@ -1,5 +1,6 @@
 package com.townpet.member;
 
+import com.townpet.relationship.api.BlockDirectory;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -23,12 +24,17 @@ public class MemberController {
   private final MemberRepository members;
   private final MemberProfileRepository profiles;
   private final MemberPetRepository pets;
+  private final BlockDirectory blocks;
 
   public MemberController(
-      MemberRepository members, MemberProfileRepository profiles, MemberPetRepository pets) {
+      MemberRepository members,
+      MemberProfileRepository profiles,
+      MemberPetRepository pets,
+      BlockDirectory blocks) {
     this.members = members;
     this.profiles = profiles;
     this.pets = pets;
+    this.blocks = blocks;
   }
 
   @GetMapping("/me")
@@ -42,7 +48,14 @@ public class MemberController {
   }
 
   @GetMapping("/{memberId}")
-  MemberResponse getMember(@org.springframework.web.bind.annotation.PathVariable UUID memberId) {
+  MemberResponse getMember(
+      @AuthenticationPrincipal UserDetails principal,
+      @org.springframework.web.bind.annotation.PathVariable UUID memberId) {
+    UUID viewerId = memberId(principal);
+    if (!viewerId.equals(memberId)
+        && (blocks.isBlocked(viewerId, memberId) || blocks.isBlocked(memberId, viewerId))) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
     MemberEntity member =
         members
             .findById(memberId)
@@ -86,15 +99,23 @@ public class MemberController {
   }
 
   private MemberEntity findMember(UserDetails principal) {
+    UUID memberId = memberId(principal);
+    return members
+        .findById(memberId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+  }
+
+  private static UUID memberId(UserDetails principal) {
+    if (principal == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+    }
     UUID memberId;
     try {
       memberId = UUID.fromString(principal.getUsername());
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
     }
-    return members
-        .findById(memberId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    return memberId;
   }
 
   private static MemberResponse toResponse(

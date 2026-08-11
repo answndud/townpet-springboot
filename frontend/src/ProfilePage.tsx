@@ -47,6 +47,10 @@ export default function ProfilePage() {
         {member ? (
           <>
             <p>{member.bio ?? "아직 소개가 없어요."}</p>
+            <div className="profile-actions">
+              <Link className="button button-soft" to="/my-posts">내 작성글</Link>
+              <Link className="button button-soft" to="/bookmarks">북마크</Link>
+            </div>
             <h2>반려동물</h2>
             <ul>{member.pets.map((pet) => <li key={pet.id}>{pet.name} · {pet.species}</li>)}</ul>
           </>
