@@ -68,7 +68,7 @@ pages:
     spring: adapter
   - path: /corrections/new
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /feed
     legacy: true
     spring: verified
