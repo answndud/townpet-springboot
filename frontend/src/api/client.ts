@@ -114,6 +114,7 @@ export type Bookmark = {
 };
 export type PublicationStats = { viewCount: number };
 export type CareRequest = { id: string; requesterMemberId: string; title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint: string | null; status: "OPEN" | "MATCHED" | "CANCELLED" | "EXPIRED"; createdAt: string; updatedAt: string; version: number };
+export type CareApplication = { id: string; requestId: string; applicantMemberId: string; message: string; status: "PENDING" | "ACCEPTED" | "DECLINED" | "WITHDRAWN"; createdAt: string; updatedAt: string; version: number };
 
 export type Relationship = {
   following: boolean;
@@ -525,6 +526,7 @@ export const careApi = {
   list(signal?: AbortSignal) { return apiFetch<CareRequest[]>("/api/v1/care/requests", { signal }); },
   create(input: { title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint?: string }) { return mutate<CareRequest>("/api/v1/care/requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
   cancel(id: string, version: number) { return mutate<CareRequest>(`/api/v1/care/requests/${encodeURIComponent(id)}/cancel`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ version }) }); },
+  apply(requestId: string, message: string) { return mutate<CareApplication>(`/api/v1/care/requests/${encodeURIComponent(requestId)}/applications`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ message }) }); },
 };
 
 export const marketplaceApi = {
