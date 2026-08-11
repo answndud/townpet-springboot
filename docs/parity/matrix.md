@@ -1,6 +1,6 @@
 # TownPet parity matrix
 
-이 파일은 기준 TownPet의 49개 page와 55개 API route를 Spring 전환의 추적 단위로 고정한다. `docs/parity/matrix.yaml`이 기계가 읽는 inventory이고, 각 행의 `spring` 상태가 `pending → adapter → spring-owned → verified`로 진행된다. 의도적으로 제품 범위에서 뺀 행은 `excluded`와 근거 ADR을 함께 기록한다. 현재 inventory가 존재한다는 사실만으로 기능 parity를 완료한 것으로 간주하지 않는다.
+이 파일은 기준 TownPet의 49개 page와 55개 API route를 Spring 전환의 추적 단위로 고정한다. `docs/parity/matrix.yaml`이 기계가 읽는 inventory이고, 각 행의 `spring` 상태가 `pending → adapter → spring-owned → verified`로 진행된다. 의도적으로 제품 범위에서 뺀 행은 `excluded`와 근거 ADR을 함께 기록한다. 현재 inventory가 존재하거나 route가 응답한다는 사실만으로 기능 parity를 완료한 것으로 간주하지 않는다.
 
 ## 범위와 상태
 
@@ -16,6 +16,8 @@
 - API는 path template, HTTP method, auth actor, request fixture, status/error, owner module과 test ID를 갖는다.
 - UUID·timestamp·signed URL·trace ID처럼 실행마다 달라지는 값은 의미 비교 전에 normalize한다.
 - `legacy: true`는 기준 구현이 존재한다는 뜻이고, `spring: pending`은 아직 Spring parity를 주장하지 않는다는 뜻이다.
+- `spring: verified`는 정상 응답만이 아니라 matrix의 `audit.verifiedRule`에 적힌 정상·오류·권한·상태 전이와 대표 browser 또는 integration evidence를 가진 항목이다.
+- route가 존재하더라도 의미 parity나 evidence가 부족하면 `spring: pending`으로 유지하고 `gap`에 다음 작업을 적는다.
 - `spring: excluded`는 현재 제품 범위에서 의도적으로 제외했다는 뜻이며 `decision`에 승인된 ADR이 반드시 있어야 한다.
 
 ## 자동 검증
