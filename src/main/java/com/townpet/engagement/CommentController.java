@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -79,6 +80,24 @@ class CommentController {
     }
   }
 
+  @PatchMapping("/{commentId}")
+  CommentResponse edit(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID publicationId,
+      @PathVariable UUID commentId,
+      @Valid @RequestBody EditCommentRequest request) {
+    try {
+      return toResponse(
+          comments.editById(memberId(principal), commentId, request.version(), request.body()));
+    } catch (CommentNotFoundException | CommentPublicationNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (CommentOwnershipException exception) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } catch (CommentVersionConflictException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT);
+    }
+  }
+
   @Nullable
   private static UUID viewerMemberId(@Nullable UserDetails principal) {
     if (principal == null) return null;
@@ -114,6 +133,9 @@ class CommentController {
   record CreateCommentRequest(@NotBlank @Size(max = 5000) String body) {}
 
   record DeleteCommentRequest(@NotNull @Min(0) Long version) {}
+
+  record EditCommentRequest(
+      @NotBlank @Size(max = 5000) String body, @NotNull @Min(0) Long version) {}
 
   record CommentResponse(
       UUID id,
