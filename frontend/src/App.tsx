@@ -26,6 +26,7 @@ import CorrectionCreatePage from "./CorrectionCreatePage";
 import AdoptionPage from "./AdoptionPage";
 import TownLandingPage from "./TownLandingPage";
 import BreedLoungePage from "./BreedLoungePage";
+import NeighborhoodMapPage from "./NeighborhoodMapPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -174,7 +175,7 @@ export default function App() {
         <Route path="/admin/policies" element={<LegalPage />} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
-        <Route path="/campaigns/neighborhood-map" element={<LocalCareListPage />} />
+        <Route path="/campaigns/neighborhood-map" element={<NeighborhoodMapPage />} />
         <Route path="/commercial" element={<MarketplaceListPage />} />
         <Route path="/lounges/breeds/:breedCode/groupbuys/new" element={<MarketplaceFormPage initialKind="GROUP_BUY" />} />
         <Route path="/gatherings" element={<GatheringListPage />} />

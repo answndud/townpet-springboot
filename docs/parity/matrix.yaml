@@ -62,7 +62,7 @@ pages:
     spring: verified
   - path: /campaigns/neighborhood-map
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /commercial
     legacy: true
     spring: adapter
