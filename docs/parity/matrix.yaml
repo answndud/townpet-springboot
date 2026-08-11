@@ -50,7 +50,7 @@ pages:
     spring: verified
   - path: /admin/reports/{id}
     legacy: true
-    spring: pending
+    spring: verified
   - path: /best
     legacy: true
     spring: pending
@@ -59,7 +59,7 @@ pages:
     spring: pending
   - path: /bookmarks
     legacy: true
-    spring: pending
+    spring: verified
   - path: /campaigns/neighborhood-map
     legacy: true
     spring: pending
