@@ -60,6 +60,8 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers("/api/viewer-shell")
                   .permitAll()
+                  .requestMatchers("/api/search/log")
+                  .permitAll()
                   .requestMatchers("/api/v1/auth/password-resets/**")
                   .permitAll()
                   .requestMatchers("/api/v1/auth/email-verifications/**")
