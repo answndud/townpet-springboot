@@ -123,6 +123,7 @@ export type LocalResource = {
 };
 export type Gathering = { id: string; hostMemberId: string; title: string; description: string; location: string; startsAt: string; capacity: number; participantCount: number; status: "ACTIVE" | "CANCELLED"; joined: boolean; version: number };
 export type TrustReportReason = "SPAM" | "ABUSE" | "PRIVACY" | "ILLEGAL" | "OTHER";
+export type Notification = { id: string; type: string; title: string; body: string; readAt: string | null; createdAt: string };
 
 export type CreatePublicationInput = {
   title: string;
@@ -312,6 +313,11 @@ export const gatheringApi = {
 
 export const trustApi = {
   report(input: { targetType: string; targetId: string; reason: TrustReportReason; detail?: string }) { return mutate("/api/v1/trust-reports", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
+};
+
+export const notificationApi = {
+  list(signal?: AbortSignal) { return apiFetch<Notification[]>("/api/v1/notifications", { signal }); },
+  markRead(id: string) { return mutate<Notification>(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH", headers: jsonHeaders }); },
 };
 
 export const publicationApi = {
