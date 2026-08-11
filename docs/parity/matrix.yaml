@@ -44,7 +44,7 @@ pages:
     spring: adapter
   - path: /admin/policies
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /admin/reports
     legacy: true
     spring: verified
@@ -65,7 +65,7 @@ pages:
     spring: verified
   - path: /commercial
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /corrections/new
     legacy: true
     spring: verified
@@ -123,7 +123,7 @@ pages:
     spring: verified
   - path: /posts/{id}/sightings
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /privacy
     legacy: true
     spring: verified
@@ -274,7 +274,7 @@ apiRoutes:
   - path: /api/lounges/breeds/{breedCode}/posts
     methods: [GET]
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /api/metrics/web-vitals
     methods: [POST]
     legacy: true

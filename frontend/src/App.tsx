@@ -28,6 +28,7 @@ import TownLandingPage from "./TownLandingPage";
 import BreedLoungePage from "./BreedLoungePage";
 import NeighborhoodMapPage from "./NeighborhoodMapPage";
 import TownSectionPage from "./TownSectionPage";
+import PostSightingsPage from "./PostSightingsPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -201,7 +202,7 @@ export default function App() {
         <Route path="/lost-found/:alertId/sightings/new" element={<LostFoundSightingFormPage />} />
         <Route path="/lost-found/sightings/:sightingId/exact" element={<LostFoundExactLocationPage />} />
         <Route path="/lost-found/:alertId" element={<LostFoundDetailPage />} />
-        <Route path="/posts/:publicationId/sightings" element={<LostFoundListPage />} />
+        <Route path="/posts/:publicationId/sightings" element={<PostSightingsPage />} />
         <Route path="*" element={<PlaceholderPage />} />
       </Routes>
     </div>
