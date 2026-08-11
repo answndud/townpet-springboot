@@ -254,7 +254,7 @@ apiRoutes:
   - path: /api/feed/personalization
     methods: [POST]
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /api/guest/step-up
     methods: [POST]
     legacy: true
