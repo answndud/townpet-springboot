@@ -25,7 +25,6 @@ import org.springframework.web.server.ResponseStatusException;
   "/api/search/guest",
   "/api/home/feed",
   "/api/feed/guest",
-  "/api/boards/{board}/posts",
   "/api/lounges/breeds/{breedCode}/posts"
 })
 class FeedController {

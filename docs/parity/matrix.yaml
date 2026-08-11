@@ -235,7 +235,7 @@ apiRoutes:
   - path: /api/boards/{board}/posts
     methods: [GET]
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /api/comments/{id}
     methods: [PATCH, DELETE]
     legacy: true
