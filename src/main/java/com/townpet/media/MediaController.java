@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/api/v1/media/uploads")
+@RequestMapping({"/api/v1/media/uploads", "/api/upload", "/api/upload/client"})
 class MediaController {
   private final MediaService media;
 
