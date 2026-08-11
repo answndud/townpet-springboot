@@ -94,6 +94,18 @@ class LostFoundAlertControllerTest {
 
     mockMvc
         .perform(
+            get("/api/v1/lost-found/alerts")
+                .param("latitude", "37.55")
+                .param("longitude", "126.91")
+                .param("radiusMeters", "1000"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(id));
+    mockMvc
+        .perform(get("/api/v1/lost-found/alerts").param("latitude", "37.55"))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
             patch("/api/v1/lost-found/alerts/{id}/status", id)
                 .cookie(member)
                 .with(csrf())
