@@ -9,11 +9,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import jakarta.servlet.http.Cookie;
 import java.util.Objects;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -51,6 +53,7 @@ class LostFoundAlertControllerTest {
   }
 
   @Autowired MockMvc mockMvc;
+  @Autowired JdbcTemplate jdbc;
 
   @Test
   void memberCreatesAlertAndAnonymousReaderSeesOnlyApproximateLocation() throws Exception {
@@ -102,6 +105,22 @@ class LostFoundAlertControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"status\":\"CLOSED\",\"closeReason\":\"duplicate\"}"))
         .andExpect(status().isForbidden());
+
+    mockMvc
+        .perform(
+            patch("/api/v1/lost-found/alerts/{id}/status", id)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"ACTIVE\",\"reopenReason\":\"new sighting\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("ACTIVE"));
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM lost_found_alert_status_history WHERE alert_id = ?",
+                Integer.class,
+                UUID.fromString(id)))
+        .isEqualTo(2);
   }
 
   private Cookie login(String email) throws Exception {
