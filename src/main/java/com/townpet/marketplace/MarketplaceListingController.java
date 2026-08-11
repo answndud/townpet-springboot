@@ -54,6 +54,24 @@ class MarketplaceListingController {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
 
+  @org.springframework.web.bind.annotation.PatchMapping("/{listingId}/status")
+  ListingResponse changeStatus(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID listingId,
+      @Valid @RequestBody ChangeStatusRequest request) {
+    try {
+      return toResponse(
+          listings.changeStatus(
+              memberId(principal), listingId, request.status(), request.version()));
+    } catch (MarketplaceListingNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (MarketplaceListingOwnershipException exception) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } catch (MarketplaceListingStateException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Invalid listing status transition");
+    }
+  }
+
   private static UUID memberId(UserDetails principal) {
     try {
       return UUID.fromString(principal.getUsername());
@@ -81,6 +99,8 @@ class MarketplaceListingController {
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 5000) String description,
       @Min(0) Long priceKrw) {}
+
+  record ChangeStatusRequest(@NotNull MarketplaceListingStatus status, @Min(0) long version) {}
 
   record ListingResponse(
       UUID id,
