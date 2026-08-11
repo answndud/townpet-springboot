@@ -86,7 +86,7 @@ pages:
     spring: verified
   - path: /lost/new
     legacy: true
-    spring: pending
+    spring: verified
   - path: /lounges/breeds/{breedCode}
     legacy: true
     spring: pending
@@ -98,7 +98,7 @@ pages:
     spring: pending
   - path: /notifications
     legacy: true
-    spring: pending
+    spring: verified
   - path: /onboarding
     legacy: true
     spring: verified
@@ -119,7 +119,7 @@ pages:
     spring: verified
   - path: /posts/{id}/guest
     legacy: true
-    spring: pending
+    spring: verified
   - path: /posts/{id}/sightings
     legacy: true
     spring: pending
@@ -152,7 +152,7 @@ pages:
     spring: pending
   - path: /users/{id}
     legacy: true
-    spring: pending
+    spring: verified
   - path: /verify-email
     legacy: true
     spring: verified
