@@ -53,7 +53,7 @@ pages:
     spring: verified
   - path: /best
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /boards/adoption
     legacy: true
     spring: verified

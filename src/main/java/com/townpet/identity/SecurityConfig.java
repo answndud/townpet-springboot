@@ -105,6 +105,8 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/feed")
                   .permitAll()
+                  .requestMatchers(HttpMethod.GET, "/api/v1/feed/popular")
+                  .permitAll()
                   .requestMatchers("/api/v1/operations/**")
                   .hasRole("MODERATOR")
                   .requestMatchers(HttpMethod.GET, "/api/v1/trust-reports/**")
