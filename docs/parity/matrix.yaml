@@ -137,10 +137,10 @@ pages:
     spring: verified
   - path: /search
     legacy: true
-    spring: pending
+    spring: verified
   - path: /search/guest
     legacy: true
-    spring: pending
+    spring: verified
   - path: /terms
     legacy: true
     spring: verified

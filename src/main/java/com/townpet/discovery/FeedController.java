@@ -34,9 +34,29 @@ class FeedController {
       @RequestParam(defaultValue = "VIEWER") FeedAudience audience,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit) {
+    return listFeed(principal, audience, cursor, limit, null);
+  }
+
+  @GetMapping(params = "query")
+  FeedResponse list(
+      @AuthenticationPrincipal @Nullable UserDetails principal,
+      @RequestParam(defaultValue = "VIEWER") FeedAudience audience,
+      @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
+      @RequestParam @Size(max = 80) String query) {
+    return listFeed(principal, audience, cursor, limit, query);
+  }
+
+  private FeedResponse listFeed(
+      @AuthenticationPrincipal @Nullable UserDetails principal,
+      FeedAudience audience,
+      @Nullable String cursor,
+      int limit,
+      @Nullable String query) {
     try {
       PublicationFeed.Page page =
-          publications.list(memberId(principal), audience == FeedAudience.VIEWER, cursor, limit);
+          publications.list(
+              memberId(principal), audience == FeedAudience.VIEWER, cursor, limit, query);
       return new FeedResponse(
           page.items().stream().map(FeedController::toResponse).toList(),
           new PageInfo(page.nextCursor(), page.hasNext()));
