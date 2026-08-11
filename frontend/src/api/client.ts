@@ -110,6 +110,18 @@ export type Relationship = {
   blocking: boolean;
 };
 
+export type LocalResourceKind = "LOCAL_GUIDE" | "WELFARE" | "CARE";
+export type LocalResource = {
+  id: string;
+  kind: LocalResourceKind;
+  title: string;
+  summary: string;
+  content: string;
+  sourceName: string;
+  sourceUrl: string | null;
+  updatedAt: string;
+};
+
 export type CreatePublicationInput = {
   title: string;
   body: string;
@@ -272,6 +284,18 @@ export const memberApi = {
 export const catalogApi = {
   neighborhoods(signal?: AbortSignal) {
     return apiFetch<Neighborhood[]>("/api/v1/catalog/neighborhoods", { signal });
+  },
+};
+
+export const localResourceApi = {
+  list(kind?: LocalResourceKind, query = "", signal?: AbortSignal) {
+    const search = new URLSearchParams();
+    if (kind) search.set("kind", kind);
+    if (query.trim()) search.set("query", query.trim());
+    return apiFetch<LocalResource[]>(`/api/v1/local-resources?${search}`, { signal });
+  },
+  detail(resourceId: string, signal?: AbortSignal) {
+    return apiFetch<LocalResource>(`/api/v1/local-resources/${encodeURIComponent(resourceId)}`, { signal });
   },
 };
 
