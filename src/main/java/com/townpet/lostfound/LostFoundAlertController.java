@@ -7,9 +7,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -54,18 +54,24 @@ class LostFoundAlertController {
       @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit,
       @org.springframework.web.bind.annotation.RequestParam(required = false) Double latitude,
       @org.springframework.web.bind.annotation.RequestParam(required = false) Double longitude,
-      @org.springframework.web.bind.annotation.RequestParam(required = false) Integer radiusMeters) {
+      @org.springframework.web.bind.annotation.RequestParam(required = false)
+          Integer radiusMeters) {
     if (limit < 1 || limit > 50) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
     }
     boolean anyRadius = latitude != null || longitude != null || radiusMeters != null;
     boolean completeRadius = latitude != null && longitude != null && radiusMeters != null;
     if (anyRadius && !completeRadius) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "radius filter requires all parameters");
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "radius filter requires all parameters");
     }
     if (completeRadius
-        && (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180
-            || radiusMeters < 1 || radiusMeters > 100_000)) {
+        && (latitude < -90
+            || latitude > 90
+            || longitude < -180
+            || longitude > 180
+            || radiusMeters < 1
+            || radiusMeters > 100_000)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid radius filter");
     }
     return alerts

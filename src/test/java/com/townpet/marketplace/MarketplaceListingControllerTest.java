@@ -2,8 +2,8 @@ package com.townpet.marketplace;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -137,9 +137,7 @@ class MarketplaceListingControllerTest {
                 .content("{\"status\":\"COMPLETED\",\"version\":2}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("COMPLETED"));
-    mockMvc
-        .perform(get("/api/v1/marketplace/listings/{id}", id))
-        .andExpect(status().isNotFound());
+    mockMvc.perform(get("/api/v1/marketplace/listings/{id}", id)).andExpect(status().isNotFound());
 
     mockMvc
         .perform(

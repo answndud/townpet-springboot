@@ -4,8 +4,8 @@ import com.townpet.common.UuidV7;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -42,7 +42,8 @@ class MarketplaceListingService {
 
   @Transactional(readOnly = true)
   Optional<ListingView> find(UUID id) {
-    return jdbc.query(
+    return jdbc
+        .query(
             "SELECT id, owner_member_id, kind, status, title, description, price_krw, "
                 + "created_at, updated_at, version FROM market_listing "
                 + "WHERE id = ? AND status = 'AVAILABLE'",
@@ -54,7 +55,8 @@ class MarketplaceListingService {
 
   @Transactional(readOnly = true)
   ListingView findAny(UUID id) {
-    return jdbc.query(
+    return jdbc
+        .query(
             "SELECT id, owner_member_id, kind, status, title, description, price_krw, "
                 + "created_at, updated_at, version FROM market_listing WHERE id = ?",
             (rs, rowNum) -> map(rs),
