@@ -189,6 +189,7 @@ h1, h2, p { margin: 0; }
 .publication-comment-reply-label { color: #3567b5; font-size: 11px; font-weight: 700; }
 .publication-replying { display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #8db2e8; background: #f5f9ff; padding: 8px 10px; color: #4f678d; font-size: 12px; }
 .publication-view-count { color: #7187a7; font-size: 11px; }
+.publication-guest-edit { display: grid; gap: 10px; margin-top: 16px; }
 .feed-error { margin-top: 12px; border: 1px solid #f0c9cf; border-radius: 8px; background: #fff7f7; padding: 10px 12px; }
 .feed-list { margin-top: 12px; padding: 0; overflow: hidden; }
 .feed-item { display: grid; gap: 7px; border-bottom: 1px solid #e3ecf8; padding: 15px 18px; transition: background-color .16s ease; }
