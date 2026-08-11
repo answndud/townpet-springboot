@@ -53,19 +53,19 @@ pages:
     spring: verified
   - path: /best
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /boards/adoption
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /bookmarks
     legacy: true
     spring: verified
   - path: /campaigns/neighborhood-map
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /commercial
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /corrections/new
     legacy: true
     spring: pending
@@ -89,10 +89,10 @@ pages:
     spring: verified
   - path: /lounges/breeds/{breedCode}
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /lounges/breeds/{breedCode}/groupbuys/new
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /my-posts
     legacy: true
     spring: verified
@@ -148,10 +148,10 @@ pages:
     spring: verified
   - path: /towns/{townSlug}
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /towns/{townSlug}/{sectionSlug}
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /users/{id}
     legacy: true
     spring: verified
@@ -234,7 +234,7 @@ apiRoutes:
   - path: /api/boards/{board}/posts
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/comments/{id}
     methods: [PATCH, DELETE]
     legacy: true
@@ -274,7 +274,7 @@ apiRoutes:
   - path: /api/lounges/breeds/{breedCode}/posts
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: adapter
   - path: /api/metrics/web-vitals
     methods: [POST]
     legacy: true

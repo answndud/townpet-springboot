@@ -146,12 +146,20 @@ export default function App() {
         <Route path="/bookmarks" element={<PersonalPostsPage saved />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/search/guest" element={<SearchPage guest />} />
+        <Route path="/best" element={<PublicationFeedPage memberView={false} />} />
+        <Route path="/boards/adoption" element={<PublicationFeedPage memberView={false} />} />
+        <Route path="/towns/:townSlug" element={<PublicationFeedPage memberView={false} />} />
+        <Route path="/towns/:townSlug/:sectionSlug" element={<PublicationFeedPage memberView={false} />} />
+        <Route path="/lounges/breeds/:breedCode" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="/admin/reports/:reportId" element={<AdminReportsPage />} />
         <Route path="/admin" element={<AdminHomePage />} />
         <Route path="/admin/ops" element={<AdminHomePage />} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
+        <Route path="/campaigns/neighborhood-map" element={<LocalCareListPage />} />
+        <Route path="/commercial" element={<MarketplaceListPage />} />
+        <Route path="/lounges/breeds/:breedCode/groupbuys/new" element={<MarketplaceFormPage />} />
         <Route path="/gatherings" element={<GatheringListPage />} />
         <Route path="/gatherings/new" element={<GatheringCreatePage />} />
         <Route path="/gatherings/:gatheringId" element={<GatheringDetailPage />} />
