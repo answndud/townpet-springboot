@@ -11,7 +11,7 @@
 
 매 작업마다 긴 문서를 처음부터 다시 요약하지 않는다. 충돌 시 제품 범위는 PRD, 구현 제약은 accepted ADR과 TRD, 작업 순서는 PLAN을 따른다. 해석이 결과를 크게 바꾸는 충돌만 구현 전에 문서로 해소한다.
 
-Legacy 기준선은 `/Users/alex/project/townpet`의 commit `7d8f6d0bd22dedd82350c05142823ab2d101574d`다. 요구사항·migration input·differential/visual baseline으로만 읽고 사용자가 요청하지 않으면 수정하지 않는다.
+작업 대상은 현재 저장소 `/Users/alex/project/townpet-springboot`로 한정한다. Downloads, Desktop, 다른 앱 데이터와 외부 프로젝트 경로에는 접근하지 않는다. Legacy 기준선은 외부 경로에 남아 있지만, 사용자가 별도로 요청하지 않는 한 읽지도 수정하지도 않고 저장소 안의 parity·문서·fixture만 사용한다.
 
 ## 2. 현재 상태
 
