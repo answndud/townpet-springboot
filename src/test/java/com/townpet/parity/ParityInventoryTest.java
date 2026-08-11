@@ -33,6 +33,20 @@ class ParityInventoryTest {
 
   @Test
   void keepsRouteTemplatesAndHttpMethodsExplicit() throws IOException {
+    JsonNode pages = readMatrix().path("pages");
+    for (JsonNode page : pages) {
+      assertThat(page.path("path").asText()).startsWith("/");
+      assertThat(page.path("legacy").asBoolean()).isTrue();
+      String springStatus = page.path("spring").asText();
+      assertThat(SPRING_STATUSES).contains(springStatus);
+      if (springStatus.equals("pending")) {
+        assertThat(page.path("gap").asText()).as("pending page gap").isNotBlank();
+      }
+      if (springStatus.equals("excluded")) {
+        assertThat(page.path("decision").asText()).startsWith("ADR-");
+      }
+    }
+
     JsonNode apiRoutes = readMatrix().path("apiRoutes");
 
     for (JsonNode route : apiRoutes) {
@@ -42,6 +56,9 @@ class ParityInventoryTest {
       assertThat(route.path("legacy").asBoolean()).isTrue();
       String springStatus = route.path("spring").asText();
       assertThat(SPRING_STATUSES).contains(springStatus);
+      if (springStatus.equals("pending")) {
+        assertThat(route.path("gap").asText()).as("pending API gap").isNotBlank();
+      }
       if (springStatus.equals("excluded")) {
         assertThat(route.path("decision").asText()).startsWith("ADR-");
       }
