@@ -166,11 +166,11 @@ apiRoutes:
   - path: /api/admin/auth-audits/export
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/admin/auth-audits
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/admin/moderation/posts/{id}/visibility
     methods: [PATCH]
     legacy: true
