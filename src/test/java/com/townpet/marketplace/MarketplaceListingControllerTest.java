@@ -80,6 +80,10 @@ class MarketplaceListingControllerTest {
         .perform(get("/api/v1/marketplace/listings/{id}", id))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("Dog carrier"));
+    mockMvc
+        .perform(get("/api/v1/marketplace/listings").param("kind", "SELL").param("limit", "10"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(id));
 
     mockMvc
         .perform(
