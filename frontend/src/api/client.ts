@@ -428,14 +428,17 @@ export const publicationApi = {
     cursor,
     limit = 20,
     signal,
+    query,
   }: {
     audience?: "GLOBAL" | "VIEWER";
     cursor?: string;
     limit?: number;
     signal?: AbortSignal;
+    query?: string;
   } = {}) {
     const search = new URLSearchParams({ audience, limit: String(limit) });
     if (cursor) search.set("cursor", cursor);
+    if (query) search.set("query", query);
     return apiFetch<FeedPage>(`/api/v1/feed?${search}`, { signal });
   },
 };
