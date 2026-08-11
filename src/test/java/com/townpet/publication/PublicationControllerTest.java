@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -77,6 +78,42 @@ class PublicationControllerTest {
             + "VALUES (?, '', ?, CURRENT_TIMESTAMP)",
         MEMBER_ID,
         NEIGHBORHOOD_ID);
+  }
+
+  @Test
+  void legacyPostsApiUsesTheSamePublicationLifecycle() throws Exception {
+    Cookie author = login();
+    MvcResult created =
+        mockMvc
+            .perform(
+                post("/api/posts")
+                    .cookie(author)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"title\":\"레거시 제목\",\"body\":\"레거시 본문\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.scope").value("GLOBAL"))
+            .andReturn();
+    String publicationId =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(created.getResponse().getContentAsString())
+            .path("id")
+            .asText();
+
+    mockMvc
+        .perform(get("/api/posts/{id}", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("레거시 제목"));
+    mockMvc
+        .perform(
+            patch("/api/posts/{id}", publicationId)
+                .cookie(author)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"변경 제목\",\"body\":\"변경 본문\",\"scope\":\"GLOBAL\",\"version\":0}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("변경 제목"));
   }
 
   @Test
