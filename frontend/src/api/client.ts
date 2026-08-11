@@ -524,9 +524,12 @@ export const guestApi = {
 
 export const careApi = {
   list(signal?: AbortSignal) { return apiFetch<CareRequest[]>("/api/v1/care/requests", { signal }); },
+  detail(id: string, signal?: AbortSignal) { return apiFetch<CareRequest>(`/api/v1/care/requests/${encodeURIComponent(id)}`, { signal }); },
+  applications(id: string, signal?: AbortSignal) { return apiFetch<CareApplication[]>(`/api/v1/care/requests/${encodeURIComponent(id)}/applications`, { signal }); },
   create(input: { title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint?: string }) { return mutate<CareRequest>("/api/v1/care/requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
   cancel(id: string, version: number) { return mutate<CareRequest>(`/api/v1/care/requests/${encodeURIComponent(id)}/cancel`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ version }) }); },
   apply(requestId: string, message: string) { return mutate<CareApplication>(`/api/v1/care/requests/${encodeURIComponent(requestId)}/applications`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ message }) }); },
+  accept(requestId: string, applicationId: string, version: number) { return mutate<{ id: string; requestId: string; caregiverMemberId: string; status: string; version: number }>(`/api/v1/care/requests/${encodeURIComponent(requestId)}/applications/${encodeURIComponent(applicationId)}/accept`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ version }) }); },
 };
 
 export const marketplaceApi = {
