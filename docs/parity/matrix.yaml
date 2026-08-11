@@ -342,7 +342,7 @@ apiRoutes:
   - path: /api/reports/{id}
     methods: [PATCH]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/reports/bulk
     methods: [PATCH]
     legacy: true
@@ -350,7 +350,7 @@ apiRoutes:
   - path: /api/reports
     methods: [POST]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/search/guest
     methods: [GET]
     legacy: true
