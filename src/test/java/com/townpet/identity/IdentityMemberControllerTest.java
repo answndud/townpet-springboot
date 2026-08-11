@@ -75,6 +75,58 @@ class IdentityMemberControllerTest {
   }
 
   @Test
+  void guestStepUpIsScopedSingleUseAndCookieBacked() throws Exception {
+    MvcResult author =
+        mockMvc
+            .perform(
+                post("/api/guest/authors")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"password\":\"guest-password-123\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.guestId").isNotEmpty())
+            .andExpect(cookie().exists(GuestStepUpController.GUEST_COOKIE))
+            .andReturn();
+    Cookie guest =
+        Objects.requireNonNull(author.getResponse().getCookie(GuestStepUpController.GUEST_COOKIE));
+
+    MvcResult challenge =
+        mockMvc
+            .perform(
+                post("/api/guest/step-up")
+                    .cookie(guest)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"scope\":\"publication:manage\",\"password\":\"guest-password-123\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.scope").value("publication:manage"))
+            .andExpect(cookie().exists(GuestStepUpController.STEP_UP_COOKIE))
+            .andReturn();
+    Cookie stepUp =
+        Objects.requireNonNull(
+            challenge.getResponse().getCookie(GuestStepUpController.STEP_UP_COOKIE));
+
+    mockMvc
+        .perform(
+            post("/api/guest/step-up/consume")
+                .cookie(stepUp)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"scope\":\"publication:manage\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.scope").value("publication:manage"));
+    mockMvc
+        .perform(
+            post("/api/guest/step-up/consume")
+                .cookie(stepUp)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"scope\":\"publication:manage\"}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   void loginPersistsSessionAndReturnsCurrentMember() throws Exception {
     verifyCredential();
     MvcResult login =

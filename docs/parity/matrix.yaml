@@ -258,7 +258,7 @@ apiRoutes:
   - path: /api/guest/step-up
     methods: [POST]
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /api/health
     methods: [GET]
     legacy: true
