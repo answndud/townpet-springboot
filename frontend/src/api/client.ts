@@ -112,6 +112,7 @@ export type Reaction = {
 export type Bookmark = {
   active: boolean;
 };
+export type PublicationStats = { viewCount: number };
 
 export type Relationship = {
   following: boolean;
@@ -384,6 +385,12 @@ export const publicationApi = {
     return mutate<{ path: string }>(`/api/posts/${encodeURIComponent(publicationId)}/share`, {
       method: "POST",
     });
+  },
+  view(publicationId: string) {
+    return mutate<PublicationStats>(`/api/posts/${encodeURIComponent(publicationId)}/view`, { method: "POST" });
+  },
+  stats(publicationId: string, signal?: AbortSignal) {
+    return apiFetch<PublicationStats>(`/api/posts/${encodeURIComponent(publicationId)}/stats`, { signal });
   },
   comments(publicationId: string, signal?: AbortSignal) {
     return apiFetch<{ items: Comment[] }>(
