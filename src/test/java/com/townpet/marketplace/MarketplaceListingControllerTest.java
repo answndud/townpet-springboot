@@ -83,6 +83,22 @@ class MarketplaceListingControllerTest {
 
     mockMvc
         .perform(
+            patch("/api/v1/marketplace/listings/{id}", id)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"Large dog carrier\",\"description\":\"Updated\","
+                        + "\"priceKrw\":18000,\"version\":"
+                        + version
+                        + "}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.title").value("Large dog carrier"))
+        .andExpect(jsonPath("$.version").value(1));
+    version = 1;
+
+    mockMvc
+        .perform(
             patch("/api/v1/marketplace/listings/{id}/status", id)
                 .cookie(member)
                 .with(csrf())
@@ -92,11 +108,21 @@ class MarketplaceListingControllerTest {
         .andExpect(jsonPath("$.status").value("RESERVED"));
     mockMvc
         .perform(
+            patch("/api/v1/marketplace/listings/{id}", id)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"Too late\",\"description\":\"Locked\","
+                        + "\"priceKrw\":20000,\"version\":2}"))
+        .andExpect(status().isConflict());
+    mockMvc
+        .perform(
             patch("/api/v1/marketplace/listings/{id}/status", id)
                 .cookie(login("demo-member-2@townpet.local"))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"status\":\"CANCELLED\",\"version\":1}"))
+                .content("{\"status\":\"CANCELLED\",\"version\":2}"))
         .andExpect(status().isForbidden());
     mockMvc
         .perform(
@@ -104,7 +130,7 @@ class MarketplaceListingControllerTest {
                 .cookie(member)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"status\":\"COMPLETED\",\"version\":1}"))
+                .content("{\"status\":\"COMPLETED\",\"version\":2}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("COMPLETED"));
     mockMvc

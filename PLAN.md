@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P4-MARKETPLACE - classified listing 상태 lifecycle과 소유권을 연결한다
-   - 파일: `src/main/java/com/townpet/marketplace/**`, `src/main/resources/db/migration/**`, `src/test/java/com/townpet/marketplace/**`
-   - 변경: `AVAILABLE/RESERVED`에서 허용된 `RESERVED/AVAILABLE/COMPLETED/CANCELLED` 전이를 version·owner와 함께 처리하고 status history를 저장한다.
+1. P4-MARKETPLACE - listing 수정 가능 상태와 거래 조건 불변식을 연결한다
+   - 파일: `src/main/java/com/townpet/marketplace/**`, `src/test/java/com/townpet/marketplace/**`
+   - 변경: owner가 `AVAILABLE` listing만 version과 함께 제목·설명·가격을 수정하게 하고 `RESERVED` 이후 수정은 충돌로 거부한다.
    - 검증: `./gradlew integrationTest --tests '*MarketplaceListingControllerTest*'`
-   - 완료: 금지된 전이·stale version·타인 변경은 거부되고, `COMPLETED/CANCELLED` listing은 공개 상세에서 404가 된다.
+   - 완료: 타인·stale version·예약 이후 수정은 차단되고, 허용된 수정은 새 version으로 반환된다.
 
 ## Backlog
 

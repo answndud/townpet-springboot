@@ -93,6 +93,36 @@ class MarketplaceListingService {
     return findAny(listingId);
   }
 
+  @Transactional
+  ListingView update(
+      UUID ownerMemberId,
+      UUID listingId,
+      String title,
+      String description,
+      Long priceKrw,
+      long version) {
+    ListingView current = findAny(listingId);
+    if (!current.ownerMemberId().equals(ownerMemberId)) {
+      throw new MarketplaceListingOwnershipException();
+    }
+    if (current.status() != MarketplaceListingStatus.AVAILABLE) {
+      throw new MarketplaceListingStateException();
+    }
+    int updated =
+        jdbc.update(
+            "UPDATE market_listing SET title = ?, description = ?, price_krw = ?, "
+                + "updated_at = CURRENT_TIMESTAMP, version = version + 1 "
+                + "WHERE id = ? AND owner_member_id = ? AND status = 'AVAILABLE' AND version = ?",
+            title.trim(),
+            description.trim(),
+            priceKrw,
+            listingId,
+            ownerMemberId,
+            version);
+    if (updated != 1) throw new MarketplaceListingStateException();
+    return findAny(listingId);
+  }
+
   private static boolean isAllowed(
       MarketplaceListingStatus current, MarketplaceListingStatus next) {
     return (current == MarketplaceListingStatus.AVAILABLE
