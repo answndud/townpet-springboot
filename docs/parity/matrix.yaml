@@ -23,19 +23,19 @@ pages:
     spring: verified
   - path: /admin/care-feedbacks
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /admin/corrections
     legacy: true
     spring: verified
   - path: /admin/hospital-review-flags
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /admin/moderation-logs
     legacy: true
     spring: verified
   - path: /admin/moderation/direct
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /admin/ops
     legacy: true
     spring: verified
