@@ -85,4 +85,25 @@ describe("Publication feed journeys", () => {
 
     expect(await screen.findByRole("heading", { name: "로그인" })).toBeInTheDocument();
   });
+
+  it("passes the URL search term to the feed and exposes the reset action", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() =>
+      Promise.resolve(response({ items: [publication("0198f342-13d7-7000-8000-000000000003", "산책 장소")], page: { nextCursor: null, hasNext: false } })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MemoryRouter initialEntries={["/feed/guest?q=산책"]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "산책 장소" })).toBeInTheDocument();
+    expect(screen.getByDisplayValue("산책")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "초기화" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/feed?audience=GLOBAL&limit=20&query=%EC%82%B0%EC%B1%85",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
 });

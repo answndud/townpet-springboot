@@ -180,6 +180,10 @@ h1, h2, p { margin: 0; }
 .feed-view-tabs { display: flex; gap: 4px; margin-top: 12px; border-bottom: 1px solid #d8e4f6; }
 .feed-view-tabs a { min-height: 38px; padding: 0 14px; color: #5a7397; font-size: 12px; font-weight: 700; }
 .feed-view-tabs a.active { border-bottom: 2px solid #3567b5; color: #285a9f; text-decoration: none; }
+.feed-search { display: flex; align-items: end; gap: 8px; margin-top: 12px; padding: 12px 14px; }
+.feed-search label { flex: 1; color: #4f678d; font-size: 11px; font-weight: 700; }
+.feed-search input { display: block; width: 100%; margin-top: 5px; }
+.feed-search .button { min-height: 38px; padding-inline: 15px; font-size: 12px; }
 .feed-error { margin-top: 12px; border: 1px solid #f0c9cf; border-radius: 8px; background: #fff7f7; padding: 10px 12px; }
 .feed-list { margin-top: 12px; padding: 0; overflow: hidden; }
 .feed-item { display: grid; gap: 7px; border-bottom: 1px solid #e3ecf8; padding: 15px 18px; transition: background-color .16s ease; }
@@ -364,6 +368,9 @@ h1, h2, p { margin: 0; }
   .feed-hero p:not(.eyebrow) { font-size: 12px; }
   .feed-hero .button { padding-inline: 13px; }
   .feed-view-tabs a { flex: 1; justify-content: center; }
+  .feed-search { align-items: stretch; flex-wrap: wrap; }
+  .feed-search label { flex-basis: 100%; }
+  .feed-search .button { flex: 1; }
   .feed-item { padding: 13px 14px; }
   .feed-item-title h2 { font-size: 15px; }
 }
