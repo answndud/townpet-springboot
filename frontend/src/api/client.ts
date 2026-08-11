@@ -113,6 +113,7 @@ export type Bookmark = {
   active: boolean;
 };
 export type PublicationStats = { viewCount: number };
+export type CareRequest = { id: string; requesterMemberId: string; title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint: string | null; status: "OPEN" | "MATCHED" | "CANCELLED" | "EXPIRED"; createdAt: string; updatedAt: string; version: number };
 
 export type Relationship = {
   following: boolean;
@@ -518,6 +519,12 @@ export const guestApi = {
       method: "DELETE", headers: jsonHeaders, body: JSON.stringify(input),
     });
   },
+};
+
+export const careApi = {
+  list(signal?: AbortSignal) { return apiFetch<CareRequest[]>("/api/v1/care/requests", { signal }); },
+  create(input: { title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint?: string }) { return mutate<CareRequest>("/api/v1/care/requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
+  cancel(id: string, version: number) { return mutate<CareRequest>(`/api/v1/care/requests/${encodeURIComponent(id)}/cancel`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ version }) }); },
 };
 
 export const marketplaceApi = {
