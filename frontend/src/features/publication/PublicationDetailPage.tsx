@@ -4,6 +4,7 @@ import {
   ApiError,
   memberApi,
   publicationApi,
+  trustApi,
   type Comment,
   type Bookmark,
   type Relationship,
@@ -219,6 +220,16 @@ export default function PublicationDetailPage() {
     }
   }
 
+  async function reportPublication() {
+    if (!publication || !window.confirm("이 게시글을 신고할까요?")) return;
+    try {
+      await trustApi.report({ targetType: "PUBLICATION", targetId: publication.id, reason: "OTHER" });
+      setMutationError("신고가 접수되었습니다. 운영팀이 확인합니다.");
+    } catch (requestError) {
+      setMutationError(requestError instanceof ApiError && requestError.status === 409 ? "이미 신고한 게시글입니다." : "신고를 접수하지 못했습니다.");
+    }
+  }
+
   if (error) {
     return (
       <main className="page publication-page publication-state-page">
@@ -259,6 +270,7 @@ export default function PublicationDetailPage() {
             </>
           ) : null}
           <Link className="button button-soft" to="/posts/new">새 글 작성</Link>
+          {viewerId && viewerId !== publication.authorId ? <button className="button button-soft" type="button" onClick={reportPublication}>신고</button> : null}
         </div>
       </div>
       {mutationError ? (
