@@ -18,6 +18,7 @@ export type Neighborhood = {
   slug: string;
   name: string;
 };
+export type Breed = { code: string; species: "DOG" | "CAT" | "OTHER"; name: string; description: string };
 
 export type Pet = {
   id: string;
@@ -292,6 +293,9 @@ export const catalogApi = {
   },
   neighborhood(slug: string, signal?: AbortSignal) {
     return apiFetch<Neighborhood>(`/api/v1/catalog/neighborhoods/${encodeURIComponent(slug)}`, { signal });
+  },
+  breed(code: string, signal?: AbortSignal) {
+    return apiFetch<Breed>(`/api/v1/catalog/breeds/${encodeURIComponent(code)}`, { signal });
   },
 };
 

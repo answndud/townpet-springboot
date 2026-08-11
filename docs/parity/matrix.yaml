@@ -89,7 +89,7 @@ pages:
     spring: verified
   - path: /lounges/breeds/{breedCode}
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /lounges/breeds/{breedCode}/groupbuys/new
     legacy: true
     spring: verified
