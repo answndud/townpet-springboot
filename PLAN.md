@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P3-LOSTFOUND - 분실·발견 alert의 작성·공개 조회·소유자 lifecycle을 안전한 vertical slice로 연결한다
+1. P3-LOSTFOUND - 정확 위치 evidence를 owner-only 조회와 audit로 보호한다
    - 파일: `src/main/java/com/townpet/lostfound/**`, `src/main/resources/db/migration/**`, `src/test/java/com/townpet/lostfound/**`
-   - 변경: `LOST/FOUND` alert를 PostgreSQL/PostGIS에 저장하고 공개 근사 위치 조회와 작성자 전용 `RESOLVED/CLOSED` 전이를 연결한다. 정확 위치 evidence와 sighting은 다음 slice로 미룬다.
-   - 검증: `./gradlew integrationTest --tests '*LostFoundAlertControllerTest*'`
-   - 완료: 유효하지 않은 위치·상태는 거부되고, 공개 응답에는 근사 위치만 포함되며, 타인 alert lifecycle 변경은 차단된다.
+   - 변경: sighting에 선택적 정확 위치와 공개 범위를 저장하고, alert 작성자 전용 exact-location endpoint 및 접근 audit row를 연결한다. 공개 조회 응답에는 exact 좌표를 절대 포함하지 않는다.
+   - 검증: `./gradlew integrationTest --tests '*LostFoundExactLocationControllerTest*'`
+   - 완료: 타인·비회원의 정확 위치 조회는 거부되고, 허용된 조회만 audit에 기록되며, exact 좌표 없는 제보도 기존 공개 흐름을 유지한다.
 
 ## Backlog
 
