@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P4-MARKETPLACE - listing 수정 가능 상태와 거래 조건 불변식을 연결한다
-   - 파일: `src/main/java/com/townpet/marketplace/**`, `src/test/java/com/townpet/marketplace/**`
-   - 변경: owner가 `AVAILABLE` listing만 version과 함께 제목·설명·가격을 수정하게 하고 `RESERVED` 이후 수정은 충돌로 거부한다.
-   - 검증: `./gradlew integrationTest --tests '*MarketplaceListingControllerTest*'`
-   - 완료: 타인·stale version·예약 이후 수정은 차단되고, 허용된 수정은 새 version으로 반환된다.
+1. P5-LOSTFOUND - LostFound backend hot path를 React 화면과 연결한다
+   - 파일: `frontend/src/features/lostfound/**`, `frontend/src/api/client.ts`, `frontend/src/App.tsx`, `frontend/src/styles.css`
+   - 변경: alert 목록·반경 filter·상세·sighting 목록·작성·owner-only exact location·lifecycle action을 모바일 화면으로 연결한다.
+   - 검증: frontend typecheck/build와 LostFound 관련 Vitest·integration test
+   - 완료: 공개 사용자는 목록·상세·근사 정보·sighting을 보고, 로그인 사용자는 alert/sighting 작성과 자신의 lifecycle/exact location action을 수행한다.
 
 ## Backlog
 
