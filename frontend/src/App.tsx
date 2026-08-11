@@ -29,6 +29,7 @@ import BreedLoungePage from "./BreedLoungePage";
 import NeighborhoodMapPage from "./NeighborhoodMapPage";
 import TownSectionPage from "./TownSectionPage";
 import PostSightingsPage from "./PostSightingsPage";
+import AdminBreedsPage from "./AdminBreedsPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -168,7 +169,7 @@ export default function App() {
         <Route path="/admin" element={<AdminHomePage />} />
         <Route path="/admin/ops" element={<AdminHomePage />} />
         <Route path="/admin/auth-audits" element={<AdminAuthAuditsPage />} />
-        <Route path="/admin/breeds" element={<AdminHomePage />} />
+        <Route path="/admin/breeds" element={<AdminBreedsPage />} />
         <Route path="/admin/care-feedbacks" element={<AdminHomePage />} />
         <Route path="/admin/corrections" element={<AdminCorrectionPage />} />
         <Route path="/admin/hospital-review-flags" element={<AdminHomePage />} />
