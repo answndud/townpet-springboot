@@ -3,6 +3,7 @@ package com.townpet.marketplace;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -69,16 +70,46 @@ class MarketplaceListingControllerTest {
             .andExpect(jsonPath("$.status").value("AVAILABLE"))
             .andExpect(jsonPath("$.priceKrw").value(15000))
             .andReturn();
-    String id =
+    com.fasterxml.jackson.databind.JsonNode created =
         new com.fasterxml.jackson.databind.ObjectMapper()
-            .readTree(result.getResponse().getContentAsString())
-            .path("id")
-            .asText();
+            .readTree(result.getResponse().getContentAsString());
+    String id = created.path("id").asText();
+    long version = created.path("version").asLong();
 
     mockMvc
         .perform(get("/api/v1/marketplace/listings/{id}", id))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("Dog carrier"));
+
+    mockMvc
+        .perform(
+            patch("/api/v1/marketplace/listings/{id}/status", id)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"RESERVED\",\"version\":" + version + "}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("RESERVED"));
+    mockMvc
+        .perform(
+            patch("/api/v1/marketplace/listings/{id}/status", id)
+                .cookie(login("demo-member-2@townpet.local"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"CANCELLED\",\"version\":1}"))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            patch("/api/v1/marketplace/listings/{id}/status", id)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"COMPLETED\",\"version\":1}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("COMPLETED"));
+    mockMvc
+        .perform(get("/api/v1/marketplace/listings/{id}", id))
+        .andExpect(status().isNotFound());
 
     mockMvc
         .perform(
