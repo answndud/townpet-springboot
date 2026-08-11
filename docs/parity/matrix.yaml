@@ -17,7 +17,7 @@ pages:
     spring: verified
   - path: /admin/auth-audits
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /admin/breeds
     legacy: true
     spring: adapter
