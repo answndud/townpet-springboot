@@ -299,7 +299,17 @@ h1, h2, p { margin: 0; }
 .localcare-summary { font-size: 1.1rem; color: var(--muted-text); }
 .localcare-content { margin: 2rem 0; white-space: pre-wrap; line-height: 1.8; }
 .localcare-detail footer { display: flex; flex-wrap: wrap; gap: 1rem; color: var(--muted-text); font-size: .9rem; }
+.gathering-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.gathering-card { color: inherit; text-decoration: none; }
+.gathering-card h2 { margin: .75rem 0 .5rem; }
+.gathering-card small { color: var(--muted-text); }
+.gathering-detail { max-width: 760px; }
+.gathering-detail h1 { margin: 1rem 0; }
+.gathering-detail dl { display: grid; grid-template-columns: 5rem 1fr; gap: .6rem; margin: 2rem 0; }
+.gathering-detail dt { color: var(--muted-text); }
+.gathering-detail dd { margin: 0; }
 @media (max-width: 760px) { .localcare-grid { grid-template-columns: 1fr; } .localcare-search { align-items: stretch; flex-direction: column; } .localcare-hero { padding: 1.5rem; } }
+@media (max-width: 760px) { .gathering-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
   .marketplace-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
