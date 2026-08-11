@@ -338,7 +338,7 @@ apiRoutes:
   - path: /api/profile/audience-segments
     methods: [GET]
     legacy: true
-    spring: adapter
+    spring: verified
   - path: /api/reports/{id}
     methods: [PATCH]
     legacy: true
