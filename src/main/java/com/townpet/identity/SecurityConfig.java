@@ -68,6 +68,8 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/lost-found/sightings/**")
                   .permitAll()
+                  .requestMatchers(HttpMethod.GET, "/api/v1/marketplace/listings/**")
+                  .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/feed")
                   .permitAll()
                   .requestMatchers("/api/v1/operations/**")
