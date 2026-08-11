@@ -145,9 +145,11 @@ class MediaControllerTest {
                 String.class,
                 UUID.fromString(expiredAssetId)))
         .isEqualTo("UPLOADING");
-    org.assertj.core.api.Assertions.assertThat(media.cleanupExpiredUploads(Instant.now()).deletedCount())
+    org.assertj.core.api.Assertions.assertThat(
+            media.cleanupExpiredUploads(Instant.now()).deletedCount())
         .isEqualTo(1);
-    org.assertj.core.api.Assertions.assertThat(media.cleanupExpiredUploads(Instant.now()).deletedCount())
+    org.assertj.core.api.Assertions.assertThat(
+            media.cleanupExpiredUploads(Instant.now()).deletedCount())
         .isZero();
     org.assertj.core.api.Assertions.assertThat(
             jdbc.queryForObject(

@@ -16,25 +16,48 @@ import org.springframework.web.server.ResponseStatusException;
 class LocalResourceController {
   private final LocalResourceRepository resources;
 
-  LocalResourceController(LocalResourceRepository resources) { this.resources = resources; }
+  LocalResourceController(LocalResourceRepository resources) {
+    this.resources = resources;
+  }
 
   @GetMapping
   List<ResourceResponse> list(
       @RequestParam(required = false) LocalResourceKind kind,
       @RequestParam(defaultValue = "") String query) {
-    if (query.length() > 80) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "query is too long");
-    return resources.search(kind, query.trim()).stream().map(LocalResourceController::toResponse).toList();
+    if (query.length() > 80)
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "query is too long");
+    return resources.search(kind, query.trim()).stream()
+        .map(LocalResourceController::toResponse)
+        .toList();
   }
 
   @GetMapping("/{resourceId}")
   ResourceResponse get(@PathVariable UUID resourceId) {
-    return resources.findById(resourceId).map(LocalResourceController::toResponse)
+    return resources
+        .findById(resourceId)
+        .map(LocalResourceController::toResponse)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
 
   private static ResourceResponse toResponse(LocalResourceEntity resource) {
-    return new ResourceResponse(resource.getId(), resource.getKind(), resource.getTitle(), resource.getSummary(), resource.getContent(), resource.getSourceName(), resource.getSourceUrl(), resource.getUpdatedAt());
+    return new ResourceResponse(
+        resource.getId(),
+        resource.getKind(),
+        resource.getTitle(),
+        resource.getSummary(),
+        resource.getContent(),
+        resource.getSourceName(),
+        resource.getSourceUrl(),
+        resource.getUpdatedAt());
   }
 
-  record ResourceResponse(UUID id, LocalResourceKind kind, String title, String summary, String content, String sourceName, String sourceUrl, Instant updatedAt) {}
+  record ResourceResponse(
+      UUID id,
+      LocalResourceKind kind,
+      String title,
+      String summary,
+      String content,
+      String sourceName,
+      String sourceUrl,
+      Instant updatedAt) {}
 }

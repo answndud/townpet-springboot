@@ -77,13 +77,13 @@ pages:
     spring: verified
   - path: /guides/{guideSlug}
     legacy: true
-    spring: pending
+    spring: verified
   - path: /login
     legacy: true
     spring: verified
   - path: /lost-found
     legacy: true
-    spring: pending
+    spring: verified
   - path: /lost/new
     legacy: true
     spring: pending

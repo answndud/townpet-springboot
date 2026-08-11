@@ -1,10 +1,10 @@
 package com.townpet.lostfound;
 
 import com.townpet.common.UuidV7;
-import java.time.Instant;
 import java.sql.Timestamp;
-import java.util.Optional;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.Nullable;
@@ -46,7 +46,8 @@ class LostFoundAlertService {
 
   @Transactional(readOnly = true)
   Optional<AlertView> find(UUID id) {
-    return jdbc.query(
+    return jdbc
+        .query(
             "SELECT id, reporter_member_id, kind, status, title, description, last_seen_at, "
                 + "ST_Y(approx_location::geometry) AS latitude, "
                 + "ST_X(approx_location::geometry) AS longitude, created_at, updated_at, version, "
@@ -114,8 +115,7 @@ class LostFoundAlertService {
       String resolutionOutcome,
       String closeReason,
       String reopenReason) {
-    AlertView current =
-        find(alertId).orElseThrow(LostFoundAlertNotFoundException::new);
+    AlertView current = find(alertId).orElseThrow(LostFoundAlertNotFoundException::new);
     if (!current.reporterMemberId().equals(ownerMemberId)) {
       throw new LostFoundAlertOwnershipException();
     }
@@ -158,7 +158,10 @@ class LostFoundAlertService {
         ownerMemberId,
         current.status().name(),
         nextStatus.name(),
-        blankToNull(reopening ? reopenReason : (nextStatus == LostFoundAlertStatus.RESOLVED ? resolutionOutcome : closeReason)));
+        blankToNull(
+            reopening
+                ? reopenReason
+                : (nextStatus == LostFoundAlertStatus.RESOLVED ? resolutionOutcome : closeReason)));
     return find(alertId).orElseThrow(LostFoundAlertNotFoundException::new);
   }
 
