@@ -16,12 +16,12 @@ const TOPIC_LINKS = [
   ["동물병원", "/feed/guest?type=HOSPITAL_REVIEW"],
   ["산책코스", "/feed/guest?type=WALK_ROUTE"],
   ["질문/답변", "/feed/guest?type=QA_QUESTION"],
-  ["중고거래", "/feed/guest?type=MARKET_LISTING"],
+  ["중고거래", "/marketplace"],
 ] as const;
 
 function Header() {
   const location = useLocation();
-  const publicHeader = ["/", "/guides", "/campaigns/neighborhood-map", "/towns"].some(
+  const publicHeader = ["/", "/guides", "/campaigns/neighborhood-map", "/towns", "/marketplace"].some(
     (path) => location.pathname === path || location.pathname.startsWith(`${path}/`),
   );
   const guestFeedHeader = location.pathname === "/feed/guest";
