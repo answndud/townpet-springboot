@@ -121,6 +121,7 @@ export type LocalResource = {
   sourceUrl: string | null;
   updatedAt: string;
 };
+export type Gathering = { id: string; hostMemberId: string; title: string; description: string; location: string; startsAt: string; capacity: number; participantCount: number; status: "ACTIVE" | "CANCELLED"; joined: boolean; version: number };
 
 export type CreatePublicationInput = {
   title: string;
@@ -297,6 +298,15 @@ export const localResourceApi = {
   detail(resourceId: string, signal?: AbortSignal) {
     return apiFetch<LocalResource>(`/api/v1/local-resources/${encodeURIComponent(resourceId)}`, { signal });
   },
+};
+
+export const gatheringApi = {
+  list(signal?: AbortSignal) { return apiFetch<Gathering[]>("/api/v1/gatherings", { signal }); },
+  detail(id: string, signal?: AbortSignal) { return apiFetch<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}`, { signal }); },
+  create(input: { title: string; description: string; location: string; startsAt: string; capacity: number }) { return mutate<Gathering>("/api/v1/gatherings", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
+  join(id: string) { return mutate<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}/participants`, { method: "POST", headers: jsonHeaders }); },
+  leave(id: string) { return mutate<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}/participants/me`, { method: "DELETE", headers: jsonHeaders }); },
+  cancel(id: string) { return mutate<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}/cancel`, { method: "PATCH", headers: jsonHeaders }); },
 };
 
 export const publicationApi = {
