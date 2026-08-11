@@ -334,7 +334,7 @@ apiRoutes:
   - path: /api/posts/suggestions
     methods: [GET]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/profile/audience-segments
     methods: [GET]
     legacy: true
