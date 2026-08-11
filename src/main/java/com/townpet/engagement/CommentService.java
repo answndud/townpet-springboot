@@ -60,6 +60,36 @@ class CommentService {
     comments.saveAndFlush(comment);
   }
 
+  @Transactional
+  CommentEntity editById(UUID memberId, UUID commentId, long expectedVersion, String body) {
+    CommentEntity comment = activeComment(commentId);
+    requireAccessiblePublication(comment.getPublicationId(), memberId);
+    requireOwnershipAndVersion(comment, memberId, expectedVersion);
+    comment.edit(body, Instant.now());
+    return comments.saveAndFlush(comment);
+  }
+
+  @Transactional
+  void deleteById(UUID memberId, UUID commentId, long expectedVersion) {
+    CommentEntity comment = activeComment(commentId);
+    requireAccessiblePublication(comment.getPublicationId(), memberId);
+    requireOwnershipAndVersion(comment, memberId, expectedVersion);
+    comment.delete(Instant.now());
+    comments.saveAndFlush(comment);
+  }
+
+  private CommentEntity activeComment(UUID commentId) {
+    return comments
+        .findByIdAndLifecycle(commentId, CommentLifecycle.ACTIVE)
+        .orElseThrow(CommentNotFoundException::new);
+  }
+
+  private static void requireOwnershipAndVersion(
+      CommentEntity comment, UUID memberId, long expectedVersion) {
+    if (!comment.getAuthorMemberId().equals(memberId)) throw new CommentOwnershipException();
+    if (comment.getVersion() != expectedVersion) throw new CommentVersionConflictException();
+  }
+
   private void requireAccessiblePublication(UUID publicationId, @Nullable UUID viewerMemberId) {
     UUID authorId =
         publications

@@ -238,7 +238,7 @@ apiRoutes:
   - path: /api/comments/{id}
     methods: [PATCH, DELETE]
     legacy: true
-    spring: pending
+    spring: verified
   - path: /api/communities
     methods: [GET]
     legacy: true
