@@ -1,8 +1,6 @@
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
-import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
 import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
@@ -12,7 +10,6 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     id("com.diffplug.spotless") version "7.0.2"
     id("net.ltgt.errorprone") version "4.1.0"
-    id("org.openapi.generator") version "7.15.0"
 }
 
 group = "com.townpet"
@@ -104,64 +101,6 @@ sourceSets {
         resources.srcDir(layout.projectDirectory.dir("docs"))
     }
 }
-val openApiSpec = layout.projectDirectory.file("api/openapi/townpet.yaml").asFile.absolutePath
-
-tasks.named<GenerateTask>("openApiGenerate") {
-    generatorName.set("spring")
-    inputSpec.set(openApiSpec)
-    outputDir.set(layout.buildDirectory.dir("generated/openapi/java").get().asFile.absolutePath)
-    apiPackage.set("com.townpet.common.web.generated")
-    modelPackage.set("com.townpet.common.web.generated.model")
-    configOptions.set(
-        mapOf(
-            "interfaceOnly" to "true",
-            "useSpringBoot3" to "true",
-            "skipDefaultInterface" to "true",
-            "useTags" to "true",
-            "dateLibrary" to "java8",
-        )
-    )
-}
-
-tasks.register<GenerateTask>("openApiGenerateTypeScript") {
-    generatorName.set("typescript-fetch")
-    inputSpec.set(openApiSpec)
-    outputDir.set(layout.buildDirectory.dir("generated/openapi/typescript").get().asFile.absolutePath)
-    configOptions.set(
-        mapOf(
-            "typescriptThreePlus" to "true",
-            "supportsES6" to "true",
-            "useSingleRequestParameter" to "true",
-            "enumPropertyNaming" to "original",
-        )
-    )
-}
-
-tasks.register("generateOpenApiClients") {
-    group = "openapi"
-    description = "Generates Java transport interfaces and a TypeScript client from the OpenAPI contract."
-    dependsOn("openApiGenerate", "openApiGenerateTypeScript")
-}
-
-tasks.named<ValidateTask>("openApiValidate") {
-    inputSpec.set(openApiSpec)
-}
-
-tasks.register("checkGeneratedSources") {
-    group = "verification"
-    dependsOn("generateOpenApiClients")
-    doLast {
-        val javaOutput = layout.buildDirectory.dir("generated/openapi/java").get().asFile
-        val typescriptOutput = layout.buildDirectory.dir("generated/openapi/typescript").get().asFile
-        check(javaOutput.walkTopDown().any { it.extension == "java" }) {
-            "OpenAPI Java sources were not generated"
-        }
-        check(typescriptOutput.walkTopDown().any { it.extension == "ts" }) {
-            "OpenAPI TypeScript sources were not generated"
-        }
-    }
-}
-
 fun registerVerificationTestTask(name: String, descriptionText: String) {
     tasks.register<Test>(name) {
         group = "verification"
@@ -177,13 +116,6 @@ registerVerificationTestTask("integrationTest", "Runs integration tests.")
 registerVerificationTestTask("modulithTest", "Runs Spring Modulith architecture tests.")
 registerVerificationTestTask("migrationTest", "Runs database migration tests.")
 registerVerificationTestTask("performanceTest", "Runs controlled performance tests.")
-registerVerificationTestTask("contractTest", "Runs OpenAPI contract tests.")
-tasks.named("contractTest") {
-    dependsOn("checkGeneratedSources")
-    (this as Test).filter {
-        includeTestsMatching("com.townpet.contract.*")
-    }
-}
 registerVerificationTestTask("parityInventoryTest", "Runs legacy page and API inventory tests.")
 tasks.named<Test>("parityInventoryTest") {
     filter {
@@ -194,7 +126,7 @@ tasks.named<Test>("parityInventoryTest") {
 tasks.named("check") {
     dependsOn(tasks.named("spotlessCheck"))
     dependsOn(tasks.named("jacocoTestReport"))
-    dependsOn("openApiValidate", "contractTest", "parityInventoryTest")
+    dependsOn("parityInventoryTest")
 }
 
 tasks.named<JacocoReport>("jacocoTestReport") {

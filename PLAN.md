@@ -6,11 +6,11 @@
 
 ## Active
 
-1. P2.17 - media object 검증과 orphan cleanup을 운영 흐름에 연결한다
-   - 파일: `src/main/java/com/townpet/media/**`, `src/test/java/com/townpet/media/**`, `src/main/resources/db/migration/**`, `deploy/compose/**`
-   - 변경: magic byte·MIME allowlist와 만료 `UPLOADING` asset cleanup command를 추가하고, object storage metadata와 `upload_asset` 대사를 반복 실행할 수 있게 한다.
-   - 검증: `./gradlew integrationTest --tests '*Media*' && ./gradlew check`; missing/mismatched object와 cleanup 재실행 contract test를 통과한다.
-   - 완료: 허용되지 않은 파일 형식과 고아 object가 `READY`/`ATTACHED`로 승격되지 않고, cleanup이 idempotent하게 metadata와 object를 함께 정리한다.
+1. P3-LOSTFOUND - 분실·발견 alert의 작성·공개 조회·소유자 lifecycle을 안전한 vertical slice로 연결한다
+   - 파일: `src/main/java/com/townpet/lostfound/**`, `src/main/resources/db/migration/**`, `src/test/java/com/townpet/lostfound/**`
+   - 변경: `LOST/FOUND` alert를 PostgreSQL/PostGIS에 저장하고 공개 근사 위치 조회와 작성자 전용 `RESOLVED/CLOSED` 전이를 연결한다. 정확 위치 evidence와 sighting은 다음 slice로 미룬다.
+   - 검증: `./gradlew integrationTest --tests '*LostFoundAlertControllerTest*'`
+   - 완료: 유효하지 않은 위치·상태는 거부되고, 공개 응답에는 근사 위치만 포함되며, 타인 alert lifecycle 변경은 차단된다.
 
 ## Backlog
 

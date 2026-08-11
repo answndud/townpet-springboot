@@ -1,14 +1,16 @@
 package com.townpet.media;
 
 import com.townpet.publication.api.PublicationAccess;
+import com.townpet.media.api.MediaOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-class MediaService {
+class MediaService implements MediaOperations {
   private final UploadAssetRepository assets;
   private final PublicationAccess publications;
   private final ObjectStoragePort storage;
@@ -47,11 +49,32 @@ class MediaService {
     if (!object.contentType().equals(asset.getContentType())
         || object.byteSize() != asset.getByteSize()
         || !object.checksumSha256().equalsIgnoreCase(asset.getChecksumSha256())
-        || !object.checksumSha256().equalsIgnoreCase(checksumSha256)) {
+        || !object.checksumSha256().equalsIgnoreCase(checksumSha256)
+        || !object.detectedContentType().equals(asset.getContentType())) {
       throw new MediaObjectMismatchException();
     }
     asset.finalizeUpload(checksumSha256, Instant.now());
     return assets.saveAndFlush(asset);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public CleanupReport inspectExpiredUploads(Instant now) {
+    List<UploadAssetEntity> expired =
+        assets.findByStatusAndExpiresAtBefore(MediaAssetStatus.UPLOADING, now);
+    return new CleanupReport(
+        expired.size(), expired.stream().mapToLong(UploadAssetEntity::getByteSize).sum(), 0, now);
+  }
+
+  @Override
+  @Transactional
+  public CleanupReport cleanupExpiredUploads(Instant now) {
+    List<UploadAssetEntity> expired =
+        assets.findByStatusAndExpiresAtBefore(MediaAssetStatus.UPLOADING, now);
+    expired.forEach(asset -> storage.delete(asset.getObjectKey()));
+    assets.deleteAll(expired);
+    return new CleanupReport(
+        expired.size(), expired.stream().mapToLong(UploadAssetEntity::getByteSize).sum(), expired.size(), now);
   }
 
   @Transactional
