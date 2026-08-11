@@ -488,6 +488,23 @@ export const publicationApi = {
   },
 };
 
+export const guestApi = {
+  createAuthor(password: string) {
+    return mutate<{ guestId: string }>("/api/guest/authors", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ password }),
+    });
+  },
+  createPublication(input: { password: string; title: string; body: string }) {
+    return mutate<{ id: string }>("/api/guest/posts", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify(input),
+    });
+  },
+};
+
 export const marketplaceApi = {
   list(kind?: MarketplaceListingKind, limit = 20, signal?: AbortSignal) {
     const search = new URLSearchParams({ limit: String(limit) });

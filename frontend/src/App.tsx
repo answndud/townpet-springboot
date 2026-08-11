@@ -9,6 +9,7 @@ import PublicationCreatePage from "./features/publication/PublicationCreatePage"
 import PublicationDetailPage from "./features/publication/PublicationDetailPage";
 import PublicationEditPage from "./features/publication/PublicationEditPage";
 import PublicationFeedPage from "./features/publication/PublicationFeedPage";
+import GuestPublicationCreatePage from "./features/publication/GuestPublicationCreatePage";
 import { MarketplaceDetailPage, MarketplaceFormPage, MarketplaceListPage } from "./features/marketplace/MarketplacePages";
 import { LostFoundAlertFormPage, LostFoundDetailPage, LostFoundExactLocationPage, LostFoundListPage, LostFoundSightingFormPage } from "./features/lostfound/LostFoundPages";
 import { LocalCareDetailPage, LocalCareListPage } from "./features/localcare/LocalCarePages";
@@ -191,6 +192,7 @@ export default function App() {
         <Route path="/members/:memberId" element={<PublicMemberProfilePage />} />
         <Route path="/users/:memberId" element={<PublicMemberProfilePage />} />
         <Route path="/posts/new" element={<PublicationCreatePage />} />
+        <Route path="/guest/posts/new" element={<GuestPublicationCreatePage />} />
         <Route path="/posts/:publicationId/edit" element={<PublicationEditPage />} />
         <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />
         <Route path="/posts/:publicationId/guest" element={<PublicationDetailPage />} />
