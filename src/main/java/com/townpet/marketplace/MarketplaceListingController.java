@@ -72,6 +72,29 @@ class MarketplaceListingController {
     }
   }
 
+  @org.springframework.web.bind.annotation.PatchMapping("/{listingId}")
+  ListingResponse update(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID listingId,
+      @Valid @RequestBody UpdateListingRequest request) {
+    try {
+      return toResponse(
+          listings.update(
+              memberId(principal),
+              listingId,
+              request.title(),
+              request.description(),
+              request.priceKrw(),
+              request.version()));
+    } catch (MarketplaceListingNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (MarketplaceListingOwnershipException exception) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } catch (MarketplaceListingStateException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Listing is not editable");
+    }
+  }
+
   private static UUID memberId(UserDetails principal) {
     try {
       return UUID.fromString(principal.getUsername());
@@ -101,6 +124,12 @@ class MarketplaceListingController {
       @Min(0) Long priceKrw) {}
 
   record ChangeStatusRequest(@NotNull MarketplaceListingStatus status, @Min(0) long version) {}
+
+  record UpdateListingRequest(
+      @NotBlank @Size(max = 120) String title,
+      @NotBlank @Size(max = 5000) String description,
+      @Min(0) Long priceKrw,
+      @Min(0) long version) {}
 
   record ListingResponse(
       UUID id,
