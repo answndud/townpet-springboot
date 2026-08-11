@@ -190,7 +190,8 @@ apiRoutes:
   - path: /api/auth/{nextauth}
     methods: [GET, POST]
     legacy: true
-    spring: adapter
+    spring: excluded
+    decision: ADR-0040
   - path: /api/auth/logout
     methods: [POST]
     legacy: true
