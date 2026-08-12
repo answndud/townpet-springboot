@@ -1,5 +1,6 @@
 package com.townpet.notification;
 
+import com.townpet.common.MemberOnly;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ class NotificationController {
   }
 
   @GetMapping
+  @MemberOnly
   List<Response> list(
       @AuthenticationPrincipal UserDetails principal,
       @RequestParam(defaultValue = "false") boolean unread) {
@@ -31,12 +33,14 @@ class NotificationController {
   }
 
   @GetMapping("/unread-count")
+  @MemberOnly
   CountResponse unreadCount(@AuthenticationPrincipal UserDetails principal) {
     return new CountResponse(
         notifications.countByRecipientMemberIdAndReadAtIsNull(memberId(principal)));
   }
 
   @PatchMapping("/{id}/read")
+  @MemberOnly
   Response markRead(@AuthenticationPrincipal UserDetails principal, @PathVariable UUID id) {
     NotificationEntity notification =
         notifications

@@ -28,9 +28,11 @@ class LegacyMemberProfileController {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     MemberProfileEntity profile = profiles.findByMemberId(memberId).orElse(null);
     List<PetSummary> petItems =
-        pets.findAllByMemberIdOrderByCreatedAtAsc(memberId).stream()
-            .map(pet -> new PetSummary(pet.getName(), pet.getSpecies()))
-            .toList();
+        (profile == null || profile.isShowPublicPets())
+            ? pets.findAllByMemberIdOrderByCreatedAtAsc(memberId).stream()
+                .map(pet -> new PetSummary(pet.getName(), pet.getSpecies()))
+                .toList()
+            : List.of();
     return new ProfileSummary(
         member.getId(),
         member.getNickname(),

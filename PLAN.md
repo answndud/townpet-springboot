@@ -8,6 +8,21 @@
 
 ## Active
 
+현재 실행 중인 권한 slice는 없다. 다음 기능 작업은 새 권한·parity gap이 확인될 때 이 위치에 추가한다.
+
+## Completed
+
+### P4 - 역할별 권한 경계를 실제 계정 조합으로 닫는다 ✅ completed (2026-08-12)
+
+- 파일: `src/main/java/com/townpet/identity/SecurityConfig.java`, `src/main/java/com/townpet/common/MemberOnly.java`, 역할별 controller, `src/main/java/com/townpet/member/`, `frontend/src/App.tsx`, `frontend/src/ProfilePage.tsx`, `frontend/src/PublicMemberProfilePage.tsx`, `src/test/java/com/townpet/identity/IdentityMemberControllerTest.java`
+- 변경:
+  - Spring Method Security와 `/api/admin/**`·legacy 신고 alias matcher를 활성화해 MEMBER가 모든 관리자 surface에 접근하지 못하게 한다.
+  - 일반 회원 mutation을 `MEMBER` 전용으로 제한하고 MODERATOR는 운영 검토·공개 읽기만 사용하게 한다.
+  - ViewerShell, legacy 공개 프로필, 공개 reaction visibility를 신규 profile API와 동일하게 맞춘다.
+  - React moderator route/header/profile와 login `next`를 역할별로 분리한다.
+- 검증: `./gradlew test --no-daemon`, `./gradlew migrationTest --no-daemon`, `cd frontend && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/vitest run`, Docker demo MEMBER/MODERATOR API status 확인
+- 완료: 관리자 API가 MEMBER에는 403, MODERATOR에는 200을 반환하고, MODERATOR의 일반 작성 mutation은 403이며 화면·공개범위·legacy contract가 역할에 맞게 표시된다. 실제 Docker demo 계정 확인과 `IdentityMemberControllerTest`의 양방향 회귀 테스트를 추가했다.
+
 ### P1 - 제품 parity와 ADR 판정을 실제 근거로 닫는다 ✅ completed (2026-08-12)
 
 - 파일: `docs/parity/matrix.yaml`, `ADR.md`, `src/main/java/com/townpet/{care,discovery,media,marketplace,localguide}/`, `frontend/src/`, `frontend/e2e/`, `src/test/java/`

@@ -49,6 +49,13 @@ public class MemberDirectory {
         .orElse(true);
   }
 
+  public boolean isPublicReactions(UUID memberId) {
+    return profiles
+        .findByMemberId(memberId)
+        .map(MemberProfileEntity::isShowPublicReactions)
+        .orElse(true);
+  }
+
   public Optional<PublicProfile> findPublicProfile(UUID memberId) {
     return members
         .findById(memberId)
@@ -67,6 +74,7 @@ public class MemberDirectory {
                   profile == null || profile.isShowPublicPosts(),
                   profile == null || profile.isShowPublicComments(),
                   profile == null || profile.isShowPublicPets(),
+                  profile == null || profile.isShowPublicReactions(),
                   memberPets);
             });
   }
@@ -81,6 +89,7 @@ public class MemberDirectory {
       boolean showPublicPosts,
       boolean showPublicComments,
       boolean showPublicPets,
+      boolean showPublicReactions,
       List<Pet> pets) {}
 
   public record Pet(UUID id, String name, String species) {}

@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
@@ -38,6 +39,7 @@ class ReactionController {
   }
 
   @PutMapping
+  @MemberOnly
   ReactionResponse set(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID publicationId,

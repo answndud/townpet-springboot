@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -19,6 +20,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
   @Bean
@@ -112,20 +114,25 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/feed/popular")
                   .permitAll()
+                  .requestMatchers(
+                      HttpMethod.POST, "/api/v1/operations/web-vitals", "/api/metrics/web-vitals")
+                  .permitAll()
                   .requestMatchers("/api/v1/operations/**")
                   .hasRole("MODERATOR")
                   .requestMatchers(HttpMethod.GET, "/api/v1/trust-reports/**")
                   .hasRole("MODERATOR")
                   .requestMatchers(HttpMethod.PATCH, "/api/v1/trust-reports/**")
                   .hasRole("MODERATOR")
-                  .requestMatchers("/api/admin/reports/**")
+                  .requestMatchers("/api/admin/**")
                   .hasRole("MODERATOR")
-                  .requestMatchers("/api/admin/auth-audits/**")
-                  .hasRole("MODERATOR")
-                  .requestMatchers("/api/metrics/web-vitals", "/api/v1/operations/web-vitals")
-                  .permitAll()
                   .requestMatchers(
                       "/api/ops/web-vitals/summary", "/api/v1/operations/web-vitals/summary")
+                  .hasRole("MODERATOR")
+                  .requestMatchers(HttpMethod.GET, "/api/v1/trust-reports/**", "/api/reports")
+                  .hasRole("MODERATOR")
+                  .requestMatchers(HttpMethod.PATCH, "/api/v1/trust-reports/**", "/api/reports/**")
+                  .hasRole("MODERATOR")
+                  .requestMatchers("/api/reports/bulk/**")
                   .hasRole("MODERATOR")
                   .anyRequest()
                   .authenticated();

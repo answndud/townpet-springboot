@@ -1,5 +1,6 @@
 package com.townpet.lostfound;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -34,6 +35,7 @@ class LostFoundSightingController {
   }
 
   @PostMapping("/alerts/{alertId}/sightings")
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   SightingResponse create(
       @AuthenticationPrincipal UserDetails principal,
@@ -82,6 +84,7 @@ class LostFoundSightingController {
   }
 
   @GetMapping("/sightings/{sightingId}/exact-location")
+  @MemberOnly
   ExactLocationResponse getExactLocation(
       @AuthenticationPrincipal UserDetails principal, @PathVariable UUID sightingId) {
     return exactLocations

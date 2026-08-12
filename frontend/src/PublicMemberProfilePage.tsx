@@ -82,7 +82,7 @@ export default function PublicMemberProfilePage() {
   if (!profile) return <main className="page placeholder-page"><section className="surface-card" role="status">프로필을 불러오는 중...</section></main>;
 
   const ownProfile = viewer?.id === profile.id;
-  const tabVisible = tab === "posts" ? profile.showPublicPosts : tab === "comments" ? profile.showPublicComments : true;
+  const tabVisible = tab === "posts" ? profile.showPublicPosts : tab === "comments" ? profile.showPublicComments : profile.showPublicReactions;
   return (
     <main className="page placeholder-page">
       <section className="surface-card profile-card">
@@ -102,7 +102,7 @@ export default function PublicMemberProfilePage() {
           {!tabVisible ? <p>이 활동은 비공개입니다.</p> : !activity.length ? <p>공개된 활동이 없습니다.</p> : null}
           {tab === "posts" && tabVisible ? <ul>{(activity as PublicMemberPublication[]).map((item) => <li key={item.id}><Link to={`/posts/${item.id}`}>{item.title}</Link><p>{item.body}</p></li>)}</ul> : null}
           {tab === "comments" && tabVisible ? <ul>{(activity as PublicMemberComment[]).map((item) => <li key={item.id}><Link to={`/posts/${item.publicationId}`}>{item.body}</Link></li>)}</ul> : null}
-          {tab === "reactions" ? <ul>{(activity as PublicMemberReaction[]).map((item) => <li key={`${item.publicationId}-${item.createdAt}`}><Link to={`/posts/${item.publicationId}`}>좋아요한 게시글 보기</Link></li>)}</ul> : null}
+          {tab === "reactions" && tabVisible ? <ul>{(activity as PublicMemberReaction[]).map((item) => <li key={`${item.publicationId}-${item.createdAt}`}><Link to={`/posts/${item.publicationId}`}>좋아요한 게시글 보기</Link></li>)}</ul> : null}
         </section>
       </section>
     </main>

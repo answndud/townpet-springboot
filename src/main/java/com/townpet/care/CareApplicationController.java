@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
@@ -20,6 +21,7 @@ class CareApplicationController {
   }
 
   @GetMapping
+  @MemberOnly
   List<Response> list(
       @AuthenticationPrincipal UserDetails principal, @PathVariable UUID requestId) {
     try {
@@ -34,6 +36,7 @@ class CareApplicationController {
   }
 
   @PostMapping
+  @MemberOnly
   ResponseEntity<Response> apply(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID requestId,
@@ -51,6 +54,7 @@ class CareApplicationController {
   }
 
   @PatchMapping("/{applicationId}")
+  @MemberOnly
   Response decide(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID requestId,

@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,7 @@ class LegacyCommentController {
   }
 
   @PatchMapping("/{id}")
+  @MemberOnly
   CommentController.CommentResponse edit(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID id,
@@ -40,6 +42,7 @@ class LegacyCommentController {
   }
 
   @DeleteMapping("/{id}")
+  @MemberOnly
   void delete(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID id,

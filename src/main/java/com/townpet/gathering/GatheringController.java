@@ -1,5 +1,6 @@
 package com.townpet.gathering;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
@@ -31,6 +32,7 @@ class GatheringController {
   }
 
   @PostMapping
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   Response create(
       @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody CreateRequest r) {
@@ -45,16 +47,19 @@ class GatheringController {
   }
 
   @PostMapping("/{id}/participants")
+  @MemberOnly
   Response join(@AuthenticationPrincipal UserDetails p, @PathVariable UUID id) {
     return response(service.join(id, required(p)));
   }
 
   @DeleteMapping("/{id}/participants/me")
+  @MemberOnly
   Response leave(@AuthenticationPrincipal UserDetails p, @PathVariable UUID id) {
     return response(service.leave(id, required(p)));
   }
 
   @PatchMapping("/{id}/cancel")
+  @MemberOnly
   Response cancel(@AuthenticationPrincipal UserDetails p, @PathVariable UUID id) {
     return response(service.cancel(id, required(p)));
   }

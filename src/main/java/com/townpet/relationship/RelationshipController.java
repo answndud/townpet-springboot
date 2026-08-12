@@ -1,5 +1,6 @@
 package com.townpet.relationship;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
@@ -27,6 +28,7 @@ class RelationshipController {
   }
 
   @GetMapping
+  @MemberOnly
   RelationshipResponse get(
       @AuthenticationPrincipal UserDetails principal, @PathVariable UUID targetMemberId) {
     try {
@@ -37,6 +39,7 @@ class RelationshipController {
   }
 
   @PutMapping
+  @MemberOnly
   RelationshipResponse set(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID targetMemberId,

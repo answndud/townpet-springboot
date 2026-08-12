@@ -41,6 +41,7 @@ import org.springframework.test.web.servlet.MvcResult;
 @ActiveProfiles("test")
 class IdentityMemberControllerTest {
   private static final UUID MEMBER_ID = UUID.fromString("00000000-0000-4000-8000-000000000001");
+  private static final UUID MODERATOR_ID = UUID.fromString("00000000-0000-4000-8000-000000000002");
   private static final UUID NEIGHBORHOOD_ID =
       UUID.fromString("00000000-0000-4000-8000-000000000101");
 
@@ -69,9 +70,16 @@ class IdentityMemberControllerTest {
     neighborhoods.deleteAll();
     neighborhoods.save(new NeighborhoodEntity(NEIGHBORHOOD_ID, "seoul-mapogu", "서울 마포구"));
     members.save(new MemberEntity(MEMBER_ID, "mango-user"));
+    members.save(new MemberEntity(MODERATOR_ID, "moderator-user"));
     credentials.save(
         new CredentialEntity(
             MEMBER_ID, "mango@example.com", passwordEncoder.encode("password123!")));
+    credentials.save(
+        new CredentialEntity(
+            MODERATOR_ID,
+            "moderator@example.com",
+            passwordEncoder.encode("password123!"),
+            "MODERATOR"));
   }
 
   @Test
@@ -150,6 +158,78 @@ class IdentityMemberControllerTest {
   }
 
   @Test
+  void memberCannotAccessModeratorPolicySurface() throws Exception {
+    verifyCredential();
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    mockMvc
+        .perform(get("/api/admin/policies?key=TERMS").cookie(sessionCookie(login)))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void moderatorCanAccessAdminSurfaceButCannotUseMemberMutations() throws Exception {
+    CredentialEntity credential = credentials.findByMemberId(MODERATOR_ID).orElseThrow();
+    credential.verifyEmail(java.time.Instant.now());
+    credentials.save(credential);
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"email\":\"moderator@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    Cookie session = sessionCookie(login);
+
+    mockMvc
+        .perform(get("/api/admin/breeds").cookie(session))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            post("/api/v1/publications")
+                .cookie(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"title\":\"운영자 작성 제한\",\"body\":\"회원 전용 기능\","
+                        + "\"scope\":\"GLOBAL\"}"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void viewerShellReportsModeratorActor() throws Exception {
+    CredentialEntity credential = credentials.findByMemberId(MODERATOR_ID).orElseThrow();
+    credential.verifyEmail(java.time.Instant.now());
+    credentials.save(credential);
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"moderator@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    mockMvc
+        .perform(get("/api/viewer-shell").cookie(sessionCookie(login)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.actor").value("MODERATOR"))
+        .andExpect(jsonPath("$.memberId").value(MODERATOR_ID.toString()));
+  }
+
+  @Test
   void onboardingReplacesOwnedPetsAndReturnsThem() throws Exception {
     verifyCredential();
     MvcResult login =
@@ -207,11 +287,50 @@ class IdentityMemberControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     "{\"bio\":\"공개 범위 테스트\",\"showPublicPosts\":false,"
-                        + "\"showPublicComments\":true,\"showPublicPets\":false}"))
+                        + "\"showPublicComments\":true,\"showPublicPets\":false,"
+                        + "\"showPublicReactions\":false}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.showPublicPosts").value(false))
         .andExpect(jsonPath("$.showPublicComments").value(true))
-        .andExpect(jsonPath("$.showPublicPets").value(false));
+        .andExpect(jsonPath("$.showPublicPets").value(false))
+        .andExpect(jsonPath("$.showPublicReactions").value(false));
+  }
+
+  @Test
+  void legacyPublicProfileHonorsPetVisibility() throws Exception {
+    verifyCredential();
+    pets.save(
+        new com.townpet.member.MemberPetEntity(
+            UUID.fromString("00000000-0000-4000-8000-000000000301"),
+            MEMBER_ID,
+            "Mango",
+            "DOG"));
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"mango@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                    "/api/v1/members/me/profile")
+                .cookie(sessionCookie(login))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"showPublicPosts\":true,\"showPublicComments\":true,"
+                        + "\"showPublicPets\":false}"))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(get("/api/users/" + MEMBER_ID + "/profile-summary"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.pets").isEmpty());
   }
 
   @Test

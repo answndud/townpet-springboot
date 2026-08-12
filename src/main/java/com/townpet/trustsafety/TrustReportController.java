@@ -1,5 +1,6 @@
 package com.townpet.trustsafety;
 
+import com.townpet.common.MemberOnly;
 import com.townpet.common.UuidV7;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -21,6 +22,7 @@ class TrustReportController {
   }
 
   @PostMapping
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   ReportResponse create(
       @AuthenticationPrincipal UserDetails p, @Valid @RequestBody CreateRequest r) {
