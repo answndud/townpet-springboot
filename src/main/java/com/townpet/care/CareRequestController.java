@@ -1,6 +1,5 @@
 package com.townpet.care;
 
-import com.townpet.catalog.api.ValidAnimalCommunityCodes;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -50,8 +49,7 @@ class CareRequestController {
                       request.location(),
                       request.startsAt(),
                       request.endsAt(),
-                      request.rewardHint(),
-                      request.animalCommunityCodes())
+                      request.rewardHint())
                   .request());
       return ResponseEntity.status(HttpStatus.CREATED).body(response);
     } catch (IllegalArgumentException e) {
@@ -107,9 +105,7 @@ class CareRequestController {
       @NotBlank @Size(max = 200) String location,
       @NotNull Instant startsAt,
       @NotNull Instant endsAt,
-      @Size(max = 200) String rewardHint,
-      @org.springframework.lang.Nullable @Size(max = 12) @ValidAnimalCommunityCodes
-          Collection<@Size(max = 40) String> animalCommunityCodes) {}
+      @Size(max = 200) String rewardHint) {}
 
   record VersionRequest(@NotNull @Min(0) Long version) {}
 

@@ -1,13 +1,11 @@
 package com.townpet.welfare;
 
-import com.townpet.catalog.api.ValidAnimalCommunityCodes;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
-import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
@@ -43,13 +41,7 @@ class HospitalReviewController {
   Response create(@AuthenticationPrincipal UserDetails p, @Valid @RequestBody CreateRequest r) {
     try {
       return response(
-          service.create(
-              member(p),
-              r.hospitalName(),
-              r.address(),
-              r.rating(),
-              r.body(),
-              r.animalCommunityCodes()));
+          service.create(member(p), r.hospitalName(), r.address(), r.rating(), r.body()));
     } catch (IllegalStateException e) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
     }
@@ -80,9 +72,7 @@ class HospitalReviewController {
       @NotBlank @Size(max = 160) String hospitalName,
       @NotBlank @Size(max = 240) String address,
       @Min(1) @Max(5) int rating,
-      @NotBlank @Size(max = 5000) String body,
-      @Nullable @Size(max = 12) @ValidAnimalCommunityCodes
-          Collection<@Size(max = 40) String> animalCommunityCodes) {}
+      @NotBlank @Size(max = 5000) String body) {}
 
   record Response(
       UUID id,

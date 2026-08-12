@@ -75,6 +75,7 @@ class PublicationControllerTest {
     jdbc.update("DELETE FROM content_animal_community");
     jdbc.update("DELETE FROM gathering_participant");
     jdbc.update("DELETE FROM gathering");
+    jdbc.update("DELETE FROM market_listing");
     jdbc.update("DELETE FROM local_resource");
     jdbc.update("DELETE FROM relationship_block");
     jdbc.update("DELETE FROM engagement_reaction");
@@ -245,6 +246,47 @@ class PublicationControllerTest {
                     """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
+  void commonBoardFeedIsSharedAndNotNestedUnderAnimalBoards() throws Exception {
+    Cookie session = login();
+    mockMvc
+        .perform(
+            post("/api/v1/marketplace/listings")
+                .cookie(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "kind": "SELL",
+                      "title": "공통 거래 게시판 글",
+                      "description": "모든 동물 가족이 볼 수 있는 거래 글입니다.",
+                      "priceKrw": 10000
+                    }
+                    """))
+        .andExpect(status().isCreated());
+
+    mockMvc
+        .perform(get("/api/v1/boards/marketplace/feed").queryParam("audience", "GLOBAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].title").value("공통 거래 게시판 글"))
+        .andExpect(jsonPath("$.items[0].kind").value("MARKETPLACE"));
+
+    mockMvc
+        .perform(get("/api/v1/boards/all/feed").queryParam("audience", "GLOBAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].title").value("공통 거래 게시판 글"));
+
+    mockMvc
+        .perform(get("/api/v1/communities/dog/feed").queryParam("board", "marketplace"))
+        .andExpect(status().isNotFound());
+
+    mockMvc
+        .perform(get("/api/v1/communities/dog/feed").queryParam("audience", "GLOBAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items").isEmpty());
   }
 
   @Test

@@ -1,6 +1,5 @@
 package com.townpet.gathering;
 
-import com.townpet.catalog.api.AnimalCommunityTagger;
 import com.townpet.common.UuidV7;
 import java.time.Instant;
 import java.util.*;
@@ -14,15 +13,10 @@ import org.springframework.web.server.ResponseStatusException;
 class GatheringService {
   private final GatheringRepository gatherings;
   private final GatheringParticipantRepository participants;
-  private final AnimalCommunityTagger communityTags;
 
-  GatheringService(
-      GatheringRepository gatherings,
-      GatheringParticipantRepository participants,
-      AnimalCommunityTagger communityTags) {
+  GatheringService(GatheringRepository gatherings, GatheringParticipantRepository participants) {
     this.gatherings = gatherings;
     this.participants = participants;
-    this.communityTags = communityTags;
   }
 
   @Transactional(readOnly = true)
@@ -49,23 +43,10 @@ class GatheringService {
       String location,
       Instant startsAt,
       int capacity) {
-    return create(host, title, description, location, startsAt, capacity, null);
-  }
-
-  @Transactional
-  GatheringView create(
-      UUID host,
-      String title,
-      String description,
-      String location,
-      Instant startsAt,
-      int capacity,
-      @Nullable Collection<String> animalCommunityCodes) {
     GatheringEntity gathering =
         gatherings.save(
             new GatheringEntity(
                 UuidV7.randomUuid(), host, title, description, location, startsAt, capacity));
-    communityTags.replace("GATHERING", gathering.getId(), animalCommunityCodes);
     return view(gathering);
   }
 

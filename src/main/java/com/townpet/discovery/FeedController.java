@@ -92,7 +92,7 @@ class FeedController {
               from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
               to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
               parseAnimals(animals),
-              parseType(type));
+              parseTypes(type));
       return new FeedResponse(
           page.items().stream().map(FeedController::toResponse).toList(),
           new PageInfo(page.nextCursor(), page.hasNext()));
@@ -212,11 +212,11 @@ class FeedController {
   }
 
   @Nullable
-  private static String parseType(@Nullable String raw) {
+  private static Set<String> parseTypes(@Nullable String raw) {
     if (raw == null || raw.isBlank()) return null;
     if (!raw.matches("[A-Z0-9_]{1,40}")) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid publication type filter");
     }
-    return raw;
+    return Set.of(raw);
   }
 }

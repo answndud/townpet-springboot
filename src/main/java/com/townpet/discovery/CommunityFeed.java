@@ -95,7 +95,7 @@ class CommunityFeed {
       @Nullable Instant from,
       @Nullable Instant to,
       @Nullable Set<String> animalInterestCodes,
-      @Nullable String type) {
+      @Nullable Set<String> itemTypes) {
     if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid feed limit");
     if (from != null && to != null && !to.isAfter(from)) {
       throw new IllegalArgumentException("Invalid feed date range");
@@ -120,8 +120,11 @@ class CommunityFeed {
       String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
       condition = condition.and(TITLE.likeIgnoreCase(term).or(SUMMARY.likeIgnoreCase(term)));
     }
-    if (type != null && !type.isBlank()) {
-      condition = condition.and(ITEM_TYPE.eq(type));
+    if (itemTypes != null) {
+      condition =
+          itemTypes.isEmpty()
+              ? condition.and(DSL.falseCondition())
+              : condition.and(ITEM_TYPE.in(itemTypes));
     }
     if (animalInterestCodes != null) {
       condition =
@@ -191,7 +194,7 @@ class CommunityFeed {
       @Nullable UUID viewerMemberId,
       boolean includeViewerNeighborhood,
       String animalCode,
-      @Nullable String boardType,
+      @Nullable Set<String> boardTypes,
       @Nullable String encodedCursor,
       int limit,
       @Nullable String searchQuery,
@@ -221,8 +224,11 @@ class CommunityFeed {
     Condition condition =
         visibility(COMMUNITY_SCOPE, COMMUNITY_NEIGHBORHOOD_ID, viewerNeighborhoodId, scopeFilter)
             .and(COMMUNITY_ANIMAL_CODE.eq(animalCode));
-    if (boardType != null && !boardType.isBlank()) {
-      condition = condition.and(COMMUNITY_ITEM_TYPE.eq(boardType));
+    if (boardTypes != null) {
+      condition =
+          boardTypes.isEmpty()
+              ? condition.and(DSL.falseCondition())
+              : condition.and(COMMUNITY_ITEM_TYPE.in(boardTypes));
     }
     if (from != null)
       condition = condition.and(COMMUNITY_CREATED_AT.ge(from.atOffset(ZoneOffset.UTC)));

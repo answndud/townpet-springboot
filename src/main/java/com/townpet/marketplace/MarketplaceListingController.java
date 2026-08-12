@@ -1,7 +1,5 @@
 package com.townpet.marketplace;
 
-import com.townpet.catalog.api.AnimalCommunityTagger;
-import com.townpet.catalog.api.ValidAnimalCommunityCodes;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -9,9 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -30,12 +26,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/v1/marketplace/listings")
 class MarketplaceListingController {
   private final MarketplaceListingService listings;
-  private final AnimalCommunityTagger communityTags;
 
-  MarketplaceListingController(
-      MarketplaceListingService listings, AnimalCommunityTagger communityTags) {
+  MarketplaceListingController(MarketplaceListingService listings) {
     this.listings = listings;
-    this.communityTags = communityTags;
   }
 
   @PostMapping
@@ -51,8 +44,7 @@ class MarketplaceListingController {
               request.kind(),
               request.title(),
               request.description(),
-              request.priceKrw(),
-              request.animalCommunityCodes()));
+              request.priceKrw()));
     } catch (org.springframework.dao.DataIntegrityViolationException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid listing price policy");
     }
@@ -68,20 +60,14 @@ class MarketplaceListingController {
     }
     List<MarketplaceListingService.ListingView> available =
         listings.listAvailable(Optional.ofNullable(kind), limit);
-    Map<UUID, List<String>> tags =
-        communityTags.findAll(
-            "MARKETPLACE",
-            available.stream().map(MarketplaceListingService.ListingView::id).toList());
-    return available.stream()
-        .map(listing -> toResponse(listing, tags.getOrDefault(listing.id(), List.of())))
-        .toList();
+    return available.stream().map(MarketplaceListingController::toResponse).toList();
   }
 
   @GetMapping("/{listingId}")
   ListingResponse get(@PathVariable UUID listingId) {
     return listings
         .find(listingId)
-        .map(this::toResponse)
+        .map(MarketplaceListingController::toResponse)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
 
@@ -118,8 +104,7 @@ class MarketplaceListingController {
               request.title(),
               request.description(),
               request.priceKrw(),
-              request.version(),
-              request.animalCommunityCodes()));
+              request.version()));
     } catch (MarketplaceListingNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (MarketplaceListingOwnershipException exception) {
@@ -137,12 +122,7 @@ class MarketplaceListingController {
     }
   }
 
-  private ListingResponse toResponse(MarketplaceListingService.ListingView listing) {
-    return toResponse(listing, communityTags.find("MARKETPLACE", listing.id()));
-  }
-
-  private static ListingResponse toResponse(
-      MarketplaceListingService.ListingView listing, List<String> animalCommunityCodes) {
+  private static ListingResponse toResponse(MarketplaceListingService.ListingView listing) {
     return new ListingResponse(
         listing.id(),
         listing.ownerMemberId(),
@@ -151,7 +131,6 @@ class MarketplaceListingController {
         listing.title(),
         listing.description(),
         listing.priceKrw(),
-        animalCommunityCodes,
         listing.createdAt(),
         listing.updatedAt(),
         listing.version());
@@ -161,9 +140,7 @@ class MarketplaceListingController {
       @NotNull MarketplaceListingKind kind,
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 5000) String description,
-      @Min(0) Long priceKrw,
-      @org.springframework.lang.Nullable @Size(max = 12) @ValidAnimalCommunityCodes
-          Collection<@Size(max = 40) String> animalCommunityCodes) {}
+      @Min(0) Long priceKrw) {}
 
   record ChangeStatusRequest(@NotNull MarketplaceListingStatus status, @Min(0) long version) {}
 
@@ -171,9 +148,7 @@ class MarketplaceListingController {
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 5000) String description,
       @Min(0) Long priceKrw,
-      @Min(0) long version,
-      @org.springframework.lang.Nullable @Size(max = 12) @ValidAnimalCommunityCodes
-          Collection<@Size(max = 40) String> animalCommunityCodes) {}
+      @Min(0) long version) {}
 
   record ListingResponse(
       UUID id,
@@ -183,7 +158,6 @@ class MarketplaceListingController {
       String title,
       String description,
       Long priceKrw,
-      List<String> animalCommunityCodes,
       Instant createdAt,
       Instant updatedAt,
       long version) {}
