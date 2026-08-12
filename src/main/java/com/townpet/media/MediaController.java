@@ -95,6 +95,8 @@ class MediaController {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (MediaOwnershipException exception) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } catch (MediaAttachmentLimitException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication attachment limit reached");
     } catch (MediaAssetStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not attachable");
     }
