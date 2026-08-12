@@ -6,6 +6,7 @@ const statusLabel = { OPEN: "모집 중", MATCHED: "매칭됨", CANCELLED: "취�
 
 export function CareListPage() {
   const [items, setItems] = useState<CareRequest[]>([]);
+  const [viewerRole, setViewerRole] = useState<Member["role"] | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     const controller = new AbortController();
@@ -17,7 +18,12 @@ export function CareListPage() {
       });
     return () => controller.abort();
   }, []);
-  return <main className="page localcare-page"><section className="localcare-hero"><p className="eyebrow">NEIGHBOR CARE</p><h1>이웃 돌봄 요청</h1><p>결제나 지급을 보장하지 않는 참고 reward로 안전하게 요청을 확인하세요.</p><Link className="button button-primary" to="/care/new">돌봄 요청 작성</Link></section>{error ? <p role="alert">{error}</p> : null}<section className="localcare-grid" aria-label="돌봄 요청 목록">{items.map((item) => <Link className="surface-card localcare-card" to={`/care/${item.id}`} key={item.id}><span className="publication-chip publication-chip-primary">{statusLabel[item.status]}</span><h2>{item.title}</h2><p>{item.description}</p><small>{item.location} · {new Date(item.startsAt).toLocaleString("ko-KR")}</small>{item.rewardHint ? <small>참고 reward: {item.rewardHint}</small> : null}</Link>)}{!items.length && !error ? <p className="surface-card localcare-empty">현재 열린 돌봄 요청이 없습니다.</p> : null}</section></main>;
+  useEffect(() => {
+    const controller = new AbortController();
+    memberApi.current(controller.signal).then((member) => setViewerRole(member.role)).catch(() => setViewerRole(null));
+    return () => controller.abort();
+  }, []);
+  return <main className="page localcare-page"><section className="localcare-hero"><p className="eyebrow">NEIGHBOR CARE</p><h1>이웃 돌봄 요청</h1><p>결제나 지급을 보장하지 않는 참고 reward로 안전하게 요청을 확인하세요.</p>{viewerRole !== "MODERATOR" ? <Link className="button button-primary" to="/care/new">돌봄 요청 작성</Link> : null}</section>{error ? <p role="alert">{error}</p> : null}<section className="localcare-grid" aria-label="돌봄 요청 목록">{items.map((item) => <Link className="surface-card localcare-card" to={`/care/${item.id}`} key={item.id}><span className="publication-chip publication-chip-primary">{statusLabel[item.status]}</span><h2>{item.title}</h2><p>{item.description}</p><small>{item.location} · {new Date(item.startsAt).toLocaleString("ko-KR")}</small>{item.rewardHint ? <small>참고 reward: {item.rewardHint}</small> : null}</Link>)}{!items.length && !error ? <p className="surface-card localcare-empty">현재 열린 돌봄 요청이 없습니다.</p> : null}</section></main>;
 }
 
 export function CareDetailPage() {

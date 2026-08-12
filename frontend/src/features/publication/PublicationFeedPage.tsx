@@ -44,9 +44,10 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
-    const memberRequest = memberView
-      ? memberApi.current(controller.signal)
-      : Promise.resolve<Member | null>(null);
+    const memberRequest = memberApi.current(controller.signal).catch((requestError: unknown) => {
+      if (memberView) throw requestError;
+      return null;
+    });
 
     Promise.all([
       memberRequest,
@@ -116,6 +117,8 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
     );
   }
 
+  const canWrite = member?.role !== "MODERATOR";
+
   return (
     <main className="page feed-page">
       <header className="feed-hero">
@@ -128,9 +131,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
               : "로그인 없이 볼 수 있는 전체 공개 글을 최신순으로 확인하세요."}
           </p>
         </div>
-        <Link className="button button-primary" to={memberView ? "/posts/new" : "/guest/posts/new"}>
-          글쓰기
-        </Link>
+        {canWrite ? <Link className="button button-primary" to={memberView ? "/posts/new" : "/guest/posts/new"}>글쓰기</Link> : null}
       </header>
 
       <form
@@ -182,9 +183,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
         <section className="surface-card feed-empty">
           <h2>{query ? "검색 결과가 없습니다" : "아직 표시할 글이 없습니다"}</h2>
           <p>{query ? "다른 검색어로 다시 시도해 보세요." : "첫 번째 반려생활 이야기를 나눠 보세요."}</p>
-          <Link className="button button-soft" to={memberView ? "/posts/new" : "/guest/posts/new"}>
-            글 작성하기
-          </Link>
+          {canWrite ? <Link className="button button-soft" to={memberView ? "/posts/new" : "/guest/posts/new"}>글 작성하기</Link> : null}
         </section>
       ) : (
         <section className="surface-card feed-list" aria-label="게시글 목록">
