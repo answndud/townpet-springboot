@@ -2,88 +2,66 @@
 
 ## Goal
 
-Legacy TownPet의 관찰 가능한 제품 동작을 Java 25·Spring Boot·PostgreSQL·React/Vite로 재현한다. 완료는 page/API route가 존재하는 상태가 아니라, 49개 page와 55개 API route가 의도적으로 `verified` 또는 ADR로 설명된 `excluded`가 되고, 각 `verified` 항목의 데이터·권한·상태·오류·반응형 화면이 대표 사용자 여정에서 동일하게 동작하는 상태로 정의한다.
+실제 VPS·DNS·TLS·외부 object storage를 구성하기 전에 TownPet의 제품 기능과 로컬 실행 경험을 완성한다. Legacy의 49개 page·55개 API를 정상·오류·권한·상태 전이·반응형 화면까지 구현하거나 ADR로 명확히 제외하고, 새 환경에서 합성 demo 데이터로 같은 사용자 여정을 재현할 수 있으면 배포 전 개발 완료로 판정한다.
 
-실제 Legacy 개인정보 migration과 Kakao/Naver 인증은 현재 제품 범위가 아니며, 실제 VPS 공개 운영은 마지막 Goal로 미룬다.
+현재 G1~G8의 기본 build/test gate는 통과했지만, parity matrix의 `pending=0`만으로 의미 parity가 증명되지는 않는다. 다음 작업은 실제 구현 공백과 문서·코드 간 불일치를 먼저 닫는다. Hetzner, DNS, TLS, SMTP, 외부 object storage, offsite backup, monitoring은 이 PLAN의 범위가 아니다.
 
 ## Active
 
-### G4 - 모든 구조화 도메인과 상태 머신을 완성한다
+### P1 - 제품 parity와 ADR 판정을 실제 근거로 닫는다
 
-- 순서: G3 이후
-- 파일: `src/main/java/com/townpet/{localguide,welfare,lostfound,marketplace,gathering,care}/`, `frontend/src/features/{localcare,lostfound,marketplace,gathering}/`, 관련 migration/test
+- 파일: `docs/parity/matrix.yaml`, `ADR.md`, `src/main/java/com/townpet/{care,discovery,media,marketplace,localguide}/`, `frontend/src/`, `frontend/e2e/`, `src/test/java/`
 - 변경:
-  - hospital/place review, walk·guide, adoption·volunteer, breed lounge·group buy의 구조화 필드·filter·detail을 구현한다.
-  - LostFound의 alert·sighting·approximate/exact location·share SVG/PNG·resolve/close/reopen lifecycle을 완성한다.
-  - Marketplace SELL/RENT/SHARE와 group buy의 조건 검증, reserve/reopen/complete/cancel 전이를 완성하고 최소 금지 품목 rule을 적용한다.
-  - Gathering 정원·중복 참가·참여 취소를 constraint와 conditional update로 보호한다.
-  - Care는 실행 우선순위는 낮추되 전체 클론 기준에서는 Request·Application·Assignment·Feedback 전체 여정을 구현한다. 이를 생략하면 전체 클론이 아니라 Care 제외 변형으로 판정한다.
-- 검증: 각 도메인의 상태 전이·권한 integration test와 LostFound/Marketplace/Gathering/Care 대표 browser journey를 Goal 종료 시 실행한다.
-- 완료: Legacy가 제공하던 구조화 게시판과 도메인별 상태 의미가 generic publication으로 대체되지 않고 실제 데이터 모델·API·화면으로 재현된다.
+  - matrix의 49 page·55 API를 Legacy `app/src/app`와 다시 대조하고, `verified`는 정상·오류·권한·상태 전이와 대표 frontend/backend evidence가 있는 경우에만 유지한다.
+  - 근거가 부족한 항목은 임의로 `excluded`로 바꾸지 말고 실제 동작을 구현하거나, 현재 제품 범위 밖인 이유·영향·대안을 ADR에 기록한다.
+  - Care의 Request·Application·Assignment·Feedback 사용자 여정을 실제 화면·API·권한·상태 전이와 browser/integration evidence로 닫고, 현재 ADR의 “care package가 비어 있음” 같은 오래된 근거를 현재 코드와 일치시킨다.
+  - Search/guest search의 query·기간·scope·type 의미, best/personalization의 ranking 의미, group buy compatibility, guide slug detail, commercial route의 의미를 Legacy fixture로 대조한다.
+  - production에서 의도적으로 제공하지 않을 media presign·personalization projection 등은 route와 화면에서 오해를 만들지 않도록 명시적 capability/error 정책을 정한다.
+- 검증:
+  - `./scripts/validate-parity-matrix.sh`
+  - 관련 backend integration test와 frontend Vitest
+  - 변경된 page family의 Chromium desktop/mobile Playwright journey
+- 완료: `pending`이 없다는 숫자가 아니라 모든 `verified`·`excluded` 행에 재현 가능한 근거 또는 ADR 결정이 있고, Care·Search·Best·GroupBuy·Guide·Commercial·Media의 남은 의미 공백이 설명 없이 남지 않는다.
 
-### G5 - Discovery·Notification·Acquisition 표면을 완성한다
+### P2 - 배포 없이도 완결되는 local/portfolio runtime을 만든다
 
-- 순서: G4 이후
-- 파일: `src/main/java/com/townpet/discovery/`, `notification/`, `operations/AcquisitionEventController.java`, `frontend/src/{SearchPage.tsx,BestPage.tsx,NotificationPage.tsx}`, 관련 migration/test
+- 파일: `src/main/java/com/townpet/operations/`, `src/main/java/com/townpet/media/`, `src/main/java/com/townpet/identity/`, `src/main/resources/`, `deploy/compose/local.yml`, `deploy/portfolio.env.example`, `migration/`
 - 변경:
-  - 일반/guest search의 title·body·구조화 field·부분/오타 검색, board·town·기간·type filter를 맞춘다.
-  - home/best/personalization feed의 정렬·stable cursor·viewer-safe visibility를 완성한다.
-  - notification comment/reaction/report 흐름, filter·읽음·unread count·retry 의미를 맞춘다.
-  - acquisition event와 search log의 privacy·중복·실패 정책을 연결한다.
-  - PostgreSQL query로 먼저 구현하고 SearchDocument/FeedDocument/event registry listener는 측정된 latency·비동기 요구가 생길 때만 추가한다.
-- 검증: 검색·피드·알림 API integration test와 guest/member browser journey, 필요한 경우 query plan/latency snapshot.
-- 완료: 탐색·추천·알림 관련 Legacy 화면과 API가 새로고침·필터·권한·오류 상황에서도 같은 결과를 제공한다.
+  - `TOWNPET_DEMO_DATA_ENABLED`를 실제 application gate로 연결하고, 합성 demo actor·권한·콘텐츠만 대상으로 하는 idempotent seed/reset 명령을 만든다. reset은 다른 데이터와 개인정보를 삭제하지 않는다.
+  - local profile에서 재시작 후에도 확인 가능한 filesystem/MinIO adapter와 production fail-closed 정책을 정리한다. 외부 object storage를 도입하지 않더라도 upload가 왜 동작하거나 제한되는지 UI·API·문서가 일치해야 한다.
+  - SMTP 없이도 local/test에서 email verification·password reset을 재현할 수 있는 capture adapter와 production에서의 명확한 비활성화 응답을 분리한다.
+  - 공개되지 않는 ADMIN/OPERATOR 자격, secret, 정확 위치, raw token이 seed·응답·로그에 나타나지 않는지 점검한다.
+  - `deploy/compose/local.yml`과 기본 실행 명령을 clean PostgreSQL에서 한 번에 기동·초기화·reset할 수 있도록 정리한다. 실제 VPS 설정은 추가하지 않는다.
+- 검증:
+  - clean Docker PostgreSQL에서 migration → seed → reset → 재실행을 반복하고 row scope·idempotency를 SQL로 확인
+  - demo flag on/off, local email capture, upload success/failure, 권한 거부 integration test
+  - `./scripts/frontend-backend-smoke.sh`
+- 완료: 외부 서비스 계정 없이 새 개발 환경에서 합성 demo 사용자로 로그인·작성·신고·관리자 검토·Care·media 제한/사용 흐름을 재현할 수 있고, reset을 여러 번 실행해도 데이터가 오염되지 않는다.
 
-### G6 - Media·Trust/Safety·Admin/Operations를 완성한다 ✅ completed (2026-08-12)
+### P3 - 배포 전 release candidate evidence를 고정한다
 
-- 순서: G5 이후
-- 파일: `src/main/java/com/townpet/{media,trustsafety,operations}/`, `frontend/src/Admin*.tsx`, `CorrectionCreatePage.tsx`, `deploy/`, 관련 migration/test
+- 파일: `.github/workflows/`, `scripts/`, `migration/fixtures/`, `docs/parity/`, `docs/report/`, `frontend/e2e/`, `README.md`
 - 변경:
-  - upload client/presign 또는 local adapter, MIME·magic byte·크기·pixel·개수 검증, finalize·publication 연결·삭제·고아 정리를 완성한다.
-  - report 단건/대량 접수, 중복 방지, moderator review, visibility restriction, user hide/restore/sanction, correction을 완성한다.
-  - auth audit/export, moderation log, policy·breed·personalization·ops 화면, CSP/web vital, acquisition 운영 API를 연결한다.
-  - demo data·고정 계정·seed flag가 실제 application 동작과 일치하고 public 환경에 ADMIN/OPERATOR·개인정보·secret이 노출되지 않게 한다.
-- 검증: authorization/security integration test, admin browser journey, upload/cleanup/backup script의 dry-run 및 restore rehearsal.
-- 완료: 일반 사용자의 신고부터 Moderator 처리·복구까지와 운영자 진단·repair가 권한 분리와 audit evidence를 갖고 동작한다.
+  - logical fixture에 guest/member/moderator와 대표 Care·Search·Marketplace·LostFound·Notification·Admin 시나리오를 연결하고, 실제 test ID·expected error·권한·상태를 기록한다.
+  - 대표 정상·오류·권한·동시성 journey를 backend integration, frontend Vitest, browser E2E로 연결한다. 단순 route 존재 확인 test는 완료 근거로 세지 않는다.
+  - CI가 parity validator, backend clean check/migrationTest, frontend typecheck/test/build, browser smoke를 실행하고 실패 원인을 구분하도록 유지한다.
+  - `docs/report/`에는 실제로 구현한 경계·실패 원인·trade-off·검증 명령만 선별해 기록하고, 측정하지 않은 성능·가용성·복구 수치는 주장하지 않는다.
+  - README와 report의 “완료” 표현을 `배포 전 local/CI release candidate` 범위로 맞춘다.
+- 검증:
+  - `./gradlew clean check migrationTest --no-daemon`
+  - `cd frontend && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/vitest run && ./node_modules/.bin/vite build`
+  - `./scripts/validate-parity-matrix.sh`
+  - `cd frontend && ./node_modules/.bin/playwright test --config=playwright.config.ts`
+  - `./scripts/frontend-backend-smoke.sh`
+- 완료: 새 환경에서 위 명령만으로 기능·권한·오류·화면·migration·fixture evidence를 재현할 수 있고, 면접에서 “무엇을 구현했고 무엇을 ADR로 제외했는지”를 코드와 테스트로 설명할 수 있다.
 
-### G7 - React/Vite 화면을 시각·접근성·성능 기준으로 수렴한다 ✅ completed (2026-08-12)
+## Backlog
 
-- 순서: G2~G6의 기능이 안정된 뒤 묶어서 수행
-- 파일: `frontend/src/`, `frontend/e2e/`, `frontend/vite.config.ts`, `styles.css`, 정적 asset
-- 변경:
-  - Legacy의 layout, typography, color, spacing, responsive breakpoint, loading/empty/error state, metadata와 공유 화면을 page family별로 비교한다.
-  - 모바일·desktop 대표 viewport에서 navigation, form, modal, list/detail, admin 화면의 키보드·screen reader·focus·contrast를 맞춘다.
-  - Vite asset hash, route fallback, API proxy, bundle·image loading과 주요 Web Vital을 측정해 회귀를 막는다.
-- 검증: `corepack pnpm -C frontend typecheck`, `corepack pnpm -C frontend test`, `corepack pnpm -C frontend build`, 대표 Playwright visual/browser smoke와 성능 snapshot.
-- 완료: 기능이 같은 것뿐 아니라 주요 page family의 시각·반응형·접근성·직접 URL 동작이 Legacy와 비교 가능한 수준이다. 공통 skip link·focus-visible·reduced-motion, route metadata, Vite hashed asset output을 적용했고 frontend typecheck/test/build와 Chromium desktop/mobile shell smoke(4 tests)가 통과했다.
-
-### G8 - 데이터·문서·품질 gate를 갖춘 재현 가능한 릴리스를 만든다 ✅ completed (2026-08-12)
-
-- 순서: G1~G7 이후
-- 파일: `src/main/resources/db/migration/`, `migration/`, `.github/workflows/`, `docs/parity/`, `docs/report/`, `README.md`, `deploy/`
-- 변경:
-  - Flyway migration, synthetic fixture, seed/reset, schema constraint와 legacy mapping을 clean database에서 재현한다. 실제 개인정보는 옮기지 않는다.
-  - 대표 정상·오류·권한·동시성·보안 journey의 테스트와 parity evidence를 정리하고, 실제로 바뀐 중요한 선택만 report에 기록한다.
-  - backend/frontend build, migration, browser, smoke, backup/restore를 변경 위험에 맞는 단계별 CI gate로 묶는다.
-  - 실행하지 않은 성능·가용성·복구 수치를 주장하지 않고, 최종 범위와 의도적 제외를 문서화한다.
-- 검증: 변경 영향에 맞는 근접 검증 후 릴리스 시 fresh `./gradlew clean check migrationTest`, frontend typecheck/test/build/e2e, `./scripts/frontend-backend-smoke.sh`, migration·restore rehearsal.
-- 완료: 새 환경에서 같은 명령으로 TownPet Springboot를 재현하고, 49개 page·55개 API를 `verified=95`, ADR 근거 `excluded=9`, `pending=0`으로 판정할 수 있다. parity validator, clean `check migrationTest`, frontend build/test, Chromium shell smoke, PostgreSQL backup/restore rehearsal이 모두 fresh 통과했다.
-
-### G9 - 실제 공개 운영을 시작할 때만 배포한다
-
-- 순서: 사용자가 VPS 배포를 시작하기로 결정한 뒤
-- 파일: `deploy/compose/`, `deploy/Caddyfile`, `deploy/backup-postgres.sh`, `deploy/restore-postgres.sh`, 운영 runbook
-- 변경: Hetzner·DNS·TLS·Caddy·PostgreSQL offsite backup/restore·object storage·health/metrics·demo reset·비용을 실제 환경에서 구성한다.
-- 검증: clean deploy, rollback, restore drill, 공개 도메인 browser smoke와 월 비용 확인.
-- 완료: 실제 URL에서 보안·복구·운영 절차를 재현할 수 있을 때만 production parity를 주장한다.
+- G9 - 사용자가 배포를 시작할 때 Hetzner VPS, DNS/TLS/Caddy, 외부 object storage/SMTP, offsite backup·restore·rollback, monitoring·alerting, 실제 공개 URL smoke와 비용을 구성한다.
+- 실제 Legacy 개인정보 migration, Kakao/Naver OAuth, 결제·정산·환불·private chat은 현재 제품 범위에서 제외한다.
+- 검색 corpus와 실제 latency가 기준을 넘을 때만 `SearchDocument`/GIN·trigram을 별도 ADR로 결정한다.
+- 실제 ranking 품질·freshness·query latency 요구가 생길 때만 FeedDocument와 versioned personalization을 도입한다.
 
 ## 완료 판정
 
-“Spring Boot + React/Vite로 클론 완료”는 G1~G8을 모두 통과한 뒤에만 주장한다. G4의 Care를 생략하거나 G1의 표면을 `deferred`로 남기면 해당 기능을 제외한 변형으로 표현해야 한다. G9를 하지 않은 상태에서는 코드·로컬/CI 수준의 재현 가능한 완성으로 표현하고, 실제 공개 서비스 운영까지 완료했다고 표현하지 않는다.
-
-## 영구 제외
-
-- Kakao/Naver OAuth와 social account link/unlink
-- 실제 Legacy 개인정보 migration
-- 결제·정산·환불·private chat
-- 근거 없는 Redis·Kafka·Elasticsearch·Kubernetes·microservice 도입
+P1~P3을 모두 통과하면 “TownPet Spring Boot 포트폴리오 프로젝트의 배포 전 개발 완료”라고 표현한다. 이 상태에서도 실제 공개 운영·TLS·외부 저장소·복구 SLA까지 완료했다고 표현하지 않으며, 그것은 G9에서 별도로 검증한다.
