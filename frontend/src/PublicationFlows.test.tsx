@@ -185,6 +185,9 @@ describe("Publication journeys", () => {
     expect(replyForm.parentElement).toBe(selectedComment);
     expect(selectedComment?.querySelector(`[data-comment-id="${childComment.id}"]`)).toBeInTheDocument();
     expect(screen.queryByRole("form", { name: "댓글 작성" })).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "답글" })).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "취소" }));
+    expect(screen.getAllByRole("button", { name: "답글" })[0]).toHaveFocus();
   });
 
   it("lets the author edit and delete with the loaded publication version", async () => {
