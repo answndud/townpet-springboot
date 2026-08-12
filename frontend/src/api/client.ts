@@ -354,7 +354,8 @@ export const trustApi = {
 };
 
 export const notificationApi = {
-  list(signal?: AbortSignal) { return apiFetch<Notification[]>("/api/v1/notifications", { signal }); },
+  list(unread = false, signal?: AbortSignal) { return apiFetch<Notification[]>(`/api/v1/notifications${unread ? "?unread=true" : ""}`, { signal }); },
+  unreadCount(signal?: AbortSignal) { return apiFetch<{ count: number }>("/api/v1/notifications/unread-count", { signal }); },
   markRead(id: string) { return mutate<Notification>(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH", headers: jsonHeaders }); },
 };
 
