@@ -1,58 +1,54 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
 afterEach(() => vi.unstubAllGlobals());
 
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{location.pathname}</output>;
+}
+
 describe("TownPet Vite shell", () => {
-  it("renders the legacy home identity and primary journeys", () => {
-    render(
-      <MemoryRouter initialEntries={["/"]}>
-        <App />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByRole("heading", { name: "우리 동네 반려생활 정보" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "전체 피드" })).toHaveAttribute("href", "/feed/guest");
-    expect(screen.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
-    expect(screen.getByRole("link", { name: "본문으로 바로가기" })).toHaveAttribute("href", "#main-content");
-    expect(screen.getByRole("link", { name: "동물병원" })).toHaveAttribute("href", "/hospital-reviews");
-    expect(screen.getByRole("link", { name: "산책코스" })).toHaveAttribute("href", "/guides?q=산책");
-    expect(screen.getByRole("link", { name: "질문/답변" })).toHaveAttribute("href", "/gatherings");
-  });
-
-  it("surfaces popular community posts on the home page", async () => {
+  it("opens the public feed instead of a separate home page for guests", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((input) => {
         const path = String(input);
-        const body = path.includes("/api/v1/members/me")
+        const body = path.endsWith("/api/v1/members/me")
           ? { detail: "Unauthorized" }
-          : {
-              items: [
-                {
-                  id: "00000000-0000-4000-8000-000000000301",
-                  title: "이번 주말 산책 코스 추천받아요",
-                  body: "저녁에 걷기 좋은 조용한 코스를 찾고 있어요.",
-                  createdAt: "2026-08-12T08:00:00Z",
-                  recommendationCount: 4,
-                },
-              ],
-            };
-        const status = path.includes("/api/v1/members/me") ? 401 : 200;
+          : { items: [{ id: "00000000-0000-4000-8000-000000000301", title: "이번 주말 산책 코스 추천받아요", body: "저녁에 걷기 좋은 조용한 코스를 찾고 있어요.", createdAt: "2026-08-12T08:00:00Z" }], page: { nextCursor: null, hasNext: false } };
+        const status = path.endsWith("/api/v1/members/me") ? 401 : 200;
         return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
       }),
     );
 
-    render(<MemoryRouter initialEntries={["/"]}><App /></MemoryRouter>);
+    render(<MemoryRouter initialEntries={["/"]}><App /><LocationProbe /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "인기글" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "공개 반려생활 피드" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "이번 주말 산책 코스 추천받아요" })).toHaveAttribute(
       "href",
       "/posts/00000000-0000-4000-8000-000000000301",
     );
-    expect(screen.getByRole("link", { name: "인기글 전체 보기" })).toHaveAttribute("href", "/best");
+    expect(screen.getByTestId("location")).toHaveTextContent("/");
+    expect(screen.queryByRole("heading", { name: "인기글" })).not.toBeInTheDocument();
+  });
+
+  it("opens the member feed instead of a separate home page for members", async () => {
+    vi.stubGlobal("fetch", vi.fn((input) => {
+      const path = String(input);
+      const body = path.endsWith("/api/v1/members/me")
+        ? { id: "00000000-0000-0000-0000-000000000201", nickname: "demo-member-1", role: "MEMBER", bio: null, neighborhoodId: null, pets: [], showPublicPosts: true, showPublicComments: true, showPublicPets: true, showPublicReactions: true }
+        : { items: [], page: { nextCursor: null, hasNext: false } };
+      return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
+    }));
+
+    render(<MemoryRouter initialEntries={["/"]}><App /><LocationProbe /></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "내 동네와 전체 새 글" })).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent("/");
+    expect(screen.queryByRole("heading", { name: "인기글" })).not.toBeInTheDocument();
   });
 
   it("updates the document title for direct routes", () => {
@@ -83,7 +79,7 @@ describe("TownPet Vite shell", () => {
     render(<MemoryRouter initialEntries={["/best"]}><App /></MemoryRouter>);
 
     expect(await screen.findByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
-    expect(screen.queryByTestId("header-login-link-home")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId("header-login-link-home")).not.toBeInTheDocument());
     expect(screen.getByRole("button", { name: "이웃 활동" })).toBeInTheDocument();
     expect(screen.getByRole("menu", { name: "게시판 바로가기" })).toBeInTheDocument();
     const boardMenu = screen.getByRole("button", { name: /게시판/ });
@@ -105,25 +101,17 @@ describe("TownPet Vite shell", () => {
   });
 
   it("does not render the moderator console for a member", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => Promise.resolve(new Response(JSON.stringify({
-        id: "00000000-0000-4000-8000-000000000201",
-        nickname: "demo-member-1",
-        role: "MEMBER",
-        bio: null,
-        neighborhoodId: null,
-        pets: [],
-        showPublicPosts: true,
-        showPublicComments: true,
-        showPublicPets: true,
-        showPublicReactions: true,
-      }), { status: 200, headers: { "content-type": "application/json" } }))),
-    );
+    vi.stubGlobal("fetch", vi.fn((input) => {
+      const path = String(input);
+      const body = path.endsWith("/api/v1/members/me")
+        ? { id: "00000000-0000-4000-8000-000000000201", nickname: "demo-member-1", role: "MEMBER", bio: null, neighborhoodId: null, pets: [], showPublicPosts: true, showPublicComments: true, showPublicPets: true, showPublicReactions: true }
+        : { items: [], page: { nextCursor: null, hasNext: false } };
+      return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
+    }));
 
     render(<MemoryRouter initialEntries={["/admin"]}><App /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "우리 동네 반려생활 정보" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "내 동네와 전체 새 글" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "운영 콘솔" })).not.toBeInTheDocument();
   });
 
