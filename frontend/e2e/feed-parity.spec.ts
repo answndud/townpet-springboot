@@ -33,7 +33,7 @@ test("member feed includes owned local posts while guest feed remains global", a
 
   const guestContext = await browser.newContext();
   const guestPage = await guestContext.newPage();
-  await guestPage.goto("http://127.0.0.1:5173/feed/guest");
+  await guestPage.goto("http://localhost:5173/feed/guest");
   await expect(guestPage.getByRole("heading", { name: "공개 반려생활 피드" })).toBeVisible();
   await expect(guestPage.getByRole("heading", { name: globalTitle })).toBeVisible();
   await expect(guestPage.getByRole("heading", { name: localTitle })).toHaveCount(0);

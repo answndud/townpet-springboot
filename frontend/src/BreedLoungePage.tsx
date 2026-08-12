@@ -12,7 +12,11 @@ export default function BreedLoungePage() {
     Promise.all([
       catalogApi.breed(breedCode, controller.signal),
       apiFetch<FeedPage>(`/api/lounges/breeds/${encodeURIComponent(breedCode)}/posts?audience=GLOBAL&scope=ALL`, { signal: controller.signal }),
-    ]).then(([loadedBreed, loadedFeed]) => { setBreed(loadedBreed); setFeed(loadedFeed); }).catch((requestError: unknown) => { setError(requestError instanceof ApiError && requestError.status === 404 ? "품종 lounge를 찾을 수 없습니다." : "품종 정보를 불러오지 못했습니다."); });
+    ]).then(([loadedBreed, loadedFeed]) => { setBreed(loadedBreed); setFeed(loadedFeed); }).catch((requestError: unknown) => {
+      if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+      if (controller.signal.aborted) return;
+      setError(requestError instanceof ApiError && requestError.status === 404 ? "품종 lounge를 찾을 수 없습니다." : "품종 정보를 불러오지 못했습니다.");
+    });
     return () => controller.abort();
   }, [breedCode]);
   if (error) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/feed/guest">전체 피드</Link></section></main>;
