@@ -5,6 +5,7 @@ import {
   catalogApi,
   memberApi,
   publicationApi,
+  mediaApi,
   type Member,
   type Neighborhood,
   type PublicationScope,
@@ -19,6 +20,7 @@ export default function PublicationCreatePage() {
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [scope, setScope] = useState<PublicationScope>("GLOBAL");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -76,6 +78,15 @@ export default function PublicationCreatePage() {
         scope,
         ...(scope === "LOCAL" && neighborhood ? { neighborhoodId: neighborhood.id } : {}),
       });
+      if (file) {
+        const bytes = await file.arrayBuffer();
+        const digest = await crypto.subtle.digest("SHA-256", bytes);
+        const checksum = Array.from(new Uint8Array(digest), (item) => item.toString(16).padStart(2, "0")).join("");
+        const asset = await mediaApi.create({ checksumSha256: checksum, contentType: file.type, byteSize: file.size });
+        await mediaApi.uploadContent(asset.id, file);
+        await mediaApi.finalize(asset.id, checksum);
+        await mediaApi.attach(asset.id, publication.id);
+      }
       navigate(`/posts/${publication.id}`);
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) {
@@ -193,6 +204,11 @@ export default function PublicationCreatePage() {
                 placeholder="반려생활 이야기를 구체적으로 적어 주세요."
               />
               <span className="field-help">{body.length.toLocaleString()}/{BODY_MAX_LENGTH.toLocaleString()}</span>
+            </label>
+            <label>
+              첨부 파일 (선택)
+              <input type="file" accept="image/jpeg,image/png,image/gif,application/pdf" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+              <span className="field-help">이미지·PDF, 최대 10MB</span>
             </label>
           </section>
 

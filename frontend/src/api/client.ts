@@ -113,6 +113,7 @@ export type Bookmark = {
   active: boolean;
 };
 export type PublicationStats = { viewCount: number };
+export type MediaUpload = { id: string; uploadUrl: string; objectKey: string; checksumSha256: string; contentType: string; byteSize: number; status: string; publicationId: string | null; expiresAt: string; version: number };
 export type CareRequest = { id: string; requesterMemberId: string; title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint: string | null; status: "OPEN" | "MATCHED" | "CANCELLED" | "EXPIRED"; createdAt: string; updatedAt: string; version: number };
 export type CareApplication = { id: string; requestId: string; applicantMemberId: string; message: string; status: "PENDING" | "ACCEPTED" | "DECLINED" | "WITHDRAWN"; createdAt: string; updatedAt: string; version: number };
 export type VolunteerOpportunity = { id: string; publisherMemberId: string; title: string; description: string; organization: string; location: string; startsAt: string; capacity: number; status: string; createdAt: string; updatedAt: string; version: number };
@@ -503,6 +504,13 @@ export const publicationApi = {
     if (to) search.set("to", to);
     return apiFetch<FeedPage>(`/api/v1/feed?${search}`, { signal });
   },
+};
+
+export const mediaApi = {
+  create(input: { checksumSha256: string; contentType: string; byteSize: number }) { return mutate<MediaUpload>("/api/v1/media/uploads", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
+  uploadContent(id: string, file: File) { const body = new FormData(); body.append("file", file); return mutate<MediaUpload>(`/api/v1/media/uploads/${encodeURIComponent(id)}/content`, { method: "PUT", body }); },
+  finalize(id: string, checksumSha256: string) { return mutate<MediaUpload>(`/api/v1/media/uploads/${encodeURIComponent(id)}/finalize`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ checksumSha256 }) }); },
+  attach(id: string, publicationId: string) { return mutate<MediaUpload>(`/api/v1/media/uploads/${encodeURIComponent(id)}/attachments/publications/${encodeURIComponent(publicationId)}`, { method: "POST", headers: jsonHeaders }); },
 };
 
 export const guestApi = {
