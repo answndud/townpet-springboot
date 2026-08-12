@@ -26,8 +26,9 @@ class BulkReportController {
   @PatchMapping
   @Transactional
   Response update(@RequestBody @Valid Request request) {
-    reports.findAllById(request.ids()).forEach(report -> report.review(request.status()));
-    return new Response(request.ids().size(), request.status());
+    List<TrustReportEntity> selected = reports.findAllById(request.ids());
+    selected.forEach(report -> report.review(request.status()));
+    return new Response(selected.size(), request.status());
   }
 
   record Request(
