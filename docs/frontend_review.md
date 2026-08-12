@@ -173,7 +173,7 @@ E2E binary가 없는 경우에는 in-app browser와 API 직접 검증을 사용�
 
 ### Remaining backlog
 
-- Deferred by explicit workflow rule: after backend performance recording is finished, add the frontend performance report to `docs/performance`.
+- Frontend performance records are maintained in `docs/frontend-performance/`; `docs/performance/` remains backend-only and is not used for frontend evidence.
 - P2: extend coverage to every non-core mutation combination if the product scope expands.
 - P3: mobile polish remains explicitly out of scope for this cycle.
 

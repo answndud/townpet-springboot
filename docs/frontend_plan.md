@@ -206,7 +206,7 @@
 
 ### G6.1 — 측정 harness와 성능 예산 고정
 
-- 파일: `frontend/src/utils/performance.ts`, `frontend/scripts/check-bundle.mjs`, 신규 `frontend/scripts/measure-performance.mjs`; 백엔드 성능 기록 종료 후 `docs/performance/frontend-baseline.md`에 프론트엔드 evidence를 기록한다.
+- 파일: `frontend/src/utils/performance.ts`, `frontend/scripts/check-bundle.mjs`, 신규 `frontend/scripts/measure-performance.mjs`; 프론트엔드 evidence는 백엔드 기록과 분리된 `docs/frontend-performance/baseline-YYYY-MM-DD.md`에 기록한다.
 - 변경:
   - route resolve time, API duration/count, JS/CSS transfer, first content, settled content를 동일 schema로 기록한다.
   - public home/feed, login→profile, marketplace, post detail, admin을 대표 route로 고정한다.
@@ -237,7 +237,7 @@
 
 ### G6.4 — 성능 회귀를 CI에 연결
 
-- 파일: `frontend/package.json`, `frontend/scripts/check-bundle.mjs`, `.github/workflows/**`; 백엔드 성능 기록 종료 후 `docs/performance/frontend-baseline.md`에 최종 수치를 추가한다.
+- 파일: `frontend/package.json`, `frontend/scripts/check-bundle.mjs`, `.github/workflows/**`; 최종 프론트엔드 수치는 `docs/frontend-performance/`의 날짜별 baseline에 추가한다. `docs/performance/`는 백엔드 성능 기록 전용으로 유지한다.
 - 변경:
   - build 시 bundle budget을 유지하고, 측정 script가 실행 가능한 환경에서는 route/API budget을 검증한다.
   - 실패 output에 초과 asset·route·request와 재현 command를 표시한다.
@@ -247,7 +247,7 @@
 
 ### G6.5 — Goal 6 gate
 
-- 검증: `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm build`, controlled desktop performance run. 백엔드 성능 기록 종료 전에는 결과 문서를 `docs/performance`에 작성하지 않는다.
+- 검증: `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm build`, controlled desktop performance run. 결과 문서는 `docs/frontend-performance/`에만 작성하고, `docs/performance/`에는 프론트엔드 결과를 추가하지 않는다.
 - 완료: 대표 desktop route의 baseline/after p50·p75가 기록되고, budget 초과 0건, Goal 6 commit 생성
 
 ## 최종 통합 gate
