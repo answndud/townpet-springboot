@@ -3,7 +3,10 @@ import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  window.localStorage.clear();
+  vi.unstubAllGlobals();
+});
 
 function LocationProbe() {
   const location = useLocation();
@@ -82,7 +85,7 @@ describe("TownPet Vite shell", () => {
 
     expect(await screen.findByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
     await waitFor(() => expect(screen.queryByTestId("header-login-link-home")).not.toBeInTheDocument());
-    expect(screen.getByRole("button", { name: "이웃 활동" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "이웃 활동" })).not.toBeInTheDocument();
     expect(screen.getByRole("menu", { name: "게시판 바로가기" })).toBeInTheDocument();
     const boardMenu = screen.getByRole("button", { name: /게시판/ });
     expect(boardMenu).toHaveAttribute("aria-expanded", "false");
@@ -161,7 +164,7 @@ describe("TownPet Vite shell", () => {
     expect(screen.queryByText(/카카오|네이버/)).not.toBeInTheDocument();
   });
 
-  it("keeps the complete public board menu and interest preferences available to guests", async () => {
+  it("keeps the public board menu and animal community navigation available to guests", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }))),
@@ -173,18 +176,30 @@ describe("TownPet Vite shell", () => {
     expect(screen.getByRole("button", { name: "관심 동물" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
     fireEvent.click(screen.getByRole("button", { name: "게시판" }));
-    expect(screen.getByRole("menuitem", { name: "전체글" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("menuitem", { name: "전체글" })).toHaveAttribute("href", "/animals/all");
     expect(screen.getByRole("menuitem", { name: "동물병원 후기" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "반려동물 자랑" })).toHaveAttribute("href", "/feed/guest?type=PET_SHOWCASE");
+    expect(screen.getByRole("menuitem", { name: "반려동물 자랑" })).toHaveAttribute("href", "/animals/all/showcase");
     expect(screen.queryByRole("menuitem", { name: "인기 게시글" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "관심 동물" }));
-    expect(screen.getByRole("dialog", { name: "관심 동물 설정" })).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "강아지" })).toBeChecked();
-    fireEvent.click(screen.getByRole("checkbox", { name: "강아지" }));
-    expect(screen.getByRole("checkbox", { name: "강아지" })).not.toBeChecked();
-    fireEvent.click(screen.getByRole("button", { name: "저장" }));
-    expect(await screen.findByText("관심 동물을 저장했습니다.")).toBeInTheDocument();
+    expect(screen.getByRole("menu", { name: "동물 커뮤니티" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "강아지 커뮤니티" })).toHaveAttribute("href", "/animals/dog");
+    expect(screen.getByRole("menuitem", { name: "관심 동물 관리" })).toHaveAttribute("href", "/settings/animal-interests");
+  });
+
+  it("keeps an explicitly empty interest list empty in the navigation menu", async () => {
+    window.localStorage.setItem("townpet:animal-interests:v1:guest", "[]");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }))),
+    );
+
+    render(<MemoryRouter initialEntries={["/feed/guest"]}><App /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole("button", { name: "관심 동물" }));
+    expect(screen.getByRole("menuitem", { name: "전체 동물" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "관심 동물 관리" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "강아지 커뮤니티" })).not.toBeInTheDocument();
   });
 
   it("renders the reset and verification routes", () => {

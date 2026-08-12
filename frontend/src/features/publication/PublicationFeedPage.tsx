@@ -4,12 +4,11 @@ import {
   ApiError,
   apiFetch,
   publicationApi,
-  memberApi,
   type FeedItem,
 } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { isAbortError } from "../../hooks/useAbortableRequest";
-import { ANIMAL_INTEREST_GROUPS, readStoredAnimalInterests } from "../member/AnimalInterestMenu";
+import { ANIMAL_INTEREST_GROUPS } from "../member/AnimalInterestMenu";
 
 type PublicationFeedPageProps = {
   memberView: boolean;
@@ -59,6 +58,9 @@ const FEED_KIND_LABELS: Record<string, string> = {
 
 const FEED_TYPE_LABELS: Record<string, string> = {
   FREE_BOARD: "자유게시판",
+  QA_QUESTION: "질문·답변",
+  PET_SHOWCASE: "반려동물 자랑",
+  PRODUCT_REVIEW: "용품 후기",
   LOCAL_GUIDE: "지역 가이드",
   WELFARE: "복지 안내",
   CARE: "케어 가이드",
@@ -119,36 +121,7 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
   const [popularItems, setPopularItems] = useState<PopularFeedItem[]>([]);
   const [popularLoading, setPopularLoading] = useState(false);
   const [popularError, setPopularError] = useState<string | null>(null);
-  const [animalInterestCodes, setAnimalInterestCodes] = useState<string[] | null>(() => readStoredAnimalInterests());
-  const [animalPreferenceRevision, setAnimalPreferenceRevision] = useState(0);
   const loadMoreController = useRef<AbortController | null>(null);
-  const feedAnimalInterestCodes = homeView ? undefined : animalInterestCodes ?? undefined;
-
-  useEffect(() => {
-    const handlePreferenceChange = (event: Event) => {
-      const codes = (event as CustomEvent<{ codes?: string[] }>).detail?.codes;
-      if (member?.role === "MEMBER" && Array.isArray(codes)) {
-        setAnimalInterestCodes(codes.length ? codes : null);
-      } else {
-        setAnimalInterestCodes(readStoredAnimalInterests());
-      }
-      setAnimalPreferenceRevision((revision) => revision + 1);
-    };
-    window.addEventListener("townpet:animal-interests-change", handlePreferenceChange);
-    return () => window.removeEventListener("townpet:animal-interests-change", handlePreferenceChange);
-  }, [member?.id, member?.role]);
-
-  useEffect(() => {
-    if (!memberView || authStatus !== "authenticated" || member?.role !== "MEMBER") return;
-    setAnimalInterestCodes(null);
-    const controller = new AbortController();
-    memberApi.animalInterests(controller.signal)
-      .then((codes) => setAnimalInterestCodes(codes.length ? codes : null))
-      .catch((requestError: unknown) => {
-        if (!isAbortError(requestError)) setAnimalInterestCodes(readStoredAnimalInterests(member.id));
-      });
-    return () => controller.abort();
-  }, [authStatus, member?.id, memberView]);
 
   useEffect(() => {
     if (!popularView) {
@@ -200,7 +173,6 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
         audience: memberView ? "VIEWER" : "GLOBAL",
         query,
         scope,
-        animalInterestCodes: feedAnimalInterestCodes,
         type: type || undefined,
         signal: controller.signal,
       }),
@@ -230,7 +202,7 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
       active = false;
       controller.abort();
     };
-  }, [animalPreferenceRevision, authStatus, feedAnimalInterestCodes, homeView, member, memberView, navigate, popularView, query, scope, type]);
+  }, [authStatus, homeView, member, memberView, navigate, popularView, query, scope, type]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
@@ -245,7 +217,6 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
         cursor: nextCursor,
         query,
         scope,
-        animalInterestCodes: feedAnimalInterestCodes,
         type: type || undefined,
         signal: controller.signal,
       });
