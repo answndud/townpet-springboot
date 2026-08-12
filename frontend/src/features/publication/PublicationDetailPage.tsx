@@ -1,9 +1,8 @@
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
   guestApi,
-  memberApi,
   publicationApi,
   trustApi,
   type Comment,
@@ -14,6 +13,7 @@ import {
   type TrustReportReason,
   type Member,
 } from "../../api/client";
+import { useAuth } from "../../auth/AuthContext";
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -106,6 +106,7 @@ export default function PublicationDetailPage() {
   const { publicationId = "" } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { member: authMember } = useAuth();
   const guestView = location.pathname.endsWith("/guest");
   const [publication, setPublication] = useState<Publication | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
@@ -141,7 +142,6 @@ export default function PublicationDetailPage() {
   useEffect(() => {
     const controller = new AbortController();
     setPublication(null);
-    setViewerRole(null);
     setError(null);
     setComments([]);
     setCommentsLoading(true);
@@ -157,7 +157,6 @@ export default function PublicationDetailPage() {
         setPublication(nextPublication);
         setGuestTitle(nextPublication.title);
         setGuestBody(nextPublication.body);
-        void publicationApi.view(publicationId).then((result) => setViewCount(result.viewCount)).catch(() => undefined);
       })
       .catch((requestError: unknown) => {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
@@ -177,35 +176,51 @@ export default function PublicationDetailPage() {
         }
       })
       .finally(() => setCommentsLoading(false));
-    publicationApi
-      .reaction(publicationId, controller.signal)
-      .then(setReaction)
-      .catch((requestError: unknown) => {
-        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-      })
-      .finally(() => setReactionLoading(false));
-    publicationApi
-      .bookmark(publicationId, controller.signal)
-      .then(setBookmark)
-      .catch((requestError: unknown) => {
-        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-      })
-      .finally(() => setBookmarkLoading(false));
-    memberApi
-      .current(controller.signal)
-      .then((member) => {
-        setViewerId(member.id);
-        setViewerRole(member.role);
-      })
-      .catch((requestError: unknown) => {
-        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-        if (!(requestError instanceof ApiError && requestError.status === 401)) {
-          setViewerId(null);
-          setViewerRole(null);
-        }
-      });
     return () => controller.abort();
   }, [publicationId]);
+
+  useEffect(() => {
+    setViewerId(authMember?.id ?? null);
+    setViewerRole(authMember?.role ?? null);
+  }, [authMember?.id, authMember?.role]);
+
+  useEffect(() => {
+    if (!publication) return;
+    const memberCanBookmark = authMember?.role === "MEMBER";
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      publicationApi
+        .reaction(publication.id, controller.signal)
+        .then(setReaction)
+        .catch((requestError: unknown) => {
+          if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+        })
+        .finally(() => setReactionLoading(false));
+      if (memberCanBookmark) {
+        publicationApi
+          .bookmark(publication.id, controller.signal)
+          .then(setBookmark)
+          .catch((requestError: unknown) => {
+            if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+          })
+          .finally(() => setBookmarkLoading(false));
+      } else {
+        setBookmarkLoading(false);
+      }
+    }, 120);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [authMember?.id, authMember?.role, publication?.id]);
+
+  useEffect(() => {
+    if (!publication) return;
+    const timer = window.setTimeout(() => {
+      void publicationApi.view(publication.id).then((result) => setViewCount(result.viewCount)).catch(() => undefined);
+    }, 240);
+    return () => window.clearTimeout(timer);
+  }, [publication?.id]);
 
   useEffect(() => {
     if (!publication || !viewerId || viewerId === publication.authorId) return;
@@ -221,12 +236,15 @@ export default function PublicationDetailPage() {
 
   const memberViewer = viewerRole === "MEMBER";
   const moderatorViewer = viewerRole === "MODERATOR";
-  const commentsByParent = new Map<string | null, Comment[]>();
-  for (const comment of comments) {
-    const siblings = commentsByParent.get(comment.parentCommentId) ?? [];
-    siblings.push(comment);
-    commentsByParent.set(comment.parentCommentId, siblings);
-  }
+  const commentsByParent = useMemo(() => {
+    const grouped = new Map<string | null, Comment[]>();
+    for (const comment of comments) {
+      const siblings = grouped.get(comment.parentCommentId) ?? [];
+      siblings.push(comment);
+      grouped.set(comment.parentCommentId, siblings);
+    }
+    return grouped;
+  }, [comments]);
 
   function renderComments(parentCommentId: string | null): ReactNode {
     return (commentsByParent.get(parentCommentId) ?? []).map((comment) => (

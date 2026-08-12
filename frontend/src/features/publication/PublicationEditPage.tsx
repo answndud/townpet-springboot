@@ -3,13 +3,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
   catalogApi,
-  memberApi,
   publicationApi,
   type Member,
   type Neighborhood,
   type Publication,
   type PublicationScope,
 } from "../../api/client";
+import { useAuth } from "../../auth/AuthContext";
 
 const TITLE_MAX_LENGTH = 120;
 const BODY_MAX_LENGTH = 20_000;
@@ -17,6 +17,7 @@ const BODY_MAX_LENGTH = 20_000;
 export default function PublicationEditPage() {
   const { publicationId = "" } = useParams();
   const navigate = useNavigate();
+  const { member: authMember } = useAuth();
   const [member, setMember] = useState<Member | null>(null);
   const [publication, setPublication] = useState<Publication | null>(null);
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
@@ -31,18 +32,19 @@ export default function PublicationEditPage() {
     const controller = new AbortController();
     let active = true;
 
+    if (!authMember) return () => controller.abort();
+
     Promise.all([
-      memberApi.current(controller.signal),
       publicationApi.detail(publicationId, controller.signal),
       catalogApi.neighborhoods(controller.signal),
     ])
-      .then(([currentMember, currentPublication, options]) => {
+      .then(([currentPublication, options]) => {
         if (!active) return;
-        if (currentMember.id !== currentPublication.authorId) {
+        if (authMember.id !== currentPublication.authorId) {
           setError("작성자만 이 게시글을 수정할 수 있습니다.");
           return;
         }
-        setMember(currentMember);
+        setMember(authMember);
         setPublication(currentPublication);
         setNeighborhoods(options);
         setTitle(currentPublication.title);
@@ -69,7 +71,7 @@ export default function PublicationEditPage() {
       active = false;
       controller.abort();
     };
-  }, [navigate, publicationId]);
+  }, [authMember, navigate, publicationId]);
 
   const neighborhood = neighborhoods.find((item) => item.id === member?.neighborhoodId) ?? null;
   const canSubmit =
