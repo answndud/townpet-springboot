@@ -17,9 +17,10 @@
 
 1. [methodology.md](methodology.md): 측정 규칙과 재현 조건
 2. [scenarios.md](scenarios.md): 사용자·관리자·경합 시나리오
-3. [redis-kafka-evaluation.md](redis-kafka-evaluation.md): 기준선 이후 확장 기술 판단 규칙
-4. [results/README.md](results/README.md): 실행 결과 기록 형식
-5. `results/<date>-<scenario>-<commit>.md`: 실제 실행 결과
+3. [retrospective.md](retrospective.md): 이미 적용한 개선의 historical replay와 증거 수준
+4. [redis-kafka-evaluation.md](redis-kafka-evaluation.md): 기준선 이후 확장 기술 판단 규칙
+5. [results/README.md](results/README.md): 실행 결과 기록 형식
+6. `results/<date>-<scenario>-<commit>.md`: 실제 실행 결과
 
 ## 문서 규칙
 

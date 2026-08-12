@@ -10,13 +10,19 @@
 
 ### P1 - 부하 테스트 기반을 구현한다
 
-1. **k6 실행 경로와 perf profile을 추가한다.**
+1. **기존 성능 개선의 historical replay 대상을 확정한다.**
+   - 파일: `docs/performance/retrospective.md`, `src/test/java/com/townpet/performance/`, Git history
+   - 변경: 변경 전 commit을 A/B/C 증거 수준으로 분류하고, bulk update·metric contention·queue index를 우선 replay 대상으로 고정한다. 재현 불가 항목은 원인과 정성 근거를 기록한다.
+   - 검증: old/current source archive가 같은 fixture·환경으로 실행 가능한지 가장 작은 smoke로 확인한다.
+   - 완료: 당시 수치와 재구성 수치가 혼동되지 않고, 첫 baseline 전에 replay 순서가 정해진다.
+
+2. **k6 실행 경로와 perf profile을 추가한다.**
    - 파일: `loadtest/`, `scripts/performance/`, `src/main/resources/application-perf.yml`, `deploy/compose/`
    - 변경: 전용 PostgreSQL DB·합성 계정·metrics 접근·reset 경로를 만들고, 일반 local/demo/production 설정과 분리한다. 실행 전 환경과 데이터 규모를 출력한다.
    - 검증: `./scripts/performance/validate.sh` 또는 구현된 가장 가까운 smoke command.
    - 완료: 빈 perf DB에서 준비→기동→reset을 반복할 수 있고 secret·demo data를 재사용하지 않는다.
 
-2. **deterministic performance fixture를 만든다.**
+3. **deterministic performance fixture를 만든다.**
    - 파일: `migration/` 또는 `scripts/performance/`, `docs/performance/methodology.md`
    - 변경: Small(2천), Medium(2만), 선택 Large(10만) 규모의 게시글·신고·volunteer·member 데이터를 고정 ID 규칙으로 생성한다.
    - 검증: reset 후 같은 seed를 두 번 실행해 row count와 주요 index/query plan을 비교한다.
