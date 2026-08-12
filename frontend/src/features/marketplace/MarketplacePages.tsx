@@ -3,12 +3,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
   marketplaceApi,
-  memberApi,
   type MarketplaceListing,
   type MarketplaceListingKind,
   type MarketplaceListingStatus,
-  type Member,
 } from "../../api/client";
+import { useAuth } from "../../auth/AuthContext";
+import { useAbortableRequest } from "../../hooks/useAbortableRequest";
 
 const KIND_LABELS: Record<MarketplaceListingKind, string> = {
   SELL: "판매",
@@ -47,29 +47,11 @@ function MarketplaceHeader({ action = true }: { action?: boolean }) {
 
 export function MarketplaceListPage() {
   const [kind, setKind] = useState<MarketplaceListingKind | "">("");
-  const [items, setItems] = useState<MarketplaceListing[]>([]);
-  const [viewerRole, setViewerRole] = useState<Member["role"] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    marketplaceApi.list(kind || undefined, 30, controller.signal)
-      .then(setItems)
-      .catch((requestError: unknown) => {
-        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-        setError("거래 목록을 불러오지 못했습니다.");
-      })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, [kind]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    memberApi.current(controller.signal).then((member) => setViewerRole(member.role)).catch(() => setViewerRole(null));
-    return () => controller.abort();
-  }, []);
+  const { member } = useAuth();
+  const { data: items, error: requestError, loading } = useAbortableRequest<MarketplaceListing[]>((signal) => marketplaceApi.list(kind || undefined, 30, signal), [kind]);
+  const listings = items ?? [];
+  const viewerRole = member?.role ?? null;
+  const error = requestError ? "거래 목록을 불러오지 못했습니다." : null;
 
   return (
     <main className="page marketplace-page">
@@ -81,16 +63,16 @@ export function MarketplaceListPage() {
             <button className={kind === option ? "market-filter active" : "market-filter"} key={option} type="button" onClick={() => setKind(option)}>{KIND_LABELS[option]}</button>
           ))}
         </div>
-        <span className="marketplace-count">{items.length}개</span>
+        <span className="marketplace-count">{listings.length}개</span>
       </div>
       {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
       {loading ? <section className="surface-card" role="status">거래 목록을 불러오는 중...</section> : null}
-      {!loading && items.length === 0 ? (
+      {!loading && listings.length === 0 ? (
         <section className="surface-card marketplace-empty"><h2>아직 등록된 물품이 없습니다</h2><p>첫 번째 반려생활 물품을 올려 보세요.</p>{viewerRole !== "MODERATOR" ? <Link className="button button-soft" to="/marketplace/new">물품 올리기</Link> : null}</section>
       ) : null}
-      {!loading && items.length > 0 ? (
+      {!loading && listings.length > 0 ? (
         <section className="marketplace-grid" aria-label="거래 목록">
-          {items.map((item) => (
+          {listings.map((item) => (
             <Link className="surface-card marketplace-card" key={item.id} to={`/marketplace/${item.id}`}>
               <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[item.kind]}</span><span className="publication-chip">{STATUS_LABELS[item.status]}</span></div>
               <h2>{item.title}</h2><p>{item.description}</p>
@@ -107,37 +89,25 @@ export function MarketplaceListPage() {
 export function MarketplaceDetailPage() {
   const { listingId = "" } = useParams();
   const navigate = useNavigate();
-  const [listing, setListing] = useState<MarketplaceListing | null>(null);
-  const [memberId, setMemberId] = useState<string | null>(null);
-  const [memberRole, setMemberRole] = useState<Member["role"] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { member } = useAuth();
+  const { data: listing, error: requestError, loading, retry } = useAbortableRequest<MarketplaceListing>((signal) => marketplaceApi.detail(listingId, signal), [listingId]);
   const [changing, setChanging] = useState(false);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    Promise.all([
-      marketplaceApi.detail(listingId, controller.signal),
-      memberApi.current(controller.signal).catch(() => null),
-    ]).then(([loaded, member]) => { setListing(loaded); setMemberId(member?.id ?? null); setMemberRole(member?.role ?? null); })
-      .catch(() => setError("거래 정보를 불러오지 못했습니다."))
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, [listingId]);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const error = requestError instanceof ApiError && requestError.status === 404 ? "거래 정보를 찾을 수 없습니다." : requestError ? "거래 정보를 불러오지 못했습니다." : actionError;
 
   async function changeStatus(status: MarketplaceListingStatus) {
-    if (!listing) return;
-    setChanging(true); setError(null);
-    try { setListing(await marketplaceApi.changeStatus(listing.id, status, listing.version)); }
+    if (!listing || changing) return;
+    setChanging(true); setActionError(null);
+    try { await marketplaceApi.changeStatus(listing.id, status, listing.version); retry(); }
     catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) { navigate(`/login?next=/marketplace/${listing.id}`); return; }
-      setError(requestError instanceof ApiError && requestError.status === 409 ? "현재 상태에서는 변경할 수 없습니다." : "상태를 변경하지 못했습니다.");
+      setActionError(requestError instanceof ApiError && requestError.status === 409 ? "현재 상태에서는 변경할 수 없습니다." : "상태를 변경하지 못했습니다.");
     } finally { setChanging(false); }
   }
 
   if (loading) return <main className="page marketplace-page"><section className="surface-card" role="status">거래 정보를 불러오는 중...</section></main>;
-  if (!listing || error) return <main className="page marketplace-page marketplace-state"><section className="surface-card"><p className="eyebrow">MARKETPLACE</p><h1>거래 정보를 찾을 수 없습니다</h1><Link className="button button-soft" to="/marketplace">목록으로</Link></section></main>;
-  const owner = memberRole === "MEMBER" && memberId === listing.ownerMemberId;
+  if (!listing || error) return <main className="page marketplace-page marketplace-state"><section className="surface-card"><p className="eyebrow">MARKETPLACE</p><h1>{error ?? "거래 정보를 찾을 수 없습니다"}</h1><Link className="button button-soft" to="/marketplace">목록으로</Link></section></main>;
+  const owner = member?.role === "MEMBER" && member.id === listing.ownerMemberId;
   return (
     <main className="page marketplace-page">
       <div className="marketplace-detail-nav"><Link className="publication-text-link" to="/marketplace">← 거래 목록</Link>{owner && listing.status === "AVAILABLE" ? <Link className="button button-soft" to={`/marketplace/${listing.id}/edit`}>수정</Link> : null}</div>
@@ -164,16 +134,14 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [version, setVersion] = useState(0);
-  const [loading, setLoading] = useState(edit);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const { data: loadedItem, error: loadError, loading } = useAbortableRequest<MarketplaceListing | null>((signal) => edit ? marketplaceApi.detail(listingId, signal) : Promise.resolve(null), [edit, listingId]);
   useEffect(() => {
-    if (!edit) return;
-    marketplaceApi.detail(listingId).then((item) => { setKind(item.kind); setTitle(item.title); setDescription(item.description); setPrice(item.priceKrw === null ? "" : String(item.priceKrw)); setVersion(item.version); })
-      .catch(() => setError("수정할 listing을 불러오지 못했습니다."))
-      .finally(() => setLoading(false));
-  }, [edit, listingId]);
+    if (!loadedItem) return;
+    setKind(loadedItem.kind); setTitle(loadedItem.title); setDescription(loadedItem.description); setPrice(loadedItem.priceKrw === null ? "" : String(loadedItem.priceKrw)); setVersion(loadedItem.version);
+  }, [loadedItem]);
+  useEffect(() => { if (loadError) setError("수정할 listing을 불러오지 못했습니다."); }, [loadError]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -191,7 +159,7 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
     } finally { setSubmitting(false); }
   }
 
-  if (loading) return <main className="page marketplace-page"><section className="surface-card" role="status">수정 정보를 불러오는 중...</section></main>;
+  if (edit && loading) return <main className="page marketplace-page"><section className="surface-card" role="status">수정 정보를 불러오는 중...</section></main>;
   return (
     <main className="page marketplace-page"><section className="marketplace-hero"><div><p className="eyebrow">MARKETPLACE</p><h1>{edit ? "거래 글 수정" : "새 거래 글"}</h1><p>가격과 상태를 분명하게 적어 이웃이 쉽게 판단할 수 있게 해 주세요.</p></div></section>
       <form className="surface-card marketplace-form" onSubmit={submit} noValidate>
