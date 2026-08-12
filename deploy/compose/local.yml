@@ -18,6 +18,29 @@ services:
       timeout: 5s
       retries: 12
 
+  backend:
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile.backend
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      TOWNPET_DB_URL: jdbc:postgresql://postgres:5432/townpet
+      TOWNPET_DB_USERNAME: townpet_app
+      TOWNPET_DB_PASSWORD: townpet_local_dev
+      TOWNPET_DEMO_DATA_ENABLED: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - townpet-local-media:/app/.townpet
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: townpet-minio
@@ -39,3 +62,4 @@ services:
 volumes:
   townpet-postgres-data:
   townpet-minio-data:
+  townpet-local-media:

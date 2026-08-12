@@ -1,5 +1,6 @@
 package com.townpet.identity;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -9,9 +10,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class MemberUserDetailsService implements UserDetailsService {
   private final CredentialRepository credentials;
+  private final boolean demoDataEnabled;
 
-  public MemberUserDetailsService(CredentialRepository credentials) {
+  public MemberUserDetailsService(
+      CredentialRepository credentials,
+      @Value("${townpet.demo-data.enabled:true}") boolean demoDataEnabled) {
     this.credentials = credentials;
+    this.demoDataEnabled = demoDataEnabled;
   }
 
   @Override
@@ -20,6 +25,10 @@ public class MemberUserDetailsService implements UserDetailsService {
         credentials
             .findByEmailIgnoreCase(username)
             .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
+    if (!demoDataEnabled
+        && username.toLowerCase(java.util.Locale.ROOT).endsWith("@townpet.local")) {
+      throw new UsernameNotFoundException("Demo credentials are disabled");
+    }
     return User.withUsername(credential.getMemberId().toString())
         .password(credential.getPasswordHash())
         .disabled(!credential.isEnabled() || !credential.isEmailVerified())

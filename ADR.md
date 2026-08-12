@@ -596,18 +596,19 @@ aggregate write는 Spring Data JPA를 우선하고 feed·집계·PostgreSQL 특�
 
 ### Evidence
 
-- `ADR.md`의 기존 ADR-0034
-- 현재 `src/main/java/com/townpet/care/`가 아직 비어 있다는 구현 상태
+- `src/main/java/com/townpet/care/`
+- `src/main/resources/db/migration/V043__care_request.sql` ~ `V045__care_assignment.sql`
+- `src/test/java/com/townpet/care/CareControllerTest.java`
 
 ## ADR-0035 - Care의 Request/Application/Assignment 모델은 구현 시 도입한다
 
-- 상태: deferred
+- 상태: accepted
 - 날짜: 2026-08-11
 - 근거 유형: inferred
 
 ### Decision
 
-Care를 다시 시작할 때 Request·Application·Assignment와 단일 active assignment invariant를 하나의 vertical slice로 구현한다. 현재 generic moderator case queue를 Care workflow로 간주하지 않는다.
+Care는 Request·Application·Assignment·Feedback과 단일 active assignment invariant를 하나의 vertical slice로 구현한다. generic moderator case queue와 분리하고, 결제·전문 자격·의료행위 없이 이웃 간 coordination만 제공한다.
 
 ### Trigger
 
@@ -615,8 +616,9 @@ Care를 다시 시작할 때 Request·Application·Assignment와 단일 active a
 
 ### Evidence
 
-- `src/main/java/com/townpet/care/`: package marker만 존재
-- Legacy evidence: `/Users/alex/project/townpet/app/prisma/schema.prisma`
+- `src/main/java/com/townpet/care/`
+- `src/main/resources/db/migration/V043__care_request.sql` ~ `V045__care_assignment.sql`
+- `src/test/java/com/townpet/care/CareControllerTest.java`
 
 ## ADR-0036 - SightingReport를 일반 Comment와 분리한다
 
