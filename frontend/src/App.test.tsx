@@ -54,6 +54,12 @@ describe("TownPet Vite shell", () => {
     fireEvent.click(boardMenu);
     expect(boardMenu).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("menuitem", { name: "내 피드" })).toBeVisible();
+
+    fireEvent.keyDown(boardMenu, { key: "Escape" });
+    expect(boardMenu).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(boardMenu);
+    fireEvent.mouseDown(document.body);
+    expect(boardMenu).toHaveAttribute("aria-expanded", "false");
   });
 
   it("does not render the moderator console for a member", async () => {

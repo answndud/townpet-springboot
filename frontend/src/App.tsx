@@ -1,5 +1,5 @@
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { ReactNode, useEffect, useState } from "react";
+import { KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
 import LoginPage from "./LoginPage";
 import OnboardingPage from "./OnboardingPage";
 import PasswordResetPage from "./PasswordResetPage";
@@ -40,8 +40,7 @@ import AdminModeratorCasePage from "./AdminModeratorCasePage";
 import { CareCreatePage, CareDetailPage, CareListPage } from "./features/care/CarePages";
 import VolunteerPage from "./VolunteerPage";
 import HospitalReviewPage from "./HospitalReviewPage";
-import { ApiError, memberApi } from "./api/client";
-import type { Member } from "./api/client";
+import { AuthProvider, useAuth } from "./auth/AuthContext";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -84,23 +83,44 @@ function HeaderMenu({
 }) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setOpen(false);
   }, [location.pathname, location.search]);
 
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (event.target instanceof Node && !menuRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [open]);
+
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key === "Escape") {
+      setOpen(false);
+      event.currentTarget.focus();
+    }
+  }
+
   return (
-    <div className={`header-menu${open ? " open" : ""}`}>
+    <div ref={menuRef} className={`header-menu${open ? " open" : ""}`}>
       <button
         className="header-menu-trigger"
         type="button"
         aria-haspopup="true"
         aria-expanded={open}
+        aria-controls={`${label}-menu`}
         onClick={() => setOpen((current) => !current)}
+        onKeyDown={handleKeyDown}
       >
         {label}<span aria-hidden="true">⌄</span>
       </button>
-      <div className="header-menu-panel" role="menu" aria-label={`${label} 바로가기`}>
+      <div id={`${label}-menu`} className="header-menu-panel" role="menu" aria-label={`${label} 바로가기`}>
         {links.map(([linkLabel, href]) => (
           <NavLink key={href} role="menuitem" to={href} onClick={() => setOpen(false)}>
             {linkLabel}
@@ -113,35 +133,7 @@ function HeaderMenu({
 
 function Header() {
   const location = useLocation();
-  const [member, setMember] = useState<Member | null>(null);
-
-  useEffect(() => {
-    if (["/login", "/password", "/verify-email", "/onboarding"].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`))) return;
-    let active = true;
-    let controller: AbortController | null = null;
-    const loadMember = () => {
-      controller?.abort();
-      controller = new AbortController();
-      memberApi.current().then((nextMember) => {
-        if (active) setMember(nextMember);
-      }).catch((requestError: unknown) => {
-        if (active && !(requestError instanceof DOMException && requestError.name === "AbortError")) {
-          setMember(null);
-        }
-      });
-    };
-    const handleAuthChange = () => {
-      setMember(null);
-      loadMember();
-    };
-    loadMember();
-    window.addEventListener("townpet:auth-change", handleAuthChange);
-    return () => {
-      active = false;
-      controller?.abort();
-      window.removeEventListener("townpet:auth-change", handleAuthChange);
-    };
-  }, [location.pathname]);
+  const { status, member } = useAuth();
 
   const boardLinks = member ? MEMBER_BOARD_LINKS : PUBLIC_BOARD_LINKS;
 
@@ -151,7 +143,7 @@ function Header() {
         <Link className="brand" to="/" aria-label="TownPet 홈으로 이동">
           <img src="/townpet-logo.svg" alt="TownPet" />
         </Link>
-        {member ? (
+        {status === "authenticated" && member ? (
           member.role === "MODERATOR" ? (
             <nav aria-label="운영자 주요 이동" className="desktop-nav">
               <NavLink to="/admin">운영 콘솔</NavLink>
@@ -180,27 +172,16 @@ function Header() {
 
 function ModeratorRoute({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const location = useLocation();
+  const { status, member } = useAuth();
 
   useEffect(() => {
-    const controller = new AbortController();
-    memberApi.current(controller.signal)
-      .then((member) => {
-        if (member.role === "MODERATOR") setAllowed(true);
-        else navigate("/", { replace: true });
-      })
-      .catch((requestError: unknown) => {
-        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-        if (requestError instanceof ApiError && requestError.status === 401) {
-          navigate("/login?next=/admin", { replace: true });
-        } else {
-          navigate("/", { replace: true });
-        }
-      });
-    return () => controller.abort();
-  }, [navigate]);
+    if (status === "anonymous") navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`, { replace: true });
+    else if (status === "authenticated" && member?.role !== "MODERATOR") navigate("/", { replace: true });
+  }, [location.pathname, location.search, member?.role, navigate, status]);
 
-  if (allowed !== true) {
+  if (status === "error") return <AuthError />;
+  if (status !== "authenticated" || member?.role !== "MODERATOR") {
     return <main className="page placeholder-page"><section className="surface-card" role="status">운영자 권한을 확인하는 중...</section></main>;
   }
   return <>{children}</>;
@@ -208,27 +189,16 @@ function ModeratorRoute({ children }: { children: ReactNode }) {
 
 function MemberRoute({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const location = useLocation();
+  const { status, member } = useAuth();
 
   useEffect(() => {
-    const controller = new AbortController();
-    memberApi.current(controller.signal)
-      .then((member) => {
-        if (member.role === "MEMBER") setAllowed(true);
-        else navigate("/feed/guest", { replace: true });
-      })
-      .catch((requestError: unknown) => {
-        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-        if (requestError instanceof ApiError && requestError.status === 401) {
-          navigate(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`, { replace: true });
-        } else {
-          navigate("/feed/guest", { replace: true });
-        }
-      });
-    return () => controller.abort();
-  }, [navigate]);
+    if (status === "anonymous") navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`, { replace: true });
+    else if (status === "authenticated" && member?.role !== "MEMBER") navigate("/feed/guest", { replace: true });
+  }, [location.pathname, location.search, member?.role, navigate, status]);
 
-  if (allowed !== true) {
+  if (status === "error") return <AuthError />;
+  if (status !== "authenticated" || member?.role !== "MEMBER") {
     return <main className="page placeholder-page"><section className="surface-card" role="status">회원 권한을 확인하는 중...</section></main>;
   }
   return <>{children}</>;
@@ -236,40 +206,26 @@ function MemberRoute({ children }: { children: ReactNode }) {
 
 function NonModeratorRoute({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const { status, member } = useAuth();
 
   useEffect(() => {
-    const controller = new AbortController();
-    memberApi.current(controller.signal)
-      .then((member) => {
-        if (member.role === "MODERATOR") navigate("/feed/guest", { replace: true });
-        else setAllowed(true);
-      })
-      .catch((requestError: unknown) => {
-        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-        if (requestError instanceof ApiError && requestError.status === 401) {
-          setAllowed(true);
-        } else {
-          navigate("/feed/guest", { replace: true });
-        }
-      });
-    return () => controller.abort();
-  }, [navigate]);
+    if (status === "authenticated" && member?.role === "MODERATOR") navigate("/feed/guest", { replace: true });
+  }, [member?.role, navigate, status]);
 
-  if (allowed !== true) {
+  if (status === "error") return <AuthError />;
+  if (status === "loading" || (status === "authenticated" && member?.role === "MODERATOR")) {
     return <main className="page placeholder-page"><section className="surface-card" role="status">접근 권한을 확인하는 중...</section></main>;
   }
   return <>{children}</>;
 }
 
-function HomePage() {
-  const [viewerRole, setViewerRole] = useState<Member["role"] | null>(null);
+function AuthError() {
+  const { refresh } = useAuth();
+  return <main className="page placeholder-page"><section className="surface-card"><p className="form-error" role="alert">로그인 상태를 확인하지 못했습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><button className="button button-soft" type="button" onClick={refresh}>다시 시도</button></section></main>;
+}
 
-  useEffect(() => {
-    const controller = new AbortController();
-    memberApi.current(controller.signal).then((member) => setViewerRole(member.role)).catch(() => setViewerRole(null));
-    return () => controller.abort();
-  }, []);
+function HomePage() {
+  const { member } = useAuth();
 
   return (
     <main className="page page-home">
@@ -284,7 +240,7 @@ function HomePage() {
           <Link className="button button-primary" to="/feed/guest">
             전체 피드
           </Link>
-          {viewerRole !== "MODERATOR" ? <Link className="button button-soft" to="/onboarding">내 동네 설정</Link> : null}
+          {member?.role !== "MODERATOR" ? <Link className="button button-soft" to="/onboarding">내 동네 설정</Link> : null}
         </div>
       </section>
       <section className="topic-section" aria-labelledby="topic-title">
@@ -332,7 +288,7 @@ function PlaceholderPage() {
   );
 }
 
-export default function App() {
+function AppShell() {
   const location = useLocation();
 
   useEffect(() => {
@@ -430,4 +386,8 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+export default function App() {
+  return <AuthProvider><AppShell /></AuthProvider>;
 }
