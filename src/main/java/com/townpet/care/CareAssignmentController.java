@@ -19,6 +19,17 @@ class CareAssignmentController {
     service = s;
   }
 
+  @GetMapping("/requests/{requestId}/assignment")
+  Response assignment(@AuthenticationPrincipal UserDetails p, @PathVariable UUID requestId) {
+    try {
+      return response(service.findForParticipant(member(p), requestId));
+    } catch (NoSuchElementException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (SecurityException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    }
+  }
+
   @PostMapping("/requests/{requestId}/applications/{applicationId}/accept")
   Response accept(
       @AuthenticationPrincipal UserDetails p,

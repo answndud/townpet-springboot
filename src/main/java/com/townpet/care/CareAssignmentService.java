@@ -23,6 +23,17 @@ class CareAssignmentService {
   }
 
   @Transactional
+  CareAssignmentEntity findForParticipant(UUID actor, UUID requestId) {
+    CareAssignmentEntity assignment =
+        assignments.findByRequestId(requestId).orElseThrow(NoSuchElementException::new);
+    CareRequestEntity request =
+        requests.findById(requestId).orElseThrow(NoSuchElementException::new);
+    if (!request.getRequesterMemberId().equals(actor)
+        && !assignment.getCaregiverMemberId().equals(actor)) throw new SecurityException();
+    return assignment;
+  }
+
+  @Transactional
   CareAssignmentEntity accept(UUID requester, UUID requestId, UUID applicationId, long appVersion) {
     CareRequestEntity request =
         requests
@@ -46,6 +57,8 @@ class CareAssignmentService {
     }
     CareAssignmentEntity assignment =
         assignments.save(new CareAssignmentEntity(requestId, application.getApplicantMemberId()));
+    request.markMatched();
+    requests.save(request);
     return assignments.saveAndFlush(assignment);
   }
 

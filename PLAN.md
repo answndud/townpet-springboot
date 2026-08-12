@@ -8,7 +8,7 @@
 
 ## Active
 
-### P1 - 제품 parity와 ADR 판정을 실제 근거로 닫는다
+### P1 - 제품 parity와 ADR 판정을 실제 근거로 닫는다 (진행 중)
 
 - 파일: `docs/parity/matrix.yaml`, `ADR.md`, `src/main/java/com/townpet/{care,discovery,media,marketplace,localguide}/`, `frontend/src/`, `frontend/e2e/`, `src/test/java/`
 - 변경:
