@@ -143,7 +143,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
       </header>
 
       <form
-        className="feed-search surface-card"
+        className="search-panel"
         onSubmit={(event) => {
           event.preventDefault();
           const value = String(new FormData(event.currentTarget).get("q") ?? "").trim();
@@ -151,7 +151,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
         }}
       >
         <label>
-          게시글 검색
+          <span>게시글 검색</span>
           <input name="q" defaultValue={query} placeholder="제목·내용을 검색해 주세요" />
         </label>
         <button className="button button-soft" type="submit">검색</button>

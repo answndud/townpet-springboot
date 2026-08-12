@@ -31,8 +31,8 @@ export function LocalCareListPage() {
         <h1>우리 동네 반려생활 가이드</h1>
         <p>산책 장소부터 복지 제도와 케어 팁까지, 출처와 갱신 시각을 함께 확인하세요.</p>
       </section>
-      <form className="surface-card localcare-search" onSubmit={load}>
-        <label>정보 검색<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="산책, 등록, 여름..." /></label>
+      <form className="search-panel" onSubmit={load}>
+        <label><span>정보 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="산책, 등록, 여름..." /></label>
         <button className="button button-primary" type="submit">검색</button>
       </form>
       <div className="localcare-tabs" role="group" aria-label="정보 유형 필터">
