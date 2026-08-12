@@ -353,6 +353,11 @@ export const trustApi = {
   report(input: { targetType: string; targetId: string; reason: TrustReportReason; detail?: string }) { return mutate("/api/v1/trust-reports", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
 };
 
+export const adminModerationApi = {
+  reviewReport(id: string, status: "REVIEWED" | "REJECTED") { return mutate(`/api/admin/reports/${encodeURIComponent(id)}`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ status }) }); },
+  setPublicationVisibility(id: string, visible: boolean, reason: string) { return mutate<{ id: string; lifecycle: string }>(`/api/admin/moderation/posts/${encodeURIComponent(id)}/visibility`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ visible, reason }) }); },
+};
+
 export const notificationApi = {
   list(unread = false, signal?: AbortSignal) { return apiFetch<Notification[]>(`/api/v1/notifications${unread ? "?unread=true" : ""}`, { signal }); },
   unreadCount(signal?: AbortSignal) { return apiFetch<{ count: number }>("/api/v1/notifications/unread-count", { signal }); },
