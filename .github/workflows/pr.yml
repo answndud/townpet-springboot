@@ -23,7 +23,8 @@ jobs:
           java-version: '25'
           cache: gradle
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew clean check --no-daemon
+      - run: ./scripts/validate-parity-matrix.sh
+      - run: ./gradlew clean check migrationTest --no-daemon
 
   frontend:
     name: Frontend type, unit, build

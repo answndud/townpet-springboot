@@ -14,7 +14,12 @@ class LegacyShareCardController {
     this.publications = publications;
   }
 
-  @GetMapping(value = {"/api/posts/{publicationId}/lost-found-share.svg", "/api/posts/{publicationId}/share.svg"}, produces = "image/svg+xml")
+  @GetMapping(
+      value = {
+        "/api/posts/{publicationId}/lost-found-share.svg",
+        "/api/posts/{publicationId}/share.svg"
+      },
+      produces = "image/svg+xml")
   ResponseEntity<byte[]> share(@PathVariable UUID publicationId) {
     PublicationEntity publication =
         publications

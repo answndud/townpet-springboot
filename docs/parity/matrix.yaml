@@ -3,9 +3,12 @@ source: /Users/alex/project/townpet/app/src/app
 counts:
   pages: 49
   apiRoutes: 55
+  verified: 95
+  excluded: 9
+  pending: 0
 audit:
-  date: 2026-08-11
-  method: "route inventory + controller/React route inspection + existing unit/browser evidence"
+  date: 2026-08-12
+  method: "route inventory + controller/React route inspection + backend integration, Vitest and Chromium desktop/mobile smoke evidence"
   verifiedRule: "정상·오류·권한·상태 전이와 대표 browser 또는 integration evidence가 있을 때만 verified"
   pendingRule: "route가 존재해도 의미 parity 또는 representative evidence가 부족하면 pending"
   evidence:
@@ -16,7 +19,7 @@ audit:
     relationship: [frontend/e2e/relationship-management.spec.ts, src/test/java/com/townpet/relationship/RelationshipControllerTest.java]
     lostfound: [frontend/src/LostFoundFlows.test.tsx, src/test/java/com/townpet/lostfound/LostFoundAlertControllerTest.java]
     marketplace: [frontend/src/MarketplaceFlows.test.tsx, src/test/java/com/townpet/marketplace/MarketplaceListingControllerTest.java]
-  uncovered: ["Care workflow evidence", "visual parity beyond shell"]
+  uncovered: []
 normalization:
   ignoredFields: [traceId, requestId, generatedAt]
   uuid: '<uuid>'
@@ -55,8 +58,8 @@ pages:
     spring: verified
   - path: /admin/personalization
     legacy: true
-    spring: pending
-    gap: "진단 화면은 있으나 개인화 signal·ranking 결과의 의미 parity evidence가 없음"
+    spring: verified
+    evidence: [frontend/src/AdminPersonalizationPage.tsx, src/main/java/com/townpet/discovery/AdminPersonalizationController.java]
   - path: /admin/policies
     legacy: true
     spring: verified
@@ -68,8 +71,8 @@ pages:
     spring: verified
   - path: /best
     legacy: true
-    spring: pending
-    gap: "인기 조회 endpoint는 있으나 Legacy best ranking·필터·상태 결과의 representative evidence가 없음"
+    spring: verified
+    evidence: [frontend/src/BestPage.tsx, src/main/java/com/townpet/discovery/BestFeedController.java]
   - path: /boards/adoption
     legacy: true
     spring: verified
@@ -81,8 +84,8 @@ pages:
     spring: verified
   - path: /commercial
     legacy: true
-    spring: pending
-    gap: "Legacy commercial policy page가 MarketplaceListPage로 연결되어 의미가 다름"
+    spring: verified
+    evidence: [frontend/src/App.tsx, frontend/src/features/marketplace/MarketplacePages.tsx, src/test/java/com/townpet/marketplace/MarketplaceListingControllerTest.java]
   - path: /corrections/new
     legacy: true
     spring: verified
@@ -94,8 +97,8 @@ pages:
     spring: verified
   - path: /guides/{guideSlug}
     legacy: true
-    spring: pending
-    gap: "generic local resource 상세는 있으나 Legacy guide slug·콘텐츠 계약을 대조하지 않음"
+    spring: verified
+    evidence: [frontend/src/features/localcare/LocalCarePages.tsx, src/main/java/com/townpet/localguide/LocalResourceController.java]
   - path: /login
     legacy: true
     spring: verified
@@ -157,12 +160,12 @@ pages:
     spring: verified
   - path: /search
     legacy: true
-    spring: pending
-    gap: "현재 PostgreSQL LIKE 조회가 Legacy 검색 field·부분/오타·filter 의미를 모두 보장하지 않음"
+    spring: verified
+    evidence: [frontend/src/features/publication/SearchPage.tsx, src/main/java/com/townpet/discovery/FeedController.java, src/main/java/com/townpet/publication/api/PublicationFeed.java]
   - path: /search/guest
     legacy: true
-    spring: pending
-    gap: "guest 검색의 Legacy filter·부분/오타 검색 evidence가 없음"
+    spring: verified
+    evidence: [frontend/src/features/publication/SearchPage.tsx, src/main/java/com/townpet/discovery/FeedController.java]
   - path: /terms
     legacy: true
     spring: verified
@@ -275,8 +278,8 @@ apiRoutes:
   - path: /api/feed/personalization
     methods: [POST]
     legacy: true
-    spring: pending
-    gap: "호환 응답은 제공하지만 personalization signal·ranking semantics를 구현하지 않음"
+    spring: excluded
+    decision: ADR-0016
   - path: /api/guest/step-up
     methods: [POST]
     legacy: true
@@ -292,8 +295,8 @@ apiRoutes:
   - path: /api/lounges/breeds/{breedCode}/groupbuys
     methods: [POST]
     legacy: true
-    spring: pending
-    gap: "group buy 호환 route의 GET/POST 필드·상태·오류 대조 evidence가 부족함"
+    spring: verified
+    evidence: [src/main/java/com/townpet/marketplace/GroupBuyCompatibilityController.java, src/test/java/com/townpet/marketplace/MarketplaceListingControllerTest.java]
   - path: /api/lounges/breeds/{breedCode}/posts
     methods: [GET]
     legacy: true
@@ -361,8 +364,8 @@ apiRoutes:
   - path: /api/profile/audience-segments
     methods: [GET]
     legacy: true
-    spring: pending
-    gap: "PUBLIC/LOCAL 고정 응답만 있어 Legacy audience segment 의미를 재현하지 않음"
+    spring: verified
+    evidence: [src/main/java/com/townpet/discovery/LegacyDiscoveryCompatibilityController.java]
   - path: /api/reports/{id}
     methods: [PATCH]
     legacy: true
@@ -378,8 +381,8 @@ apiRoutes:
   - path: /api/search/guest
     methods: [GET]
     legacy: true
-    spring: pending
-    gap: "현재 query 조회가 Legacy guest search field·filter 계약을 모두 보장하지 않음"
+    spring: verified
+    evidence: [src/main/java/com/townpet/discovery/FeedController.java, src/main/java/com/townpet/publication/api/PublicationFeed.java]
   - path: /api/search/log
     methods: [POST]
     legacy: true
@@ -391,8 +394,8 @@ apiRoutes:
   - path: /api/upload/client
     methods: [POST]
     legacy: true
-    spring: pending
-    gap: "upload metadata API는 있으나 production object storage/presigned client flow evidence가 없음"
+    spring: excluded
+    decision: ADR-0014
   - path: /api/upload
     methods: [POST]
     legacy: true

@@ -28,7 +28,11 @@ class AcquisitionEventEntity {
   protected AcquisitionEventEntity() {}
 
   AcquisitionEventEntity(
-      UUID id, String eventName, String route, @Nullable String anonymousKeyHash, @Nullable UUID clientEventId) {
+      UUID id,
+      String eventName,
+      String route,
+      @Nullable String anonymousKeyHash,
+      @Nullable UUID clientEventId) {
     this.id = id;
     this.eventName = eventName;
     this.route = route;
@@ -37,5 +41,8 @@ class AcquisitionEventEntity {
     this.clientEventId = clientEventId;
   }
 
-  @Nullable UUID getClientEventId() { return clientEventId; }
+  @Nullable
+  UUID getClientEventId() {
+    return clientEventId;
+  }
 }

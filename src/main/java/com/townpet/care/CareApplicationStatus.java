@@ -1,3 +1,8 @@
 package com.townpet.care;
 
-public enum CareApplicationStatus { PENDING, ACCEPTED, DECLINED, WITHDRAWN }
+public enum CareApplicationStatus {
+  PENDING,
+  ACCEPTED,
+  DECLINED,
+  WITHDRAWN
+}

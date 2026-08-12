@@ -3,9 +3,9 @@ package com.townpet.notification;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,17 +23,17 @@ class NotificationController {
       @AuthenticationPrincipal UserDetails principal,
       @RequestParam(defaultValue = "false") boolean unread) {
     UUID memberId = memberId(principal);
-    var items = unread
-        ? notifications.findByRecipientMemberIdAndReadAtIsNullOrderByCreatedAtDesc(memberId)
-        : notifications.findByRecipientMemberIdOrderByCreatedAtDesc(memberId);
-    return items.stream()
-        .map(NotificationController::response)
-        .toList();
+    var items =
+        unread
+            ? notifications.findByRecipientMemberIdAndReadAtIsNullOrderByCreatedAtDesc(memberId)
+            : notifications.findByRecipientMemberIdOrderByCreatedAtDesc(memberId);
+    return items.stream().map(NotificationController::response).toList();
   }
 
   @GetMapping("/unread-count")
   CountResponse unreadCount(@AuthenticationPrincipal UserDetails principal) {
-    return new CountResponse(notifications.countByRecipientMemberIdAndReadAtIsNull(memberId(principal)));
+    return new CountResponse(
+        notifications.countByRecipientMemberIdAndReadAtIsNull(memberId(principal)));
   }
 
   @PatchMapping("/{id}/read")
@@ -66,7 +66,12 @@ class NotificationController {
   }
 
   record Response(
-      UUID id, String type, String title, String body, @Nullable Instant readAt, Instant createdAt) {}
+      UUID id,
+      String type,
+      String title,
+      String body,
+      @Nullable Instant readAt,
+      Instant createdAt) {}
 
   record CountResponse(long count) {}
 }

@@ -26,7 +26,8 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - uses: gradle/actions/setup-gradle@v4
       - run: corepack enable
-      - run: ./gradlew clean check --no-daemon
+      - run: ./scripts/validate-parity-matrix.sh
+      - run: ./gradlew clean check migrationTest --no-daemon
       - run: corepack pnpm install --frozen-lockfile
         working-directory: frontend
       - run: corepack pnpm typecheck && corepack pnpm test && corepack pnpm build

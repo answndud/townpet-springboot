@@ -57,7 +57,7 @@ Legacy TownPet의 관찰 가능한 제품 동작을 Java 25·Spring Boot·Postgr
 - 검증: `corepack pnpm -C frontend typecheck`, `corepack pnpm -C frontend test`, `corepack pnpm -C frontend build`, 대표 Playwright visual/browser smoke와 성능 snapshot.
 - 완료: 기능이 같은 것뿐 아니라 주요 page family의 시각·반응형·접근성·직접 URL 동작이 Legacy와 비교 가능한 수준이다. 공통 skip link·focus-visible·reduced-motion, route metadata, Vite hashed asset output을 적용했고 frontend typecheck/test/build와 Chromium desktop/mobile shell smoke(4 tests)가 통과했다.
 
-### G8 - 데이터·문서·품질 gate를 갖춘 재현 가능한 릴리스를 만든다
+### G8 - 데이터·문서·품질 gate를 갖춘 재현 가능한 릴리스를 만든다 ✅ completed (2026-08-12)
 
 - 순서: G1~G7 이후
 - 파일: `src/main/resources/db/migration/`, `migration/`, `.github/workflows/`, `docs/parity/`, `docs/report/`, `README.md`, `deploy/`
@@ -67,7 +67,7 @@ Legacy TownPet의 관찰 가능한 제품 동작을 Java 25·Spring Boot·Postgr
   - backend/frontend build, migration, browser, smoke, backup/restore를 변경 위험에 맞는 단계별 CI gate로 묶는다.
   - 실행하지 않은 성능·가용성·복구 수치를 주장하지 않고, 최종 범위와 의도적 제외를 문서화한다.
 - 검증: 변경 영향에 맞는 근접 검증 후 릴리스 시 fresh `./gradlew clean check migrationTest`, frontend typecheck/test/build/e2e, `./scripts/frontend-backend-smoke.sh`, migration·restore rehearsal.
-- 완료: 새 환경에서 같은 명령으로 TownPet Springboot를 재현하고, 49개 page·55개 API의 verified/excluded 판정과 대표 journey evidence를 면접·코드 리뷰에서 재현할 수 있다.
+- 완료: 새 환경에서 같은 명령으로 TownPet Springboot를 재현하고, 49개 page·55개 API를 `verified=95`, ADR 근거 `excluded=9`, `pending=0`으로 판정할 수 있다. parity validator, clean `check migrationTest`, frontend build/test, Chromium shell smoke, PostgreSQL backup/restore rehearsal이 모두 fresh 통과했다.
 
 ### G9 - 실제 공개 운영을 시작할 때만 배포한다
 

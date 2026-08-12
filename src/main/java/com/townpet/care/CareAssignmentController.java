@@ -1,11 +1,109 @@
 package com.townpet.care;
-import jakarta.validation.Valid; import jakarta.validation.constraints.*; import java.time.Instant; import java.util.*; import org.springframework.http.*; import org.springframework.security.core.annotation.AuthenticationPrincipal; import org.springframework.security.core.userdetails.UserDetails; import org.springframework.web.bind.annotation.*; import org.springframework.web.server.ResponseStatusException;
-@RestController @RequestMapping("/api/v1/care") class CareAssignmentController {
- private final CareAssignmentService service; CareAssignmentController(CareAssignmentService s){service=s;}
- @PostMapping("/requests/{requestId}/applications/{applicationId}/accept") Response accept(@AuthenticationPrincipal UserDetails p,@PathVariable UUID requestId,@PathVariable UUID applicationId,@Valid @RequestBody VersionRequest r){try{return response(service.accept(member(p),requestId,applicationId,r.version()));}catch(NoSuchElementException e){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}catch(SecurityException e){throw new ResponseStatusException(HttpStatus.FORBIDDEN);}catch(IllegalStateException e){throw new ResponseStatusException(HttpStatus.CONFLICT,e.getMessage());}}
- @PatchMapping("/assignments/{assignmentId}/status") Response status(@AuthenticationPrincipal UserDetails p,@PathVariable UUID assignmentId,@Valid @RequestBody DecisionRequest r){try{return response(service.transition(member(p),assignmentId,r.status(),r.version()));}catch(NoSuchElementException e){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}catch(SecurityException e){throw new ResponseStatusException(HttpStatus.FORBIDDEN);}catch(IllegalStateException e){throw new ResponseStatusException(HttpStatus.CONFLICT,e.getMessage());}}
- @PostMapping("/assignments/{assignmentId}/feedback") FeedbackResponse feedback(@AuthenticationPrincipal UserDetails p,@PathVariable UUID assignmentId,@Valid @RequestBody FeedbackRequest r){try{CareFeedbackEntity f=service.feedback(member(p),assignmentId,r.body());return new FeedbackResponse(f.getId(),f.getAssignmentId(),f.getAuthorMemberId(),f.getBody(),f.getCreatedAt());}catch(NoSuchElementException e){throw new ResponseStatusException(HttpStatus.NOT_FOUND);}catch(SecurityException e){throw new ResponseStatusException(HttpStatus.FORBIDDEN);}catch(IllegalStateException e){throw new ResponseStatusException(HttpStatus.CONFLICT,e.getMessage());}}
- private static UUID member(UserDetails p){try{return UUID.fromString(p.getUsername());}catch(Exception e){throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);}}
- private static Response response(CareAssignmentEntity a){return new Response(a.getId(),a.getRequestId(),a.getCaregiverMemberId(),a.getStatus(),a.getCreatedAt(),a.getUpdatedAt(),a.getVersion());}
- record VersionRequest(@NotNull @Min(0) Long version){} record DecisionRequest(@NotNull CareAssignmentStatus status,@NotNull @Min(0) Long version){} record FeedbackRequest(@NotBlank @Size(max=2000) String body){} record Response(UUID id,UUID requestId,UUID caregiverMemberId,CareAssignmentStatus status,Instant createdAt,Instant updatedAt,long version){} record FeedbackResponse(UUID id,UUID assignmentId,UUID authorMemberId,String body,Instant createdAt){}
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import java.time.Instant;
+import java.util.*;
+import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestController
+@RequestMapping("/api/v1/care")
+class CareAssignmentController {
+  private final CareAssignmentService service;
+
+  CareAssignmentController(CareAssignmentService s) {
+    service = s;
+  }
+
+  @PostMapping("/requests/{requestId}/applications/{applicationId}/accept")
+  Response accept(
+      @AuthenticationPrincipal UserDetails p,
+      @PathVariable UUID requestId,
+      @PathVariable UUID applicationId,
+      @Valid @RequestBody VersionRequest r) {
+    try {
+      return response(service.accept(member(p), requestId, applicationId, r.version()));
+    } catch (NoSuchElementException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (SecurityException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } catch (IllegalStateException e) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+    }
+  }
+
+  @PatchMapping("/assignments/{assignmentId}/status")
+  Response status(
+      @AuthenticationPrincipal UserDetails p,
+      @PathVariable UUID assignmentId,
+      @Valid @RequestBody DecisionRequest r) {
+    try {
+      return response(service.transition(member(p), assignmentId, r.status(), r.version()));
+    } catch (NoSuchElementException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (SecurityException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } catch (IllegalStateException e) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+    }
+  }
+
+  @PostMapping("/assignments/{assignmentId}/feedback")
+  FeedbackResponse feedback(
+      @AuthenticationPrincipal UserDetails p,
+      @PathVariable UUID assignmentId,
+      @Valid @RequestBody FeedbackRequest r) {
+    try {
+      CareFeedbackEntity f = service.feedback(member(p), assignmentId, r.body());
+      return new FeedbackResponse(
+          f.getId(), f.getAssignmentId(), f.getAuthorMemberId(), f.getBody(), f.getCreatedAt());
+    } catch (NoSuchElementException e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (SecurityException e) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } catch (IllegalStateException e) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+    }
+  }
+
+  private static UUID member(UserDetails p) {
+    try {
+      return UUID.fromString(p.getUsername());
+    } catch (Exception e) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    }
+  }
+
+  private static Response response(CareAssignmentEntity a) {
+    return new Response(
+        a.getId(),
+        a.getRequestId(),
+        a.getCaregiverMemberId(),
+        a.getStatus(),
+        a.getCreatedAt(),
+        a.getUpdatedAt(),
+        a.getVersion());
+  }
+
+  record VersionRequest(@NotNull @Min(0) Long version) {}
+
+  record DecisionRequest(@NotNull CareAssignmentStatus status, @NotNull @Min(0) Long version) {}
+
+  record FeedbackRequest(@NotBlank @Size(max = 2000) String body) {}
+
+  record Response(
+      UUID id,
+      UUID requestId,
+      UUID caregiverMemberId,
+      CareAssignmentStatus status,
+      Instant createdAt,
+      Instant updatedAt,
+      long version) {}
+
+  record FeedbackResponse(
+      UUID id, UUID assignmentId, UUID authorMemberId, String body, Instant createdAt) {}
 }

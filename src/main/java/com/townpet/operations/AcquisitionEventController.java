@@ -25,8 +25,13 @@ class AcquisitionEventController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   void record(@Valid @RequestBody EventRequest request) {
     try {
-      events.save(new AcquisitionEventEntity(UuidV7.randomUuid(), request.eventName(), request.route(),
-          hash(request.anonymousKey()), request.clientEventId()));
+      events.save(
+          new AcquisitionEventEntity(
+              UuidV7.randomUuid(),
+              request.eventName(),
+              request.route(),
+              hash(request.anonymousKey()),
+              request.clientEventId()));
     } catch (DataIntegrityViolationException ignored) {
       // Replayed client event is already recorded; keep the endpoint idempotent.
     }
