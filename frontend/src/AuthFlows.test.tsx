@@ -58,9 +58,14 @@ describe("Credentials journeys", () => {
           response({
             id: "00000000-0000-4000-8000-000000000201",
             nickname: "demo-member-1",
+            role: "MEMBER",
             bio: null,
             neighborhoodId: null,
             pets: [],
+            showPublicPosts: true,
+            showPublicComments: true,
+            showPublicPets: true,
+            showPublicReactions: true,
           }),
         );
       }
@@ -86,6 +91,6 @@ describe("Credentials journeys", () => {
       await screen.findByRole("heading", { name: "내 동네와 반려동물 설정" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "서울 마포구" })).toBeInTheDocument();
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
   });
 });

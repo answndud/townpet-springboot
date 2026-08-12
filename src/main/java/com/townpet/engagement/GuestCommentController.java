@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.MemberOrAnonymousOnly;
 import com.townpet.identity.GuestStepUpController;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -27,6 +28,7 @@ class GuestCommentController {
   }
 
   @PostMapping
+  @MemberOrAnonymousOnly
   @ResponseStatus(HttpStatus.CREATED)
   Response create(
       @PathVariable UUID publicationId,
