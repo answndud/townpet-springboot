@@ -10,8 +10,9 @@ const labels: Record<string, string> = { "care-feedbacks": "돌봄 피드백", "
 export default function AdminModeratorCasePage({ initialQueue }: { initialQueue?: string }) {
   const { queue: routeQueue } = useParams();
   const queue = routeQueue ?? initialQueue ?? "care-feedbacks";
+  const queuePath = queue === "moderation/direct" ? queue : encodeURIComponent(queue);
   const navigate = useNavigate();
-  const { data: items, error: requestError, loading, retry } = useAbortableRequest<CaseItem[]>((signal) => apiFetch<CaseItem[]>(`/api/admin/${encodeURIComponent(queue)}`, { signal }), [queue]);
+  const { data: items, error: requestError, loading, retry } = useAbortableRequest<CaseItem[]>((signal) => apiFetch<CaseItem[]>(`/api/admin/${queuePath}`, { signal }), [queuePath]);
   const [memberId, setMemberId] = useState("");
   const [reason, setReason] = useState("");
   const [pendingCaseId, setPendingCaseId] = useState<string | null>(null);
@@ -34,7 +35,7 @@ export default function AdminModeratorCasePage({ initialQueue }: { initialQueue?
     setActionError(null);
     setNotice(null);
     try {
-      const updated = await apiMutate<CaseItem>(`/api/admin/${encodeURIComponent(queue)}/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status }) });
+      const updated = await apiMutate<CaseItem>(`/api/admin/${queuePath}/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status }) });
       void updated;
       retry();
     } catch (requestError) {
