@@ -11,5 +11,5 @@ interface ReactionRepository extends JpaRepository<ReactionEntity, UUID> {
 
   long countByPublicationIdAndType(UUID publicationId, ReactionType type);
 
-  List<ReactionEntity> findByAuthorMemberIdOrderByCreatedAtDesc(UUID authorMemberId);
+  List<ReactionEntity> findTop100ByAuthorMemberIdOrderByCreatedAtDescIdDesc(UUID authorMemberId);
 }

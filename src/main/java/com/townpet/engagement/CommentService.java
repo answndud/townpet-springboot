@@ -66,7 +66,7 @@ class CommentService {
   @Transactional(readOnly = true)
   List<CommentEntity> list(UUID publicationId, @Nullable UUID viewerMemberId) {
     requireAccessiblePublication(publicationId, viewerMemberId);
-    return comments.findByPublicationIdAndLifecycleOrderByCreatedAtAscIdAsc(
+    return comments.findTop500ByPublicationIdAndLifecycleOrderByCreatedAtAscIdAsc(
         publicationId, CommentLifecycle.ACTIVE);
   }
 

@@ -45,14 +45,15 @@ DELETE FROM engagement_bookmark WHERE publication_id IN ('00000000-0000-4000-800
 DELETE FROM engagement_comment WHERE id IN ('00000000-0000-4000-8000-000000006103', '00000000-0000-4000-8000-000000006102', '00000000-0000-4000-8000-000000006101');
 DELETE FROM engagement_reaction WHERE id IN ('00000000-0000-4000-8000-000000005101', '00000000-0000-4000-8000-000000005102');
 DELETE FROM engagement_bookmark WHERE id IN ('00000000-0000-4000-8000-000000004101');
+DELETE FROM publication_metric WHERE publication_id IN ('00000000-0000-4000-8000-000000003101', '00000000-0000-4000-8000-000000003102');
 DELETE FROM publication WHERE id IN ('00000000-0000-4000-8000-000000003101', '00000000-0000-4000-8000-000000003102');
 
 -- Two posts in the community feed. These are the records used to test comments,
 -- replies, likes and bookmarks from the browser.
 INSERT INTO publication (id, author_member_id, type, scope, neighborhood_id, title, body, lifecycle, created_at, updated_at, version)
 VALUES
-  ('00000000-0000-4000-8000-000000003101', '00000000-0000-4000-8000-000000000201', 'FREE_BOARD', 'LOCAL', '00000000-0000-4000-8000-000000000101', '망원 산책 초보자를 위한 저녁 코스', '해 질 무렵 걷기 좋은 구간과 물을 챙길 때의 팁을 정리했습니다. 처음 함께 걷는 분들도 편하게 의견을 남겨 주세요.', 'ACTIVE', '2026-08-10T10:00:00+09:00', '2026-08-10T10:00:00+09:00', 0),
-  ('00000000-0000-4000-8000-000000003102', '00000000-0000-4000-8000-000000000202', 'FREE_BOARD', 'LOCAL', '00000000-0000-4000-8000-000000000102', '반려동물과 이사할 때 먼저 확인한 것들', '이동장, 동물병원 기록, 새 동네 산책로를 준비한 순서를 공유합니다. 다른 보호자님의 체크리스트도 궁금해요.', 'ACTIVE', '2026-08-09T09:30:00+09:00', '2026-08-09T09:30:00+09:00', 0);
+  ('00000000-0000-4000-8000-000000003101', '00000000-0000-4000-8000-000000000201', 'FREE_BOARD', 'GLOBAL', NULL, '망원 산책 초보자를 위한 저녁 코스', '해 질 무렵 걷기 좋은 구간과 물을 챙길 때의 팁을 정리했습니다. 처음 함께 걷는 분들도 편하게 의견을 남겨 주세요.', 'ACTIVE', '2026-08-10T10:00:00+09:00', '2026-08-10T10:00:00+09:00', 0),
+  ('00000000-0000-4000-8000-000000003102', '00000000-0000-4000-8000-000000000202', 'FREE_BOARD', 'GLOBAL', NULL, '반려동물과 이사할 때 먼저 확인한 것들', '이동장, 동물병원 기록, 새 동네 산책로를 준비한 순서를 공유합니다. 다른 보호자님의 체크리스트도 궁금해요.', 'ACTIVE', '2026-08-09T09:30:00+09:00', '2026-08-09T09:30:00+09:00', 0);
 
 INSERT INTO engagement_comment (id, publication_id, author_member_id, parent_comment_id, body, lifecycle, created_at, updated_at, version)
 VALUES

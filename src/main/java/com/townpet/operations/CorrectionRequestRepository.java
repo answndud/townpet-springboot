@@ -5,5 +5,5 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CorrectionRequestRepository extends JpaRepository<CorrectionRequestEntity, UUID> {
-  List<CorrectionRequestEntity> findAllByOrderByCreatedAtDesc();
+  List<CorrectionRequestEntity> findTop100ByOrderByCreatedAtDescIdDesc();
 }

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.lang.Nullable;
@@ -24,9 +25,13 @@ public class GuestStepUpController {
   public static final String GUEST_COOKIE = "TOWNPET_GUEST_ID";
   static final String STEP_UP_COOKIE = "TOWNPET_STEP_UP";
   private final GuestStepUpService steps;
+  private final boolean secureCookies;
 
-  GuestStepUpController(GuestStepUpService steps) {
+  GuestStepUpController(
+      GuestStepUpService steps,
+      @Value("${townpet.security.secure-cookies:false}") boolean secureCookies) {
     this.steps = steps;
+    this.secureCookies = secureCookies;
   }
 
   @PostMapping("/authors")
@@ -40,6 +45,7 @@ public class GuestStepUpController {
         ResponseCookie.from(GUEST_COOKIE, guest.getPublicId().toString())
             .httpOnly(true)
             .sameSite("Lax")
+            .secure(secureCookies)
             .path("/")
             .maxAge(Duration.ofDays(30))
             .build()
@@ -61,6 +67,7 @@ public class GuestStepUpController {
         ResponseCookie.from(STEP_UP_COOKIE, challenge.rawToken())
             .httpOnly(true)
             .sameSite("Lax")
+            .secure(secureCookies)
             .path("/")
             .maxAge(Duration.ofMinutes(5))
             .build()
@@ -80,6 +87,7 @@ public class GuestStepUpController {
         ResponseCookie.from(STEP_UP_COOKIE, "")
             .httpOnly(true)
             .sameSite("Lax")
+            .secure(secureCookies)
             .path("/")
             .maxAge(Duration.ZERO)
             .build()

@@ -29,7 +29,8 @@ class PublicMemberPublicationController {
     }
     if (!members.isPublicPosts(memberId)) return List.of();
     return publications
-        .findByAuthorMemberIdAndLifecycleOrderByCreatedAtDesc(memberId, PublicationLifecycle.ACTIVE)
+        .findTop100ByAuthorMemberIdAndLifecycleOrderByCreatedAtDescIdDesc(
+            memberId, PublicationLifecycle.ACTIVE)
         .stream()
         .map(PublicMemberPublicationController::response)
         .toList();

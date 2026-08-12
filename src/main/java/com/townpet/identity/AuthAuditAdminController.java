@@ -19,7 +19,7 @@ class AuthAuditAdminController {
 
   @GetMapping
   List<Response> list() {
-    return audits.findAll().stream()
+    return audits.findTop100ByOrderByCreatedAtDescIdDesc().stream()
         .map(audit -> new Response(audit.getMemberId(), audit.getAction(), audit.getCreatedAt()))
         .toList();
   }

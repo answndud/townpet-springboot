@@ -10,7 +10,7 @@ interface PublicationRepository extends JpaRepository<PublicationEntity, UUID> {
 
   boolean existsByIdAndLifecycle(UUID id, PublicationLifecycle lifecycle);
 
-  List<PublicationEntity> findByAuthorMemberIdAndLifecycleOrderByCreatedAtDesc(
+  List<PublicationEntity> findTop100ByAuthorMemberIdAndLifecycleOrderByCreatedAtDescIdDesc(
       UUID authorMemberId, PublicationLifecycle lifecycle);
 
   List<PublicationEntity> findByAuthorMemberId(UUID authorMemberId);

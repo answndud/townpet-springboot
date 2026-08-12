@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 class VolunteerService {
+  private static final int PUBLIC_LIMIT = 100;
   private final JdbcTemplate jdbc;
 
   VolunteerService(JdbcTemplate jdbc) {
@@ -19,8 +20,9 @@ class VolunteerService {
   @Transactional(readOnly = true)
   List<Opportunity> list() {
     return jdbc.query(
-        "SELECT id,publisher_member_id,title,description,organization,location,starts_at,capacity,status,created_at,updated_at,version FROM volunteer_opportunity WHERE status IN ('OPEN','FULL') ORDER BY starts_at,id",
-        (rs, n) -> map(rs));
+        "SELECT id,publisher_member_id,title,description,organization,location,starts_at,capacity,status,created_at,updated_at,version FROM volunteer_opportunity WHERE status IN ('OPEN','FULL') ORDER BY starts_at,id LIMIT ?",
+        (rs, n) -> map(rs),
+        PUBLIC_LIMIT);
   }
 
   @Transactional(readOnly = true)
