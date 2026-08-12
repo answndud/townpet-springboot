@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
-  memberApi,
   publicationApi,
-  type Member,
   type Publication,
 } from "../../api/client";
+import { useAuth } from "../../auth/AuthContext";
+import { isAbortError } from "../../hooks/useAbortableRequest";
 
 type PublicationFeedPageProps = {
   memberView: boolean;
@@ -30,27 +30,29 @@ function formatFeedDate(value: string) {
 
 export default function PublicationFeedPage({ memberView }: PublicationFeedPageProps) {
   const navigate = useNavigate();
+  const { member, status: authStatus } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
   const scope = memberView && searchParams.get("scope") === "LOCAL" ? "LOCAL" : "ALL";
-  const [member, setMember] = useState<Member | null>(null);
   const [items, setItems] = useState<Publication[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadMoreController = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
-    const memberRequest = memberApi.current(controller.signal).catch((requestError: unknown) => {
-      if (memberView) throw requestError;
-      return null;
-    });
+    if (memberView && authStatus === "loading") return () => controller.abort();
+    if (memberView && authStatus === "anonymous") {
+      navigate("/login?next=/feed", { replace: true });
+      return () => controller.abort();
+    }
 
     Promise.all([
-      memberRequest,
+      Promise.resolve(member),
       publicationApi.feed({
         audience: memberView ? "VIEWER" : "GLOBAL",
         query,
@@ -60,7 +62,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
     ])
       .then(([currentMember, page]) => {
         if (!active) return;
-        setMember(currentMember);
+        if (memberView && !currentMember) return;
         setItems(page.items);
         setNextCursor(page.page.nextCursor);
         setHasNext(page.page.hasNext);
@@ -83,10 +85,13 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
       active = false;
       controller.abort();
     };
-  }, [memberView, navigate, query, scope]);
+  }, [authStatus, member, memberView, navigate, query, scope]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
+    loadMoreController.current?.abort();
+    const controller = new AbortController();
+    loadMoreController.current = controller;
     setLoadingMore(true);
     setError(null);
     try {
@@ -95,6 +100,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
         cursor: nextCursor,
         query,
         scope,
+        signal: controller.signal,
       });
       setItems((current) => {
         const existingIds = new Set(current.map((item) => item.id));
@@ -102,12 +108,14 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
       });
       setNextCursor(page.page.nextCursor);
       setHasNext(page.page.hasNext);
-    } catch {
-      setError("다음 글을 불러오지 못했습니다.");
+    } catch (requestError) {
+      if (!isAbortError(requestError)) setError("다음 글을 불러오지 못했습니다.");
     } finally {
-      setLoadingMore(false);
+      if (loadMoreController.current === controller) setLoadingMore(false);
     }
   }
+
+  useEffect(() => () => loadMoreController.current?.abort(), []);
 
   if (loading) {
     return (
