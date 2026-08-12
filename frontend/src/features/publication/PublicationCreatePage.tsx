@@ -1,14 +1,15 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   catalogApi,
   publicationApi,
   mediaApi,
   type Neighborhood,
+  type Publication,
   type PublicationScope,
 } from "../../api/client";
-import { ANIMAL_INTEREST_GROUPS } from "../member/AnimalInterestMenu";
+import AnimalCommunitySelector, { initialAnimalCommunityCodes } from "../member/AnimalCommunitySelector";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
 
@@ -17,13 +18,17 @@ const BODY_MAX_LENGTH = 20_000;
 
 export default function PublicationCreatePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { member, status: authStatus } = useAuth();
   const { data: neighborhoods, error: neighborhoodError, loading: neighborhoodsLoading, retry: retryNeighborhoods } = useAbortableRequest<Neighborhood[]>((signal) => catalogApi.neighborhoods(signal), []);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [scope, setScope] = useState<PublicationScope>("GLOBAL");
-  const [animalInterestCode, setAnimalInterestCode] = useState("");
+  const initialBoard = searchParams.get("board") ?? "";
+  const boardType: Publication["type"] = initialBoard === "questions" ? "QA_QUESTION" : initialBoard === "showcase" ? "PET_SHOWCASE" : initialBoard === "product-reviews" ? "PRODUCT_REVIEW" : "FREE_BOARD";
+  const [publicationType] = useState<Publication["type"]>(boardType);
+  const [animalCommunityCodes, setAnimalCommunityCodes] = useState<string[]>(() => initialAnimalCommunityCodes(searchParams));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [partialPublicationId, setPartialPublicationId] = useState<string | null>(null);
@@ -55,9 +60,12 @@ export default function PublicationCreatePage() {
       const publication = await publicationApi.create({
         title: title.trim(),
         body: body.trim(),
+        ...(publicationType !== "FREE_BOARD" ? { type: publicationType } : {}),
         scope,
         ...(scope === "LOCAL" && neighborhood ? { neighborhoodId: neighborhood.id } : {}),
-        ...(animalInterestCode ? { animalInterestCode } : {}),
+        ...(animalCommunityCodes.length
+          ? { animalInterestCode: animalCommunityCodes[0], animalCommunityCodes }
+          : {}),
       });
       createdPublicationId = publication.id;
       if (file) {
@@ -131,19 +139,14 @@ export default function PublicationCreatePage() {
             <div className="publication-section-title">글 정보</div>
             <label>
               분류
-              <select value="FREE_BOARD" disabled>
+              <select value={publicationType} disabled>
                 <option value="FREE_BOARD">자유게시판</option>
+                <option value="QA_QUESTION">질문·답변</option>
+                <option value="PET_SHOWCASE">반려동물 자랑</option>
+                <option value="PRODUCT_REVIEW">용품 후기</option>
               </select>
             </label>
-            <label>
-              관심 동물 분류 (선택)
-              <select value={animalInterestCode} onChange={(event) => setAnimalInterestCode(event.target.value)}>
-                <option value="">일반 글</option>
-                {ANIMAL_INTEREST_GROUPS.flatMap((group) => group.options).map((option) => (
-                  <option key={option.code} value={option.code}>{option.label}</option>
-                ))}
-              </select>
-            </label>
+            <AnimalCommunitySelector value={animalCommunityCodes} onChange={setAnimalCommunityCodes} />
             <fieldset className="publication-scope-field">
               <legend>공개 범위</legend>
               <label className="publication-radio">

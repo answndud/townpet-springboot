@@ -86,13 +86,14 @@ export type PublicationScope = "LOCAL" | "GLOBAL";
 
 export type Publication = {
   id: string;
-  type: "FREE_BOARD";
+  type: "FREE_BOARD" | "QA_QUESTION" | "PET_SHOWCASE" | "PRODUCT_REVIEW";
   title: string;
   body: string;
   scope: PublicationScope;
   authorId: string;
   neighborhoodId: string | null;
   animalInterestCode?: string | null;
+  animalCommunityCodes?: string[];
   lifecycle: "ACTIVE" | "DELETED";
   createdAt: string;
   updatedAt: string;
@@ -109,6 +110,7 @@ export type FeedItem = {
   authorId: string | null;
   neighborhoodId: string | null;
   animalInterestCode?: string | null;
+  animalCode?: string | null;
   status: string;
   lifecycle: string;
   createdAt: string;
@@ -162,6 +164,7 @@ export type LocalResource = {
   updatedAt: string;
 };
 export type Gathering = { id: string; hostMemberId: string; title: string; description: string; location: string; startsAt: string; capacity: number; participantCount: number; status: "ACTIVE" | "CANCELLED"; joined: boolean; version: number };
+export type AdoptionListing = { id: string; publisherMemberId: string; neighborhoodId: string | null; title: string; description: string; species: string; breed: string | null; status: string; createdAt: string; updatedAt: string; version: number };
 export type TrustReportReason = "SPAM" | "ABUSE" | "PRIVACY" | "ILLEGAL" | "OTHER";
 export type Notification = { id: string; type: string; title: string; body: string; readAt: string | null; createdAt: string };
 export type PolicyDocument = { key: string; title: string; body: string; updatedAt: string };
@@ -169,9 +172,11 @@ export type PolicyDocument = { key: string; title: string; body: string; updated
 export type CreatePublicationInput = {
   title: string;
   body: string;
+  type?: Publication["type"];
   scope: PublicationScope;
   neighborhoodId?: string;
   animalInterestCode?: string | null;
+  animalCommunityCodes?: string[];
 };
 
 export type EditPublicationInput = CreatePublicationInput & {
@@ -191,6 +196,11 @@ export type FeedPage = {
   };
 };
 
+export type CommunityFeedPage = FeedPage & {
+  animalCode: string;
+  board: string;
+};
+
 export type MarketplaceListingKind = "SELL" | "RENT" | "SHARE" | "GROUP_BUY";
 export type MarketplaceListingStatus = "AVAILABLE" | "RESERVED" | "COMPLETED" | "CANCELLED";
 export type MarketplaceListing = {
@@ -201,6 +211,7 @@ export type MarketplaceListing = {
   title: string;
   description: string;
   priceKrw: number | null;
+  animalCommunityCodes?: string[];
   createdAt: string;
   updatedAt: string;
   version: number;
@@ -211,6 +222,7 @@ export type CreateMarketplaceListingInput = {
   title: string;
   description: string;
   priceKrw: number | null;
+  animalCommunityCodes?: string[];
 };
 
 export class ApiError extends Error {
@@ -479,10 +491,16 @@ export const localResourceApi = {
 export const gatheringApi = {
   list(signal?: AbortSignal) { return apiFetch<Gathering[]>("/api/v1/gatherings", { signal }); },
   detail(id: string, signal?: AbortSignal) { return apiFetch<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}`, { signal }); },
-  create(input: { title: string; description: string; location: string; startsAt: string; capacity: number }) { return mutate<Gathering>("/api/v1/gatherings", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
+  create(input: { title: string; description: string; location: string; startsAt: string; capacity: number; animalCommunityCodes?: string[] }) { return mutate<Gathering>("/api/v1/gatherings", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
   join(id: string) { return mutate<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}/participants`, { method: "POST", headers: jsonHeaders }); },
   leave(id: string) { return mutate<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}/participants/me`, { method: "DELETE", headers: jsonHeaders }); },
   cancel(id: string) { return mutate<Gathering>(`/api/v1/gatherings/${encodeURIComponent(id)}/cancel`, { method: "PATCH", headers: jsonHeaders }); },
+};
+
+export const adoptionApi = {
+  create(input: { title: string; description: string; species: string; breed?: string; neighborhoodId?: string; animalCommunityCodes?: string[] }) {
+    return mutate<AdoptionListing>("/api/v1/adoptions", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) });
+  },
 };
 
 export const trustApi = {
@@ -657,6 +675,34 @@ export const publicationApi = {
   },
 };
 
+export const communityApi = {
+  feed(
+    animalCode: string,
+    board = "all",
+    options: {
+      audience?: "GLOBAL" | "VIEWER";
+      cursor?: string;
+      limit?: number;
+      signal?: AbortSignal;
+      query?: string;
+      scope?: "ALL" | "GLOBAL" | "LOCAL";
+    } = {},
+  ) {
+    const search = new URLSearchParams({
+      audience: options.audience ?? "VIEWER",
+      board,
+      limit: String(options.limit ?? 20),
+      scope: options.scope ?? "ALL",
+    });
+    if (options.cursor) search.set("cursor", options.cursor);
+    if (options.query) search.set("query", options.query);
+    return apiFetch<CommunityFeedPage>(
+      `/api/v1/communities/${encodeURIComponent(animalCode)}/feed?${search}`,
+      { signal: options.signal },
+    );
+  },
+};
+
 export const mediaApi = {
   create(input: { checksumSha256: string; contentType: string; byteSize: number }) { return mutate<MediaUpload>("/api/v1/media/uploads", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
   uploadContent(id: string, file: File) { const body = new FormData(); body.append("file", file); return mutate<MediaUpload>(`/api/v1/media/uploads/${encodeURIComponent(id)}/content`, { method: "PUT", body }); },
@@ -701,15 +747,15 @@ export const careApi = {
   detail(id: string, signal?: AbortSignal) { return apiFetch<CareRequest>(`/api/v1/care/requests/${encodeURIComponent(id)}`, { signal }); },
   applications(id: string, signal?: AbortSignal) { return apiFetch<CareApplication[]>(`/api/v1/care/requests/${encodeURIComponent(id)}/applications`, { signal }); },
   assignment(id: string, signal?: AbortSignal) { return apiFetch<CareAssignment>(`/api/v1/care/requests/${encodeURIComponent(id)}/assignment`, { signal }); },
-  create(input: { title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint?: string }) { return mutate<CareRequest>("/api/v1/care/requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
+  create(input: { title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint?: string; animalCommunityCodes?: string[] }) { return mutate<CareRequest>("/api/v1/care/requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
   cancel(id: string, version: number) { return mutate<CareRequest>(`/api/v1/care/requests/${encodeURIComponent(id)}/cancel`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ version }) }); },
   apply(requestId: string, message: string) { return mutate<CareApplication>(`/api/v1/care/requests/${encodeURIComponent(requestId)}/applications`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ message }) }); },
   accept(requestId: string, applicationId: string, version: number) { return mutate<CareAssignment>(`/api/v1/care/requests/${encodeURIComponent(requestId)}/applications/${encodeURIComponent(applicationId)}/accept`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ version }) }); },
   transition(assignmentId: string, status: CareAssignment["status"], version: number) { return mutate<CareAssignment>(`/api/v1/care/assignments/${encodeURIComponent(assignmentId)}/status`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ status, version }) }); },
   feedback(assignmentId: string, body: string) { return mutate(`/api/v1/care/assignments/${encodeURIComponent(assignmentId)}/feedback`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ body }) }); },
 };
-export const volunteerApi = { list(signal?: AbortSignal) { return apiFetch<VolunteerOpportunity[]>("/api/v1/volunteer", { signal }); }, apply(id: string, message: string) { return mutate<void>(`/api/v1/volunteer/${encodeURIComponent(id)}/applications`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ message }) }); } };
-export const hospitalReviewApi = { list(query = "", signal?: AbortSignal) { const params = query ? `?hospital=${encodeURIComponent(query)}` : ""; return apiFetch<HospitalReview[]>(`/api/v1/hospital-reviews${params}`, { signal }); }, create(input: { hospitalName: string; address: string; rating: number; body: string }) { return mutate<HospitalReview>("/api/v1/hospital-reviews", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); }, flag(id: string, input: { reason: string; detail?: string }) { return mutate(`/api/v1/hospital-reviews/${encodeURIComponent(id)}/flags`, { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); } };
+export const volunteerApi = { list(signal?: AbortSignal) { return apiFetch<VolunteerOpportunity[]>("/api/v1/volunteer", { signal }); }, apply(id: string, message: string) { return mutate<void>(`/api/v1/volunteer/${encodeURIComponent(id)}/applications`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ message }) }); }, create(input: { title: string; description: string; organization: string; location: string; startsAt: string; capacity: number; animalCommunityCodes?: string[] }) { return mutate<VolunteerOpportunity>("/api/v1/volunteer", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); } };
+export const hospitalReviewApi = { list(query = "", signal?: AbortSignal) { const params = query ? `?hospital=${encodeURIComponent(query)}` : ""; return apiFetch<HospitalReview[]>(`/api/v1/hospital-reviews${params}`, { signal }); }, create(input: { hospitalName: string; address: string; rating: number; body: string; animalCommunityCodes?: string[] }) { return mutate<HospitalReview>("/api/v1/hospital-reviews", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); }, flag(id: string, input: { reason: string; detail?: string }) { return mutate(`/api/v1/hospital-reviews/${encodeURIComponent(id)}/flags`, { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); } };
 
 export const marketplaceApi = {
   list(kind?: MarketplaceListingKind, limit = 20, signal?: AbortSignal) {
@@ -774,6 +820,7 @@ export const lostFoundApi = {
     lastSeenAt: string;
     latitude: number;
     longitude: number;
+    animalCommunityCodes?: string[];
   }) {
     return mutate<LostFoundAlert>("/api/v1/lost-found/alerts", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) });
   },

@@ -193,7 +193,11 @@ describe("Publication journeys", () => {
   });
 
   it("lets the author edit and delete with the loaded publication version", async () => {
-    let currentPublication = publication();
+    let currentPublication = {
+      ...publication(),
+      animalInterestCode: "DOG",
+      animalCommunityCodes: ["DOG", "CAT"],
+    };
     const fetchMock = vi.fn<typeof fetch>((input, init) => {
       const path = String(input);
       if (path.endsWith("/api/v1/members/me")) {
@@ -257,6 +261,8 @@ describe("Publication journeys", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "게시글 수정" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "강아지" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "고양이" })).toBeChecked();
     fireEvent.change(screen.getByLabelText("제목"), { target: { value: "수정한 산책 정보" } });
     fireEvent.change(screen.getByLabelText("본문"), { target: { value: "수정한 공원 정보입니다." } });
     fireEvent.click(screen.getByRole("button", { name: "변경 사항 저장" }));
@@ -269,7 +275,8 @@ describe("Publication journeys", () => {
         body: "수정한 공원 정보입니다.",
         scope: "GLOBAL",
         version: 0,
-        animalInterestCode: null,
+        animalInterestCode: "DOG",
+        animalCommunityCodes: ["DOG", "CAT"],
       }),
     );
 
