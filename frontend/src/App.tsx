@@ -263,6 +263,14 @@ function NonModeratorRoute({ children }: { children: ReactNode }) {
 }
 
 function HomePage() {
+  const [viewerRole, setViewerRole] = useState<Member["role"] | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    memberApi.current(controller.signal).then((member) => setViewerRole(member.role)).catch(() => setViewerRole(null));
+    return () => controller.abort();
+  }, []);
+
   return (
     <main className="page page-home">
       <section className="hero-section">
@@ -276,9 +284,7 @@ function HomePage() {
           <Link className="button button-primary" to="/feed/guest">
             전체 피드
           </Link>
-          <Link className="button button-soft" to="/onboarding">
-            내 동네 설정
-          </Link>
+          {viewerRole !== "MODERATOR" ? <Link className="button button-soft" to="/onboarding">내 동네 설정</Link> : null}
         </div>
       </section>
       <section className="topic-section" aria-labelledby="topic-title">

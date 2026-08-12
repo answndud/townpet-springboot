@@ -15,8 +15,8 @@ const statusLabel = { ACTIVE: "진행 중", RESOLVED: "해결", CLOSED: "종료"
 const dateFormat = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const dateText = (value: string) => dateFormat.format(new Date(value));
 
-function LostFoundHero() {
-  return <header className="lostfound-hero"><div><p className="eyebrow">LOST & FOUND</p><h1>분실·목격 제보</h1><p>근처의 분실·발견 소식을 확인하고, 목격 정보를 안전하게 공유하세요.</p></div><Link className="button button-primary" to="/lost-found/new">제보 등록</Link></header>;
+function LostFoundHero({ canWrite }: { canWrite: boolean }) {
+  return <header className="lostfound-hero"><div><p className="eyebrow">LOST & FOUND</p><h1>분실·목격 제보</h1><p>근처의 분실·발견 소식을 확인하고, 목격 정보를 안전하게 공유하세요.</p></div>{canWrite ? <Link className="button button-primary" to="/lost-found/new">제보 등록</Link> : null}</header>;
 }
 
 export function LostFoundListPage() {
@@ -25,6 +25,7 @@ export function LostFoundListPage() {
   const [longitude, setLongitude] = useState("");
   const [radius, setRadius] = useState("5000");
   const [items, setItems] = useState<LostFoundAlert[]>([]);
+  const [viewerRole, setViewerRole] = useState<Member["role"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,8 +38,37 @@ export function LostFoundListPage() {
     } catch { setError("분실·목격 목록을 불러오지 못했습니다."); } finally { setLoading(false); }
   }
   useEffect(() => { void load(); }, [kind]);
+  useEffect(() => {
+    const controller = new AbortController();
+    memberApi.current(controller.signal).then((member) => setViewerRole(member.role)).catch(() => setViewerRole(null));
+    return () => controller.abort();
+  }, []);
 
-  return <main className="page lostfound-page"><LostFoundHero /><div className="lostfound-toolbar"><div className="lostfound-filters"><button className={!kind ? "market-filter active" : "market-filter"} onClick={() => setKind("")} type="button">전체</button><button className={kind === "LOST" ? "market-filter active" : "market-filter"} onClick={() => setKind("LOST")} type="button">분실</button><button className={kind === "FOUND" ? "market-filter active" : "market-filter"} onClick={() => setKind("FOUND")} type="button">발견</button></div><span className="marketplace-count">{items.length}건</span></div><form className="lostfound-radius" onSubmit={(event) => { event.preventDefault(); void load(); }}><label>위도<input inputMode="decimal" value={latitude} onChange={(event) => setLatitude(event.target.value)} placeholder="예: 37.55" /></label><label>경도<input inputMode="decimal" value={longitude} onChange={(event) => setLongitude(event.target.value)} placeholder="예: 126.91" /></label><label>반경(m)<input type="number" min="1" max="100000" value={radius} onChange={(event) => setRadius(event.target.value)} /></label><button className="button button-soft" type="submit">근처 검색</button></form>{error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}{loading ? <section className="surface-card" role="status">목록을 불러오는 중...</section> : null}{!loading && !items.length ? <section className="surface-card marketplace-empty"><h2>등록된 제보가 없습니다</h2><p>새로운 분실·발견 소식을 등록해 주세요.</p></section> : null}<section className="lostfound-grid" aria-label="분실·목격 목록">{items.map((item) => <Link className="surface-card lostfound-card" key={item.id} to={`/lost-found/${item.id}`}><div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{kindLabel[item.kind]}</span><span className="publication-chip">{statusLabel[item.status]}</span></div><h2>{item.title}</h2><p>{item.description}</p><small>마지막 확인 {dateText(item.lastSeenAt)} · 근사 위치 {item.approximateLocation.latitude.toFixed(3)}, {item.approximateLocation.longitude.toFixed(3)}</small></Link>)}</section></main>;
+  return (
+    <main className="page lostfound-page">
+      <LostFoundHero canWrite={viewerRole !== "MODERATOR"} />
+      <div className="lostfound-toolbar">
+        <div className="lostfound-filters">
+          <button className={!kind ? "market-filter active" : "market-filter"} onClick={() => setKind("")} type="button">전체</button>
+          <button className={kind === "LOST" ? "market-filter active" : "market-filter"} onClick={() => setKind("LOST")} type="button">분실</button>
+          <button className={kind === "FOUND" ? "market-filter active" : "market-filter"} onClick={() => setKind("FOUND")} type="button">발견</button>
+        </div>
+        <span className="marketplace-count">{items.length}건</span>
+      </div>
+      <form className="lostfound-radius" onSubmit={(event) => { event.preventDefault(); void load(); }}>
+        <label>위도<input inputMode="decimal" value={latitude} onChange={(event) => setLatitude(event.target.value)} placeholder="예: 37.55" /></label>
+        <label>경도<input inputMode="decimal" value={longitude} onChange={(event) => setLongitude(event.target.value)} placeholder="예: 126.91" /></label>
+        <label>반경(m)<input type="number" min="1" max="100000" value={radius} onChange={(event) => setRadius(event.target.value)} /></label>
+        <button className="button button-soft" type="submit">근처 검색</button>
+      </form>
+      {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
+      {loading ? <section className="surface-card" role="status">목록을 불러오는 중...</section> : null}
+      {!loading && !items.length ? <section className="surface-card marketplace-empty"><h2>등록된 제보가 없습니다</h2><p>새로운 분실·발견 소식을 등록해 주세요.</p></section> : null}
+      <section className="lostfound-grid" aria-label="분실·목격 목록">
+        {items.map((item) => <Link className="surface-card lostfound-card" key={item.id} to={`/lost-found/${item.id}`}><div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{kindLabel[item.kind]}</span><span className="publication-chip">{statusLabel[item.status]}</span></div><h2>{item.title}</h2><p>{item.description}</p><small>마지막 확인 {dateText(item.lastSeenAt)} · 근사 위치 {item.approximateLocation.latitude.toFixed(3)}, {item.approximateLocation.longitude.toFixed(3)}</small></Link>)}
+      </section>
+    </main>
+  );
 }
 
 export function LostFoundDetailPage() {
