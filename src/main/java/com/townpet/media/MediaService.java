@@ -6,6 +6,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import javax.imageio.ImageIO;
+import java.io.ByteArrayInputStream;
+import java.awt.image.BufferedImage;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,12 +18,14 @@ class MediaService implements MediaOperations {
   private final UploadAssetRepository assets;
   private final PublicationAccess publications;
   private final ObjectStoragePort storage;
+  private final JdbcTemplate jdbc;
 
   MediaService(
-      UploadAssetRepository assets, PublicationAccess publications, ObjectStoragePort storage) {
+      UploadAssetRepository assets, PublicationAccess publications, ObjectStoragePort storage, JdbcTemplate jdbc) {
     this.assets = assets;
     this.publications = publications;
     this.storage = storage;
+    this.jdbc = jdbc;
   }
 
   @Transactional
@@ -56,6 +62,16 @@ class MediaService implements MediaOperations {
     }
     if (!asset.getContentType().equalsIgnoreCase(contentType) || asset.getByteSize() != content.length) {
       throw new MediaObjectMismatchException();
+    }
+    if (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("image/")) {
+      try {
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(content));
+        if (image == null || image.getWidth() > 8000 || image.getHeight() > 8000) {
+          throw new MediaObjectMismatchException();
+        }
+      } catch (java.io.IOException exception) {
+        throw new MediaObjectMismatchException();
+      }
     }
     storage.store(asset.getObjectKey(), contentType, content);
     StoredObject stored = storage.inspect(asset.getObjectKey()).orElseThrow(MediaObjectNotFoundException::new);
@@ -114,6 +130,10 @@ class MediaService implements MediaOperations {
             .activeAuthorMemberId(publicationId)
             .orElseThrow(MediaPublicationNotFoundException::new);
     if (!authorId.equals(ownerMemberId)) throw new MediaOwnershipException();
+    Integer attachmentCount = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM upload_asset WHERE publication_id = ? AND status = 'ATTACHED'",
+        Integer.class, publicationId);
+    if (attachmentCount != null && attachmentCount >= 5) throw new MediaAttachmentLimitException();
     asset.attach(publicationId, Instant.now());
     return assets.saveAndFlush(asset);
   }
@@ -128,6 +148,8 @@ class MediaService implements MediaOperations {
 final class MediaAssetNotFoundException extends RuntimeException {}
 
 final class MediaInputNotAllowedException extends RuntimeException {}
+
+final class MediaAttachmentLimitException extends RuntimeException {}
 
 final class MediaAssetStateException extends RuntimeException {}
 
