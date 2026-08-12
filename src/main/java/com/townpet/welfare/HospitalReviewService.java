@@ -1,9 +1,83 @@
 package com.townpet.welfare;
-import com.townpet.common.UuidV7; import java.sql.*; import java.time.Instant; import java.util.*; import org.springframework.jdbc.core.JdbcTemplate; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
-@Service class HospitalReviewService { private final JdbcTemplate jdbc; HospitalReviewService(JdbcTemplate jdbc){this.jdbc=jdbc;}
- @Transactional(readOnly=true) List<Review> list(String hospital){String clause=hospital==null?"":" WHERE hospital_name ILIKE ?";Object[] args=hospital==null?new Object[]{}:new Object[]{"%"+hospital+"%"};return jdbc.query("SELECT id,author_member_id,hospital_name,address,rating,body,created_at,updated_at,version FROM hospital_review"+clause+" ORDER BY created_at DESC,id DESC",(rs,n)->map(rs),args);}
- @Transactional(readOnly=true) Optional<Review> find(UUID id){return jdbc.query("SELECT id,author_member_id,hospital_name,address,rating,body,created_at,updated_at,version FROM hospital_review WHERE id=?",(rs,n)->map(rs),id).stream().findFirst();}
- @Transactional Review create(UUID author,String name,String address,int rating,String body){UUID id=UuidV7.randomUuid();try{jdbc.update("INSERT INTO hospital_review(id,author_member_id,hospital_name,address,rating,body) VALUES(?,?,?,?,?,?)",id,author,name.trim(),address.trim(),rating,body.trim());}catch(org.springframework.dao.DataIntegrityViolationException e){throw new IllegalStateException("Already reviewed this hospital");}return find(id).orElseThrow();}
- private static Review map(ResultSet r)throws SQLException{return new Review(r.getObject("id",UUID.class),r.getObject("author_member_id",UUID.class),r.getString("hospital_name"),r.getString("address"),r.getInt("rating"),r.getString("body"),r.getTimestamp("created_at").toInstant(),r.getTimestamp("updated_at").toInstant(),r.getLong("version"));}
- record Review(UUID id,UUID authorMemberId,String hospitalName,String address,int rating,String body,Instant createdAt,Instant updatedAt,long version){}
+
+import com.townpet.common.UuidV7;
+import java.sql.*;
+import java.time.Instant;
+import java.util.*;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+class HospitalReviewService {
+  private final JdbcTemplate jdbc;
+
+  HospitalReviewService(JdbcTemplate jdbc) {
+    this.jdbc = jdbc;
+  }
+
+  @Transactional(readOnly = true)
+  List<Review> list(String hospital) {
+    String clause = hospital == null ? "" : " WHERE hospital_name ILIKE ?";
+    Object[] args = hospital == null ? new Object[] {} : new Object[] {"%" + hospital + "%"};
+    return jdbc.query(
+        "SELECT id,author_member_id,hospital_name,address,rating,body,created_at,updated_at,version FROM hospital_review"
+            + clause
+            + " ORDER BY created_at DESC,id DESC",
+        (rs, n) -> map(rs),
+        args);
+  }
+
+  @Transactional(readOnly = true)
+  Optional<Review> find(UUID id) {
+    return jdbc
+        .query(
+            "SELECT id,author_member_id,hospital_name,address,rating,body,created_at,updated_at,version FROM hospital_review WHERE id=?",
+            (rs, n) -> map(rs),
+            id)
+        .stream()
+        .findFirst();
+  }
+
+  @Transactional
+  Review create(UUID author, String name, String address, int rating, String body) {
+    UUID id = UuidV7.randomUuid();
+    try {
+      jdbc.update(
+          "INSERT INTO hospital_review(id,author_member_id,hospital_name,address,rating,body) VALUES(?,?,?,?,?,?)",
+          id,
+          author,
+          name.trim(),
+          address.trim(),
+          rating,
+          body.trim());
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      throw new IllegalStateException("Already reviewed this hospital");
+    }
+    return find(id).orElseThrow();
+  }
+
+  private static Review map(ResultSet r) throws SQLException {
+    return new Review(
+        r.getObject("id", UUID.class),
+        r.getObject("author_member_id", UUID.class),
+        r.getString("hospital_name"),
+        r.getString("address"),
+        r.getInt("rating"),
+        r.getString("body"),
+        r.getTimestamp("created_at").toInstant(),
+        r.getTimestamp("updated_at").toInstant(),
+        r.getLong("version"));
+  }
+
+  record Review(
+      UUID id,
+      UUID authorMemberId,
+      String hospitalName,
+      String address,
+      int rating,
+      String body,
+      Instant createdAt,
+      Instant updatedAt,
+      long version) {}
 }

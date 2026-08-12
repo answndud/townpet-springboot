@@ -16,6 +16,12 @@ class NotificationEventHandler {
   @ApplicationModuleListener
   void handle(NotificationEvent event) {
     if (event.recipientMemberId().equals(event.actorMemberId())) return;
-    notifications.save(new NotificationEntity(UuidV7.randomUuid(), event.recipientMemberId(), event.type(), event.title(), event.body()));
+    notifications.save(
+        new NotificationEntity(
+            UuidV7.randomUuid(),
+            event.recipientMemberId(),
+            event.type(),
+            event.title(),
+            event.body()));
   }
 }

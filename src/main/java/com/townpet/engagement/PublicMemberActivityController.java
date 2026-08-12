@@ -39,7 +39,13 @@ class PublicMemberActivityController {
         .findByAuthorMemberIdAndLifecycleOrderByCreatedAtDesc(memberId, CommentLifecycle.ACTIVE)
         .stream()
         .filter(comment -> publications.existsActive(comment.getPublicationId()))
-        .map(comment -> new CommentResponse(comment.getId(), comment.getPublicationId(), comment.getBody(), comment.getCreatedAt()))
+        .map(
+            comment ->
+                new CommentResponse(
+                    comment.getId(),
+                    comment.getPublicationId(),
+                    comment.getBody(),
+                    comment.getCreatedAt()))
         .toList();
   }
 
@@ -48,7 +54,12 @@ class PublicMemberActivityController {
     requireMember(memberId);
     return reactions.findByAuthorMemberIdOrderByCreatedAtDesc(memberId).stream()
         .filter(reaction -> publications.existsActive(reaction.getPublicationId()))
-        .map(reaction -> new ReactionResponse(reaction.getPublicationId(), reaction.getType().name(), reaction.getCreatedAt()))
+        .map(
+            reaction ->
+                new ReactionResponse(
+                    reaction.getPublicationId(),
+                    reaction.getType().name(),
+                    reaction.getCreatedAt()))
         .toList();
   }
 

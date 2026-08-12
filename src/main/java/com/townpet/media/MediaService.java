@@ -2,13 +2,13 @@ package com.townpet.media;
 
 import com.townpet.media.api.MediaOperations;
 import com.townpet.publication.api.PublicationAccess;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import javax.imageio.ImageIO;
-import java.io.ByteArrayInputStream;
-import java.awt.image.BufferedImage;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +21,10 @@ class MediaService implements MediaOperations {
   private final JdbcTemplate jdbc;
 
   MediaService(
-      UploadAssetRepository assets, PublicationAccess publications, ObjectStoragePort storage, JdbcTemplate jdbc) {
+      UploadAssetRepository assets,
+      PublicationAccess publications,
+      ObjectStoragePort storage,
+      JdbcTemplate jdbc) {
     this.assets = assets;
     this.publications = publications;
     this.storage = storage;
@@ -55,12 +58,15 @@ class MediaService implements MediaOperations {
   }
 
   @Transactional
-  UploadAssetEntity uploadContent(UUID ownerMemberId, UUID assetId, String contentType, byte[] content) {
+  UploadAssetEntity uploadContent(
+      UUID ownerMemberId, UUID assetId, String contentType, byte[] content) {
     UploadAssetEntity asset = ownedAsset(ownerMemberId, assetId);
-    if (asset.getStatus() != MediaAssetStatus.UPLOADING || !asset.getExpiresAt().isAfter(Instant.now())) {
+    if (asset.getStatus() != MediaAssetStatus.UPLOADING
+        || !asset.getExpiresAt().isAfter(Instant.now())) {
       throw new MediaAssetStateException();
     }
-    if (!asset.getContentType().equalsIgnoreCase(contentType) || asset.getByteSize() != content.length) {
+    if (!asset.getContentType().equalsIgnoreCase(contentType)
+        || asset.getByteSize() != content.length) {
       throw new MediaObjectMismatchException();
     }
     if (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("image/")) {
@@ -74,7 +80,8 @@ class MediaService implements MediaOperations {
       }
     }
     storage.store(asset.getObjectKey(), contentType, content);
-    StoredObject stored = storage.inspect(asset.getObjectKey()).orElseThrow(MediaObjectNotFoundException::new);
+    StoredObject stored =
+        storage.inspect(asset.getObjectKey()).orElseThrow(MediaObjectNotFoundException::new);
     if (!stored.checksumSha256().equalsIgnoreCase(asset.getChecksumSha256())
         || !stored.detectedContentType().equals(asset.getContentType())) {
       storage.delete(asset.getObjectKey());
@@ -130,9 +137,11 @@ class MediaService implements MediaOperations {
             .activeAuthorMemberId(publicationId)
             .orElseThrow(MediaPublicationNotFoundException::new);
     if (!authorId.equals(ownerMemberId)) throw new MediaOwnershipException();
-    Integer attachmentCount = jdbc.queryForObject(
-        "SELECT COUNT(*) FROM upload_asset WHERE publication_id = ? AND status = 'ATTACHED'",
-        Integer.class, publicationId);
+    Integer attachmentCount =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM upload_asset WHERE publication_id = ? AND status = 'ATTACHED'",
+            Integer.class,
+            publicationId);
     if (attachmentCount != null && attachmentCount >= 5) throw new MediaAttachmentLimitException();
     asset.attach(publicationId, Instant.now());
     return assets.saveAndFlush(asset);

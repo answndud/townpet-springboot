@@ -7,10 +7,10 @@ import jakarta.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.dao.DataIntegrityViolationException;
-import java.util.UUID;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,7 +25,12 @@ class SearchEventController {
   @ResponseStatus(HttpStatus.NO_CONTENT)
   void record(@Valid @RequestBody SearchLogRequest request) {
     try {
-      events.save(new SearchEventEntity(UuidV7.randomUuid(), hash(request.query()), request.route(), request.clientEventId()));
+      events.save(
+          new SearchEventEntity(
+              UuidV7.randomUuid(),
+              hash(request.query()),
+              request.route(),
+              request.clientEventId()));
     } catch (DataIntegrityViolationException ignored) {
       // Replayed client event is already recorded; keep the endpoint idempotent.
     }
@@ -45,6 +50,7 @@ class SearchEventController {
   }
 
   record SearchLogRequest(
-      @NotBlank @Size(max = 200) String query, @NotBlank @Size(max = 200) String route,
+      @NotBlank @Size(max = 200) String query,
+      @NotBlank @Size(max = 200) String route,
       @Nullable UUID clientEventId) {}
 }

@@ -73,7 +73,12 @@ class FeedController {
     try {
       PublicationFeed.Page page =
           publications.list(
-              memberId(principal), audience == FeedAudience.VIEWER, cursor, limit, query, scope.name(),
+              memberId(principal),
+              audience == FeedAudience.VIEWER,
+              cursor,
+              limit,
+              query,
+              scope.name(),
               from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
               to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC));
       return new FeedResponse(

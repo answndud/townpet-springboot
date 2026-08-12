@@ -17,9 +17,7 @@ import org.springframework.lang.Nullable;
 class PublicationEntity {
   @Id private UUID id;
 
-  @Nullable
-  @Column
-  private UUID authorMemberId;
+  @Nullable @Column private UUID authorMemberId;
 
   @Nullable private UUID guestAuthorId;
 

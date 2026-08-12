@@ -19,8 +19,13 @@ class GuestDirectoryAdapter implements GuestDirectory {
 
   @Override
   public GuestIdentity authenticate(UUID publicId, String password) {
-    GuestAuthorEntity guest = guests.findByPublicId(publicId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Guest identity is required"));
+    GuestAuthorEntity guest =
+        guests
+            .findByPublicId(publicId)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Guest identity is required"));
     if (!passwords.matches(password, guest.getManagementPasswordHash())) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid guest credential");
     }

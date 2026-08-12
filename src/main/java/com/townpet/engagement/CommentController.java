@@ -54,7 +54,9 @@ class CommentController {
       @PathVariable UUID publicationId,
       @Valid @RequestBody CreateCommentRequest request) {
     try {
-      CommentEntity comment = comments.create(memberId(principal), publicationId, request.parentCommentId(), request.body());
+      CommentEntity comment =
+          comments.create(
+              memberId(principal), publicationId, request.parentCommentId(), request.body());
       return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(comment));
     } catch (CommentPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -131,7 +133,8 @@ class CommentController {
 
   record CommentListResponse(List<CommentResponse> items) {}
 
-  record CreateCommentRequest(@NotBlank @Size(max = 5000) String body, @Nullable UUID parentCommentId) {}
+  record CreateCommentRequest(
+      @NotBlank @Size(max = 5000) String body, @Nullable UUID parentCommentId) {}
 
   record DeleteCommentRequest(@NotNull @Min(0) Long version) {}
 

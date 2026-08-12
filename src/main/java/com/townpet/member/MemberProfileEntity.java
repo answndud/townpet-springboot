@@ -48,7 +48,8 @@ public class MemberProfileEntity {
     this.updatedAt = Instant.now();
   }
 
-  public void updateVisibility(boolean showPublicPosts, boolean showPublicComments, boolean showPublicPets) {
+  public void updateVisibility(
+      boolean showPublicPosts, boolean showPublicComments, boolean showPublicPets) {
     this.showPublicPosts = showPublicPosts;
     this.showPublicComments = showPublicComments;
     this.showPublicPets = showPublicPets;
