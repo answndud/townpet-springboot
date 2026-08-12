@@ -478,6 +478,8 @@ export const publicationApi = {
     signal,
     query,
     scope = "ALL",
+    from,
+    to,
   }: {
     audience?: "GLOBAL" | "VIEWER";
     cursor?: string;
@@ -485,10 +487,14 @@ export const publicationApi = {
     signal?: AbortSignal;
     query?: string;
     scope?: "ALL" | "GLOBAL" | "LOCAL";
+    from?: string;
+    to?: string;
   } = {}) {
     const search = new URLSearchParams({ audience, limit: String(limit), scope });
     if (cursor) search.set("cursor", cursor);
     if (query) search.set("query", query);
+    if (from) search.set("from", from);
+    if (to) search.set("to", to);
     return apiFetch<FeedPage>(`/api/v1/feed?${search}`, { signal });
   },
 };

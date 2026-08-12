@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -40,8 +42,10 @@ class FeedController {
       @RequestParam(defaultValue = "VIEWER") FeedAudience audience,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
-      @RequestParam(defaultValue = "ALL") FeedScope scope) {
-    return listFeed(principal, audience, cursor, limit, null, scope);
+      @RequestParam(defaultValue = "ALL") FeedScope scope,
+      @RequestParam(required = false) LocalDate from,
+      @RequestParam(required = false) LocalDate to) {
+    return listFeed(principal, audience, cursor, limit, null, scope, from, to);
   }
 
   @GetMapping(params = "query")
@@ -51,8 +55,10 @@ class FeedController {
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam @Size(max = 80) String query,
-      @RequestParam(defaultValue = "ALL") FeedScope scope) {
-    return listFeed(principal, audience, cursor, limit, query, scope);
+      @RequestParam(defaultValue = "ALL") FeedScope scope,
+      @RequestParam(required = false) LocalDate from,
+      @RequestParam(required = false) LocalDate to) {
+    return listFeed(principal, audience, cursor, limit, query, scope, from, to);
   }
 
   private FeedResponse listFeed(
@@ -61,11 +67,15 @@ class FeedController {
       @Nullable String cursor,
       int limit,
       @Nullable String query,
-      FeedScope scope) {
+      FeedScope scope,
+      @Nullable LocalDate from,
+      @Nullable LocalDate to) {
     try {
       PublicationFeed.Page page =
           publications.list(
-              memberId(principal), audience == FeedAudience.VIEWER, cursor, limit, query, scope.name());
+              memberId(principal), audience == FeedAudience.VIEWER, cursor, limit, query, scope.name(),
+              from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
+              to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC));
       return new FeedResponse(
           page.items().stream().map(FeedController::toResponse).toList(),
           new PageInfo(page.nextCursor(), page.hasNext()));
