@@ -130,6 +130,63 @@ describe("Publication journeys", () => {
     );
   });
 
+  it("places a reply composer directly below the selected comment", async () => {
+    const rootComment = {
+      id: "comment-root",
+      publicationId: PUBLICATION_ID,
+      authorId: "00000000-0000-4000-8000-000000000202",
+      parentCommentId: null,
+      body: "첫 번째 댓글입니다.",
+      lifecycle: "ACTIVE",
+      createdAt: "2026-08-10T10:00:00Z",
+      updatedAt: "2026-08-10T10:00:00Z",
+      version: 0,
+    };
+    const otherComment = { ...rootComment, id: "comment-other", body: "다음 댓글입니다." };
+    const childComment = { ...rootComment, id: "comment-child", parentCommentId: rootComment.id, body: "첫 번째 댓글의 답글입니다." };
+    const fetchMock = vi.fn<typeof fetch>((input) => {
+      const path = String(input);
+      if (path.endsWith("/api/v1/publications/" + PUBLICATION_ID)) return Promise.resolve(response(publication()));
+      if (path.endsWith("/api/v1/publications/" + PUBLICATION_ID + "/comments")) {
+        return Promise.resolve(response({ items: [rootComment, otherComment, childComment] }));
+      }
+      if (path.endsWith("/api/v1/publications/" + PUBLICATION_ID + "/reaction")) return Promise.resolve(response({ active: false, count: 0 }));
+      if (path.endsWith("/api/v1/publications/" + PUBLICATION_ID + "/bookmark")) return Promise.resolve(response({ active: false }));
+      if (path.endsWith("/api/v1/members/me")) {
+        return Promise.resolve(response({
+          id: "00000000-0000-4000-8000-000000000201",
+          nickname: "demo-member-1",
+          role: "MEMBER",
+          bio: null,
+          neighborhoodId: null,
+          pets: [],
+          showPublicPosts: true,
+          showPublicComments: true,
+          showPublicPets: true,
+          showPublicReactions: true,
+        }));
+      }
+      if (path.includes("/api/posts/") && path.endsWith("/view")) return Promise.resolve(response({ viewCount: 1 }));
+      return Promise.reject(new Error(`Unexpected request: ${path}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MemoryRouter initialEntries={[`/posts/${PUBLICATION_ID}`]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("region", { name: "댓글 3" })).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "답글" })[0]);
+
+    const replyForm = await screen.findByRole("form", { name: "답글 작성" });
+    const selectedComment = document.querySelector(`[data-comment-id="${rootComment.id}"]`);
+    expect(replyForm.parentElement).toBe(selectedComment);
+    expect(selectedComment?.querySelector(`[data-comment-id="${childComment.id}"]`)).toBeInTheDocument();
+    expect(screen.queryByRole("form", { name: "댓글 작성" })).not.toBeInTheDocument();
+  });
+
   it("lets the author edit and delete with the loaded publication version", async () => {
     let currentPublication = publication();
     const fetchMock = vi.fn<typeof fetch>((input, init) => {
