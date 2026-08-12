@@ -1,11 +1,13 @@
 package com.townpet.welfare;
 
+import com.townpet.catalog.api.ValidAnimalCommunityCodes;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -45,7 +47,8 @@ class VolunteerController {
             r.organization(),
             r.location(),
             r.startsAt(),
-            r.capacity()));
+            r.capacity(),
+            r.animalCommunityCodes()));
   }
 
   @PostMapping("/{id}/applications")
@@ -94,7 +97,9 @@ class VolunteerController {
       @NotBlank @Size(max = 160) String organization,
       @NotBlank @Size(max = 200) String location,
       @NotNull Instant startsAt,
-      @Min(1) @Max(100) int capacity) {}
+      @Min(1) @Max(100) int capacity,
+      @Nullable @Size(max = 12) @ValidAnimalCommunityCodes
+          Collection<@Size(max = 40) String> animalCommunityCodes) {}
 
   record ApplyRequest(@NotBlank @Size(max = 1000) String message) {}
 

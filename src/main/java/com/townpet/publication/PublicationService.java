@@ -1,13 +1,18 @@
 package com.townpet.publication;
 
+import com.townpet.catalog.api.AnimalCommunityTagger;
 import com.townpet.catalog.api.AnimalInterestCatalog;
 import com.townpet.member.api.MemberDirectory;
 import com.townpet.member.api.MemberDirectory.MemberPublicationContext;
 import com.townpet.publication.api.GuestDirectory;
 import com.townpet.publication.api.PublicationModeration;
 import com.townpet.relationship.api.BlockDirectory;
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -19,16 +24,19 @@ class PublicationService implements PublicationModeration {
   private final MemberDirectory members;
   private final BlockDirectory blocks;
   private final GuestDirectory guests;
+  private final AnimalCommunityTagger communityTags;
 
   PublicationService(
       PublicationRepository publications,
       MemberDirectory members,
       BlockDirectory blocks,
-      GuestDirectory guests) {
+      GuestDirectory guests,
+      AnimalCommunityTagger communityTags) {
     this.publications = publications;
     this.members = members;
     this.blocks = blocks;
     this.guests = guests;
+    this.communityTags = communityTags;
   }
 
   @Transactional
@@ -38,7 +46,8 @@ class PublicationService implements PublicationModeration {
       @Nullable UUID neighborhoodId,
       String title,
       String body) {
-    return create(memberId, scope, neighborhoodId, null, title, body);
+    return create(
+        memberId, PublicationType.FREE_BOARD, scope, neighborhoodId, null, title, body, null);
   }
 
   @Transactional
@@ -49,19 +58,62 @@ class PublicationService implements PublicationModeration {
       @Nullable String animalInterestCode,
       String title,
       String body) {
+    return create(
+        memberId,
+        PublicationType.FREE_BOARD,
+        scope,
+        neighborhoodId,
+        animalInterestCode,
+        title,
+        body,
+        animalInterestCode == null ? null : Set.of(animalInterestCode));
+  }
+
+  @Transactional
+  PublicationEntity create(
+      UUID memberId,
+      PublicationType type,
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
+      String title,
+      String body,
+      @Nullable Collection<String> animalCommunityCodes) {
     MemberPublicationContext member =
         members
             .findPublicationContext(memberId)
             .orElseThrow(() -> new PublicationPolicyException("Member does not exist"));
     UUID resolvedNeighborhoodId = resolveNeighborhood(member, scope, neighborhoodId);
-    return publications.save(
-        new PublicationEntity(
-            memberId,
-            scope,
-            resolvedNeighborhoodId,
-            normalizeAnimalInterestCode(animalInterestCode),
-            title.trim(),
-            body.trim()));
+    List<String> normalizedCommunityCodes = normalizeAnimalCommunityCodes(animalCommunityCodes);
+    String normalizedAnimalInterestCode = normalizeAnimalInterestCode(animalInterestCode);
+    if (animalCommunityCodes != null) {
+      if (normalizedAnimalInterestCode != null
+          && !normalizedCommunityCodes.contains(normalizedAnimalInterestCode)) {
+        throw new PublicationPolicyException("Animal community codes are inconsistent");
+      }
+      if (normalizedAnimalInterestCode == null && !normalizedCommunityCodes.isEmpty()) {
+        normalizedAnimalInterestCode = normalizedCommunityCodes.getFirst();
+      }
+    }
+    PublicationEntity publication =
+        publications.save(
+            new PublicationEntity(
+                memberId,
+                type == null ? PublicationType.FREE_BOARD : type,
+                scope,
+                resolvedNeighborhoodId,
+                normalizedAnimalInterestCode,
+                title.trim(),
+                body.trim()));
+    communityTags.replace(
+        "PUBLICATION",
+        publication.getId(),
+        animalCommunityCodes == null
+            ? (normalizedAnimalInterestCode == null
+                ? Set.of()
+                : Set.of(normalizedAnimalInterestCode))
+            : normalizedCommunityCodes);
+    return publication;
   }
 
   @Transactional(readOnly = true)
@@ -122,6 +174,16 @@ class PublicationService implements PublicationModeration {
         memberId, PublicationLifecycle.ACTIVE);
   }
 
+  @Transactional(readOnly = true)
+  List<String> animalCommunityCodes(UUID publicationId) {
+    return communityTags.find("PUBLICATION", publicationId);
+  }
+
+  @Transactional(readOnly = true)
+  Map<UUID, List<String>> animalCommunityCodes(Collection<UUID> publicationIds) {
+    return communityTags.findAll("PUBLICATION", publicationIds);
+  }
+
   @Override
   @Transactional
   public int setAuthorContentVisibility(UUID authorMemberId, boolean visible) {
@@ -152,6 +214,31 @@ class PublicationService implements PublicationModeration {
       @Nullable String animalInterestCode,
       String title,
       String body) {
+    return edit(
+        memberId,
+        publicationId,
+        expectedVersion,
+        null,
+        scope,
+        neighborhoodId,
+        animalInterestCode,
+        title,
+        body,
+        animalInterestCode == null ? null : Set.of(animalInterestCode));
+  }
+
+  @Transactional
+  PublicationEntity edit(
+      UUID memberId,
+      UUID publicationId,
+      long expectedVersion,
+      @Nullable PublicationType type,
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
+      String title,
+      String body,
+      @Nullable Collection<String> animalCommunityCodes) {
     PublicationEntity publication = ownedActivePublication(memberId, publicationId);
     requireCurrentVersion(publication, expectedVersion);
     MemberPublicationContext member =
@@ -159,14 +246,39 @@ class PublicationService implements PublicationModeration {
             .findPublicationContext(memberId)
             .orElseThrow(() -> new PublicationPolicyException("Member does not exist"));
     UUID resolvedNeighborhoodId = resolveNeighborhood(member, scope, neighborhoodId);
+    boolean replacesCommunityCodes = animalCommunityCodes != null;
+    List<String> normalizedCommunityCodes = normalizeAnimalCommunityCodes(animalCommunityCodes);
+    String normalizedAnimalInterestCode = normalizeAnimalInterestCode(animalInterestCode);
+    if (replacesCommunityCodes) {
+      if (normalizedAnimalInterestCode != null
+          && !normalizedCommunityCodes.contains(normalizedAnimalInterestCode)) {
+        throw new PublicationPolicyException("Animal community codes are inconsistent");
+      }
+      if (normalizedAnimalInterestCode == null && !normalizedCommunityCodes.isEmpty()) {
+        normalizedAnimalInterestCode = normalizedCommunityCodes.getFirst();
+      }
+    }
+    String resolvedAnimalInterestCode =
+        replacesCommunityCodes
+            ? normalizedAnimalInterestCode
+            : (animalInterestCode == null
+                ? publication.getAnimalInterestCode()
+                : normalizedAnimalInterestCode);
     publication.edit(
+        type == null ? publication.getType() : type,
         scope,
         resolvedNeighborhoodId,
-        normalizeAnimalInterestCode(animalInterestCode),
+        resolvedAnimalInterestCode,
         title.trim(),
         body.trim(),
         java.time.Instant.now());
-    return publications.saveAndFlush(publication);
+    PublicationEntity saved = publications.saveAndFlush(publication);
+    if (replacesCommunityCodes) {
+      communityTags.replace("PUBLICATION", saved.getId(), normalizedCommunityCodes);
+    } else if (animalInterestCode != null) {
+      communityTags.replace("PUBLICATION", saved.getId(), Set.of(animalInterestCode));
+    }
+    return saved;
   }
 
   @Transactional
@@ -232,6 +344,23 @@ class PublicationService implements PublicationModeration {
     String normalized = code.trim().toUpperCase(java.util.Locale.ROOT);
     if (!AnimalInterestCatalog.codes().contains(normalized)) {
       throw new PublicationPolicyException("Invalid animal interest code");
+    }
+    return normalized;
+  }
+
+  private static List<String> normalizeAnimalCommunityCodes(
+      @Nullable Collection<String> animalCommunityCodes) {
+    if (animalCommunityCodes == null) return List.of();
+    if (animalCommunityCodes.stream().anyMatch(code -> code == null || code.isBlank())) {
+      throw new PublicationPolicyException("Invalid animal community code");
+    }
+    List<String> normalized =
+        animalCommunityCodes.stream()
+            .map(code -> code.trim().toUpperCase(Locale.ROOT))
+            .distinct()
+            .toList();
+    if (!AnimalInterestCatalog.codes().containsAll(normalized)) {
+      throw new PublicationPolicyException("Invalid animal community code");
     }
     return normalized;
   }

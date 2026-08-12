@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import com.townpet.catalog.api.AnimalCommunityTagger;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.stereotype.Service;
@@ -8,9 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class CareRequestService {
   private final CareRequestRepository requests;
+  private final AnimalCommunityTagger communityTags;
 
-  CareRequestService(CareRequestRepository requests) {
+  CareRequestService(CareRequestRepository requests, AnimalCommunityTagger communityTags) {
     this.requests = requests;
+    this.communityTags = communityTags;
   }
 
   @Transactional(readOnly = true)
@@ -31,13 +34,16 @@ class CareRequestService {
       String location,
       Instant startsAt,
       Instant endsAt,
-      String rewardHint) {
+      String rewardHint,
+      @org.springframework.lang.Nullable Collection<String> animalCommunityCodes) {
     if (!endsAt.isAfter(startsAt))
       throw new IllegalArgumentException("endsAt must be after startsAt");
-    return new CreateResult(
+    CareRequestEntity request =
         requests.saveAndFlush(
             new CareRequestEntity(
-                memberId, title, description, location, startsAt, endsAt, rewardHint)));
+                memberId, title, description, location, startsAt, endsAt, rewardHint));
+    communityTags.replace("CARE_REQUEST", request.getId(), animalCommunityCodes);
+    return new CreateResult(request);
   }
 
   @Transactional
