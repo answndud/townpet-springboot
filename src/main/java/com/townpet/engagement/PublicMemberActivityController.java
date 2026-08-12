@@ -36,7 +36,8 @@ class PublicMemberActivityController {
     requireMember(memberId);
     if (!members.isPublicComments(memberId)) return List.of();
     return comments
-        .findByAuthorMemberIdAndLifecycleOrderByCreatedAtDesc(memberId, CommentLifecycle.ACTIVE)
+        .findTop100ByAuthorMemberIdAndLifecycleOrderByCreatedAtDescIdDesc(
+            memberId, CommentLifecycle.ACTIVE)
         .stream()
         .filter(comment -> publications.existsActive(comment.getPublicationId()))
         .map(
@@ -53,7 +54,7 @@ class PublicMemberActivityController {
   List<ReactionResponse> reactions(@PathVariable UUID memberId) {
     requireMember(memberId);
     if (!members.isPublicReactions(memberId)) return List.of();
-    return reactions.findByAuthorMemberIdOrderByCreatedAtDesc(memberId).stream()
+    return reactions.findTop100ByAuthorMemberIdOrderByCreatedAtDescIdDesc(memberId).stream()
         .filter(reaction -> publications.existsActive(reaction.getPublicationId()))
         .map(
             reaction ->

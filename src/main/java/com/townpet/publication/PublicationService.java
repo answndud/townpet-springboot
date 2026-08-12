@@ -100,7 +100,7 @@ class PublicationService implements PublicationModeration {
 
   @Transactional(readOnly = true)
   List<PublicationEntity> mine(UUID memberId) {
-    return publications.findByAuthorMemberIdAndLifecycleOrderByCreatedAtDesc(
+    return publications.findTop100ByAuthorMemberIdAndLifecycleOrderByCreatedAtDescIdDesc(
         memberId, PublicationLifecycle.ACTIVE);
   }
 

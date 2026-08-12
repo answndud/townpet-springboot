@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -27,8 +28,9 @@ class NotificationController {
     UUID memberId = memberId(principal);
     var items =
         unread
-            ? notifications.findByRecipientMemberIdAndReadAtIsNullOrderByCreatedAtDesc(memberId)
-            : notifications.findByRecipientMemberIdOrderByCreatedAtDesc(memberId);
+            ? notifications.findTop100ByRecipientMemberIdAndReadAtIsNullOrderByCreatedAtDescIdDesc(
+                memberId)
+            : notifications.findTop100ByRecipientMemberIdOrderByCreatedAtDescIdDesc(memberId);
     return items.stream().map(NotificationController::response).toList();
   }
 
@@ -41,6 +43,7 @@ class NotificationController {
 
   @PatchMapping("/{id}/read")
   @MemberOnly
+  @Transactional
   Response markRead(@AuthenticationPrincipal UserDetails principal, @PathVariable UUID id) {
     NotificationEntity notification =
         notifications

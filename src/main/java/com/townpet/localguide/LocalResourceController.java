@@ -3,6 +3,7 @@ package com.townpet.localguide;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/v1/local-resources")
 class LocalResourceController {
+  private static final int PUBLIC_LIMIT = 100;
   private final LocalResourceRepository resources;
 
   LocalResourceController(LocalResourceRepository resources) {
@@ -26,7 +28,7 @@ class LocalResourceController {
       @RequestParam(defaultValue = "") String query) {
     if (query.length() > 80)
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "query is too long");
-    return resources.search(kind, query.trim()).stream()
+    return resources.search(kind, query.trim(), PageRequest.of(0, PUBLIC_LIMIT)).stream()
         .map(LocalResourceController::toResponse)
         .toList();
   }

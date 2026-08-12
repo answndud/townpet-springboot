@@ -139,6 +139,7 @@ public class SecurityConfig {
             })
         .sessionManagement(
             sessions -> sessions.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+        .headers(headers -> headers.frameOptions(frame -> frame.deny()))
         .exceptionHandling(
             exceptions ->
                 exceptions.authenticationEntryPoint(

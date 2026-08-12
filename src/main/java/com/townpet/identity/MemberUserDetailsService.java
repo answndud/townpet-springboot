@@ -14,7 +14,7 @@ public class MemberUserDetailsService implements UserDetailsService {
 
   public MemberUserDetailsService(
       CredentialRepository credentials,
-      @Value("${townpet.demo-data.enabled:true}") boolean demoDataEnabled) {
+      @Value("${townpet.demo-data.enabled:false}") boolean demoDataEnabled) {
     this.credentials = credentials;
     this.demoDataEnabled = demoDataEnabled;
   }

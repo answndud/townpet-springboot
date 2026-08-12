@@ -3,5 +3,7 @@ spring:
     locations: classpath:db/migration,classpath:db/e2e
 
 townpet:
+  demo-data:
+    enabled: true
   e2e-support:
     enabled: true

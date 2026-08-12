@@ -142,6 +142,13 @@ public class PublicationFeed {
       @Nullable String scopeFilter,
       @Nullable Instant from,
       @Nullable Instant to) {
+    if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid feed limit");
+    if (from != null && to != null && !to.isAfter(from)) {
+      throw new IllegalArgumentException("Invalid feed date range");
+    }
+    if (searchQuery != null && searchQuery.length() > 80) {
+      throw new IllegalArgumentException("Invalid feed query");
+    }
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
     UUID viewerNeighborhoodId =
         viewerMemberId == null || !includeViewerNeighborhood

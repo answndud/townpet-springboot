@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -34,13 +35,17 @@ import org.springframework.web.server.ResponseStatusException;
 public class SessionController {
   private final AuthenticationManager authenticationManager;
   private final CredentialRepository credentials;
+  private final boolean secureCookies;
   private final SecurityContextRepository securityContexts =
       new HttpSessionSecurityContextRepository();
 
   public SessionController(
-      AuthenticationManager authenticationManager, CredentialRepository credentials) {
+      AuthenticationManager authenticationManager,
+      CredentialRepository credentials,
+      @Value("${townpet.security.secure-cookies:false}") boolean secureCookies) {
     this.authenticationManager = authenticationManager;
     this.credentials = credentials;
+    this.secureCookies = secureCookies;
   }
 
   @GetMapping("/csrf")
@@ -49,6 +54,7 @@ public class SessionController {
         HttpHeaders.SET_COOKIE,
         ResponseCookie.from("XSRF-TOKEN", token.getToken())
             .path("/")
+            .secure(secureCookies)
             .httpOnly(false)
             .sameSite("Lax")
             .build()

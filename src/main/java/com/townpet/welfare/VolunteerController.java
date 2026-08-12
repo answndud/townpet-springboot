@@ -37,19 +37,15 @@ class VolunteerController {
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   Response create(@AuthenticationPrincipal UserDetails p, @Valid @RequestBody CreateRequest r) {
-    try {
-      return response(
-          service.create(
-              member(p),
-              r.title(),
-              r.description(),
-              r.organization(),
-              r.location(),
-              r.startsAt(),
-              r.capacity()));
-    } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-    }
+    return response(
+        service.create(
+            member(p),
+            r.title(),
+            r.description(),
+            r.organization(),
+            r.location(),
+            r.startsAt(),
+            r.capacity()));
   }
 
   @PostMapping("/{id}/applications")

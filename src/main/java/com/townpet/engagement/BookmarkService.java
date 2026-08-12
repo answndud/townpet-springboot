@@ -49,7 +49,7 @@ class BookmarkService {
 
   @Transactional(readOnly = true)
   List<UUID> list(UUID memberId) {
-    return bookmarks.findAllByMemberIdOrderByCreatedAtDesc(memberId).stream()
+    return bookmarks.findTop100ByMemberIdOrderByCreatedAtDescIdDesc(memberId).stream()
         .map(BookmarkEntity::getPublicationId)
         .toList();
   }

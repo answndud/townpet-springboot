@@ -8,11 +8,13 @@ import java.util.*;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/hospital-reviews")
+@Validated
 class HospitalReviewController {
   private final HospitalReviewService service;
 
@@ -21,7 +23,7 @@ class HospitalReviewController {
   }
 
   @GetMapping
-  List<Response> list(@RequestParam(required = false) String hospital) {
+  List<Response> list(@RequestParam(required = false) @Size(max = 120) String hospital) {
     return service.list(hospital).stream().map(HospitalReviewController::response).toList();
   }
 
