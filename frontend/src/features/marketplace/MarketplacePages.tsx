@@ -7,6 +7,7 @@ import {
   type MarketplaceListing,
   type MarketplaceListingKind,
   type MarketplaceListingStatus,
+  type Member,
 } from "../../api/client";
 
 const KIND_LABELS: Record<MarketplaceListingKind, string> = {
@@ -101,6 +102,7 @@ export function MarketplaceDetailPage() {
   const navigate = useNavigate();
   const [listing, setListing] = useState<MarketplaceListing | null>(null);
   const [memberId, setMemberId] = useState<string | null>(null);
+  const [memberRole, setMemberRole] = useState<Member["role"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
@@ -110,7 +112,7 @@ export function MarketplaceDetailPage() {
     Promise.all([
       marketplaceApi.detail(listingId, controller.signal),
       memberApi.current(controller.signal).catch(() => null),
-    ]).then(([loaded, member]) => { setListing(loaded); setMemberId(member?.id ?? null); })
+    ]).then(([loaded, member]) => { setListing(loaded); setMemberId(member?.id ?? null); setMemberRole(member?.role ?? null); })
       .catch(() => setError("거래 정보를 불러오지 못했습니다."))
       .finally(() => setLoading(false));
     return () => controller.abort();
@@ -128,7 +130,7 @@ export function MarketplaceDetailPage() {
 
   if (loading) return <main className="page marketplace-page"><section className="surface-card" role="status">거래 정보를 불러오는 중...</section></main>;
   if (!listing || error) return <main className="page marketplace-page marketplace-state"><section className="surface-card"><p className="eyebrow">MARKETPLACE</p><h1>거래 정보를 찾을 수 없습니다</h1><Link className="button button-soft" to="/marketplace">목록으로</Link></section></main>;
-  const owner = memberId === listing.ownerMemberId;
+  const owner = memberRole === "MEMBER" && memberId === listing.ownerMemberId;
   return (
     <main className="page marketplace-page">
       <div className="marketplace-detail-nav"><Link className="publication-text-link" to="/marketplace">← 거래 목록</Link>{owner && listing.status === "AVAILABLE" ? <Link className="button button-soft" to={`/marketplace/${listing.id}/edit`}>수정</Link> : null}</div>

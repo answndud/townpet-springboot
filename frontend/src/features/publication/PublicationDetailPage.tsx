@@ -12,6 +12,7 @@ import {
   type Publication,
   type Reaction,
   type TrustReportReason,
+  type Member,
 } from "../../api/client";
 
 function formatDate(value: string) {
@@ -31,6 +32,7 @@ export default function PublicationDetailPage() {
   const guestView = location.pathname.endsWith("/guest");
   const [publication, setPublication] = useState<Publication | null>(null);
   const [viewerId, setViewerId] = useState<string | null>(null);
+  const [viewerRole, setViewerRole] = useState<Member["role"] | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export default function PublicationDetailPage() {
   useEffect(() => {
     const controller = new AbortController();
     setPublication(null);
+    setViewerRole(null);
     setError(null);
     setComments([]);
     setCommentsLoading(true);
@@ -82,7 +85,7 @@ export default function PublicationDetailPage() {
       .catch((requestError: unknown) => {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
         setError(
-          requestError instanceof ApiError && requestError.status === 404
+          requestError && typeof requestError === "object" && "status" in requestError && requestError.status === 404
             ? "존재하지 않거나 삭제된 게시글입니다."
             : "게시글을 불러오지 못했습니다.",
         );
@@ -113,10 +116,16 @@ export default function PublicationDetailPage() {
       .finally(() => setBookmarkLoading(false));
     memberApi
       .current(controller.signal)
-      .then((member) => setViewerId(member.id))
+      .then((member) => {
+        setViewerId(member.id);
+        setViewerRole(member.role);
+      })
       .catch((requestError: unknown) => {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-        if (!(requestError instanceof ApiError && requestError.status === 401)) setViewerId(null);
+        if (!(requestError instanceof ApiError && requestError.status === 401)) {
+          setViewerId(null);
+          setViewerRole(null);
+        }
       });
     return () => controller.abort();
   }, [publicationId]);
@@ -132,6 +141,9 @@ export default function PublicationDetailPage() {
       });
     return () => controller.abort();
   }, [publication, viewerId]);
+
+  const memberViewer = viewerRole === "MEMBER";
+  const moderatorViewer = viewerRole === "MODERATOR";
 
   async function setPublicationReaction() {
     if (!publication || reactionSubmitting) return;
@@ -325,7 +337,7 @@ export default function PublicationDetailPage() {
       <div className="publication-detail-nav">
         <Link className="publication-text-link" to="/feed/guest">목록으로</Link>
         <div className="publication-detail-actions">
-          {viewerId === publication.authorId ? (
+          {memberViewer && viewerId === publication.authorId ? (
             <>
               <Link className="button button-soft" to={`/posts/${publication.id}/edit`}>수정</Link>
               <button
@@ -338,15 +350,15 @@ export default function PublicationDetailPage() {
               </button>
             </>
           ) : null}
-          {guestView ? <>
+          {guestView && !moderatorViewer ? <>
             <button className="button button-soft" type="button" onClick={() => setGuestEditing((current) => !current)}>{guestEditing ? "수정 취소" : "비회원 수정"}</button>
             <button className="button button-danger" type="button" onClick={() => void deleteGuestPublication()}>비회원 삭제</button>
           </> : null}
-          <Link className="button button-soft" to="/posts/new">새 글 작성</Link>
+          {!moderatorViewer ? <Link className="button button-soft" to="/posts/new">새 글 작성</Link> : null}
           <button className="button button-soft" type="button" disabled={shareSubmitting} onClick={sharePublication}>
             {shareSubmitting ? "공유 중..." : "공유"}
           </button>
-          {viewerId && viewerId !== publication.authorId ? <button className="button button-soft" type="button" onClick={() => setReportOpen((current) => !current)}>신고</button> : null}
+          {memberViewer && viewerId !== publication.authorId ? <button className="button button-soft" type="button" onClick={() => setReportOpen((current) => !current)}>신고</button> : null}
         </div>
       </div>
       {reportOpen ? (
@@ -387,7 +399,7 @@ export default function PublicationDetailPage() {
           </form>
         ) : <div className="publication-body">{publication.body}</div>}
         <div className="publication-reaction-row">
-          {viewerId ? (
+          {memberViewer ? (
             <button
               className={reaction.active ? "reaction-button active" : "reaction-button"}
               type="button"
@@ -398,13 +410,15 @@ export default function PublicationDetailPage() {
             >
               <span aria-hidden="true">♥</span> 좋아요 {reaction.count}
             </button>
+          ) : moderatorViewer ? (
+            <span className="reaction-button" aria-label="좋아요 수">♥ 좋아요 {reaction.count}</span>
           ) : (
             <Link className="reaction-button" to={`/login?next=/posts/${publication.id}`}>
               <span aria-hidden="true">♥</span> 좋아요 {reaction.count}
             </Link>
           )}
           <span className="publication-reaction-help">회원당 한 번만 표시됩니다.</span>
-          {viewerId ? (
+          {memberViewer ? (
             <button
               className={bookmark.active ? "reaction-button bookmark-button active" : "reaction-button bookmark-button"}
               type="button"
@@ -415,13 +429,15 @@ export default function PublicationDetailPage() {
             >
               <span aria-hidden="true">🔖</span> 저장
             </button>
+          ) : moderatorViewer ? (
+            <span className="reaction-button bookmark-button" aria-label="회원 전용 저장">🔖 저장은 회원 전용</span>
           ) : (
             <Link className="reaction-button bookmark-button" to={`/login?next=/posts/${publication.id}`}>
               <span aria-hidden="true">🔖</span> 저장
             </Link>
           )}
           <span className="publication-reaction-help">나만 볼 수 있게 저장합니다.</span>
-          {viewerId && viewerId !== publication.authorId ? (
+          {memberViewer && viewerId !== publication.authorId ? (
             <>
               <button
                 className="reaction-button relationship-button"
@@ -467,12 +483,12 @@ export default function PublicationDetailPage() {
                 <div className="publication-comment-meta">
                   <strong>TownPet 회원</strong>
                   <time dateTime={comment.createdAt}>{formatDate(comment.createdAt)}</time>
-                  {viewerId === comment.authorId ? (
+                  {memberViewer && viewerId === comment.authorId ? (
                     <button className="text-button" type="button" onClick={() => deleteComment(comment)}>
                       삭제
                     </button>
                   ) : null}
-                  {viewerId ? (
+                  {memberViewer ? (
                     <button className="text-button" type="button" onClick={() => setReplyingTo(comment)}>
                       답글
                     </button>
@@ -484,7 +500,7 @@ export default function PublicationDetailPage() {
             ))}
           </div>
         )}
-        {viewerId || guestView ? (
+        {memberViewer || (guestView && !viewerId) ? (
           <form className="publication-comment-form" onSubmit={createComment} noValidate>
             {guestView && !viewerId ? <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} /></label> : null}
             {replyingTo ? (

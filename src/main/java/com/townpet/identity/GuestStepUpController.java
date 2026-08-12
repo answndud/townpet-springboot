@@ -1,5 +1,6 @@
 package com.townpet.identity;
 
+import com.townpet.common.MemberOrAnonymousOnly;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -29,6 +30,7 @@ public class GuestStepUpController {
   }
 
   @PostMapping("/authors")
+  @MemberOrAnonymousOnly
   @ResponseStatus(HttpStatus.CREATED)
   GuestResponse createAuthor(
       @Valid @RequestBody CreateGuestRequest request, HttpServletResponse response) {
@@ -46,6 +48,7 @@ public class GuestStepUpController {
   }
 
   @PostMapping("/step-up")
+  @MemberOrAnonymousOnly
   StepUpResponse issue(
       @Valid @RequestBody StepUpRequest request,
       @Nullable @CookieValue(name = GUEST_COOKIE, required = false) String cookieGuestId,
@@ -66,6 +69,7 @@ public class GuestStepUpController {
   }
 
   @PostMapping("/step-up/consume")
+  @MemberOrAnonymousOnly
   ConsumedResponse consume(
       @Valid @RequestBody ConsumeRequest request,
       @CookieValue(name = STEP_UP_COOKIE) String token,

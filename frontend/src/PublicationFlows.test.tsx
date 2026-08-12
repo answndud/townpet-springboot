@@ -43,9 +43,14 @@ describe("Publication journeys", () => {
           response({
             id: "00000000-0000-4000-8000-000000000201",
             nickname: "demo-member-1",
+            role: "MEMBER",
             bio: null,
             neighborhoodId: "00000000-0000-4000-8000-000000000101",
             pets: [],
+            showPublicPosts: true,
+            showPublicComments: true,
+            showPublicPets: true,
+            showPublicReactions: true,
           }),
         );
       }
@@ -134,9 +139,14 @@ describe("Publication journeys", () => {
           response({
             id: currentPublication.authorId,
             nickname: "demo-member-1",
+            role: "MEMBER",
             bio: null,
             neighborhoodId: "00000000-0000-4000-8000-000000000101",
             pets: [],
+            showPublicPosts: true,
+            showPublicComments: true,
+            showPublicPets: true,
+            showPublicReactions: true,
           }),
         );
       }

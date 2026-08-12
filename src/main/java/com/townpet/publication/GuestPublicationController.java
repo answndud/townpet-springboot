@@ -1,5 +1,6 @@
 package com.townpet.publication;
 
+import com.townpet.common.MemberOrAnonymousOnly;
 import com.townpet.identity.GuestStepUpController;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -31,6 +32,7 @@ class GuestPublicationController {
   }
 
   @PostMapping
+  @MemberOrAnonymousOnly
   @ResponseStatus(HttpStatus.CREATED)
   Response create(
       @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
@@ -40,6 +42,7 @@ class GuestPublicationController {
   }
 
   @PatchMapping("/{publicationId}")
+  @MemberOrAnonymousOnly
   Response edit(
       @PathVariable UUID publicationId,
       @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
@@ -63,6 +66,7 @@ class GuestPublicationController {
   }
 
   @DeleteMapping("/{publicationId}")
+  @MemberOrAnonymousOnly
   void delete(
       @PathVariable UUID publicationId,
       @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,

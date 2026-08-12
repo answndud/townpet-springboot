@@ -79,6 +79,32 @@ describe("TownPet Vite shell", () => {
     expect(screen.queryByRole("heading", { name: "운영 콘솔" })).not.toBeInTheDocument();
   });
 
+  it("keeps moderator accounts out of member-only routes", async () => {
+    vi.stubGlobal("fetch", vi.fn((input) => {
+      const path = String(input);
+      const body = path.endsWith("/api/v1/members/me")
+        ? {
+            id: "00000000-0000-4000-8000-000000000002",
+            nickname: "moderator-user",
+            role: "MODERATOR",
+            bio: null,
+            neighborhoodId: null,
+            pets: [],
+            showPublicPosts: true,
+            showPublicComments: true,
+            showPublicPets: true,
+            showPublicReactions: true,
+          }
+        : { items: [], page: { nextCursor: null, hasNext: false } };
+      return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
+    }));
+
+    render(<MemoryRouter initialEntries={["/onboarding"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "공개 반려생활 피드" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "내 동네와 반려동물 설정" })).not.toBeInTheDocument();
+  });
+
   it("renders the identity vertical slice login form", () => {
     render(
       <MemoryRouter initialEntries={["/login"]}>

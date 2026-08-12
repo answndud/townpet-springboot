@@ -208,6 +208,32 @@ class IdentityMemberControllerTest {
   }
 
   @Test
+  void moderatorCannotUseGuestWriteFlow() throws Exception {
+    CredentialEntity credential = credentials.findByMemberId(MODERATOR_ID).orElseThrow();
+    credential.verifyEmail(java.time.Instant.now());
+    credentials.save(credential);
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"email\":\"moderator@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    mockMvc
+        .perform(
+            post("/api/guest/authors")
+                .cookie(sessionCookie(login))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\":\"guest-password-123\"}"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
   void viewerShellReportsModeratorActor() throws Exception {
     CredentialEntity credential = credentials.findByMemberId(MODERATOR_ID).orElseThrow();
     credential.verifyEmail(java.time.Instant.now());
