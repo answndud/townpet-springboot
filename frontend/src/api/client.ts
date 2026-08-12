@@ -1,3 +1,5 @@
+import { recordApiTiming } from "../utils/performance";
+
 export type ProblemDetail = {
   type?: string;
   title?: string;
@@ -202,6 +204,7 @@ export class ApiError extends Error {
 
 /** Small transport seam; feature code keeps endpoint details in one client module. */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const startedAt = typeof performance === "undefined" ? 0 : performance.now();
   const method = init?.method?.toUpperCase() ?? "GET";
   const csrf = document.cookie
     .split("; ")
@@ -218,6 +221,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
       ...init?.headers,
     },
   });
+  recordApiTiming(path, response.status, startedAt ? performance.now() - startedAt : 0);
   const body = await response.text();
 
   if (!response.ok) {
@@ -235,22 +239,64 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   return (body ? JSON.parse(body) : undefined) as T;
 }
 
+type CachedGetEntry = { value: unknown; expiresAt: number };
+const cachedGetEntries = new Map<string, CachedGetEntry>();
+const cachedGetRequests = new Map<string, Promise<unknown>>();
+
+function abortError() {
+  return new DOMException("The operation was aborted.", "AbortError");
+}
+
+function withAbortSignal<T>(request: Promise<T>, signal?: AbortSignal) {
+  if (!signal) return request;
+  return new Promise<T>((resolve, reject) => {
+    if (signal.aborted) {
+      reject(abortError());
+      return;
+    }
+    const cleanup = () => signal.removeEventListener("abort", handleAbort);
+    const handleAbort = () => {
+      cleanup();
+      reject(abortError());
+    };
+    signal.addEventListener("abort", handleAbort, { once: true });
+    request.then(
+      (value) => { cleanup(); resolve(value); },
+      (error: unknown) => { cleanup(); reject(error); },
+    );
+  });
+}
+
+function cachedGet<T>(key: string, path: string, signal: AbortSignal | undefined, ttlMs: number) {
+  if (import.meta.env.MODE === "test") return apiFetch<T>(path, { signal });
+  const now = Date.now();
+  const cached = cachedGetEntries.get(key);
+  if (cached && cached.expiresAt > now) {
+    return withAbortSignal(Promise.resolve(cached.value as T), signal);
+  }
+
+  let request = cachedGetRequests.get(key) as Promise<T> | undefined;
+  if (!request) {
+    request = apiFetch<T>(path).then((value) => {
+      cachedGetEntries.set(key, { value, expiresAt: Date.now() + ttlMs });
+      return value;
+    });
+    cachedGetRequests.set(key, request);
+    void request.then(
+      () => { if (cachedGetRequests.get(key) === request) cachedGetRequests.delete(key); },
+      () => { if (cachedGetRequests.get(key) === request) cachedGetRequests.delete(key); },
+    );
+  }
+  return withAbortSignal(request, signal);
+}
+
 export async function getCsrfToken(): Promise<string> {
   const response = await apiFetch<{ token: string }>("/api/v1/auth/csrf");
   return response.token;
 }
 
-let currentMemberRequest: Promise<Member> | null = null;
-
 function currentMember(signal?: AbortSignal) {
-  if (signal) return apiFetch<Member>("/api/v1/members/me", { signal });
-  if (currentMemberRequest) return currentMemberRequest;
-  const request = apiFetch<Member>("/api/v1/members/me");
-  const sharedRequest = request.finally(() => {
-    if (currentMemberRequest === sharedRequest) currentMemberRequest = null;
-  });
-  currentMemberRequest = sharedRequest;
-  return sharedRequest;
+  return apiFetch<Member>("/api/v1/members/me", { signal });
 }
 
 async function mutate<T>(path: string, init: RequestInit): Promise<T> {
@@ -339,13 +385,15 @@ export const memberApi = {
 
 export const catalogApi = {
   neighborhoods(signal?: AbortSignal) {
-    return apiFetch<Neighborhood[]>("/api/v1/catalog/neighborhoods", { signal });
+    return cachedGet<Neighborhood[]>("catalog:neighborhoods", "/api/v1/catalog/neighborhoods", signal, 5 * 60_000);
   },
   neighborhood(slug: string, signal?: AbortSignal) {
-    return apiFetch<Neighborhood>(`/api/v1/catalog/neighborhoods/${encodeURIComponent(slug)}`, { signal });
+    const path = `/api/v1/catalog/neighborhoods/${encodeURIComponent(slug)}`;
+    return cachedGet<Neighborhood>(`catalog:neighborhood:${slug}`, path, signal, 5 * 60_000);
   },
   breed(code: string, signal?: AbortSignal) {
-    return apiFetch<Breed>(`/api/v1/catalog/breeds/${encodeURIComponent(code)}`, { signal });
+    const path = `/api/v1/catalog/breeds/${encodeURIComponent(code)}`;
+    return cachedGet<Breed>(`catalog:breed:${code}`, path, signal, 5 * 60_000);
   },
 };
 
