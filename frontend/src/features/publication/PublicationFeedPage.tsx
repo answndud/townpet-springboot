@@ -8,7 +8,7 @@ import {
 } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { isAbortError } from "../../hooks/useAbortableRequest";
-import { ANIMAL_INTEREST_GROUPS } from "../member/AnimalInterestMenu";
+import { ANIMAL_BOARD_GROUPS } from "../member/AnimalBoardCatalog";
 
 type PublicationFeedPageProps = {
   memberView: boolean;
@@ -341,7 +341,7 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
                 ) : null}
                 {item.animalInterestCode ? (
                   <span className="publication-chip">
-                    {ANIMAL_INTEREST_GROUPS.flatMap((group) => group.options).find((option) => option.code === item.animalInterestCode)?.label ?? "동물 게시판"}
+                    {ANIMAL_BOARD_GROUPS.flatMap((group) => group.options).find((option) => option.code === item.animalInterestCode)?.label ?? "동물 게시판"}
                   </span>
                 ) : null}
                 <span className="publication-chip">

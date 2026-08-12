@@ -1,7 +1,7 @@
-import { ANIMAL_INTEREST_GROUPS } from "./AnimalInterestMenu";
+import { ANIMAL_BOARD_GROUPS } from "./AnimalBoardCatalog";
 
 const ANIMAL_COMMUNITY_CODES = new Set(
-  ANIMAL_INTEREST_GROUPS.flatMap((group) => group.options.map((option) => option.code)),
+  ANIMAL_BOARD_GROUPS.flatMap((group) => group.options.map((option) => option.code)),
 );
 
 export function initialAnimalCommunityCodes(searchParams: URLSearchParams, fallback?: string) {
@@ -32,11 +32,11 @@ export default function AnimalCommunitySelector({
     <fieldset className="animal-community-selector">
       <legend>{label}</legend>
       <p className="field-help">{help}</p>
-      <div className="interest-groups">
-        {ANIMAL_INTEREST_GROUPS.map((group) => (
-          <div className="interest-group" key={group.label}>
+      <div className="animal-board-groups">
+        {ANIMAL_BOARD_GROUPS.map((group) => (
+          <div className="animal-board-group" key={group.label}>
             <strong>{group.label}</strong>
-            <div className="interest-options">
+            <div className="animal-board-options">
               {group.options.map((option) => (
                 <label key={option.code}>
                   <input
