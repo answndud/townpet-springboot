@@ -356,6 +356,7 @@ export const trustApi = {
 export const adminModerationApi = {
   reviewReport(id: string, status: "REVIEWED" | "REJECTED") { return mutate(`/api/admin/reports/${encodeURIComponent(id)}`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ status }) }); },
   setPublicationVisibility(id: string, visible: boolean, reason: string) { return mutate<{ id: string; lifecycle: string }>(`/api/admin/moderation/posts/${encodeURIComponent(id)}/visibility`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ visible, reason }) }); },
+  memberAction(action: "sanction" | "hide-content" | "restore-content", memberId: string, reason: string) { return mutate<{ memberId: string; action: string; affectedPublications: number }>(`/api/admin/moderation/users/${action}`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ memberId, reason }) }); },
 };
 
 export const notificationApi = {
