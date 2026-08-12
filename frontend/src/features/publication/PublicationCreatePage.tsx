@@ -17,7 +17,7 @@ const BODY_MAX_LENGTH = 20_000;
 export default function PublicationCreatePage() {
   const navigate = useNavigate();
   const { member, status: authStatus } = useAuth();
-  const { data: neighborhoods, error: neighborhoodError, loading: neighborhoodsLoading } = useAbortableRequest<Neighborhood[]>((signal) => catalogApi.neighborhoods(signal), []);
+  const { data: neighborhoods, error: neighborhoodError, loading: neighborhoodsLoading, retry: retryNeighborhoods } = useAbortableRequest<Neighborhood[]>((signal) => catalogApi.neighborhoods(signal), []);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -100,7 +100,7 @@ export default function PublicationCreatePage() {
           <p className="eyebrow">글 작성</p>
           <h1>글쓰기 준비가 지연됐습니다</h1>
           <p className="form-error" role="alert">{error}</p>
-          <button className="button button-soft" type="button" onClick={() => window.location.reload()}>
+          <button className="button button-soft" type="button" onClick={() => { setError(null); retryNeighborhoods(); }}>
             다시 시도
           </button>
         </section>
