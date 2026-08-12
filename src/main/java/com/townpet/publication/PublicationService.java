@@ -1,5 +1,6 @@
 package com.townpet.publication;
 
+import com.townpet.catalog.api.AnimalInterestCatalog;
 import com.townpet.member.api.MemberDirectory;
 import com.townpet.member.api.MemberDirectory.MemberPublicationContext;
 import com.townpet.publication.api.GuestDirectory;
@@ -37,13 +38,30 @@ class PublicationService implements PublicationModeration {
       @Nullable UUID neighborhoodId,
       String title,
       String body) {
+    return create(memberId, scope, neighborhoodId, null, title, body);
+  }
+
+  @Transactional
+  PublicationEntity create(
+      UUID memberId,
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
+      String title,
+      String body) {
     MemberPublicationContext member =
         members
             .findPublicationContext(memberId)
             .orElseThrow(() -> new PublicationPolicyException("Member does not exist"));
     UUID resolvedNeighborhoodId = resolveNeighborhood(member, scope, neighborhoodId);
     return publications.save(
-        new PublicationEntity(memberId, scope, resolvedNeighborhoodId, title.trim(), body.trim()));
+        new PublicationEntity(
+            memberId,
+            scope,
+            resolvedNeighborhoodId,
+            normalizeAnimalInterestCode(animalInterestCode),
+            title.trim(),
+            body.trim()));
   }
 
   @Transactional(readOnly = true)
@@ -121,6 +139,19 @@ class PublicationService implements PublicationModeration {
       @Nullable UUID neighborhoodId,
       String title,
       String body) {
+    return edit(memberId, publicationId, expectedVersion, scope, neighborhoodId, null, title, body);
+  }
+
+  @Transactional
+  PublicationEntity edit(
+      UUID memberId,
+      UUID publicationId,
+      long expectedVersion,
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
+      String title,
+      String body) {
     PublicationEntity publication = ownedActivePublication(memberId, publicationId);
     requireCurrentVersion(publication, expectedVersion);
     MemberPublicationContext member =
@@ -129,7 +160,12 @@ class PublicationService implements PublicationModeration {
             .orElseThrow(() -> new PublicationPolicyException("Member does not exist"));
     UUID resolvedNeighborhoodId = resolveNeighborhood(member, scope, neighborhoodId);
     publication.edit(
-        scope, resolvedNeighborhoodId, title.trim(), body.trim(), java.time.Instant.now());
+        scope,
+        resolvedNeighborhoodId,
+        normalizeAnimalInterestCode(animalInterestCode),
+        title.trim(),
+        body.trim(),
+        java.time.Instant.now());
     return publications.saveAndFlush(publication);
   }
 
@@ -188,6 +224,16 @@ class PublicationService implements PublicationModeration {
       throw new PublicationPolicyException("LOCAL publication requires the member neighborhood");
     }
     return requestedNeighborhoodId;
+  }
+
+  @Nullable
+  private static String normalizeAnimalInterestCode(@Nullable String code) {
+    if (code == null || code.isBlank()) return null;
+    String normalized = code.trim().toUpperCase(java.util.Locale.ROOT);
+    if (!AnimalInterestCatalog.codes().contains(normalized)) {
+      throw new PublicationPolicyException("Invalid animal interest code");
+    }
+    return normalized;
   }
 }
 

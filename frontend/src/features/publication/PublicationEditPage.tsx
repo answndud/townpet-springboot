@@ -9,6 +9,7 @@ import {
   type Publication,
   type PublicationScope,
 } from "../../api/client";
+import { ANIMAL_INTEREST_GROUPS } from "../member/AnimalInterestMenu";
 import { useAuth } from "../../auth/AuthContext";
 
 const TITLE_MAX_LENGTH = 120;
@@ -24,6 +25,7 @@ export default function PublicationEditPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [scope, setScope] = useState<PublicationScope>("GLOBAL");
+  const [animalInterestCode, setAnimalInterestCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export default function PublicationEditPage() {
         setTitle(currentPublication.title);
         setBody(currentPublication.body);
         setScope(currentPublication.scope);
+        setAnimalInterestCode(currentPublication.animalInterestCode ?? "");
       })
       .catch((requestError: unknown) => {
         if (!active || (requestError instanceof DOMException && requestError.name === "AbortError")) {
@@ -93,6 +96,7 @@ export default function PublicationEditPage() {
         scope,
         version: publication.version,
         ...(scope === "LOCAL" && neighborhood ? { neighborhoodId: neighborhood.id } : {}),
+        animalInterestCode: animalInterestCode || null,
       });
       navigate(`/posts/${edited.id}`, { replace: true });
     } catch (requestError) {
@@ -155,6 +159,15 @@ export default function PublicationEditPage() {
               분류
               <select value="FREE_BOARD" disabled>
                 <option value="FREE_BOARD">자유게시판</option>
+              </select>
+            </label>
+            <label>
+              관심 동물 분류 (선택)
+              <select value={animalInterestCode} onChange={(event) => setAnimalInterestCode(event.target.value)}>
+                <option value="">일반 글</option>
+                {ANIMAL_INTEREST_GROUPS.flatMap((group) => group.options).map((option) => (
+                  <option key={option.code} value={option.code}>{option.label}</option>
+                ))}
               </select>
             </label>
             <fieldset className="publication-scope-field">

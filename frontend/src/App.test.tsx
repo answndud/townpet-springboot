@@ -18,7 +18,7 @@ describe("TownPet Vite shell", () => {
         const path = String(input);
         const body = path.endsWith("/api/v1/members/me")
           ? { detail: "Unauthorized" }
-          : { items: [{ id: "00000000-0000-4000-8000-000000000301", title: "이번 주말 산책 코스 추천받아요", body: "저녁에 걷기 좋은 조용한 코스를 찾고 있어요.", createdAt: "2026-08-12T08:00:00Z" }], page: { nextCursor: null, hasNext: false } };
+          : { items: [{ id: "00000000-0000-4000-8000-000000000301", kind: "PUBLICATION", type: "FREE_BOARD", title: "이번 주말 산책 코스 추천받아요", body: "저녁에 걷기 좋은 조용한 코스를 찾고 있어요.", scope: "GLOBAL", authorId: "00000000-0000-0000-0000-000000000201", neighborhoodId: null, status: "ACTIVE", lifecycle: "ACTIVE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/posts/00000000-0000-4000-8000-000000000301" }], page: { nextCursor: null, hasNext: false } };
         const status = path.endsWith("/api/v1/members/me") ? 401 : 200;
         return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
       }),
@@ -93,7 +93,7 @@ describe("TownPet Vite shell", () => {
     fireEvent.keyDown(boardMenu, { key: "ArrowDown" });
     await waitFor(() => expect(screen.getByRole("menuitem", { name: "전체글" })).toHaveFocus());
     fireEvent.keyDown(screen.getByRole("menuitem", { name: "전체글" }), { key: "ArrowDown" });
-    expect(screen.getByRole("menuitem", { name: "입양" })).toHaveFocus();
+    expect(screen.getByRole("menuitem", { name: "자유게시판" })).toHaveFocus();
 
     fireEvent.keyDown(boardMenu, { key: "Escape" });
     expect(boardMenu).toHaveAttribute("aria-expanded", "false");
@@ -173,6 +173,7 @@ describe("TownPet Vite shell", () => {
     expect(screen.getByRole("button", { name: "관심 동물" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
     fireEvent.click(screen.getByRole("button", { name: "게시판" }));
+    expect(screen.getByRole("menuitem", { name: "전체글" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("menuitem", { name: "동물병원 후기" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "반려동물 자랑" })).toHaveAttribute("href", "/feed/guest?type=PET_SHOWCASE");
     expect(screen.queryByRole("menuitem", { name: "인기 게시글" })).not.toBeInTheDocument();

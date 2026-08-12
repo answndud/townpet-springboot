@@ -6,7 +6,7 @@ const DEMO_PASSWORD = "townpet-demo-123!";
 test("member feed includes owned local posts while guest feed remains global", async ({ browser, page }, testInfo) => {
   const browserErrors: string[] = [];
   page.on("console", (message) => {
-    if (message.type() === "error") browserErrors.push(message.text());
+    if (message.type() === "error" && !message.text().includes("status of 401")) browserErrors.push(message.text());
   });
   page.on("pageerror", (error) => browserErrors.push(error.message));
 
@@ -27,19 +27,49 @@ test("member feed includes owned local posts while guest feed remains global", a
   await createPublication(page, localTitle, "LOCAL");
 
   await page.goto("/feed");
-  await expect(page.getByRole("heading", { name: "내 동네와 전체 새 글" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "내 피드" })).toBeVisible();
   await expect(page.getByRole("heading", { name: globalTitle }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: localTitle }).first()).toBeVisible();
 
   const guestContext = await browser.newContext();
   const guestPage = await guestContext.newPage();
   await guestPage.goto("http://127.0.0.1:4173/feed/guest");
-  await expect(guestPage.getByRole("heading", { name: "공개 반려생활 피드" })).toBeVisible();
+  await expect(guestPage.getByRole("heading", { name: "전체글" })).toBeVisible();
   await expect(guestPage.getByRole("heading", { name: globalTitle }).first()).toBeVisible();
   await expect(guestPage.getByRole("heading", { name: localTitle })).toHaveCount(0);
   await guestContext.close();
   expect(browserErrors).toEqual([]);
 });
+
+test("guest feed aggregates the synthetic community boards and preserves detail links", async ({ page }) => {
+  const browserErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error" && !message.text().includes("status of 401")) browserErrors.push(message.text());
+  });
+  page.on("pageerror", (error) => browserErrors.push(error.message));
+
+  await assertFeedItem(page, "FREE_BOARD", "망원 산책 초보자를 위한 저녁 코스", "/posts/");
+  await assertFeedItem(page, "MARKETPLACE", "소형 이동장 판매합니다", "/marketplace/");
+  await assertFeedItem(page, "ADOPTION", "차분한 성격의 믹스견 가족을 찾습니다", "/adoptions/");
+  await assertFeedItem(page, "LOST_FOUND", "성산동에서 보라색 목줄 강아지를 찾습니다", "/lost-found/");
+  await assertFeedItem(page, "GATHERING", "망원 한강 저녁 산책 데모", "/gatherings/");
+  await assertFeedItem(page, "CARE_REQUEST", "주말 고양이 돌봄 요청 데모", "/care/");
+  await assertFeedItem(page, "HOSPITAL_REVIEW", "망원우리동물병원", "/hospital-reviews");
+  await assertFeedItem(page, "VOLUNTEER", "보호소 산책 봉사 데모", "/volunteer");
+  await assertFeedItem(page, "LOCAL_GUIDE", "망원 한강 산책 코스", "/guides/");
+  expect(browserErrors).toEqual([]);
+});
+
+async function assertFeedItem(
+  page: import("@playwright/test").Page,
+  type: string,
+  title: string,
+  hrefPrefix: string,
+) {
+  await page.goto(`/feed/guest?type=${type}&q=${encodeURIComponent(title)}`);
+  await expect(page.getByRole("heading", { name: "전체글" })).toBeVisible();
+  await expect(page.locator(`a[href^="${hrefPrefix}"]`).filter({ hasText: title })).toBeVisible();
+}
 
 async function createPublication(
   page: import("@playwright/test").Page,

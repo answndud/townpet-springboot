@@ -269,6 +269,7 @@ describe("Publication journeys", () => {
         body: "수정한 공원 정보입니다.",
         scope: "GLOBAL",
         version: 0,
+        animalInterestCode: null,
       }),
     );
 

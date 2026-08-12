@@ -33,6 +33,8 @@ public class PublicationFeed {
   private static final Field<String> SCOPE = field(name("p", "scope"), String.class);
   private static final Field<UUID> NEIGHBORHOOD_ID =
       field(name("p", "neighborhood_id"), UUID.class);
+  private static final Field<String> ANIMAL_INTEREST_CODE =
+      field(name("p", "animal_interest_code"), String.class);
   private static final Field<String> TITLE = field(name("p", "title"), String.class);
   private static final Field<String> BODY = field(name("p", "body"), String.class);
   private static final Field<String> LIFECYCLE = field(name("p", "lifecycle"), String.class);
@@ -93,6 +95,7 @@ public class PublicationFeed {
             TYPE,
             SCOPE,
             NEIGHBORHOOD_ID,
+            ANIMAL_INTEREST_CODE,
             TITLE,
             BODY,
             LIFECYCLE,
@@ -120,6 +123,7 @@ public class PublicationFeed {
         record.get(SCOPE),
         record.get(AUTHOR_ID),
         record.get(NEIGHBORHOOD_ID),
+        record.get(ANIMAL_INTEREST_CODE),
         record.get(LIFECYCLE),
         record.get(CREATED_AT).toInstant(),
         record.get(UPDATED_AT).toInstant(),
@@ -158,6 +162,8 @@ public class PublicationFeed {
         searchQuery,
         scopeFilter,
         null,
+        null,
+        null,
         null);
   }
 
@@ -171,6 +177,31 @@ public class PublicationFeed {
       @Nullable String scopeFilter,
       @Nullable Instant from,
       @Nullable Instant to) {
+    return list(
+        viewerMemberId,
+        includeViewerNeighborhood,
+        encodedCursor,
+        limit,
+        searchQuery,
+        scopeFilter,
+        from,
+        to,
+        null,
+        null);
+  }
+
+  @Transactional(readOnly = true)
+  public Page list(
+      @Nullable UUID viewerMemberId,
+      boolean includeViewerNeighborhood,
+      @Nullable String encodedCursor,
+      int limit,
+      @Nullable String searchQuery,
+      @Nullable String scopeFilter,
+      @Nullable Instant from,
+      @Nullable Instant to,
+      @Nullable Set<String> animalInterestCodes,
+      @Nullable String publicationType) {
     if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid feed limit");
     if (from != null && to != null && !to.isAfter(from)) {
       throw new IllegalArgumentException("Invalid feed date range");
@@ -201,6 +232,16 @@ public class PublicationFeed {
       String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
       condition = condition.and(TITLE.likeIgnoreCase(term).or(BODY.likeIgnoreCase(term)));
     }
+    if (publicationType != null && !publicationType.isBlank()) {
+      condition = condition.and(TYPE.eq(publicationType));
+    }
+    if (animalInterestCodes != null) {
+      condition =
+          animalInterestCodes.isEmpty()
+              ? condition.and(ANIMAL_INTEREST_CODE.isNull())
+              : condition.and(
+                  ANIMAL_INTEREST_CODE.isNull().or(ANIMAL_INTEREST_CODE.in(animalInterestCodes)));
+    }
     if (viewerMemberId != null && includeViewerNeighborhood) {
       Set<UUID> blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
       if (!blockedAuthorIds.isEmpty()) condition = condition.and(AUTHOR_ID.notIn(blockedAuthorIds));
@@ -220,6 +261,7 @@ public class PublicationFeed {
                 TYPE,
                 SCOPE,
                 NEIGHBORHOOD_ID,
+                ANIMAL_INTEREST_CODE,
                 TITLE,
                 BODY,
                 LIFECYCLE,
@@ -240,6 +282,7 @@ public class PublicationFeed {
                         record.get(SCOPE),
                         record.get(AUTHOR_ID),
                         record.get(NEIGHBORHOOD_ID),
+                        record.get(ANIMAL_INTEREST_CODE),
                         record.get(LIFECYCLE),
                         record.get(CREATED_AT).toInstant(),
                         record.get(UPDATED_AT).toInstant(),
@@ -262,6 +305,7 @@ public class PublicationFeed {
       String scope,
       UUID authorId,
       @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
       String lifecycle,
       Instant createdAt,
       Instant updatedAt,

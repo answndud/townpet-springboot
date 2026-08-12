@@ -53,10 +53,11 @@ class LegacyDiscoveryCompatibilityController {
 
   record AudienceResponse(List<String> segments) {}
 
-  private static FeedController.PublicationResponse response(
+  private static FeedController.FeedItemResponse response(
       com.townpet.publication.api.PublicationFeed.Item item) {
-    return new FeedController.PublicationResponse(
+    return new FeedController.FeedItemResponse(
         item.id(),
+        "PUBLICATION",
         item.type(),
         item.title(),
         item.body(),
