@@ -71,6 +71,7 @@ class PublicationControllerTest {
   @BeforeEach
   void resetPublicationState() {
     jdbc.update("DELETE FROM relationship_block");
+    jdbc.update("DELETE FROM engagement_reaction");
     jdbc.update("DELETE FROM publication");
     jdbc.update("DELETE FROM member_profile WHERE member_id = ?", MEMBER_ID);
     jdbc.update(
@@ -266,6 +267,50 @@ class PublicationControllerTest {
     mockMvc
         .perform(get("/api/v1/feed").queryParam("cursor", "not-a-cursor"))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void popularFeedRanksOnlyActiveGlobalPostsByRecommendationCount() throws Exception {
+    UUID mostRecommendedId = UUID.fromString("00000000-0000-4000-8000-000000000307");
+    UUID lessRecommendedId = UUID.fromString("00000000-0000-4000-8000-000000000308");
+    UUID noRecommendationId = UUID.fromString("00000000-0000-4000-8000-000000000309");
+    UUID localId = UUID.fromString("00000000-0000-4000-8000-000000000310");
+    UUID deletedId = UUID.fromString("00000000-0000-4000-8000-000000000311");
+    insertPublication(
+        mostRecommendedId, "추천이 가장 많은 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:10:00Z");
+    insertPublication(
+        lessRecommendedId, "추천이 적은 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:11:00Z");
+    insertPublication(
+        noRecommendationId, "추천이 없는 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:12:00Z");
+    insertPublication(
+        localId, "동네 추천 글", "LOCAL", NEIGHBORHOOD_ID, "ACTIVE", "2026-08-10T10:13:00Z");
+    insertPublication(deletedId, "삭제된 추천 글", "GLOBAL", null, "DELETED", "2026-08-10T10:14:00Z");
+
+    jdbc.update(
+        "INSERT INTO engagement_reaction (id, publication_id, author_member_id, type, created_at) "
+            + "VALUES (?, ?, ?, 'LIKE', CURRENT_TIMESTAMP), (?, ?, ?, 'LIKE', CURRENT_TIMESTAMP), "
+            + "(?, ?, ?, 'LIKE', CURRENT_TIMESTAMP)",
+        UUID.fromString("00000000-0000-4000-8000-000000000407"),
+        mostRecommendedId,
+        MEMBER_ID,
+        UUID.fromString("00000000-0000-4000-8000-000000000408"),
+        mostRecommendedId,
+        UUID.fromString("00000000-0000-4000-8000-000000000202"),
+        UUID.fromString("00000000-0000-4000-8000-000000000409"),
+        lessRecommendedId,
+        MEMBER_ID);
+
+    mockMvc
+        .perform(get("/api/v1/feed/popular"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items[0].id").value(mostRecommendedId.toString()))
+        .andExpect(jsonPath("$.items[0].recommendationCount").value(2))
+        .andExpect(jsonPath("$.items[0].rank").value(1))
+        .andExpect(jsonPath("$.items[0].viewCount").doesNotExist())
+        .andExpect(jsonPath("$.items[1].id").value(lessRecommendedId.toString()))
+        .andExpect(jsonPath("$.items[1].recommendationCount").value(1))
+        .andExpect(jsonPath("$.items[1].rank").value(2));
   }
 
   @Test

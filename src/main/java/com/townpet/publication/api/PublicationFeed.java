@@ -70,9 +70,22 @@ public class PublicationFeed {
   @Transactional(readOnly = true)
   public List<PopularItem> popularRanked(int limit) {
     if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid popular limit");
-    Table<?> METRIC = table(name("publication_metric")).as("m");
-    Field<UUID> METRIC_ID = field(name("m", "publication_id"), UUID.class);
-    Field<Long> VIEWS = field(name("m", "view_count"), Long.class);
+    Table<?> REACTION = table(name("engagement_reaction")).as("r");
+    Field<UUID> REACTION_PUBLICATION_ID = field(name("r", "publication_id"), UUID.class);
+    Field<String> REACTION_TYPE = field(name("r", "type"), String.class);
+    Table<?> RECOMMENDATIONS =
+        query
+            .select(
+                REACTION_PUBLICATION_ID.as("publication_id"),
+                org.jooq.impl.DSL.count().cast(Long.class).as("recommendation_count"))
+            .from(REACTION)
+            .where(REACTION_TYPE.eq("LIKE"))
+            .groupBy(REACTION_PUBLICATION_ID)
+            .asTable("recommendation_count");
+    Field<UUID> RECOMMENDATION_PUBLICATION_ID =
+        field(name("recommendation_count", "publication_id"), UUID.class);
+    Field<Long> RECOMMENDATION_TOTAL =
+        field(name("recommendation_count", "recommendation_count"), Long.class);
     return query
         .select(
             ID,
@@ -86,14 +99,16 @@ public class PublicationFeed {
             CREATED_AT,
             UPDATED_AT,
             VERSION,
-            VIEWS)
+            RECOMMENDATION_TOTAL)
         .from(PUBLICATION)
-        .leftJoin(METRIC)
-        .on(METRIC_ID.eq(ID))
+        .join(RECOMMENDATIONS)
+        .on(RECOMMENDATION_PUBLICATION_ID.eq(ID))
         .where(LIFECYCLE.eq("ACTIVE").and(SCOPE.eq("GLOBAL")))
-        .orderBy(VIEWS.desc().nullsLast(), CREATED_AT.desc(), ID.desc())
+        .orderBy(RECOMMENDATION_TOTAL.desc(), CREATED_AT.desc(), ID.desc())
         .limit(limit)
-        .fetch(record -> new PopularItem(toItem(record), valueOrZero(record.get(VIEWS))));
+        .fetch(
+            record ->
+                new PopularItem(toItem(record), valueOrZero(record.get(RECOMMENDATION_TOTAL))));
   }
 
   private static Item toItem(Record record) {
@@ -125,7 +140,7 @@ public class PublicationFeed {
     return list(viewerMemberId, includeViewerNeighborhood, encodedCursor, limit, searchQuery, null);
   }
 
-  public record PopularItem(Item publication, long viewCount) {}
+  public record PopularItem(Item publication, long recommendationCount) {}
 
   @Transactional(readOnly = true)
   public Page list(
