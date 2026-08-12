@@ -1,10 +1,12 @@
 package com.townpet.welfare;
 
+import com.townpet.catalog.api.ValidAnimalCommunityCodes;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -57,7 +59,8 @@ public class AdoptionController {
             request.description(),
             request.species(),
             request.breed(),
-            request.neighborhoodId()));
+            request.neighborhoodId(),
+            request.animalCommunityCodes()));
   }
 
   private static UUID memberId(UserDetails principal) {
@@ -88,7 +91,9 @@ public class AdoptionController {
       @NotBlank @Size(max = 5000) String description,
       @NotBlank @Size(max = 30) String species,
       @Nullable @Size(max = 80) String breed,
-      @Nullable UUID neighborhoodId) {}
+      @Nullable UUID neighborhoodId,
+      @Nullable @Size(max = 12) @ValidAnimalCommunityCodes
+          Collection<@Size(max = 40) String> animalCommunityCodes) {}
 
   public record Response(
       UUID id,

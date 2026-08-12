@@ -1,5 +1,6 @@
 package com.townpet.lostfound;
 
+import com.townpet.catalog.api.ValidAnimalCommunityCodes;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -8,10 +9,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,7 +49,8 @@ class LostFoundAlertController {
             request.description(),
             request.lastSeenAt(),
             request.latitude(),
-            request.longitude()));
+            request.longitude(),
+            request.animalCommunityCodes()));
   }
 
   @GetMapping
@@ -151,7 +155,9 @@ class LostFoundAlertController {
       @NotBlank @Size(max = 5000) String description,
       @NotNull Instant lastSeenAt,
       @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
-      @DecimalMin("-180.0") @DecimalMax("180.0") double longitude) {}
+      @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
+      @Nullable @Size(max = 12) @ValidAnimalCommunityCodes
+          Collection<@Size(max = 40) String> animalCommunityCodes) {}
 
   record ChangeStatusRequest(
       @NotNull LostFoundAlertStatus status,

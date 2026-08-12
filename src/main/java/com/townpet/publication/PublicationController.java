@@ -1,5 +1,6 @@
 package com.townpet.publication;
 
+import com.townpet.catalog.api.ValidAnimalCommunityCodes;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -8,7 +9,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,11 +48,13 @@ class PublicationController {
       PublicationEntity publication =
           publications.create(
               memberId,
+              request.type() == null ? PublicationType.FREE_BOARD : request.type(),
               request.scope(),
               request.neighborhoodId(),
               request.animalInterestCode(),
               request.title(),
-              request.body());
+              request.body(),
+              request.animalCommunityCodes());
       return ResponseEntity.created(URI.create("/api/v1/publications/" + publication.getId()))
           .body(toResponse(publication));
     } catch (PublicationPolicyException exception) {
@@ -62,15 +67,20 @@ class PublicationController {
       @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal) {
     return publications
         .findVisible(publicationId, viewerMemberId(principal))
-        .map(PublicationController::toResponse)
+        .map(this::toResponse)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
 
   @GetMapping("/mine")
   @MemberOnly
   List<PublicationResponse> mine(@AuthenticationPrincipal UserDetails principal) {
-    return publications.mine(memberId(principal)).stream()
-        .map(PublicationController::toResponse)
+    List<PublicationEntity> mine = publications.mine(memberId(principal));
+    Map<UUID, List<String>> tags =
+        publications.animalCommunityCodes(mine.stream().map(PublicationEntity::getId).toList());
+    return mine.stream()
+        .map(
+            publication ->
+                toResponse(publication, tags.getOrDefault(publication.getId(), List.of())))
         .toList();
   }
 
@@ -86,11 +96,13 @@ class PublicationController {
               memberId(principal),
               publicationId,
               request.version(),
+              request.type(),
               request.scope(),
               request.neighborhoodId(),
               request.animalInterestCode(),
               request.title(),
-              request.body()));
+              request.body(),
+              request.animalCommunityCodes()));
     } catch (PublicationPolicyException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
     } catch (PublicationNotFoundException exception) {
@@ -163,7 +175,12 @@ class PublicationController {
     return memberId;
   }
 
-  private static PublicationResponse toResponse(PublicationEntity publication) {
+  private PublicationResponse toResponse(PublicationEntity publication) {
+    return toResponse(publication, publications.animalCommunityCodes(publication.getId()));
+  }
+
+  private static PublicationResponse toResponse(
+      PublicationEntity publication, List<String> animalCommunityCodes) {
     return new PublicationResponse(
         publication.getId(),
         publication.getType(),
@@ -171,6 +188,7 @@ class PublicationController {
         publication.getAuthorMemberId(),
         publication.getNeighborhoodId(),
         publication.getAnimalInterestCode(),
+        animalCommunityCodes,
         publication.getTitle(),
         publication.getBody(),
         publication.getLifecycle(),
@@ -182,16 +200,22 @@ class PublicationController {
   record CreatePublicationRequest(
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 20000) String body,
+      @Nullable PublicationType type,
       @NotNull PublicationScope scope,
       @Nullable UUID neighborhoodId,
-      @Nullable @Size(max = 40) String animalInterestCode) {}
+      @Nullable @Size(max = 40) String animalInterestCode,
+      @Nullable @Size(max = 12) @ValidAnimalCommunityCodes
+          Collection<@Size(max = 40) String> animalCommunityCodes) {}
 
   record EditPublicationRequest(
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 20000) String body,
+      @Nullable PublicationType type,
       @NotNull PublicationScope scope,
       @Nullable UUID neighborhoodId,
       @Nullable @Size(max = 40) String animalInterestCode,
+      @Nullable @Size(max = 12) @ValidAnimalCommunityCodes
+          Collection<@Size(max = 40) String> animalCommunityCodes,
       @NotNull @Min(0) Long version) {}
 
   record DeletePublicationRequest(@NotNull @Min(0) Long version) {}
@@ -205,6 +229,7 @@ class PublicationController {
       @Nullable UUID authorId,
       @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
+      List<String> animalCommunityCodes,
       String title,
       String body,
       PublicationLifecycle lifecycle,
@@ -230,6 +255,7 @@ class PublicationController {
           authorId,
           neighborhoodId,
           null,
+          List.of(),
           title,
           body,
           lifecycle,

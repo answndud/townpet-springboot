@@ -1,10 +1,12 @@
 package com.townpet.welfare;
 
+import com.townpet.catalog.api.AnimalCommunityTagger;
 import com.townpet.common.UuidV7;
 import java.sql.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 class VolunteerService {
   private static final int PUBLIC_LIMIT = 100;
   private final JdbcTemplate jdbc;
+  private final AnimalCommunityTagger communityTags;
 
-  VolunteerService(JdbcTemplate jdbc) {
+  VolunteerService(JdbcTemplate jdbc, AnimalCommunityTagger communityTags) {
     this.jdbc = jdbc;
+    this.communityTags = communityTags;
   }
 
   @Transactional(readOnly = true)
@@ -44,7 +48,8 @@ class VolunteerService {
       String organization,
       String location,
       Instant startsAt,
-      int capacity) {
+      int capacity,
+      @Nullable Collection<String> animalCommunityCodes) {
     UUID id = UuidV7.randomUuid();
     jdbc.update(
         "INSERT INTO volunteer_opportunity(id,publisher_member_id,title,description,organization,location,starts_at,capacity) VALUES(?,?,?,?,?,?,?,?)",
@@ -56,6 +61,7 @@ class VolunteerService {
         location.trim(),
         startsAt,
         capacity);
+    communityTags.replace("VOLUNTEER", id, animalCommunityCodes);
     return find(id).orElseThrow();
   }
 
