@@ -2,6 +2,8 @@ import { performance } from "node:perf_hooks";
 
 const baseUrl = process.env.TOWNPET_BASE_URL ?? "http://localhost:5173";
 const repeat = Number(process.env.TOWNPET_PERF_REPEAT ?? 3);
+const routeBudgetMs = 100;
+const apiBudgetMs = 250;
 const routes = ["/", "/feed/guest", "/marketplace", "/lost-found", "/guides?q=%EC%82%B0%EC%B1%85", "/gatherings", "/care"];
 const apiRequests = [
   "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL",
@@ -30,10 +32,12 @@ async function measureGroup(paths) {
   for (const path of paths) {
     const samples = [];
     for (let index = 0; index < repeat; index += 1) samples.push(await measure(path));
+    const sortedSamples = samples.map((sample) => sample.durationMs).sort((a, b) => a - b);
     results.push({
       path,
       samples,
-      medianMs: samples.map((sample) => sample.durationMs).sort((a, b) => a - b)[Math.floor(samples.length / 2)],
+      medianMs: sortedSamples[Math.floor(sortedSamples.length / 2)],
+      p75Ms: sortedSamples[Math.max(0, Math.ceil(sortedSamples.length * 0.75) - 1)],
     });
   }
   return results;
@@ -41,10 +45,15 @@ async function measureGroup(paths) {
 
 const [routeResults, apiResults] = await Promise.all([measureGroup(routes), measureGroup(apiRequests)]);
 
-console.log(JSON.stringify({ baseUrl, repeat, measuredAt: new Date().toISOString(), routes: routeResults, api: apiResults }, null, 2));
+console.log(JSON.stringify({ baseUrl, repeat, budgets: { routeMedianMs: routeBudgetMs, apiMedianMs: apiBudgetMs }, measuredAt: new Date().toISOString(), routes: routeResults, api: apiResults }, null, 2));
 
 const serverFailures = [...routeResults, ...apiResults].filter((result) => result.samples.some((sample) => sample.status >= 500));
-if (serverFailures.length) {
-  console.error(`Unexpected server failures: ${serverFailures.map(({ path }) => path).join(", ")}`);
+const budgetFailures = [
+  ...routeResults.filter((result) => result.medianMs > routeBudgetMs),
+  ...apiResults.filter((result) => result.medianMs > apiBudgetMs),
+];
+if (serverFailures.length || budgetFailures.length) {
+  if (serverFailures.length) console.error(`Unexpected server failures: ${serverFailures.map(({ path }) => path).join(", ")}`);
+  if (budgetFailures.length) console.error(`Performance budget failures: ${budgetFailures.map(({ path, medianMs }) => `${path}=${medianMs}ms`).join(", ")}`);
   process.exitCode = 1;
 }
