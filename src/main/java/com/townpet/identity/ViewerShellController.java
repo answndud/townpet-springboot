@@ -15,7 +15,14 @@ class ViewerShellController {
   ViewerShell get(@AuthenticationPrincipal @Nullable UserDetails principal) {
     if (principal == null) return new ViewerShell("GUEST", null);
     try {
-      return new ViewerShell("MEMBER", UUID.fromString(principal.getUsername()));
+      String actor =
+          principal.getAuthorities().stream()
+              .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+              .filter(authority -> authority.startsWith("ROLE_"))
+              .map(authority -> authority.substring("ROLE_".length()))
+              .findFirst()
+              .orElse("MEMBER");
+      return new ViewerShell(actor, UUID.fromString(principal.getUsername()));
     } catch (IllegalArgumentException exception) {
       return new ViewerShell("GUEST", null);
     }

@@ -30,6 +30,9 @@ public class MemberProfileEntity {
   @Column(name = "show_public_pets", nullable = false)
   private boolean showPublicPets = true;
 
+  @Column(name = "show_public_reactions", nullable = false)
+  private boolean showPublicReactions = true;
+
   @Column(nullable = false)
   private Instant updatedAt;
 
@@ -50,9 +53,18 @@ public class MemberProfileEntity {
 
   public void updateVisibility(
       boolean showPublicPosts, boolean showPublicComments, boolean showPublicPets) {
+    updateVisibility(showPublicPosts, showPublicComments, showPublicPets, true);
+  }
+
+  public void updateVisibility(
+      boolean showPublicPosts,
+      boolean showPublicComments,
+      boolean showPublicPets,
+      boolean showPublicReactions) {
     this.showPublicPosts = showPublicPosts;
     this.showPublicComments = showPublicComments;
     this.showPublicPets = showPublicPets;
+    this.showPublicReactions = showPublicReactions;
     this.updatedAt = Instant.now();
   }
 
@@ -78,5 +90,9 @@ public class MemberProfileEntity {
 
   public boolean isShowPublicPets() {
     return showPublicPets;
+  }
+
+  public boolean isShowPublicReactions() {
+    return showPublicReactions;
   }
 }

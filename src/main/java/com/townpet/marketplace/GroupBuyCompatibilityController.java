@@ -1,5 +1,6 @@
 package com.townpet.marketplace;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -37,6 +38,7 @@ class GroupBuyCompatibilityController {
   }
 
   @PostMapping
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   MarketplaceListingController.ListingResponse create(
       @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody Request request) {

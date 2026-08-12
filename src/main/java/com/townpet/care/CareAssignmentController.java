@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
@@ -20,6 +21,7 @@ class CareAssignmentController {
   }
 
   @GetMapping("/requests/{requestId}/assignment")
+  @MemberOnly
   Response assignment(@AuthenticationPrincipal UserDetails p, @PathVariable UUID requestId) {
     try {
       return response(service.findForParticipant(member(p), requestId));
@@ -31,6 +33,7 @@ class CareAssignmentController {
   }
 
   @PostMapping("/requests/{requestId}/applications/{applicationId}/accept")
+  @MemberOnly
   Response accept(
       @AuthenticationPrincipal UserDetails p,
       @PathVariable UUID requestId,
@@ -48,6 +51,7 @@ class CareAssignmentController {
   }
 
   @PatchMapping("/assignments/{assignmentId}/status")
+  @MemberOnly
   Response status(
       @AuthenticationPrincipal UserDetails p,
       @PathVariable UUID assignmentId,
@@ -64,6 +68,7 @@ class CareAssignmentController {
   }
 
   @PostMapping("/assignments/{assignmentId}/feedback")
+  @MemberOnly
   FeedbackResponse feedback(
       @AuthenticationPrincipal UserDetails p,
       @PathVariable UUID assignmentId,

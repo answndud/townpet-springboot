@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const [showPublicPosts, setShowPublicPosts] = useState(true);
   const [showPublicComments, setShowPublicComments] = useState(true);
   const [showPublicPets, setShowPublicPets] = useState(true);
+  const [showPublicReactions, setShowPublicReactions] = useState(true);
 
   useEffect(() => {
     memberApi
@@ -22,6 +23,7 @@ export default function ProfilePage() {
         setShowPublicPosts(current.showPublicPosts);
         setShowPublicComments(current.showPublicComments);
         setShowPublicPets(current.showPublicPets);
+        setShowPublicReactions(current.showPublicReactions);
       })
       .catch(() => setError("로그인이 만료되었습니다."));
   }, []);
@@ -50,6 +52,7 @@ export default function ProfilePage() {
         showPublicPosts,
         showPublicComments,
         showPublicPets,
+        showPublicReactions,
       });
       setMember(updated);
       setVisibilitySaved(true);
@@ -79,10 +82,12 @@ export default function ProfilePage() {
         {member ? (
           <>
             <p>{member.bio ?? "아직 소개가 없어요."}</p>
-            <div className="profile-actions">
-              <Link className="button button-soft" to="/my-posts">내 작성글</Link>
-              <Link className="button button-soft" to="/bookmarks">북마크</Link>
-            </div>
+            {member.role === "MEMBER" ? (
+              <div className="profile-actions">
+                <Link className="button button-soft" to="/my-posts">내 작성글</Link>
+                <Link className="button button-soft" to="/bookmarks">북마크</Link>
+              </div>
+            ) : null}
             <h2>반려동물</h2>
             <ul>{member.pets.map((pet) => <li key={pet.id}>{pet.name} · {pet.species}</li>)}</ul>
             {member.role === "MEMBER" ? (
@@ -91,6 +96,7 @@ export default function ProfilePage() {
                 <label><input type="checkbox" checked={showPublicPosts} onChange={(event) => setShowPublicPosts(event.target.checked)} /> 게시글 공개</label>
                 <label><input type="checkbox" checked={showPublicComments} onChange={(event) => setShowPublicComments(event.target.checked)} /> 댓글 활동 공개</label>
                 <label><input type="checkbox" checked={showPublicPets} onChange={(event) => setShowPublicPets(event.target.checked)} /> 반려동물 공개</label>
+                <label><input type="checkbox" checked={showPublicReactions} onChange={(event) => setShowPublicReactions(event.target.checked)} /> 좋아요 활동 공개</label>
                 {visibilitySaved ? <p className="form-success" role="status">공개 범위가 저장되었습니다.</p> : null}
                 <button className="button button-soft" type="submit" disabled={savingVisibility}>{savingVisibility ? "저장 중..." : "공개 범위 저장"}</button>
               </form>
@@ -104,9 +110,11 @@ export default function ProfilePage() {
           </>
         ) : null}
         <div className="profile-actions">
-          <Link className="button button-soft" to="/onboarding">
-            내 동네 설정
-          </Link>
+          {member?.role === "MEMBER" ? (
+            <Link className="button button-soft" to="/onboarding">
+              내 동네 설정
+            </Link>
+          ) : null}
           <button className="button button-soft" onClick={logout} disabled={!member || loggingOut}>
             {loggingOut ? "로그아웃 중..." : "로그아웃"}
           </button>

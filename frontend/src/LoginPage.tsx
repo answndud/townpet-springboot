@@ -7,11 +7,9 @@ const DEMO_EMAIL = "demo-member-1@townpet.local";
 const DEMO_PASSWORD = "townpet-demo-123!";
 
 function safeNextPath(candidate: string | null, role: "MEMBER" | "MODERATOR") {
-  return candidate?.startsWith("/") && !candidate.startsWith("//")
-    ? candidate
-    : role === "MODERATOR"
-      ? "/admin"
-      : "/profile";
+  const internalPath = candidate?.startsWith("/") && !candidate.startsWith("//") ? candidate : null;
+  if (role === "MEMBER" && internalPath?.startsWith("/admin")) return "/profile";
+  return internalPath ?? (role === "MODERATOR" ? "/admin" : "/profile");
 }
 
 export default function LoginPage() {

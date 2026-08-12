@@ -52,6 +52,7 @@ class PublicMemberActivityController {
   @GetMapping("/reactions")
   List<ReactionResponse> reactions(@PathVariable UUID memberId) {
     requireMember(memberId);
+    if (!members.isPublicReactions(memberId)) return List.of();
     return reactions.findByAuthorMemberIdOrderByCreatedAtDesc(memberId).stream()
         .filter(reaction -> publications.existsActive(reaction.getPublicationId()))
         .map(
