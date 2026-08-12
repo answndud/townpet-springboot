@@ -29,11 +29,11 @@ class BestFeedController {
   private static Response response(PublicationFeed.PopularItem ranked, int rank) {
     PublicationFeed.Item item = ranked.publication();
     return new Response(
-        item.id(), item.title(), item.body(), item.createdAt(), ranked.viewCount(), rank);
+        item.id(), item.title(), item.body(), item.createdAt(), ranked.recommendationCount(), rank);
   }
 
   record FeedResponse(List<Response> items) {}
 
   record Response(
-      UUID id, String title, String body, Instant createdAt, long viewCount, int rank) {}
+      UUID id, String title, String body, Instant createdAt, long recommendationCount, int rank) {}
 }

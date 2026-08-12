@@ -36,6 +36,7 @@ describe("TownPet Vite shell", () => {
                   title: "이번 주말 산책 코스 추천받아요",
                   body: "저녁에 걷기 좋은 조용한 코스를 찾고 있어요.",
                   createdAt: "2026-08-12T08:00:00Z",
+                  recommendationCount: 4,
                 },
               ],
             };
@@ -46,7 +47,7 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/"]}><App /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "오늘의 인기글" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "인기글" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "이번 주말 산책 코스 추천받아요" })).toHaveAttribute(
       "href",
       "/posts/00000000-0000-4000-8000-000000000301",
@@ -168,6 +169,30 @@ describe("TownPet Vite shell", () => {
     }
     expect(screen.queryByRole("link", { name: "회원가입" })).not.toBeInTheDocument();
     expect(screen.queryByText(/카카오|네이버/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the complete public board menu and interest preferences available to guests", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }))),
+    );
+
+    render(<MemoryRouter initialEntries={["/feed/guest"]}><App /></MemoryRouter>);
+
+    expect(screen.getByRole("button", { name: "게시판" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "관심 동물" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
+    fireEvent.click(screen.getByRole("button", { name: "게시판" }));
+    expect(screen.getByRole("menuitem", { name: "동물병원 후기" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "반려동물 자랑" })).toHaveAttribute("href", "/feed/guest?type=PET_SHOWCASE");
+
+    fireEvent.click(screen.getByRole("button", { name: "관심 동물" }));
+    expect(screen.getByRole("dialog", { name: "관심 동물 설정" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "강아지" })).toBeChecked();
+    fireEvent.click(screen.getByRole("checkbox", { name: "강아지" }));
+    expect(screen.getByRole("checkbox", { name: "강아지" })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+    expect(await screen.findByText("관심 동물을 저장했습니다.")).toBeInTheDocument();
   });
 
   it("renders the reset and verification routes", () => {

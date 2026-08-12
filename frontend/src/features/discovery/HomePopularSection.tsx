@@ -8,6 +8,7 @@ export type PopularPublication = {
   title: string;
   body: string;
   createdAt: string;
+  recommendationCount?: number;
 };
 
 type PopularFeedResponse = {
@@ -31,8 +32,8 @@ export default function HomePopularSection() {
       <header className="home-community-header">
         <div>
           <p className="eyebrow">COMMUNITY PICKS</p>
-          <h2 id="home-popular-title">오늘의 인기글</h2>
-          <p>많이 읽힌 공개 게시글을 한눈에 확인해 보세요.</p>
+          <h2 id="home-popular-title">인기글</h2>
+          <p>추천을 많이 받은 공개 게시글을 한눈에 확인해 보세요.</p>
         </div>
         <Link className="publication-text-link" to="/best">
           인기글 전체 보기
@@ -60,14 +61,15 @@ export default function HomePopularSection() {
                 </Link>
                 <p>{excerpt(item.body)}</p>
               </div>
-              <time className="home-popular-meta" dateTime={item.createdAt}>
-                {formatDateTime(item.createdAt)}
-              </time>
+              <div className="home-popular-meta">
+                {item.recommendationCount !== undefined ? <span>추천 {item.recommendationCount}</span> : null}
+                <time dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time>
+              </div>
             </li>
           ))}
         </ol>
       ) : (
-        <p className="home-community-empty">아직 집계된 인기글이 없습니다.</p>
+        <p className="home-community-empty">아직 추천을 받은 인기글이 없습니다.</p>
       )}
     </section>
   );
