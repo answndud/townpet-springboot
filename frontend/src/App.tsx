@@ -84,6 +84,7 @@ function HeaderMenu({
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuItemsRef = useRef<HTMLAnchorElement[]>([]);
 
   useEffect(() => {
     setOpen(false);
@@ -100,10 +101,35 @@ function HeaderMenu({
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, [open]);
 
+  function focusMenuItem(index: number) {
+    const items = menuItemsRef.current;
+    if (!items.length) return;
+    items[(index + items.length) % items.length]?.focus();
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key === "Escape") {
       setOpen(false);
       event.currentTarget.focus();
+    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      setOpen(true);
+      window.setTimeout(() => focusMenuItem(event.key === "ArrowDown" ? 0 : -1), 0);
+    }
+  }
+
+  function handleMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const currentIndex = menuItemsRef.current.indexOf(document.activeElement as HTMLAnchorElement);
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      focusMenuItem(currentIndex + (event.key === "ArrowDown" ? 1 : -1));
+    } else if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      focusMenuItem(event.key === "Home" ? 0 : -1);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+      menuRef.current?.querySelector<HTMLButtonElement>(".header-menu-trigger")?.focus();
     }
   }
 
@@ -120,9 +146,9 @@ function HeaderMenu({
       >
         {label}<span aria-hidden="true">⌄</span>
       </button>
-      <div id={`${label}-menu`} className="header-menu-panel" role="menu" aria-label={`${label} 바로가기`}>
+      <div id={`${label}-menu`} className="header-menu-panel" role="menu" aria-label={`${label} 바로가기`} onKeyDown={handleMenuKeyDown}>
         {links.map(([linkLabel, href]) => (
-          <NavLink key={href} role="menuitem" to={href} onClick={() => setOpen(false)}>
+          <NavLink key={href} ref={(element) => { if (element) menuItemsRef.current[links.findIndex(([, linkHref]) => linkHref === href)] = element; }} role="menuitem" to={href} onClick={() => setOpen(false)}>
             {linkLabel}
           </NavLink>
         ))}
