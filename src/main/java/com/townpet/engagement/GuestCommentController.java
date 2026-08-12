@@ -22,24 +22,53 @@ import org.springframework.web.server.ResponseStatusException;
 class GuestCommentController {
   private final CommentService comments;
 
-  GuestCommentController(CommentService comments) { this.comments = comments; }
+  GuestCommentController(CommentService comments) {
+    this.comments = comments;
+  }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  Response create(@PathVariable UUID publicationId,
+  Response create(
+      @PathVariable UUID publicationId,
       @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
       @Valid @RequestBody CreateRequest request) {
     try {
-      return response(comments.createGuest(guestId, request.password(), publicationId, request.parentCommentId(), request.body()));
+      return response(
+          comments.createGuest(
+              guestId,
+              request.password(),
+              publicationId,
+              request.parentCommentId(),
+              request.body()));
     } catch (CommentPublicationNotFoundException | CommentNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
   }
 
   private static Response response(CommentEntity comment) {
-    return new Response(comment.getId(), comment.getPublicationId(), comment.getParentCommentId(), comment.getBody(), comment.getLifecycle(), comment.getCreatedAt(), comment.getUpdatedAt(), comment.getVersion());
+    return new Response(
+        comment.getId(),
+        comment.getPublicationId(),
+        comment.getParentCommentId(),
+        comment.getBody(),
+        comment.getLifecycle(),
+        comment.getCreatedAt(),
+        comment.getUpdatedAt(),
+        comment.getVersion());
   }
 
-  record CreateRequest(@NotBlank @Size(min = 8, max = 72) String password, @NotBlank @Size(max = 5000) String body, @Nullable UUID parentCommentId) {}
-  record Response(UUID id, UUID publicationId, @Nullable UUID parentCommentId, String body, CommentLifecycle lifecycle, Instant createdAt, Instant updatedAt, long version) {}
+  record CreateRequest(
+      @NotBlank @Size(min = 8, max = 72) String password,
+      @NotBlank @Size(max = 5000) String body,
+      @Nullable UUID parentCommentId) {}
+
+  record Response(
+      UUID id,
+      UUID publicationId,
+      @Nullable UUID parentCommentId,
+      String body,
+      CommentLifecycle lifecycle,
+      Instant createdAt,
+      Instant updatedAt,
+      long version) {}
 }

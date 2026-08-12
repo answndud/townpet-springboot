@@ -20,7 +20,10 @@ class PublicationService implements PublicationModeration {
   private final GuestDirectory guests;
 
   PublicationService(
-      PublicationRepository publications, MemberDirectory members, BlockDirectory blocks, GuestDirectory guests) {
+      PublicationRepository publications,
+      MemberDirectory members,
+      BlockDirectory blocks,
+      GuestDirectory guests) {
     this.publications = publications;
     this.members = members;
     this.blocks = blocks;
@@ -61,22 +64,35 @@ class PublicationService implements PublicationModeration {
   }
 
   @Transactional
-  PublicationEntity editGuest(UUID guestPublicId, String password, UUID publicationId, long expectedVersion, String title, String body) {
+  PublicationEntity editGuest(
+      UUID guestPublicId,
+      String password,
+      UUID publicationId,
+      long expectedVersion,
+      String title,
+      String body) {
     GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
-    PublicationEntity publication = publications.findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
-        .orElseThrow(PublicationNotFoundException::new);
-    if (!guest.internalId().equals(publication.getGuestAuthorId())) throw new PublicationOwnershipException();
+    PublicationEntity publication =
+        publications
+            .findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
+            .orElseThrow(PublicationNotFoundException::new);
+    if (!guest.internalId().equals(publication.getGuestAuthorId()))
+      throw new PublicationOwnershipException();
     requireCurrentVersion(publication, expectedVersion);
-    publication.edit(PublicationScope.GLOBAL, null, title.trim(), body.trim(), java.time.Instant.now());
+    publication.edit(
+        PublicationScope.GLOBAL, null, title.trim(), body.trim(), java.time.Instant.now());
     return publications.saveAndFlush(publication);
   }
 
   @Transactional
   void deleteGuest(UUID guestPublicId, String password, UUID publicationId, long expectedVersion) {
     GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
-    PublicationEntity publication = publications.findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
-        .orElseThrow(PublicationNotFoundException::new);
-    if (!guest.internalId().equals(publication.getGuestAuthorId())) throw new PublicationOwnershipException();
+    PublicationEntity publication =
+        publications
+            .findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
+            .orElseThrow(PublicationNotFoundException::new);
+    if (!guest.internalId().equals(publication.getGuestAuthorId()))
+      throw new PublicationOwnershipException();
     requireCurrentVersion(publication, expectedVersion);
     publication.delete(java.time.Instant.now());
     publications.saveAndFlush(publication);

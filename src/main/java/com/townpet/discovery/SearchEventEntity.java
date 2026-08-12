@@ -31,5 +31,8 @@ class SearchEventEntity {
     this.clientEventId = clientEventId;
   }
 
-  @Nullable UUID getClientEventId() { return clientEventId; }
+  @Nullable
+  UUID getClientEventId() {
+    return clientEventId;
+  }
 }

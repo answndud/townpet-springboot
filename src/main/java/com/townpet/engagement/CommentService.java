@@ -1,14 +1,14 @@
 package com.townpet.engagement;
 
-import com.townpet.publication.api.PublicationAccess;
-import com.townpet.publication.api.GuestDirectory;
-import com.townpet.relationship.api.BlockDirectory;
 import com.townpet.notification.api.NotificationEvent;
+import com.townpet.publication.api.GuestDirectory;
+import com.townpet.publication.api.PublicationAccess;
+import com.townpet.relationship.api.BlockDirectory;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.dao.DataAccessException;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataAccessException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +22,10 @@ class CommentService {
   private final ApplicationEventPublisher events;
 
   CommentService(
-      CommentRepository comments, PublicationAccess publications, BlockDirectory blocks, GuestDirectory guests,
+      CommentRepository comments,
+      PublicationAccess publications,
+      BlockDirectory blocks,
+      GuestDirectory guests,
       ApplicationEventPublisher events) {
     this.comments = comments;
     this.publications = publications;
@@ -32,17 +35,31 @@ class CommentService {
   }
 
   @Transactional
-  CommentEntity createGuest(UUID guestPublicId, String password, UUID publicationId, @Nullable UUID parentCommentId, String body) {
+  CommentEntity createGuest(
+      UUID guestPublicId,
+      String password,
+      UUID publicationId,
+      @Nullable UUID parentCommentId,
+      String body) {
     GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
     requireAccessiblePublication(publicationId, null);
     if (parentCommentId != null) {
-      CommentEntity parent = comments.findByIdAndLifecycle(parentCommentId, CommentLifecycle.ACTIVE)
-          .orElseThrow(CommentNotFoundException::new);
+      CommentEntity parent =
+          comments
+              .findByIdAndLifecycle(parentCommentId, CommentLifecycle.ACTIVE)
+              .orElseThrow(CommentNotFoundException::new);
       if (!parent.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
     }
-    CommentEntity comment = comments.saveAndFlush(CommentEntity.forGuest(publicationId, guest.internalId(), parentCommentId, body));
-    publications.activeAuthorMemberId(publicationId).ifPresent(recipient -> events.publishEvent(
-        new NotificationEvent(recipient, null, "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
+    CommentEntity comment =
+        comments.saveAndFlush(
+            CommentEntity.forGuest(publicationId, guest.internalId(), parentCommentId, body));
+    publications
+        .activeAuthorMemberId(publicationId)
+        .ifPresent(
+            recipient ->
+                events.publishEvent(
+                    new NotificationEvent(
+                        recipient, null, "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
     return comment;
   }
 
@@ -54,17 +71,27 @@ class CommentService {
   }
 
   @Transactional
-  CommentEntity create(UUID memberId, UUID publicationId, @Nullable UUID parentCommentId, String body) {
+  CommentEntity create(
+      UUID memberId, UUID publicationId, @Nullable UUID parentCommentId, String body) {
     requireAccessiblePublication(publicationId, memberId);
     if (parentCommentId != null) {
-      CommentEntity parent = comments.findByIdAndLifecycle(parentCommentId, CommentLifecycle.ACTIVE)
-          .orElseThrow(CommentNotFoundException::new);
+      CommentEntity parent =
+          comments
+              .findByIdAndLifecycle(parentCommentId, CommentLifecycle.ACTIVE)
+              .orElseThrow(CommentNotFoundException::new);
       if (!parent.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
     }
     try {
-      CommentEntity comment = comments.saveAndFlush(new CommentEntity(publicationId, memberId, parentCommentId, body.trim()));
-      publications.activeAuthorMemberId(publicationId).ifPresent(recipient -> events.publishEvent(
-          new NotificationEvent(recipient, memberId, "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
+      CommentEntity comment =
+          comments.saveAndFlush(
+              new CommentEntity(publicationId, memberId, parentCommentId, body.trim()));
+      publications
+          .activeAuthorMemberId(publicationId)
+          .ifPresent(
+              recipient ->
+                  events.publishEvent(
+                      new NotificationEvent(
+                          recipient, memberId, "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
       return comment;
     } catch (DataAccessException exception) {
       throw new CommentPublicationNotFoundException();

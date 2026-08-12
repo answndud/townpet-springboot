@@ -121,21 +121,41 @@ public class PublicationFeed {
       int limit,
       @Nullable String searchQuery,
       @Nullable String scopeFilter) {
-    return list(viewerMemberId, includeViewerNeighborhood, encodedCursor, limit, searchQuery, scopeFilter, null, null);
+    return list(
+        viewerMemberId,
+        includeViewerNeighborhood,
+        encodedCursor,
+        limit,
+        searchQuery,
+        scopeFilter,
+        null,
+        null);
   }
 
   @Transactional(readOnly = true)
   public Page list(
-      @Nullable UUID viewerMemberId, boolean includeViewerNeighborhood, @Nullable String encodedCursor,
-      int limit, @Nullable String searchQuery, @Nullable String scopeFilter,
-      @Nullable Instant from, @Nullable Instant to) {
+      @Nullable UUID viewerMemberId,
+      boolean includeViewerNeighborhood,
+      @Nullable String encodedCursor,
+      int limit,
+      @Nullable String searchQuery,
+      @Nullable String scopeFilter,
+      @Nullable Instant from,
+      @Nullable Instant to) {
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
-    UUID viewerNeighborhoodId = viewerMemberId == null || !includeViewerNeighborhood ? null
-        : members.findPublicationContext(viewerMemberId).map(MemberDirectory.MemberPublicationContext::neighborhoodId).orElse(null);
+    UUID viewerNeighborhoodId =
+        viewerMemberId == null || !includeViewerNeighborhood
+            ? null
+            : members
+                .findPublicationContext(viewerMemberId)
+                .map(MemberDirectory.MemberPublicationContext::neighborhoodId)
+                .orElse(null);
     Condition visible = SCOPE.eq("GLOBAL");
-    if (viewerNeighborhoodId != null) visible = visible.or(SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId)));
+    if (viewerNeighborhoodId != null)
+      visible = visible.or(SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId)));
     if (scopeFilter != null && !scopeFilter.isBlank()) {
-      if (scopeFilter.equalsIgnoreCase("LOCAL")) visible = SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId));
+      if (scopeFilter.equalsIgnoreCase("LOCAL"))
+        visible = SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId));
       else if (scopeFilter.equalsIgnoreCase("GLOBAL")) visible = SCOPE.eq("GLOBAL");
     }
     Condition condition = LIFECYCLE.eq("ACTIVE").and(visible);

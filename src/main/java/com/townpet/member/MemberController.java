@@ -25,9 +25,7 @@ public class MemberController {
   private final MemberPetRepository pets;
 
   public MemberController(
-      MemberRepository members,
-      MemberProfileRepository profiles,
-      MemberPetRepository pets) {
+      MemberRepository members, MemberProfileRepository profiles, MemberPetRepository pets) {
     this.members = members;
     this.profiles = profiles;
     this.pets = pets;
@@ -92,7 +90,8 @@ public class MemberController {
                       request.showPublicPosts(),
                       request.showPublicComments(),
                       request.showPublicPets());
-                  if (request.bio() != null) existing.update(request.bio(), existing.getNeighborhoodId());
+                  if (request.bio() != null)
+                    existing.update(request.bio(), existing.getNeighborhoodId());
                   return existing;
                 })
             .orElseGet(
@@ -130,9 +129,7 @@ public class MemberController {
   }
 
   private static MemberResponse toResponse(
-      MemberEntity member,
-      @Nullable MemberProfileEntity profile,
-      List<MemberPetEntity> pets) {
+      MemberEntity member, @Nullable MemberProfileEntity profile, List<MemberPetEntity> pets) {
     return new MemberResponse(
         member.getId(),
         member.getNickname(),

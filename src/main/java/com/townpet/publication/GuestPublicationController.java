@@ -32,16 +32,27 @@ class GuestPublicationController {
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  Response create(@CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
+  Response create(
+      @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
       @Valid @RequestBody CreateRequest request) {
-    return response(publications.createGuest(guestId, request.password(), request.title(), request.body()));
+    return response(
+        publications.createGuest(guestId, request.password(), request.title(), request.body()));
   }
 
   @PatchMapping("/{publicationId}")
-  Response edit(@PathVariable UUID publicationId, @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
+  Response edit(
+      @PathVariable UUID publicationId,
+      @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
       @Valid @RequestBody EditRequest request) {
     try {
-      return response(publications.editGuest(guestId, request.password(), publicationId, request.version(), request.title(), request.body()));
+      return response(
+          publications.editGuest(
+              guestId,
+              request.password(),
+              publicationId,
+              request.version(),
+              request.title(),
+              request.body()));
     } catch (PublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (PublicationOwnershipException exception) {
@@ -52,7 +63,9 @@ class GuestPublicationController {
   }
 
   @DeleteMapping("/{publicationId}")
-  void delete(@PathVariable UUID publicationId, @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
+  void delete(
+      @PathVariable UUID publicationId,
+      @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
       @Valid @RequestBody DeleteRequest request) {
     try {
       publications.deleteGuest(guestId, request.password(), publicationId, request.version());
@@ -66,11 +79,38 @@ class GuestPublicationController {
   }
 
   private static Response response(PublicationEntity publication) {
-    return new Response(publication.getId(), null, publication.getTitle(), publication.getBody(), publication.getLifecycle(), publication.getCreatedAt(), publication.getUpdatedAt(), publication.getVersion());
+    return new Response(
+        publication.getId(),
+        null,
+        publication.getTitle(),
+        publication.getBody(),
+        publication.getLifecycle(),
+        publication.getCreatedAt(),
+        publication.getUpdatedAt(),
+        publication.getVersion());
   }
 
-  record CreateRequest(@NotBlank @Size(min = 8, max = 72) String password, @NotBlank @Size(max = 120) String title, @NotBlank @Size(max = 20000) String body) {}
-  record EditRequest(@NotBlank @Size(min = 8, max = 72) String password, @NotBlank @Size(max = 120) String title, @NotBlank @Size(max = 20000) String body, @NotNull @Min(0) Long version) {}
-  record DeleteRequest(@NotBlank @Size(min = 8, max = 72) String password, @NotNull @Min(0) Long version) {}
-  record Response(UUID id, @Nullable UUID authorId, String title, String body, PublicationLifecycle lifecycle, Instant createdAt, Instant updatedAt, long version) {}
+  record CreateRequest(
+      @NotBlank @Size(min = 8, max = 72) String password,
+      @NotBlank @Size(max = 120) String title,
+      @NotBlank @Size(max = 20000) String body) {}
+
+  record EditRequest(
+      @NotBlank @Size(min = 8, max = 72) String password,
+      @NotBlank @Size(max = 120) String title,
+      @NotBlank @Size(max = 20000) String body,
+      @NotNull @Min(0) Long version) {}
+
+  record DeleteRequest(
+      @NotBlank @Size(min = 8, max = 72) String password, @NotNull @Min(0) Long version) {}
+
+  record Response(
+      UUID id,
+      @Nullable UUID authorId,
+      String title,
+      String body,
+      PublicationLifecycle lifecycle,
+      Instant createdAt,
+      Instant updatedAt,
+      long version) {}
 }

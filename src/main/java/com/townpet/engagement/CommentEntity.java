@@ -44,7 +44,8 @@ class CommentEntity {
 
   protected CommentEntity() {}
 
-  CommentEntity(UUID publicationId, UUID authorMemberId, @Nullable UUID parentCommentId, String body) {
+  CommentEntity(
+      UUID publicationId, UUID authorMemberId, @Nullable UUID parentCommentId, String body) {
     this.id = UuidV7.randomUuid();
     this.publicationId = publicationId;
     this.authorMemberId = authorMemberId;
@@ -55,7 +56,8 @@ class CommentEntity {
     this.updatedAt = createdAt;
   }
 
-  static CommentEntity forGuest(UUID publicationId, UUID guestAuthorId, @Nullable UUID parentCommentId, String body) {
+  static CommentEntity forGuest(
+      UUID publicationId, UUID guestAuthorId, @Nullable UUID parentCommentId, String body) {
     CommentEntity comment = new CommentEntity();
     comment.id = UuidV7.randomUuid();
     comment.publicationId = publicationId;
@@ -91,7 +93,9 @@ class CommentEntity {
   }
 
   @Nullable
-  UUID getGuestAuthorId() { return guestAuthorId; }
+  UUID getGuestAuthorId() {
+    return guestAuthorId;
+  }
 
   @Nullable
   UUID getParentCommentId() {

@@ -14,11 +14,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -36,9 +36,15 @@ class MediaController {
       @AuthenticationPrincipal UserDetails principal,
       @Valid @RequestBody CreateUploadRequest request) {
     try {
-      return toResponse(media.create(memberId(principal), request.checksumSha256(), request.contentType(), request.byteSize()));
+      return toResponse(
+          media.create(
+              memberId(principal),
+              request.checksumSha256(),
+              request.contentType(),
+              request.byteSize()));
     } catch (MediaInputNotAllowedException exception) {
-      throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media metadata");
+      throw new ResponseStatusException(
+          HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media metadata");
     }
   }
 
@@ -70,13 +76,16 @@ class MediaController {
     try {
       String contentType = file.getContentType();
       if (contentType == null || contentType.isBlank()) {
-        throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Missing content type");
+        throw new ResponseStatusException(
+            HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Missing content type");
       }
-      return toResponse(media.uploadContent(memberId(principal), assetId, contentType, file.getBytes()));
+      return toResponse(
+          media.uploadContent(memberId(principal), assetId, contentType, file.getBytes()));
     } catch (MediaAssetNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (MediaObjectMismatchException exception) {
-      throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Uploaded object does not match metadata");
+      throw new ResponseStatusException(
+          HttpStatus.UNPROCESSABLE_ENTITY, "Uploaded object does not match metadata");
     } catch (MediaAssetStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not active");
     } catch (java.io.IOException exception) {
@@ -96,7 +105,8 @@ class MediaController {
     } catch (MediaOwnershipException exception) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     } catch (MediaAttachmentLimitException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication attachment limit reached");
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "Publication attachment limit reached");
     } catch (MediaAssetStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not attachable");
     }

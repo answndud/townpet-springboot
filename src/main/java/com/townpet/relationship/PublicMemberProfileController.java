@@ -6,9 +6,9 @@ import com.townpet.relationship.api.BlockDirectory;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,13 +34,24 @@ class PublicMemberProfileController {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
     PublicProfile profile =
-        members.findPublicProfile(memberId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    List<PetResponse> pets = profile.showPublicPets() || viewerId.equals(memberId)
-        ? profile.pets().stream().map(pet -> new PetResponse(pet.id(), pet.name(), pet.species())).toList()
-        : List.of();
+        members
+            .findPublicProfile(memberId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    List<PetResponse> pets =
+        profile.showPublicPets() || viewerId.equals(memberId)
+            ? profile.pets().stream()
+                .map(pet -> new PetResponse(pet.id(), pet.name(), pet.species()))
+                .toList()
+            : List.of();
     return new Response(
-        profile.id(), profile.nickname(), profile.bio(), profile.neighborhoodId(),
-        profile.showPublicPosts(), profile.showPublicComments(), profile.showPublicPets(), pets);
+        profile.id(),
+        profile.nickname(),
+        profile.bio(),
+        profile.neighborhoodId(),
+        profile.showPublicPosts(),
+        profile.showPublicComments(),
+        profile.showPublicPets(),
+        pets);
   }
 
   private static UUID memberId(UserDetails principal) {
@@ -53,8 +64,13 @@ class PublicMemberProfileController {
   }
 
   record Response(
-      UUID id, String nickname, @Nullable String bio, @Nullable UUID neighborhoodId,
-      boolean showPublicPosts, boolean showPublicComments, boolean showPublicPets,
+      UUID id,
+      String nickname,
+      @Nullable String bio,
+      @Nullable UUID neighborhoodId,
+      boolean showPublicPosts,
+      boolean showPublicComments,
+      boolean showPublicPets,
       List<PetResponse> pets) {}
 
   record PetResponse(UUID id, String name, String species) {}

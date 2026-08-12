@@ -58,7 +58,8 @@ class NotificationEntity {
     return body;
   }
 
-  @Nullable Instant getReadAt() {
+  @Nullable
+  Instant getReadAt() {
     return readAt;
   }
 
