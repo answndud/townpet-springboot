@@ -52,6 +52,7 @@ class DatabaseBaselineTest {
           .isEqualTo("character varying");
       assertThat(tableExists(statement, "identity_auth_audit")).isTrue();
       assertThat(tableExists(statement, "publication")).isTrue();
+      assertThat(tableExists(statement, "member_animal_interest")).isFalse();
       assertThat(columnExists(statement, "identity_credential", "role")).isTrue();
       assertThat(columnExists(statement, "identity_credential", "lifecycle_locked")).isTrue();
       assertThat(columnExists(statement, "identity_credential", "email_verified_at")).isTrue();

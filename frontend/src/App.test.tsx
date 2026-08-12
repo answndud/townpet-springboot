@@ -184,22 +184,27 @@ describe("TownPet Vite shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "동물 게시판" }));
     expect(screen.getByRole("menu", { name: "동물 게시판" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "강아지 게시판" })).toHaveAttribute("href", "/animals/dog");
-    expect(screen.getByRole("menuitem", { name: "동물 게시판 관리" })).toHaveAttribute("href", "/settings/animal-boards");
+    expect(screen.getByRole("menuitem", { name: "고양이 게시판" })).toHaveAttribute("href", "/animals/cat");
+    expect(screen.getByRole("menuitem", { name: "어류·수조 게시판" })).toHaveAttribute("href", "/animals/aquarium_fish");
+    expect(screen.queryByRole("menuitem", { name: "동물 게시판 관리" })).not.toBeInTheDocument();
   });
 
-  it("keeps an explicitly empty interest list empty in the navigation menu", async () => {
-    window.localStorage.setItem("townpet:animal-interests:v1:guest", "[]");
+  it("always exposes the full animal board catalog without a preference request", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }))),
+      vi.fn((input) => {
+        const path = String(input);
+        return Promise.resolve(new Response(JSON.stringify(path.endsWith("/api/v1/members/me") ? { detail: "Unauthorized" } : { items: [], page: { nextCursor: null, hasNext: false } }), { status: path.endsWith("/api/v1/members/me") ? 401 : 200 }));
+      }),
     );
 
     render(<MemoryRouter initialEntries={["/feed/guest"]}><App /></MemoryRouter>);
 
     fireEvent.click(screen.getByRole("button", { name: "동물 게시판" }));
     expect(screen.getByRole("menuitem", { name: "전체 동물 게시판" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "동물 게시판 관리" })).toBeInTheDocument();
-    expect(screen.queryByRole("menuitem", { name: "강아지 게시판" })).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "강아지 게시판" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "고양이 게시판" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "동물 게시판 관리" })).not.toBeInTheDocument();
   });
 
   it("renders the reset and verification routes", () => {
