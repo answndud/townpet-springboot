@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "measure:perf": "node scripts/measure-performance.mjs",
+    "measure:browser": "node scripts/measure-browser-performance.mjs",
     "test:e2e": "playwright test",
     "test:e2e:auth": "../scripts/auth-browser-e2e.sh"
   },
