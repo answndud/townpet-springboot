@@ -32,7 +32,18 @@ describe("LostFound journeys", () => {
       if (path.includes("/api/v1/lost-found/alerts?") && !path.includes("/sightings")) return Promise.resolve(response([alert]));
       if (path.endsWith("/api/v1/lost-found/alerts/" + alert.id)) return Promise.resolve(response(alert));
       if (path.includes("/sightings?")) return Promise.resolve(response([]));
-      if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response({}, 401));
+      if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response({
+        id: "00000000-0000-4000-8000-000000000201",
+        nickname: "demo-member-1",
+        role: "MEMBER",
+        bio: null,
+        neighborhoodId: null,
+        pets: [],
+        showPublicPosts: true,
+        showPublicComments: true,
+        showPublicPets: true,
+        showPublicReactions: true,
+      }));
       return Promise.resolve(response({}));
     });
     vi.stubGlobal("fetch", fetchMock);

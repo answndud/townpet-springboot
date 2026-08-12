@@ -18,10 +18,11 @@
 - 변경:
   - Spring Method Security와 `/api/admin/**`·legacy 신고 alias matcher를 활성화해 MEMBER가 모든 관리자 surface에 접근하지 못하게 한다.
   - 일반 회원 mutation을 `MEMBER` 전용으로 제한하고 MODERATOR는 운영 검토·공개 읽기만 사용하게 한다.
+  - GuestPrincipal 기반 작성·댓글·step-up도 `익명 또는 MEMBER`만 허용해 MODERATOR가 guest 경로로 우회하지 못하게 한다.
   - ViewerShell, legacy 공개 프로필, 공개 reaction visibility를 신규 profile API와 동일하게 맞춘다.
-  - React moderator route/header/profile와 login `next`를 역할별로 분리한다.
+  - React moderator/member route와 detail action을 역할별로 분리하고 login `next`를 안전하게 처리한다.
 - 검증: `./gradlew test --no-daemon`, `./gradlew migrationTest --no-daemon`, `cd frontend && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/vitest run`, Docker demo MEMBER/MODERATOR API status 확인
-- 완료: 관리자 API가 MEMBER에는 403, MODERATOR에는 200을 반환하고, MODERATOR의 일반 작성 mutation은 403이며 화면·공개범위·legacy contract가 역할에 맞게 표시된다. 실제 Docker demo 계정 확인과 `IdentityMemberControllerTest`의 양방향 회귀 테스트를 추가했다.
+- 완료: 관리자 API가 MEMBER에는 403, MODERATOR에는 200을 반환하고, MODERATOR의 일반·guest 작성 mutation은 403이며 화면·공개범위·legacy contract가 역할에 맞게 표시된다. 실제 Docker demo 계정 확인과 `IdentityMemberControllerTest`의 양방향 회귀 테스트를 추가했다.
 
 ### P1 - 제품 parity와 ADR 판정을 실제 근거로 닫는다 ✅ completed (2026-08-12)
 

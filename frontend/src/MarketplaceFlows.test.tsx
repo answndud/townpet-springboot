@@ -37,7 +37,18 @@ describe("Marketplace journeys", () => {
         return Promise.resolve(response({ ...listing, title: "새 이동장" }, 201));
       }
       if (path.includes("/api/v1/marketplace/listings/")) return Promise.resolve(response(listing));
-      if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response({}, 401));
+      if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response({
+        id: "00000000-0000-4000-8000-000000000201",
+        nickname: "demo-member-1",
+        role: "MEMBER",
+        bio: null,
+        neighborhoodId: null,
+        pets: [],
+        showPublicPosts: true,
+        showPublicComments: true,
+        showPublicPets: true,
+        showPublicReactions: true,
+      }));
       return Promise.resolve(response({}));
     });
     vi.stubGlobal("fetch", fetchMock);

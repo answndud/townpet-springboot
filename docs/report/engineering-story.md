@@ -57,6 +57,8 @@ Credentials 화면을 실제 PostgreSQL·Spring·Vite browser test로 연결하�
 
 Spring Method Security를 활성화하고 `/api/admin/**`, 신고 compatibility alias와 운영 summary의 경계를 정리했다. 일반 회원 쓰기 기능에는 `MEMBER` 전용 meta-annotation을 적용해 MODERATOR가 게시·댓글·관계·거래·돌봄·미디어 같은 일반 사용자 mutation을 실행하지 못하게 했다. 레거시 공개 프로필도 공개 반려동물 설정을 동일하게 적용하고 React Router에는 moderator route guard를 추가했다.
 
+추가 점검에서 guest cookie가 있으면 인증된 MODERATOR도 GuestPrincipal 작성·댓글·step-up을 호출할 수 있는 우회 경로와, 공개 상세 화면에 회원 전용 버튼이 보이는 문제를 발견했다. guest write는 익명 또는 MEMBER만 허용하고, React member route와 상세 action은 MODERATOR에게 읽기 전용으로 렌더링하도록 분리했다.
+
 이 수정은 코드 검색만으로 완료 처리하지 않고 MEMBER·MODERATOR demo session을 실제 Docker PostgreSQL backend에 로그인시켜 관리자 API가 각각 `403`·`200`인지, 일반 mutation이 MODERATOR에게 `403`인지 확인했다. `IdentityMemberControllerTest`, `ModularityTest`, frontend Vitest가 이 경계를 회귀 검증한다.
 
 - 근거: `SecurityConfig`, `MemberOnly`, `ViewerShellController`, `IdentityMemberControllerTest`, `frontend/src/App.tsx`
