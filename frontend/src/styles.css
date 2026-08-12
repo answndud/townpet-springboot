@@ -44,7 +44,7 @@ nav a.active { color: #2563eb; text-decoration: underline; text-decoration-thick
 .header-menu:hover .header-menu-panel, .header-menu:focus-within .header-menu-panel, .header-menu.open .header-menu-panel { visibility: visible; opacity: 1; pointer-events: auto; transform: translateY(0); }
 .header-menu-panel a { min-height: 32px; justify-content: flex-start; border-radius: 6px; padding: 0 10px; color: #315484; font-size: 12px; white-space: nowrap; }
 .header-menu-panel a:hover, .header-menu-panel a:focus-visible { background: #edf5ff; color: #285a9f; text-decoration: none; }
-.desktop-nav > .header-menu:last-child .header-menu-panel { left: auto; right: 0; }
+.desktop-nav > .header-menu:nth-last-child(2) .header-menu-panel { left: auto; right: 0; }
 .mobile-only-menu { display: none; }
 .page { width: 100%; max-width: 1180px; margin: 0 auto; padding: 24px 16px 56px; }
 .hero-section { padding: 24px 0 28px; }
@@ -389,7 +389,7 @@ h1, h2, p { margin: 0; }
   .desktop-nav-secondary { display: none; }
   .mobile-only-menu { display: block; }
   .header-menu-panel { position: fixed; top: 51px; right: 12px; left: auto; }
-  .desktop-nav > .header-menu:last-child .header-menu-panel { right: 12px; }
+  .desktop-nav > .header-menu:nth-last-child(2) .header-menu-panel { right: 12px; }
   .page { padding: 22px 16px 44px; }
   .hero-section { padding-top: 16px; }
   .hero-copy { font-size: 15px; }
