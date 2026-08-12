@@ -11,6 +11,7 @@ export type ProblemDetail = {
 export type Session = {
   memberId: string;
   expiresAt: string;
+  role: "MEMBER" | "MODERATOR";
 };
 
 export type Neighborhood = {
@@ -29,6 +30,7 @@ export type Pet = {
 export type Member = {
   id: string;
   nickname: string;
+  role: "MEMBER" | "MODERATOR";
   bio: string | null;
   neighborhoodId: string | null;
   pets: Pet[];
@@ -37,7 +39,7 @@ export type Member = {
   showPublicPets: boolean;
 };
 
-export type PublicMember = Member;
+export type PublicMember = Omit<Member, "role">;
 export type PublicMemberPublication = { id: string; title: string; body: string; scope: PublicationScope; createdAt: string; updatedAt: string };
 export type PublicMemberComment = { id: string; publicationId: string; body: string; createdAt: string };
 export type PublicMemberReaction = { publicationId: string; type: string; createdAt: string };

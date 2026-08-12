@@ -78,13 +78,14 @@ public class SessionController {
     SecurityContextHolder.setContext(context);
     securityContexts.saveContext(context, httpRequest, httpResponse);
 
-    UUID memberId =
+    CredentialEntity credential =
         credentials
             .findByEmailIgnoreCase(email)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED))
-            .getMemberId();
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+    UUID memberId = credential.getMemberId();
+    String role = credential.getRole();
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(new SessionResponse(memberId, Instant.now().plusSeconds(1800)));
+        .body(new SessionResponse(memberId, Instant.now().plusSeconds(1800), role));
   }
 
   @DeleteMapping("/sessions/current")
@@ -100,7 +101,7 @@ public class SessionController {
       @NotBlank @Email @Size(max = 320) String email,
       @NotBlank @Size(min = 8, max = 72) String password) {}
 
-  record SessionResponse(UUID memberId, Instant expiresAt) {}
+  record SessionResponse(UUID memberId, Instant expiresAt, String role) {}
 
   record CsrfResponse(String token) {}
 }
