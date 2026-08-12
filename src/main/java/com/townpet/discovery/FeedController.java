@@ -70,6 +70,9 @@ class FeedController {
       FeedScope scope,
       @Nullable LocalDate from,
       @Nullable LocalDate to) {
+    if (from != null && to != null && to.isBefore(from)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed date range");
+    }
     try {
       PublicationFeed.Page page =
           publications.list(

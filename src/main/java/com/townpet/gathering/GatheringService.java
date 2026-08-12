@@ -21,7 +21,7 @@ class GatheringService {
 
   @Transactional(readOnly = true)
   List<GatheringView> list() {
-    return gatherings.findByStatusOrderByStartsAtAsc(GatheringStatus.ACTIVE).stream()
+    return gatherings.findTop100ByStatusOrderByStartsAtAscIdAsc(GatheringStatus.ACTIVE).stream()
         .map(this::view)
         .toList();
   }
@@ -59,7 +59,7 @@ class GatheringService {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Gathering is cancelled");
     if (participants.findByGatheringIdAndMemberId(id, member).isPresent())
       return view(gathering, member);
-    if (participants.findAllByGatheringId(id).size() >= gathering.getCapacity())
+    if (participants.countByGatheringId(id) >= gathering.getCapacity())
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Gathering is full");
     participants.save(new GatheringParticipantEntity(UuidV7.randomUuid(), id, member));
     return view(gathering, member);
@@ -92,7 +92,7 @@ class GatheringService {
   }
 
   private GatheringView view(GatheringEntity g, @Nullable UUID viewer) {
-    int count = participants.findAllByGatheringId(g.getId()).size();
+    int count = Math.toIntExact(participants.countByGatheringId(g.getId()));
     boolean joined =
         viewer != null && participants.findByGatheringIdAndMemberId(g.getId(), viewer).isPresent();
     return new GatheringView(

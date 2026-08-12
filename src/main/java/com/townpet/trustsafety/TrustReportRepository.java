@@ -7,5 +7,5 @@ interface TrustReportRepository extends JpaRepository<TrustReportEntity, UUID> {
   Optional<TrustReportEntity> findByReporterMemberIdAndTargetTypeAndTargetId(
       UUID reporter, String type, UUID target);
 
-  List<TrustReportEntity> findByStatusOrderByCreatedAtAsc(String status);
+  List<TrustReportEntity> findTop100ByStatusOrderByCreatedAtAscIdAsc(String status);
 }

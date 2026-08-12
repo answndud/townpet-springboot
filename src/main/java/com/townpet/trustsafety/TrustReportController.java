@@ -9,11 +9,13 @@ import java.util.*;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping({"/api/v1/trust-reports", "/api/reports"})
+@Validated
 class TrustReportController {
   private final TrustReportRepository reports;
 
@@ -43,14 +45,17 @@ class TrustReportController {
 
   @GetMapping
   @org.springframework.security.access.prepost.PreAuthorize("hasRole('MODERATOR')")
-  List<ReportResponse> queue(@RequestParam(defaultValue = "OPEN") String status) {
-    return reports.findByStatusOrderByCreatedAtAsc(status).stream()
+  List<ReportResponse> queue(
+      @RequestParam(defaultValue = "OPEN") @Pattern(regexp = "OPEN|REVIEWED|REJECTED")
+          String status) {
+    return reports.findTop100ByStatusOrderByCreatedAtAscIdAsc(status).stream()
         .map(TrustReportController::response)
         .toList();
   }
 
   @PatchMapping("/{id}")
   @org.springframework.security.access.prepost.PreAuthorize("hasRole('MODERATOR')")
+  @org.springframework.transaction.annotation.Transactional
   ReportResponse review(@PathVariable UUID id, @Valid @RequestBody ReviewRequest r) {
     TrustReportEntity report =
         reports.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));

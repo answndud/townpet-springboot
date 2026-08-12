@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 class HospitalReviewService {
+  private static final int PUBLIC_LIMIT = 100;
   private final JdbcTemplate jdbc;
 
   HospitalReviewService(JdbcTemplate jdbc) {
@@ -23,9 +24,15 @@ class HospitalReviewService {
     return jdbc.query(
         "SELECT id,author_member_id,hospital_name,address,rating,body,created_at,updated_at,version FROM hospital_review"
             + clause
-            + " ORDER BY created_at DESC,id DESC",
+            + " ORDER BY created_at DESC,id DESC LIMIT ?",
         (rs, n) -> map(rs),
-        args);
+        appendLimit(args));
+  }
+
+  private static Object[] appendLimit(Object[] args) {
+    Object[] limited = java.util.Arrays.copyOf(args, args.length + 1);
+    limited[args.length] = PUBLIC_LIMIT;
+    return limited;
   }
 
   @Transactional(readOnly = true)

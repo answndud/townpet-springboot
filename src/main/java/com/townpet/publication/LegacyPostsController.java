@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -27,6 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/posts")
+@Validated
 class LegacyPostsController {
   private final PublicationFeed feed;
   private final PublicationService publications;
@@ -41,7 +43,7 @@ class LegacyPostsController {
       @AuthenticationPrincipal @Nullable UserDetails principal,
       @RequestParam(defaultValue = "20") int limit,
       @RequestParam(required = false) @Nullable String cursor,
-      @RequestParam(required = false) @Nullable String query) {
+      @RequestParam(required = false) @Size(max = 80) @Nullable String query) {
     if (limit < 1 || limit > 50) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
     }

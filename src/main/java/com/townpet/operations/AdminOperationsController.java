@@ -23,7 +23,7 @@ class AdminOperationsController {
 
   @GetMapping("/corrections")
   List<CorrectionResponse> corrections() {
-    return corrections.findAllByOrderByCreatedAtDesc().stream()
+    return corrections.findTop100ByOrderByCreatedAtDescIdDesc().stream()
         .map(
             correction ->
                 new CorrectionResponse(

@@ -2,82 +2,158 @@
 
 ## Goal
 
-실제 VPS·DNS·TLS·외부 object storage를 구성하기 전에 TownPet의 제품 기능과 로컬 실행 경험을 완성한다. Legacy의 49개 page·55개 API를 정상·오류·권한·상태 전이·반응형 화면까지 구현하거나 ADR로 명확히 제외하고, 새 환경에서 합성 demo 데이터로 같은 사용자 여정을 재현할 수 있으면 배포 전 개발 완료로 판정한다.
+외부 VPS·DNS·TLS·object storage를 구성하기 전, Spring Boot 백엔드를 배포 가능한 release candidate 수준으로 완성한다. 모든 유지 대상 API가 정상·오류·권한·상태 전이를 일관되게 처리하고, PostgreSQL/Flyway 기준의 데이터 불변식·트랜잭션·쿼리 효율·실행 재현성이 검증되며, 깨끗한 환경에서 재기동해도 알려진 오류가 없는 상태를 완료로 본다.
 
-현재 G1~G8의 기본 build/test gate는 통과했지만, parity matrix의 `pending=0`만으로 의미 parity가 증명되지는 않는다. 다음 작업은 실제 구현 공백과 문서·코드 간 불일치를 먼저 닫는다. Hetzner, DNS, TLS, SMTP, 외부 object storage, offsite backup, monitoring은 이 PLAN의 범위가 아니다.
+범위는 `src/main/java`, `src/main/resources`, backend migration·test·Docker 실행 경로다. React 화면 구현과 실제 공개 배포는 이 계획의 완료 조건이 아니며, 공개 배포·TLS·외부 저장소·SMTP·off-site backup·monitoring은 G9에서 별도로 다룬다.
+
+## Current status
+
+P1~P3 구현 덩어리는 `100cac6`에서 반영했고, 아래 완료 판정의 fresh gate와 Docker local evidence를 통과했다. 현재는 backend release candidate 상태이며 공개 배포는 시작하지 않는다. 이후에는 배포를 시작할 때만 Backlog의 G9를 실행한다.
+
+- Gradle `clean check migrationTest`, `performanceTest`, `bootJar`: 통과
+- Docker backend health/readiness, Flyway `051`, demo seed 2회 반복: 통과
+- parity inventory: `104 total / 95 verified / 9 excluded / 0 pending`
+- 남은 것은 production 외부 인프라·TLS·백업·모니터링이며 G9 범위다.
 
 ## Active
 
-현재 실행 중인 권한 slice는 없다. 다음 기능 작업은 새 권한·parity gap이 확인될 때 이 위치에 추가한다.
+### P1 - 백엔드 기능·계약·권한을 닫는다
 
-## Completed
+#### P1.1 - HTTP 오류와 입력 계약을 하나의 정책으로 통합한다
 
-### P4 - 역할별 권한 경계를 실제 계정 조합으로 닫는다 ✅ completed (2026-08-12)
-
-- 파일: `src/main/java/com/townpet/identity/SecurityConfig.java`, `src/main/java/com/townpet/common/MemberOnly.java`, 역할별 controller, `src/main/java/com/townpet/member/`, `frontend/src/App.tsx`, `frontend/src/ProfilePage.tsx`, `frontend/src/PublicMemberProfilePage.tsx`, `src/test/java/com/townpet/identity/IdentityMemberControllerTest.java`
+- 파일: `src/main/java/com/townpet/common/web/`, `src/main/java/com/townpet/*/*Controller.java`, 관련 `src/test/java/com/townpet/**`
 - 변경:
-  - Spring Method Security와 `/api/admin/**`·legacy 신고 alias matcher를 활성화해 MEMBER가 모든 관리자 surface에 접근하지 못하게 한다.
-  - 일반 회원 mutation을 `MEMBER` 전용으로 제한하고 MODERATOR는 운영 검토·공개 읽기만 사용하게 한다.
-  - GuestPrincipal 기반 작성·댓글·step-up도 `익명 또는 MEMBER`만 허용해 MODERATOR가 guest 경로로 우회하지 못하게 한다.
-  - ViewerShell, legacy 공개 프로필, 공개 reaction visibility를 신규 profile API와 동일하게 맞춘다.
-  - React moderator/member route와 detail action을 역할별로 분리하고 login `next`를 안전하게 처리한다.
-- 검증: `./gradlew test --no-daemon`, `./gradlew migrationTest --no-daemon`, `cd frontend && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/vitest run`, Docker demo MEMBER/MODERATOR API status 확인
-- 완료: 관리자 API가 MEMBER에는 403, MODERATOR에는 200을 반환하고, MODERATOR의 일반·guest 작성 mutation은 403이며 화면·공개범위·legacy contract가 역할에 맞게 표시된다. 실제 Docker demo 계정 확인과 `IdentityMemberControllerTest`의 양방향 회귀 테스트를 추가했다.
+  - `ResponseStatusException`, `null` 반환, controller별 문자열 오류를 공통 domain/application 예외와 `ProblemDetail` 코드로 정리한다.
+  - validation, 잘못된 UUID·cursor·limit·filter, 존재하지 않는 리소스, 인증 실패, 권한 부족, 상태 충돌, optimistic-lock 충돌을 각각 고정된 status/code로 매핑한다.
+  - 401·403·404를 resource visibility 규칙에 맞게 구분하고, 오류 응답에 credential·정확 위치·내부 SQL·stack trace가 노출되지 않게 한다.
+  - trace/correlation id 생성·전달 규칙을 정하고 모든 API 오류에서 재현 가능한 형태로 제공한다.
+- 검증: 공통 `GlobalProblemHandler` 단위 테스트와 각 controller의 정상·validation·404·401·403·409 통합 테스트를 변경 module별로 실행한다.
+- 완료: 동일한 오류 유형이 어느 module에서도 같은 status/code/response shape을 반환하고, 주요 endpoint의 계약 테스트가 통과한다.
 
-### P1 - 제품 parity와 ADR 판정을 실제 근거로 닫는다 ✅ completed (2026-08-12)
+#### P1.2 - Identity·RBAC·ownership·privacy 매트릭스를 backend에서 강제한다
 
-- 파일: `docs/parity/matrix.yaml`, `ADR.md`, `src/main/java/com/townpet/{care,discovery,media,marketplace,localguide}/`, `frontend/src/`, `frontend/e2e/`, `src/test/java/`
+- 파일: `src/main/java/com/townpet/identity/`, `src/main/java/com/townpet/common/security/`, `src/main/java/com/townpet/member/`, `src/main/java/com/townpet/relationship/`, `src/main/java/com/townpet/media/`, `src/main/java/com/townpet/trustsafety/`, `src/test/java/com/townpet/identity/`
 - 변경:
-  - matrix의 49 page·55 API를 Legacy `app/src/app`와 다시 대조하고, `verified`는 정상·오류·권한·상태 전이와 대표 frontend/backend evidence가 있는 경우에만 유지한다.
-  - 근거가 부족한 항목은 임의로 `excluded`로 바꾸지 말고 실제 동작을 구현하거나, 현재 제품 범위 밖인 이유·영향·대안을 ADR에 기록한다.
-  - Care의 Request·Application·Assignment·Feedback 사용자 여정을 실제 화면·API·권한·상태 전이와 browser/integration evidence로 닫고, 현재 ADR의 “care package가 비어 있음” 같은 오래된 근거를 현재 코드와 일치시킨다.
-  - Search/guest search의 query·기간·scope·type 의미, best/personalization의 ranking 의미, group buy compatibility, guide slug detail, commercial route의 의미를 Legacy fixture로 대조한다.
-  - production에서 의도적으로 제공하지 않을 media presign·personalization projection 등은 route와 화면에서 오해를 만들지 않도록 명시적 capability/error 정책을 정한다.
+  - anonymous, MEMBER, MODERATOR, ADMIN/운영 내부 계정의 읽기·쓰기·운영 API 매트릭스를 endpoint 목록으로 고정한다.
+  - method security가 실제 application method까지 적용되는지 확인하고, controller matcher 누락·legacy alias·guest cookie/step-up 우회 경로를 모두 같은 정책으로 묶는다.
+  - resource owner, staff review, blocked member, 공개 게시글·댓글·반응·반려동물 프로필, 분실동물 정확 위치·private media 규칙을 service/domain에서 검사한다.
+  - session·CSRF·password/email token lifecycle의 만료·single-use·재사용·실패 잠금·로그아웃 동작을 명확히 한다.
+- 검증: 각 역할의 허용/거부 쌍을 `MockMvc` 또는 Testcontainers PostgreSQL 통합 테스트로 작성하고, staff가 일반 회원/guest write API를 우회할 수 없는지 회귀 테스트한다.
+- 완료: 모든 보호 API가 deny-by-default로 동작하고, 권한과 privacy 결과가 신규·legacy route에서 동일하다.
+
+#### P1.3 - 핵심 상태 전이와 동시성 불변식을 원자화한다
+
+- 파일: `src/main/java/com/townpet/care/`, `src/main/java/com/townpet/marketplace/`, `src/main/java/com/townpet/lostfound/`, `src/main/java/com/townpet/gathering/`, `src/main/java/com/townpet/publication/`, `src/main/java/com/townpet/engagement/`, 해당 migration·test
+- 변경:
+  - Care request/application/assignment/feedback, marketplace listing/group-buy, lost-found alert/sighting, gathering 참가, publication/comment/reaction/bookmark의 허용 상태 전이를 domain/application service에 모은다.
+  - controller에 남은 상태·소유권 판단을 제거하고 transaction 경계를 application service에 둔다.
+  - version·조건부 update·unique/check/FK constraint로 중복 신청·중복 반응·정원 초과·잘못된 종료·이미 사용한 token을 방지한다.
+  - 재시도 가능한 command는 idempotency key 또는 unique business key를 사용하고, 충돌은 409로 돌려준다.
+  - event publication이 필요한 변경만 source transaction과 함께 기록하고 consumer는 재처리 가능하게 만든다.
+- 검증: 상태 전이 표의 정상·역전이·중복 요청·동시 요청을 integration test로 실행하고, PostgreSQL constraint/optimistic lock 실패를 실제 응답까지 확인한다.
+- 완료: 모든 핵심 aggregate가 허용된 전이만 수행하며, 동시 요청에서도 데이터가 깨지지 않고 재시도 결과가 결정적이다.
+
+#### P1.4 - 유지 대상 API의 기능 공백과 legacy compatibility를 닫는다
+
+- 파일: `src/main/java/com/townpet/*/`, `api/` 계약 참조 파일, `src/test/java/com/townpet/contract/`, `src/test/java/com/townpet/parity/`
+- 변경:
+  - parity matrix의 유지 대상 API를 endpoint 단위로 다시 확인해 route만 존재하고 빈 응답·placeholder·무시된 입력을 반환하는 구현을 제거한다.
+  - feed/search/best, catalog/local guide, welfare/adoption/volunteer/hospital, marketplace, gathering, notification, trust & safety, admin projection의 정상·빈 결과·잘못된 query·권한 결과를 명시한다.
+  - 유지하지 않는 외부 계약은 조용히 성공시키지 않고 명시적인 404/409/capability 응답과 ADR 근거를 둔다.
+- 검증: `./gradlew test --tests 'com.townpet.contract.*' parityInventoryTest`를 실행하고, 변경 module의 API integration test를 추가로 통과시킨다.
+- 완료: 유지 대상 API에는 알려진 기능 공백이 없고, 제외 API는 오해를 일으키지 않는 명시적 동작을 갖는다.
+
+### P2 - 구조와 데이터 접근을 리팩터링해 효율과 유지보수성을 확보한다
+
+#### P2.1 - Modulith 경계와 계층 책임을 정리한다
+
+- 파일: `src/main/java/com/townpet/*/`, `src/test/java/com/townpet/architecture/`, `src/test/java/com/townpet/platform/`
+- 변경:
+  - controller는 transport 변환만, application service는 use case·transaction·authorization만, domain은 business invariant만, infrastructure는 JPA/jOOQ/외부 adapter만 담당하도록 이동한다.
+  - module 간 JPA association·repository·entity·controller DTO 참조를 제거하고 공개 `api` 또는 식별자/event로 연결한다.
+  - 중복 principal 해석, ownership 검사, pagination parsing, 날짜/enum 변환, 동일 query adapter를 공통 기술 component로 추출하되 business shared model은 만들지 않는다.
+  - 사용되지 않는 interface·추상 factory·legacy wrapper와 동일 조회의 JPA/jOOQ 이중 구현을 제거한다.
+- 검증: `./gradlew modulithTest test`, ArchUnit/Modulith 경계 테스트, `spotlessCheck`, Error Prone/NullAway compile을 실행한다.
+- 완료: 모듈 경계 위반과 controller 비대화가 사라지고, 각 use case의 transaction·의존 방향을 코드만 보고 설명할 수 있다.
+
+#### P2.2 - 목록·feed·검색·admin 조회의 쿼리와 pagination을 측정 기반으로 개선한다
+
+- 파일: `src/main/java/com/townpet/discovery/`, `src/main/java/com/townpet/catalog/`, `src/main/java/com/townpet/localguide/`, 각 list/report service·repository, `src/main/resources/db/migration/`
+- 변경:
+  - 반복적인 entity lazy-load/N+1과 controller 내 임의 SQL을 query adapter로 모으고, 읽기 전용 projection은 jOOQ/JDBC로 일관되게 반환한다.
+  - 모든 목록에 상한·안정적인 tie-breaker·cursor 또는 명시적인 page 정책을 적용하고, 검색어·기간·scope·type filter의 의미를 고정한다.
+  - 실제 query plan에서 필요한 복합/부분/index를 추가하고, 불필요한 select·count·중복 join을 줄인다. 측정 없이 Redis/검색 서버를 도입하지 않는다.
+  - query count와 representative latency를 측정할 수 있는 test fixture를 만든다.
+- 검증: PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` 기준 fixture, query-count/integration test, `./gradlew performanceTest`로 개선 전후를 기록한다.
+- 완료: 대표 목록·feed·검색·admin 조회에 N+1·무제한 조회·불안정 정렬이 없고, 변경한 index/query가 측정 결과로 설명된다.
+
+#### P2.3 - Flyway schema와 persistence lifecycle을 깨끗한 DB에서 재현한다
+
+- 파일: `src/main/resources/db/migration/`, `src/test/java/com/townpet/platform/`, `migration/`, `deploy/compose/`
+- 변경:
+  - 적용된 migration은 수정하지 않고 새 migration으로 constraint/index/default/backfill을 추가한다.
+  - `ddl-auto=validate`, UTC `Instant`, UUIDv7, optimistic version, FK/unique/check constraint가 entity mapping과 일치하는지 정리한다.
+  - seed/demo/reset이 application data와 분리되고 반복 실행에 안전한지 확인한다. invalid migration row는 quarantine하고 조용히 삭제하지 않는다.
+  - schema history, event publication, JDBC session, upload metadata가 재시작 후에도 일관되게 복구되는지 확인한다.
+- 검증: 빈 PostgreSQL에서 migration 전체 적용, application 재기동, seed→reset→seed 반복, `./gradlew migrationTest integrationTest`를 실행한다.
+- 완료: 새 DB와 기존 local DB 모두에서 startup validation 실패가 없고, migration·seed·reset이 재현 가능하며 data ownership이 유지된다.
+
+### P3 - 실제 실행 중 실패를 조기에 발견하고 release candidate를 고정한다
+
+#### P3.1 - profile·adapter·startup/shutdown 실패 정책을 명확히 한다
+
+- 파일: `src/main/resources/application*.yml`, `src/main/java/com/townpet/media/`, `src/main/java/com/townpet/identity/`, `src/main/java/com/townpet/operations/`, `deploy/compose/`
+- 변경:
+  - local/test/e2e/smoke 설정의 datasource·session·media·email·demo flag 차이를 명시하고 필수 secret/위험한 기본값은 startup에서 fail-fast한다.
+  - local filesystem media와 production 미설정 adapter, email capture와 production unavailable 정책의 API 응답·로그·UI 계약을 일치시킨다.
+  - health/readiness, graceful shutdown, DB connection timeout, upload size/type/결로 traversal, session cookie/CSRF 설정을 실제 실행 조건에 맞춘다.
+  - demo 계정·seed가 production profile에서 우연히 켜지지 않도록 이중 gate를 둔다.
+- 검증: profile별 startup/health, 잘못된 env, DB down, media missing, email unavailable, SIGTERM graceful shutdown 시나리오를 Docker 또는 integration test로 실행한다.
+- 완료: 설정 누락·외부 adapter 장애·재시작이 사용자에게 모호한 500을 남기지 않고, 안전한 실패와 복구 경로를 가진다.
+
+#### P3.2 - 관측·보안·운영 진단 정보를 backend에 고정한다
+
+- 파일: `src/main/java/com/townpet/common/`, `src/main/java/com/townpet/operations/`, `src/main/resources/application*.yml`, 관련 test
+- 변경:
+  - request/trace id, method·route·status·duration·DB failure를 구조화해 기록하되 credential/session/token/정확 위치/개인정보는 마스킹한다.
+  - Actuator health/info와 핵심 4xx/5xx·DB pool·migration·media cleanup 상태를 확인할 수 있는 최소 metric을 정한다.
+  - rate/size 제한, CORS, security headers, file/object key 검증, password/token hash와 secret 로그 누출을 점검한다.
+  - 운영자가 실패 원인을 로그 한 건과 재현 command로 추적할 수 있도록 correlation contract를 문서화한다.
+- 검증: log assertion/security test, actuator endpoint test, 민감정보 grep 및 오류 주입 test를 실행한다.
+- 완료: 장애·권한 실패·데이터 오류를 진단할 증거가 있고, 민감정보가 response/log/metric에 남지 않는다.
+
+#### P3.3 - backend test pyramid와 실패 회귀 묶음을 완성한다
+
+- 파일: `src/test/java/com/townpet/`, `src/test/resources/`, `scripts/validate-release-candidate.sh`, `deploy/compose/`
+- 변경:
+  - domain/service 단위 test, controller contract test, PostgreSQL Testcontainers integration/migration test, Modulith/ArchUnit test의 책임을 겹치지 않게 정리한다.
+  - 모든 핵심 여정에 정상·빈 결과·validation·401·403·404·409·동시성·재시작 case를 대표 fixture로 연결한다.
+  - flaky clock/random/network 의존을 고정하고, 테스트가 실제 DB constraint·transaction·session을 우회하지 않도록 구분한다.
+  - 실패 시 원인과 재현 명령이 출력되도록 Gradle task와 smoke script를 정리한다.
+- 검증: 변경 중에는 module test만 실행하고, phase 완료 때 `./gradlew clean check integrationTest modulithTest migrationTest performanceTest --no-daemon`을 fresh run한다.
+- 완료: backend test suite가 반복 실행해도 안정적이고, 기능·권한·데이터·구조·성능 회귀를 각각 잡는다.
+
+#### P3.4 - 깨끗한 환경에서 backend release candidate를 최종 고정한다
+
+- 파일: `deploy/Dockerfile.backend`, `deploy/compose/local.yml`, `scripts/seed-local-demo.sh`, `scripts/reset-demo-data.sh`, `scripts/frontend-backend-smoke.sh`, `docs/runbooks/`
+- 변경:
+  - Docker PostgreSQL과 backend를 빈 volume에서 시작해 migration→seed→login→대표 API 정상/오류/권한→media/email local adapter→reset→재시작 순서로 재현한다.
+  - Gradle bootJar/container build와 IDE 실행 profile의 결과를 맞추고, 환경 변수·포트·health URL·demo credential 문서를 최신 코드와 일치시킨다.
+  - 현재 HEAD의 변경을 모두 의도적으로 commit한 뒤 untracked/secret/generated artifact가 없는지 확인한다.
+  - 검증 결과, 남은 제한, 배포 전 deferred 항목만 report에 기록한다. 통과한 명령 목록을 경험담처럼 복사하지 않는다.
 - 검증:
-  - `./scripts/validate-parity-matrix.sh`
-  - 관련 backend integration test와 frontend Vitest
-  - 변경된 page family의 Chromium desktop/mobile Playwright journey
-- 완료: Care 전체 상태 전이 evidence와 ADR-0035 근거를 추가했고, Search·Best·GroupBuy·Guide·Commercial·Media의 현재 범위·제외 이유·대표 evidence를 matrix에 연결했다. `pending=0`은 실제 근거 또는 ADR 결정으로 설명된다.
-
-### P2 - 배포 없이도 완결되는 local/portfolio runtime을 만든다 ✅ completed (2026-08-12)
-
-- 파일: `src/main/java/com/townpet/operations/`, `src/main/java/com/townpet/media/`, `src/main/java/com/townpet/identity/`, `src/main/resources/`, `deploy/compose/local.yml`, `deploy/portfolio.env.example`, `migration/`
-- 변경:
-  - `TOWNPET_DEMO_DATA_ENABLED`를 실제 application gate로 연결하고, 합성 demo actor·권한·콘텐츠만 대상으로 하는 idempotent seed/reset 명령을 만든다. reset은 다른 데이터와 개인정보를 삭제하지 않는다.
-  - local profile에서 재시작 후에도 확인 가능한 filesystem/MinIO adapter와 production fail-closed 정책을 정리한다. 외부 object storage를 도입하지 않더라도 upload가 왜 동작하거나 제한되는지 UI·API·문서가 일치해야 한다.
-  - SMTP 없이도 local/test에서 email verification·password reset을 재현할 수 있는 capture adapter와 production에서의 명확한 비활성화 응답을 분리한다.
-  - 공개되지 않는 ADMIN/OPERATOR 자격, secret, 정확 위치, raw token이 seed·응답·로그에 나타나지 않는지 점검한다.
-  - `deploy/compose/local.yml`과 기본 실행 명령을 clean PostgreSQL에서 한 번에 기동·초기화·reset할 수 있도록 정리한다. 실제 VPS 설정은 추가하지 않는다.
-- 검증:
-  - clean Docker PostgreSQL에서 migration → seed → reset → 재실행을 반복하고 row scope·idempotency를 SQL로 확인
-  - demo flag on/off, local email capture, upload success/failure, 권한 거부 integration test
-  - `./scripts/frontend-backend-smoke.sh`
-- 완료: `local` profile의 filesystem media adapter, demo credential gate, scoped/idempotent demo reset script, local Compose backend, Care runtime을 추가했다. 외부 서비스 계정 없이 합성 demo 사용자와 local DB로 핵심 흐름을 재현할 수 있다.
-
-### P3 - 배포 전 release candidate evidence를 고정한다 ✅ completed (2026-08-12)
-
-- 파일: `.github/workflows/`, `scripts/`, `migration/fixtures/`, `docs/parity/`, `docs/report/`, `frontend/e2e/`, `README.md`
-- 변경:
-  - logical fixture에 guest/member/moderator와 대표 Care·Search·Marketplace·LostFound·Notification·Admin 시나리오를 연결하고, 실제 test ID·expected error·권한·상태를 기록한다.
-  - 대표 정상·오류·권한·동시성 journey를 backend integration, frontend Vitest, browser E2E로 연결한다. 단순 route 존재 확인 test는 완료 근거로 세지 않는다.
-  - CI가 parity validator, backend clean check/migrationTest, frontend typecheck/test/build, browser smoke를 실행하고 실패 원인을 구분하도록 유지한다.
-  - `docs/report/`에는 실제로 구현한 경계·실패 원인·trade-off·검증 명령만 선별해 기록하고, 측정하지 않은 성능·가용성·복구 수치는 주장하지 않는다.
-  - README와 report의 “완료” 표현을 `배포 전 local/CI release candidate` 범위로 맞춘다.
-- 검증:
-  - `./gradlew clean check migrationTest --no-daemon`
-  - `cd frontend && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/vitest run && ./node_modules/.bin/vite build`
-  - `./scripts/validate-parity-matrix.sh`
-  - `cd frontend && ./node_modules/.bin/playwright test --config=playwright.config.ts`
-  - `./scripts/frontend-backend-smoke.sh`
-- 완료: logical fixture에 대표 Care·검색·신고 시나리오를 연결하고, release-candidate validator가 parity matrix·fixture·shell script를 검사한다. backend/frontend/browser gate와 함께 기능·권한·오류·화면·migration evidence를 재현할 수 있다.
+  - `./gradlew clean check integrationTest modulithTest migrationTest performanceTest --no-daemon`
+  - `./scripts/validate-release-candidate.sh`
+  - 빈 Docker volume에서 local Compose smoke와 seed/reset 반복
+  - `./gradlew bootJar` 및 backend container health check
+- 완료: 깨끗한 clone/volume에서 같은 명령으로 backend가 기동하고 대표 사용자 여정이 재현되며, 알려진 blocker·flaky test·미커밋 산출물이 없다.
 
 ## Backlog
 
-- G9 - 사용자가 배포를 시작할 때 Hetzner VPS, DNS/TLS/Caddy, 외부 object storage/SMTP, offsite backup·restore·rollback, monitoring·alerting, 실제 공개 URL smoke와 비용을 구성한다.
-- 실제 Legacy 개인정보 migration, Kakao/Naver OAuth, 결제·정산·환불·private chat은 현재 제품 범위에서 제외한다.
-- 검색 corpus와 실제 latency가 기준을 넘을 때만 `SearchDocument`/GIN·trigram을 별도 ADR로 결정한다.
-- 실제 ranking 품질·freshness·query latency 요구가 생길 때만 FeedDocument와 versioned personalization을 도입한다.
+- G9 - 사용자가 배포를 시작할 때 Hetzner VPS, DNS/TLS/Caddy, 외부 object storage/SMTP, off-site backup·restore·rollback, monitoring·alerting, 공개 URL smoke와 비용을 구성한다.
+- 실제 Legacy 개인정보 migration, Kakao/Naver OAuth, 결제·정산·환불·private chat은 현재 범위에 포함하지 않는다.
+- 실제 검색 corpus·ranking 품질·latency가 P2 측정 기준을 넘을 때만 SearchDocument/GIN·trigram·personalization projection을 별도 ADR로 결정한다.
 
 ## 완료 판정
 
-P1~P3을 모두 통과하면 “TownPet Spring Boot 포트폴리오 프로젝트의 배포 전 개발 완료”라고 표현한다. 이 상태에서도 실제 공개 운영·TLS·외부 저장소·복구 SLA까지 완료했다고 표현하지 않으며, 그것은 G9에서 별도로 검증한다.
+P1~P3의 모든 완료 조건과 최종 fresh gate를 통과하면 “배포 전 backend release candidate 완료”라고 표현한다. 실제 공개 운영의 TLS·외부 서비스·백업 복구·SLA까지 완료했다고 표현하지 않는다.

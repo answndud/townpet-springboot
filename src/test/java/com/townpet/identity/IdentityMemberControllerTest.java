@@ -186,15 +186,12 @@ class IdentityMemberControllerTest {
                 post("/api/v1/auth/sessions")
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        "{\"email\":\"moderator@example.com\",\"password\":\"password123!\"}"))
+                    .content("{\"email\":\"moderator@example.com\",\"password\":\"password123!\"}"))
             .andExpect(status().isCreated())
             .andReturn();
     Cookie session = sessionCookie(login);
 
-    mockMvc
-        .perform(get("/api/admin/breeds").cookie(session))
-        .andExpect(status().isOk());
+    mockMvc.perform(get("/api/admin/breeds").cookie(session)).andExpect(status().isOk());
     mockMvc
         .perform(
             post("/api/v1/publications")
@@ -202,8 +199,7 @@ class IdentityMemberControllerTest {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"title\":\"운영자 작성 제한\",\"body\":\"회원 전용 기능\","
-                        + "\"scope\":\"GLOBAL\"}"))
+                    "{\"title\":\"운영자 작성 제한\",\"body\":\"회원 전용 기능\"," + "\"scope\":\"GLOBAL\"}"))
         .andExpect(status().isForbidden());
   }
 
@@ -218,8 +214,7 @@ class IdentityMemberControllerTest {
                 post("/api/v1/auth/sessions")
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(
-                        "{\"email\":\"moderator@example.com\",\"password\":\"password123!\"}"))
+                    .content("{\"email\":\"moderator@example.com\",\"password\":\"password123!\"}"))
             .andExpect(status().isCreated())
             .andReturn();
 
@@ -327,10 +322,7 @@ class IdentityMemberControllerTest {
     verifyCredential();
     pets.save(
         new com.townpet.member.MemberPetEntity(
-            UUID.fromString("00000000-0000-4000-8000-000000000301"),
-            MEMBER_ID,
-            "Mango",
-            "DOG"));
+            UUID.fromString("00000000-0000-4000-8000-000000000301"), MEMBER_ID, "Mango", "DOG"));
     MvcResult login =
         mockMvc
             .perform(

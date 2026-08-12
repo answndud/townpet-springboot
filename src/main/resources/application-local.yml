@@ -1,3 +1,9 @@
+spring:
+  datasource:
+    url: ${TOWNPET_DB_URL:jdbc:postgresql://localhost:54329/townpet}
+    username: ${TOWNPET_DB_USERNAME:townpet_app}
+    password: ${TOWNPET_DB_PASSWORD:townpet_local_dev}
+
 townpet:
   demo-data:
     enabled: true

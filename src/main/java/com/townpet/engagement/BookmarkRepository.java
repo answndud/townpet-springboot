@@ -8,5 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 interface BookmarkRepository extends JpaRepository<BookmarkEntity, UUID> {
   Optional<BookmarkEntity> findByPublicationIdAndMemberId(UUID publicationId, UUID memberId);
 
-  List<BookmarkEntity> findAllByMemberIdOrderByCreatedAtDesc(UUID memberId);
+  List<BookmarkEntity> findTop100ByMemberIdOrderByCreatedAtDescIdDesc(UUID memberId);
 }
