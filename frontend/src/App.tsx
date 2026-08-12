@@ -351,20 +351,27 @@ function PlaceholderPage() {
   );
 }
 
+function RoutePerformanceProbe({ path, startedAt }: { path: string; startedAt: number }) {
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      recordRouteTiming(path, performance.now() - startedAt);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [path, startedAt]);
+  return null;
+}
+
 function AppShell() {
   const location = useLocation();
+  const routeKey = `${location.pathname}${location.search}`;
+  const routeStartRef = useRef<{ key: string; startedAt: number }>({ key: routeKey, startedAt: typeof performance === "undefined" ? 0 : performance.now() });
+  if (routeStartRef.current.key !== routeKey) {
+    routeStartRef.current = { key: routeKey, startedAt: typeof performance === "undefined" ? 0 : performance.now() };
+  }
 
   useEffect(() => {
     installPerformanceObservers();
   }, []);
-
-  useEffect(() => {
-    const startedAt = typeof performance === "undefined" ? 0 : performance.now();
-    const frame = window.requestAnimationFrame(() => {
-      if (startedAt) recordRouteTiming(`${location.pathname}${location.search}`, performance.now() - startedAt);
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [location.pathname, location.search]);
 
   useEffect(() => {
     const titleByPath: Array<[string, string]> = [
@@ -389,6 +396,7 @@ function AppShell() {
       <Header />
       <div id="main-content" tabIndex={-1}>
         <Suspense fallback={<main className="page placeholder-page"><section className="surface-card" role="status">화면을 준비하는 중...</section></main>}>
+          <RoutePerformanceProbe path={routeKey} startedAt={routeStartRef.current.startedAt} />
           <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
