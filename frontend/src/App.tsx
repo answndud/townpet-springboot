@@ -5,6 +5,7 @@ import PasswordResetPage from "./PasswordResetPage";
 import VerifyEmailPage from "./VerifyEmailPage";
 import LegalPage from "./LegalPage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
+import HomePopularSection from "./features/discovery/HomePopularSection";
 import { installPerformanceObservers, recordRouteTiming } from "./utils/performance";
 
 const OnboardingPage = lazy(() => import("./OnboardingPage"));
@@ -306,6 +307,7 @@ function HomePage() {
           {member?.role !== "MODERATOR" ? <Link className="button button-soft" to="/onboarding">내 동네 설정</Link> : null}
         </div>
       </section>
+      <HomePopularSection />
       <section className="topic-section" aria-labelledby="topic-title">
         <div>
           <h2 id="topic-title">관심 주제</h2>
@@ -318,18 +320,6 @@ function HomePage() {
             </Link>
           ))}
         </div>
-      </section>
-      <section className="preview-grid" aria-label="TownPet 주요 기능">
-        <article className="surface-card">
-          <span className="card-label">LOCAL FEED</span>
-          <h2>우리 동네 소식을 한눈에</h2>
-          <p>지역 기반 게시글과 반려생활 정보를 최신순으로 확인할 수 있어요.</p>
-        </article>
-        <article className="surface-card">
-          <span className="card-label">SAFE COMMUNITY</span>
-          <h2>함께 만드는 안전한 커뮤니티</h2>
-          <p>필요한 정보만 차분하게 나누고, 서로의 반려생활을 응원합니다.</p>
-        </article>
       </section>
     </main>
   );

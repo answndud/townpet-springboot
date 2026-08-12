@@ -22,6 +22,38 @@ describe("TownPet Vite shell", () => {
     expect(screen.getByRole("link", { name: "질문/답변" })).toHaveAttribute("href", "/gatherings");
   });
 
+  it("surfaces popular community posts on the home page", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input) => {
+        const path = String(input);
+        const body = path.includes("/api/v1/members/me")
+          ? { detail: "Unauthorized" }
+          : {
+              items: [
+                {
+                  id: "00000000-0000-4000-8000-000000000301",
+                  title: "이번 주말 산책 코스 추천받아요",
+                  body: "저녁에 걷기 좋은 조용한 코스를 찾고 있어요.",
+                  createdAt: "2026-08-12T08:00:00Z",
+                },
+              ],
+            };
+        const status = path.includes("/api/v1/members/me") ? 401 : 200;
+        return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
+      }),
+    );
+
+    render(<MemoryRouter initialEntries={["/"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "오늘의 인기글" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "이번 주말 산책 코스 추천받아요" })).toHaveAttribute(
+      "href",
+      "/posts/00000000-0000-4000-8000-000000000301",
+    );
+    expect(screen.getByRole("link", { name: "인기글 전체 보기" })).toHaveAttribute("href", "/best");
+  });
+
   it("updates the document title for direct routes", () => {
     render(<MemoryRouter initialEntries={["/marketplace"]}><App /></MemoryRouter>);
     expect(document.title).toBe("TownPet | 동네 거래");

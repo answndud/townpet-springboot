@@ -19,15 +19,21 @@ class BestFeedController {
 
   @GetMapping
   FeedResponse list() {
-    PublicationFeed.Page page = feed.popular(30);
-    return new FeedResponse(page.items().stream().map(BestFeedController::response).toList());
+    List<PublicationFeed.PopularItem> items = feed.popularRanked(30);
+    return new FeedResponse(
+        java.util.stream.IntStream.range(0, items.size())
+            .mapToObj(index -> response(items.get(index), index + 1))
+            .toList());
   }
 
-  private static Response response(PublicationFeed.Item item) {
-    return new Response(item.id(), item.title(), item.body(), item.createdAt());
+  private static Response response(PublicationFeed.PopularItem ranked, int rank) {
+    PublicationFeed.Item item = ranked.publication();
+    return new Response(
+        item.id(), item.title(), item.body(), item.createdAt(), ranked.viewCount(), rank);
   }
 
   record FeedResponse(List<Response> items) {}
 
-  record Response(UUID id, String title, String body, Instant createdAt) {}
+  record Response(
+      UUID id, String title, String body, Instant createdAt, long viewCount, int rank) {}
 }
