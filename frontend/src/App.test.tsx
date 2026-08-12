@@ -17,6 +17,9 @@ describe("TownPet Vite shell", () => {
     expect(screen.getByRole("link", { name: "전체 피드" })).toHaveAttribute("href", "/feed/guest");
     expect(screen.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
     expect(screen.getByRole("link", { name: "본문으로 바로가기" })).toHaveAttribute("href", "#main-content");
+    expect(screen.getByRole("link", { name: "동물병원" })).toHaveAttribute("href", "/hospital-reviews");
+    expect(screen.getByRole("link", { name: "산책코스" })).toHaveAttribute("href", "/guides?q=산책");
+    expect(screen.getByRole("link", { name: "질문/답변" })).toHaveAttribute("href", "/gatherings");
   });
 
   it("updates the document title for direct routes", () => {

@@ -39,9 +39,9 @@ export function LostFoundListPage() {
       <LostFoundHero canWrite={viewerRole !== "MODERATOR"} />
       <div className="lostfound-toolbar">
         <div className="lostfound-filters">
-          <button className={!kind ? "market-filter active" : "market-filter"} onClick={() => setKind("")} type="button">전체</button>
-          <button className={kind === "LOST" ? "market-filter active" : "market-filter"} onClick={() => setKind("LOST")} type="button">분실</button>
-          <button className={kind === "FOUND" ? "market-filter active" : "market-filter"} onClick={() => setKind("FOUND")} type="button">발견</button>
+          <button className={!kind ? "market-filter active" : "market-filter"} aria-pressed={!kind} onClick={() => setKind("")} type="button">전체</button>
+          <button className={kind === "LOST" ? "market-filter active" : "market-filter"} aria-pressed={kind === "LOST"} onClick={() => setKind("LOST")} type="button">분실</button>
+          <button className={kind === "FOUND" ? "market-filter active" : "market-filter"} aria-pressed={kind === "FOUND"} onClick={() => setKind("FOUND")} type="button">발견</button>
         </div>
         <span className="marketplace-count">{alerts.length}건</span>
       </div>
