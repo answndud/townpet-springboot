@@ -138,10 +138,39 @@ E2E binary가 없는 경우에는 in-app browser와 API 직접 검증을 사용�
 
 | Goal | 점수 | P0 | P1 | P2 | 증거 | 재리뷰 상태 |
 |---|---:|---:|---:|---:|---|---|
-| G3 제품·UX | 미정 | 미정 | 미정 | 미정 | 미정 | 대기 |
-| G4 유지보수성 | 미정 | 미정 | 미정 | 미정 | 미정 | 대기 |
-| G5 접근성·디자인 | 미정 | 미정 | 미정 | 미정 | 미정 | 대기 |
-| G6 성능 | 미정 | 미정 | 미정 | 미정 | 미정 | 대기 |
-| 합계 | 100점 만점 |  |  |  |  | 미정 |
+| G3 제품·UX | 21/25 | 0 | 0 | 0 | route·actor 점검, direct guide search, topic link, publication E2E | 재리뷰 통과; 일부 비핵심 actor write는 후속 검증 |
+| G4 유지보수성 | 23/25 | 0 | 0 | 0 | comment thread 추출, auth transition regression, typecheck/test | 통과 |
+| G5 접근성·디자인 | 23/25 | 0 | 0 | 0 | DOM semantics, header keyboard, reply focus return, 1265px screenshot | 통과; 1280/1440 자동 visual diff는 후속 |
+| G6 성능 | 23/25 | 0 | 0 | 0 | 3회 HTTP baseline, p50/p75, bundle budget, CI/E2E | 통과; browser paint metric은 후속 |
+| 합계 | 90/100 | 0 | 0 | 0 | 아래 fresh gate와 Chromium 9/9 통과 | desktop release-candidate 기준 충족 |
+
+## 2026-08-12 fresh review result
+
+### Evidence
+
+- Goal commits: `918ddb7`, `50fdbbf`, `75fd7d4`, `7fa2c4d`, `01638c3`, `599b0b1`, `db6ea04`
+- `corepack pnpm install --frozen-lockfile`: pass
+- `corepack pnpm typecheck`: pass
+- `corepack pnpm test`: 8 files / 24 tests pass
+- `corepack pnpm build`: pass; entry JS 280.78KB raw / 86.59KB gzip, CSS 35.24KB
+- `corepack pnpm test:e2e --project=chromium`: 9/9 pass after installing the missing local Chromium binary
+- `node scripts/measure-performance.mjs`: 39 route/API samples, all 200; route median 1.72–4.46ms, API median 8.37–35.63ms; route p75 max 37.07ms, API p75 max 48.17ms
+- In-app desktop review: topic routes, direct guide query, hospital review page, direct moderation queue, public feed and reply composer semantics checked; no visible error state or route dead-end found in the reviewed flows
+
+### Rework completed from the review loop
+
+- Fixed the direct moderation queue URL encoding boundary.
+- Fixed the successful login transition race that returned users to `/login`.
+- Replaced three dead home topic destinations and preserved `guides?q=` on direct navigation.
+- Extracted the nested publication comment thread and restored focus to the reply trigger after cancel.
+- Stabilized browser review fixtures: exact pathname login assertion, same-origin contexts, repeat-safe duplicate-title locators, and explicit comment DELETE response assertion.
+- Added p75 output and route/API budget failures to the repeatable performance command.
+
+### Remaining backlog
+
+- P2: capture real browser LCP/INP/CLS and route-settle timings in a production-like preview run; the current baseline is HTTP shell/API only.
+- P2: add automated visual snapshots at exact 1280×900 and 1440×900 viewports.
+- P2: extend fresh actor write/error coverage to every marketplace, lost-found, care, gathering, and moderator action; current core paths are covered but not every mutation combination.
+- P3: mobile polish remains explicitly out of scope for this cycle.
 
 최종 문서에는 실제 점수, 발견한 결함, 수정 commit, 재실행한 명령, 남은 P2/P3 backlog만 적는다. “검증 예정”, “동작할 것으로 예상”은 완료 근거가 아니다.
