@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -49,6 +50,7 @@ class CommentController {
   }
 
   @PostMapping
+  @MemberOnly
   ResponseEntity<CommentResponse> create(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID publicationId,
@@ -64,6 +66,7 @@ class CommentController {
   }
 
   @DeleteMapping("/{commentId}")
+  @MemberOnly
   ResponseEntity<Void> delete(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID publicationId,
@@ -83,6 +86,7 @@ class CommentController {
   }
 
   @PatchMapping("/{commentId}")
+  @MemberOnly
   CommentResponse edit(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID publicationId,

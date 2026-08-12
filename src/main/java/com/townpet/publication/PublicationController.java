@@ -1,5 +1,6 @@
 package com.townpet.publication;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -35,6 +36,7 @@ class PublicationController {
   }
 
   @PostMapping
+  @MemberOnly
   ResponseEntity<PublicationResponse> create(
       @AuthenticationPrincipal UserDetails principal,
       @Valid @RequestBody CreatePublicationRequest request) {
@@ -60,6 +62,7 @@ class PublicationController {
   }
 
   @GetMapping("/mine")
+  @MemberOnly
   List<PublicationResponse> mine(@AuthenticationPrincipal UserDetails principal) {
     return publications.mine(memberId(principal)).stream()
         .map(PublicationController::toResponse)
@@ -67,6 +70,7 @@ class PublicationController {
   }
 
   @PutMapping("/{publicationId}")
+  @MemberOnly
   PublicationResponse edit(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID publicationId,
@@ -95,6 +99,7 @@ class PublicationController {
   }
 
   @DeleteMapping("/{publicationId}")
+  @MemberOnly
   ResponseEntity<Void> delete(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID publicationId,
@@ -115,6 +120,7 @@ class PublicationController {
   }
 
   @PostMapping("/{publicationId}/restore")
+  @MemberOnly
   PublicationResponse restore(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID publicationId,

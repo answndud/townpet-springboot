@@ -1,5 +1,6 @@
 package com.townpet.welfare;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -45,6 +46,7 @@ public class AdoptionController {
   }
 
   @PostMapping
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   Response create(
       @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody CreateRequest request) {

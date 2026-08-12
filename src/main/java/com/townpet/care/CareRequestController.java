@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
@@ -34,6 +35,7 @@ class CareRequestController {
   }
 
   @PostMapping
+  @MemberOnly
   ResponseEntity<Response> create(
       @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody CreateRequest request) {
     try {
@@ -56,6 +58,7 @@ class CareRequestController {
   }
 
   @PatchMapping("/{id}/cancel")
+  @MemberOnly
   Response cancel(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID id,

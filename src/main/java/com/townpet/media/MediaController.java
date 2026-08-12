@@ -1,5 +1,6 @@
 package com.townpet.media;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -32,6 +33,7 @@ class MediaController {
   }
 
   @PostMapping
+  @MemberOnly
   MediaResponse create(
       @AuthenticationPrincipal UserDetails principal,
       @Valid @RequestBody CreateUploadRequest request) {
@@ -49,6 +51,7 @@ class MediaController {
   }
 
   @PostMapping("/{assetId}/finalize")
+  @MemberOnly
   MediaResponse finalizeUpload(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID assetId,
@@ -69,6 +72,7 @@ class MediaController {
   }
 
   @PutMapping(value = "/{assetId}/content", consumes = "multipart/form-data")
+  @MemberOnly
   MediaResponse uploadContent(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID assetId,
@@ -94,6 +98,7 @@ class MediaController {
   }
 
   @PostMapping("/{assetId}/attachments/publications/{publicationId}")
+  @MemberOnly
   MediaResponse attachPublication(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID assetId,

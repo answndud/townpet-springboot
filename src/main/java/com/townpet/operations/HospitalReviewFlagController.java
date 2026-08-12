@@ -1,6 +1,7 @@
 package com.townpet.operations;
 
 import com.townpet.common.UuidV7;
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -22,6 +23,7 @@ class HospitalReviewFlagController {
   }
 
   @PostMapping("/{reviewId}/flags")
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   FlagResponse flag(
       @PathVariable UUID reviewId,

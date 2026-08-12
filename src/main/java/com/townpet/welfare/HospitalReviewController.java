@@ -1,5 +1,6 @@
 package com.townpet.welfare;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
@@ -33,6 +34,7 @@ class HospitalReviewController {
   }
 
   @PostMapping
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   Response create(@AuthenticationPrincipal UserDetails p, @Valid @RequestBody CreateRequest r) {
     try {

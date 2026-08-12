@@ -1,5 +1,6 @@
 package com.townpet.marketplace;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -31,6 +32,7 @@ class MarketplaceListingController {
   }
 
   @PostMapping
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   ListingResponse create(
       @AuthenticationPrincipal UserDetails principal,
@@ -70,6 +72,7 @@ class MarketplaceListingController {
   }
 
   @org.springframework.web.bind.annotation.PatchMapping("/{listingId}/status")
+  @MemberOnly
   ListingResponse changeStatus(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID listingId,
@@ -88,6 +91,7 @@ class MarketplaceListingController {
   }
 
   @org.springframework.web.bind.annotation.PatchMapping("/{listingId}")
+  @MemberOnly
   ListingResponse update(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID listingId,

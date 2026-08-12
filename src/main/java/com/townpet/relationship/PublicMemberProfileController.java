@@ -51,6 +51,7 @@ class PublicMemberProfileController {
         profile.showPublicPosts(),
         profile.showPublicComments(),
         profile.showPublicPets(),
+        profile.showPublicReactions(),
         pets);
   }
 
@@ -71,6 +72,7 @@ class PublicMemberProfileController {
       boolean showPublicPosts,
       boolean showPublicComments,
       boolean showPublicPets,
+      boolean showPublicReactions,
       List<PetResponse> pets) {}
 
   record PetResponse(UUID id, String name, String species) {}

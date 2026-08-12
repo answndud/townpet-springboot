@@ -1,5 +1,6 @@
 package com.townpet.discovery;
 
+import com.townpet.common.MemberOnly;
 import com.townpet.member.api.MemberDirectory;
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +24,7 @@ class LegacyDiscoveryCompatibilityController {
   }
 
   @PostMapping("/api/feed/personalization")
+  @MemberOnly
   FeedController.FeedResponse personalized(
       @AuthenticationPrincipal @Nullable UserDetails principal,
       @RequestBody(required = false) Object ignored) {
@@ -35,6 +37,7 @@ class LegacyDiscoveryCompatibilityController {
   }
 
   @GetMapping("/api/profile/audience-segments")
+  @MemberOnly
   AudienceResponse segments(@AuthenticationPrincipal UserDetails principal) {
     UUID memberId = requiredMemberId(principal);
     List<String> segments = new java.util.ArrayList<>(List.of("PUBLIC"));

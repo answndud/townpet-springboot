@@ -1,5 +1,6 @@
 package com.townpet.member;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -43,11 +44,11 @@ public class MemberController {
   }
 
   @PutMapping("/me/onboarding")
+  @MemberOnly
   @Transactional
   MemberResponse updateOnboarding(
       @AuthenticationPrincipal UserDetails principal,
       @Valid @RequestBody OnboardingRequest request) {
-    requireMemberRole(principal);
     MemberEntity member = findMember(principal);
     if (request.neighborhoodId() == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "neighborhoodId is required");
@@ -78,11 +79,11 @@ public class MemberController {
   }
 
   @PutMapping("/me/profile")
+  @MemberOnly
   @Transactional
   MemberResponse updateProfile(
       @AuthenticationPrincipal UserDetails principal,
       @Valid @RequestBody ProfileUpdateRequest request) {
-    requireMemberRole(principal);
     MemberEntity member = findMember(principal);
     MemberProfileEntity profile =
         profiles
@@ -92,7 +93,8 @@ public class MemberController {
                   existing.updateVisibility(
                       request.showPublicPosts(),
                       request.showPublicComments(),
-                      request.showPublicPets());
+                      request.showPublicPets(),
+                      request.showPublicReactions());
                   if (request.bio() != null)
                     existing.update(request.bio(), existing.getNeighborhoodId());
                   return existing;
@@ -104,7 +106,8 @@ public class MemberController {
                   created.updateVisibility(
                       request.showPublicPosts(),
                       request.showPublicComments(),
-                      request.showPublicPets());
+                      request.showPublicPets(),
+                      request.showPublicReactions());
                   return created;
                 });
     profiles.save(profile);
@@ -132,15 +135,6 @@ public class MemberController {
     return memberId;
   }
 
-  private static void requireMemberRole(UserDetails principal) {
-    if (principal == null
-        || principal.getAuthorities().stream()
-            .anyMatch(authority -> "ROLE_MODERATOR".equals(authority.getAuthority()))) {
-      throw new ResponseStatusException(
-          HttpStatus.FORBIDDEN, "Staff accounts do not use member profile settings");
-    }
-  }
-
   private static MemberResponse toResponse(
       UserDetails principal,
       MemberEntity member,
@@ -155,6 +149,7 @@ public class MemberController {
         profile == null || profile.isShowPublicPosts(),
         profile == null || profile.isShowPublicComments(),
         profile == null || profile.isShowPublicPets(),
+        profile == null || profile.isShowPublicReactions(),
         pets.stream()
             .map(pet -> new PetResponse(pet.getId(), pet.getName(), pet.getSpecies()))
             .toList());
@@ -182,11 +177,13 @@ public class MemberController {
       @Size(max = 500) String bio,
       Boolean showPublicPosts,
       Boolean showPublicComments,
-      Boolean showPublicPets) {
+      Boolean showPublicPets,
+      Boolean showPublicReactions) {
     ProfileUpdateRequest {
       showPublicPosts = showPublicPosts == null ? true : showPublicPosts;
       showPublicComments = showPublicComments == null ? true : showPublicComments;
       showPublicPets = showPublicPets == null ? true : showPublicPets;
+      showPublicReactions = showPublicReactions == null ? true : showPublicReactions;
     }
   }
 
@@ -202,6 +199,7 @@ public class MemberController {
       boolean showPublicPosts,
       boolean showPublicComments,
       boolean showPublicPets,
+      boolean showPublicReactions,
       List<PetResponse> pets) {}
 
   record PetResponse(UUID id, String name, String species) {}

@@ -51,6 +51,17 @@ Credentials 화면을 실제 PostgreSQL·Spring·Vite browser test로 연결하�
 - 근거: `482428d`, `c1f6155`, `461d4ad`, Flyway V004~V006, `IdentityMemberControllerTest`, `auth-browser-e2e.sh`
 - 현재 한계: 실제 email provider와 transaction 이후 durable delivery·retry·bounce 처리는 아직 구현하지 않았다.
 
+## 6. 역할 검증 누락을 실제 계정 조합으로 닫았다
+
+권한 감사를 진행하면서 URL matcher로 보호된 관리자 API와 controller의 `@PreAuthorize`에 의존한 API가 서로 다른 결과를 내는 것을 발견했다. Method Security가 활성화되지 않아 MEMBER가 정책·운영 로그·personalization 같은 관리자 surface에 접근할 수 있었고, `viewer-shell`은 MODERATOR도 MEMBER로 표현했다.
+
+Spring Method Security를 활성화하고 `/api/admin/**`, 신고 compatibility alias와 운영 summary의 경계를 정리했다. 일반 회원 쓰기 기능에는 `MEMBER` 전용 meta-annotation을 적용해 MODERATOR가 게시·댓글·관계·거래·돌봄·미디어 같은 일반 사용자 mutation을 실행하지 못하게 했다. 레거시 공개 프로필도 공개 반려동물 설정을 동일하게 적용하고 React Router에는 moderator route guard를 추가했다.
+
+이 수정은 코드 검색만으로 완료 처리하지 않고 MEMBER·MODERATOR demo session을 실제 Docker PostgreSQL backend에 로그인시켜 관리자 API가 각각 `403`·`200`인지, 일반 mutation이 MODERATOR에게 `403`인지 확인했다. `IdentityMemberControllerTest`, `ModularityTest`, frontend Vitest가 이 경계를 회귀 검증한다.
+
+- 근거: `SecurityConfig`, `MemberOnly`, `ViewerShellController`, `IdentityMemberControllerTest`, `frontend/src/App.tsx`
+- trade-off: MODERATOR는 운영 검토와 공개 읽기만 수행하며 일반 회원 콘텐츠를 만들지 않는다. 운영자가 테스트용 콘텐츠를 만들어야 한다면 별도 MEMBER demo 계정을 사용한다.
+
 ## 면접에서 강조할 핵심
 
 “처음부터 모든 기술을 넣었다”가 아니라, 사전 제약으로 정한 선택과 실제 실패 후 수정한 선택을 구분한다. 각 답변은 상황, 선택한 경계, 재현 가능한 test, 남은 trade-off 순서로 말한다. 아직 측정하지 않은 성능이나 구현하지 않은 기능은 성과로 주장하지 않는다.

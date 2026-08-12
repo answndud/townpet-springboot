@@ -1,5 +1,6 @@
 package com.townpet.lostfound;
 
+import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -32,6 +33,7 @@ class LostFoundAlertController {
   }
 
   @PostMapping
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   AlertResponse create(
       @AuthenticationPrincipal UserDetails principal,
@@ -95,6 +97,7 @@ class LostFoundAlertController {
   }
 
   @org.springframework.web.bind.annotation.PatchMapping("/{alertId}/status")
+  @MemberOnly
   AlertResponse changeStatus(
       @AuthenticationPrincipal UserDetails principal,
       @PathVariable UUID alertId,

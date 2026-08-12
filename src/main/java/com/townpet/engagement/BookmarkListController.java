@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.MemberOnly;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ class BookmarkListController {
   }
 
   @GetMapping
+  @MemberOnly
   List<UUID> list(@AuthenticationPrincipal UserDetails principal) {
     try {
       return bookmarks.list(UUID.fromString(principal.getUsername()));

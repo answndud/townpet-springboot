@@ -1,5 +1,6 @@
 package com.townpet.publication;
 
+import com.townpet.common.MemberOnly;
 import com.townpet.publication.api.PublicationFeed;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -50,6 +51,7 @@ class LegacyPostsController {
   }
 
   @PostMapping
+  @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   PublicationController.PublicationResponse create(
       @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody CreateRequest request) {
@@ -77,6 +79,7 @@ class LegacyPostsController {
   }
 
   @PatchMapping("/{id}")
+  @MemberOnly
   PublicationController.PublicationResponse edit(
       @PathVariable UUID id,
       @AuthenticationPrincipal UserDetails principal,
@@ -103,6 +106,7 @@ class LegacyPostsController {
   }
 
   @DeleteMapping("/{id}")
+  @MemberOnly
   void delete(
       @PathVariable UUID id,
       @AuthenticationPrincipal UserDetails principal,
