@@ -26,6 +26,8 @@ const PublicationCreatePage = lazy(() => import("./features/publication/Publicat
 const PublicationDetailPage = lazy(() => import("./features/publication/PublicationDetailPage"));
 const PublicationEditPage = lazy(() => import("./features/publication/PublicationEditPage"));
 const PublicationFeedPage = lazy(() => import("./features/publication/PublicationFeedPage"));
+const AnimalCommunityPage = lazy(() => import("./features/community/AnimalCommunityPage"));
+const AnimalInterestSettingsPage = lazy(() => import("./features/member/AnimalInterestSettingsPage"));
 const GuestPublicationCreatePage = lazy(() => import("./features/publication/GuestPublicationCreatePage"));
 const MarketplaceDetailPage = lazy(() => import("./features/marketplace/MarketplacePages").then(({ MarketplaceDetailPage }) => ({ default: MarketplaceDetailPage })));
 const MarketplaceFormPage = lazy(() => import("./features/marketplace/MarketplacePages").then(({ MarketplaceFormPage }) => ({ default: MarketplaceFormPage })));
@@ -44,6 +46,7 @@ const PersonalPostsPage = lazy(() => import("./features/publication/PersonalPost
 const SearchPage = lazy(() => import("./features/publication/SearchPage"));
 const CorrectionCreatePage = lazy(() => import("./CorrectionCreatePage"));
 const AdoptionPage = lazy(() => import("./AdoptionPage"));
+const AdoptionCreatePage = lazy(() => import("./AdoptionCreatePage"));
 const AdoptionDetailPage = lazy(() => import("./AdoptionDetailPage"));
 const TownLandingPage = lazy(() => import("./TownLandingPage"));
 const BreedLoungePage = lazy(() => import("./BreedLoungePage"));
@@ -75,35 +78,23 @@ function preloadRoute(href: string) {
 }
 
 const PUBLIC_BOARD_LINKS = [
-  ["전체글", "/"],
-  ["자유게시판", "/feed/guest?type=FREE_BOARD"],
-  ["질문·답변", "/feed/guest?type=QA_QUESTION"],
-  ["입양", "/boards/adoption"],
-  ["분실·목격", "/lost-found"],
-  ["동물병원 후기", "/hospital-reviews"],
-  ["동네 모임", "/gatherings"],
-  ["동네 거래", "/marketplace"],
-  ["이웃 돌봄", "/care"],
-  ["봉사 기회", "/volunteer"],
-  ["반려동물 자랑", "/feed/guest?type=PET_SHOWCASE"],
-  ["용품 후기", "/feed/guest?type=PRODUCT_REVIEW"],
-] as const;
-
-const MEMBER_BOARD_LINKS = [
-  ...PUBLIC_BOARD_LINKS,
+  ["전체글", "/animals/all"],
+  ["자유게시판", "/animals/all/free"],
+  ["질문·답변", "/animals/all/questions"],
+  ["입양", "/animals/all/adoption"],
+  ["분실·목격", "/animals/all/lost-found"],
+  ["동물병원 후기", "/animals/all/hospital-reviews"],
+  ["동네 모임", "/animals/all/gatherings"],
+  ["동네 거래", "/animals/all/marketplace"],
+  ["이웃 돌봄", "/animals/all/care"],
+  ["봉사 기회", "/animals/all/volunteer"],
+  ["반려동물 자랑", "/animals/all/showcase"],
+  ["용품 후기", "/animals/all/product-reviews"],
 ] as const;
 
 const MEMBER_ACCOUNT_LINKS = [
   ["내 프로필", "/profile"],
   ["알림", "/notifications"],
-] as const;
-
-const NEIGHBORHOOD_ACTIVITY_LINKS = [
-  ["동네 거래", "/marketplace"],
-  ["동물병원 후기", "/hospital-reviews"],
-  ["봉사 기회", "/volunteer"],
-  ["산책·질문 모임", "/gatherings"],
-  ["이웃 돌봄", "/care"],
 ] as const;
 
 function HeaderMenu({
@@ -194,8 +185,6 @@ function HeaderMenu({
 function Header() {
   const { status, member } = useAuth();
 
-  const boardLinks = member ? MEMBER_BOARD_LINKS : PUBLIC_BOARD_LINKS;
-
   return (
     <header className="site-header">
       <div className="header-inner">
@@ -212,11 +201,10 @@ function Header() {
             </nav>
           ) : (
             <nav aria-label="주요 이동" className="desktop-nav">
-              <HeaderMenu label="게시판" links={boardLinks} />
+              <HeaderMenu label="게시판" links={PUBLIC_BOARD_LINKS} />
               <AnimalInterestMenu />
               <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
               <NavLink className="desktop-nav-secondary" to="/notifications">알림</NavLink>
-              <HeaderMenu label="이웃 활동" links={NEIGHBORHOOD_ACTIVITY_LINKS} />
               <HeaderMenu className="mobile-only-menu" label="더보기" links={MEMBER_ACCOUNT_LINKS} />
             </nav>
           )
@@ -367,6 +355,9 @@ function AppShell() {
         <Route path="/password/reset" element={<PasswordResetPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/onboarding" element={<MemberRoute><OnboardingPage /></MemberRoute>} />
+        <Route path="/settings/animal-interests" element={<AnimalInterestSettingsPage />} />
+        <Route path="/animals/:animalCode" element={<AnimalCommunityPage />} />
+        <Route path="/animals/:animalCode/:boardCode" element={<AnimalCommunityPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<MemberRoute><NotificationPage /></MemberRoute>} />
         <Route path="/privacy" element={<LegalPage />} />
@@ -379,6 +370,7 @@ function AppShell() {
         <Route path="/corrections/new" element={<MemberRoute><CorrectionCreatePage /></MemberRoute>} />
         <Route path="/best" element={<BestPage />} />
         <Route path="/boards/adoption" element={<AdoptionPage />} />
+        <Route path="/adoptions/new" element={<MemberRoute><AdoptionCreatePage /></MemberRoute>} />
         <Route path="/adoptions/:adoptionId" element={<AdoptionDetailPage />} />
         <Route path="/volunteer" element={<VolunteerPage />} />
         <Route path="/hospital-reviews" element={<HospitalReviewPage />} />

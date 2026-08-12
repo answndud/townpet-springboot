@@ -1,9 +1,10 @@
 import { FormEvent, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ApiError, gatheringApi, type Gathering } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
 import { formatDateMediumTime } from "../../utils/date";
+import AnimalCommunitySelector, { initialAnimalCommunityCodes } from "../member/AnimalCommunitySelector";
 
 function date(value: string) { return formatDateMediumTime(value); }
 
@@ -31,9 +32,11 @@ export function GatheringDetailPage() {
 
 export function GatheringCreatePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [animalCommunityCodes, setAnimalCommunityCodes] = useState<string[]>(() => initialAnimalCommunityCodes(searchParams));
   const [form, setForm] = useState({ title: "", description: "", location: "", startsAt: "", capacity: "8" });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  async function submit(event: FormEvent) { event.preventDefault(); if (saving) return; setSaving(true); setError(null); try { const created = await gatheringApi.create({ ...form, startsAt: new Date(form.startsAt).toISOString(), capacity: Number(form.capacity) }); navigate(`/gatherings/${created.id}`); } catch (requestError) { if (requestError instanceof ApiError && requestError.status === 401) navigate("/login?next=/gatherings/new"); else setError("모임을 만들지 못했습니다."); } finally { setSaving(false); } }
-  return <main className="page gathering-page"><section className="surface-card publication-form"><p className="eyebrow">NEW GATHERING</p><h1>모임 만들기</h1><form onSubmit={submit}><label>제목<input required maxLength={160} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label><label>설명<textarea required maxLength={5000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label><label>장소<input required maxLength={200} value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></label><label>일시<input required type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} /></label><label>정원<input required min="2" max="100" type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} /></label>{error ? <p role="alert">{error}</p> : null}<button className="button button-primary" disabled={saving} type="submit">{saving ? "생성 중..." : "모임 만들기"}</button></form></section></main>;
+  async function submit(event: FormEvent) { event.preventDefault(); if (saving) return; setSaving(true); setError(null); try { const created = await gatheringApi.create({ ...form, startsAt: new Date(form.startsAt).toISOString(), capacity: Number(form.capacity), ...(animalCommunityCodes.length ? { animalCommunityCodes } : {}) }); navigate(`/gatherings/${created.id}`); } catch (requestError) { if (requestError instanceof ApiError && requestError.status === 401) navigate("/login?next=/gatherings/new"); else setError("모임을 만들지 못했습니다."); } finally { setSaving(false); } }
+  return <main className="page gathering-page"><section className="surface-card publication-form"><p className="eyebrow">NEW GATHERING</p><h1>모임 만들기</h1><form onSubmit={submit}><AnimalCommunitySelector value={animalCommunityCodes} onChange={setAnimalCommunityCodes} /><label>제목<input required maxLength={160} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label><label>설명<textarea required maxLength={5000} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label><label>장소<input required maxLength={200} value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></label><label>일시<input required type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} /></label><label>정원<input required min="2" max="100" type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} /></label>{error ? <p role="alert">{error}</p> : null}<button className="button button-primary" disabled={saving} type="submit">{saving ? "생성 중..." : "모임 만들기"}</button></form></section></main>;
 }

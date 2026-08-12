@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { memberApi } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 
@@ -57,7 +58,7 @@ function storeInterests(codes: string[], memberId?: string) {
   }
 }
 
-export default function AnimalInterestMenu() {
+export function AnimalInterestSettings({ embedded = false }: { embedded?: boolean } = {}) {
   const { member } = useAuth();
   const isMember = member?.role === "MEMBER";
   const memberId = isMember ? member.id : undefined;
@@ -66,9 +67,10 @@ export default function AnimalInterestMenu() {
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
+  const panelOpen = open || embedded;
 
   useEffect(() => {
-    if (!open) return;
+    if (!panelOpen) return;
     if (!isMember) {
       setSelected(readStoredInterests());
       return;
@@ -86,16 +88,16 @@ export default function AnimalInterestMenu() {
     return () => {
       active = false;
     };
-  }, [isMember, memberId, open]);
+  }, [isMember, memberId, panelOpen]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || embedded) return;
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (event.target instanceof Node && !menuRef.current?.contains(event.target)) setOpen(false);
     };
     document.addEventListener("mousedown", closeOnOutsideClick);
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
-  }, [open]);
+  }, [embedded, open]);
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
   const allSelected = selected.length === ALL_CODES.length;
@@ -135,8 +137,8 @@ export default function AnimalInterestMenu() {
   }
 
   return (
-    <div ref={menuRef} className={`header-menu interest-menu${open ? " open" : ""}`}>
-      <button
+    <div ref={menuRef} className={`header-menu interest-menu${panelOpen ? " open" : ""}`}>
+      {!embedded ? <button
         className="header-menu-trigger"
         type="button"
         aria-haspopup="dialog"
@@ -145,11 +147,11 @@ export default function AnimalInterestMenu() {
         onClick={() => setOpen((current) => !current)}
       >
         관심 동물<span aria-hidden="true">⌄</span>
-      </button>
+      </button> : null}
       <div
         id="animal-interest-menu"
         className="header-menu-panel interest-menu-panel"
-        role="dialog"
+        role={embedded ? "region" : "dialog"}
         aria-label="관심 동물 설정"
       >
         <p className="interest-menu-description">보고 싶은 동물을 체크하고 저장하세요.</p>
@@ -180,6 +182,126 @@ export default function AnimalInterestMenu() {
           </button>
         </div>
         {statusMessage ? <p className="interest-status" role="status">{statusMessage}</p> : null}
+      </div>
+    </div>
+  );
+}
+
+function animalLabel(code: string) {
+  return ANIMAL_INTEREST_GROUPS
+    .flatMap((group) => group.options)
+    .find((option) => option.code === code)?.label ?? code;
+}
+
+export default function AnimalInterestMenu() {
+  const { member } = useAuth();
+  const location = useLocation();
+  const memberId = member?.role === "MEMBER" ? member.id : undefined;
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<string[]>(() => readStoredInterests(memberId));
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuItemsRef = useRef<HTMLAnchorElement[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!memberId) {
+      setSelected(readStoredInterests());
+      return;
+    }
+    let active = true;
+    memberApi.animalInterests()
+      .then((codes) => { if (active) setSelected(codes.filter((code) => ALL_CODES.includes(code))); })
+      .catch(() => { if (active) setSelected(readStoredInterests(memberId)); });
+    return () => { active = false; };
+  }, [memberId, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (event.target instanceof Node && !menuRef.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [open]);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const updateSelected = (event: Event) => {
+      const detail = (event as CustomEvent<{ codes?: unknown; memberId?: string }>).detail;
+      if (detail?.memberId !== memberId || !Array.isArray(detail.codes)) return;
+      setSelected(detail.codes.filter((code): code is string => typeof code === "string" && ALL_CODES.includes(code)));
+    };
+    window.addEventListener("townpet:animal-interests-change", updateSelected);
+    return () => window.removeEventListener("townpet:animal-interests-change", updateSelected);
+  }, [memberId]);
+
+  const codes = selected;
+  useEffect(() => {
+    menuItemsRef.current.length = codes.length + 2;
+  }, [codes.length]);
+
+  function focusMenuItem(index: number) {
+    const items = menuItemsRef.current;
+    if (!items.length) return;
+    items[(index + items.length) % items.length]?.focus();
+  }
+
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
+    if (event.key === "Escape") {
+      setOpen(false);
+      event.currentTarget.focus();
+    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      setOpen(true);
+      window.setTimeout(() => focusMenuItem(event.key === "ArrowDown" ? 0 : -1), 0);
+    }
+  }
+
+  function handleMenuKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const currentIndex = menuItemsRef.current.indexOf(document.activeElement as HTMLAnchorElement);
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      focusMenuItem(currentIndex + (event.key === "ArrowDown" ? 1 : -1));
+    } else if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      focusMenuItem(event.key === "Home" ? 0 : -1);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      setOpen(false);
+      menuRef.current?.querySelector<HTMLButtonElement>(".header-menu-trigger")?.focus();
+    }
+  }
+
+  return (
+    <div ref={menuRef} className={`header-menu interest-menu${open ? " open" : ""}`}>
+      <button
+        className="header-menu-trigger"
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls="animal-community-menu"
+        onClick={() => setOpen((current) => !current)}
+        onKeyDown={handleKeyDown}
+      >
+        관심 동물<span aria-hidden="true">⌄</span>
+      </button>
+      <div id="animal-community-menu" className="header-menu-panel interest-menu-panel animal-community-menu" role="menu" aria-label="동물 커뮤니티" onKeyDown={handleMenuKeyDown}>
+        <div className="animal-community-menu-heading">
+          <strong>동물 커뮤니티</strong>
+          <span>동물별 게시판으로 이동</span>
+        </div>
+        <NavLink ref={(element) => { if (element) menuItemsRef.current[0] = element; }} role="menuitem" to="/animals/all" onClick={() => setOpen(false)}>전체 동물</NavLink>
+        {codes.map((code, index) => (
+          <NavLink key={code} ref={(element) => { if (element) menuItemsRef.current[index + 1] = element; }} role="menuitem" to={`/animals/${code.toLowerCase()}`} onClick={() => setOpen(false)}>
+            {animalLabel(code)} 커뮤니티
+          </NavLink>
+        ))}
+        <NavLink ref={(element) => { if (element) menuItemsRef.current[codes.length + 1] = element; }} className="animal-community-settings" role="menuitem" to="/settings/animal-interests" onClick={() => setOpen(false)}>
+          관심 동물 관리
+        </NavLink>
       </div>
     </div>
   );

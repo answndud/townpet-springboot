@@ -131,7 +131,7 @@ describe("Publication feed journeys", () => {
     );
   });
 
-  it("passes saved animal interests to the feed request", async () => {
+  it("keeps the legacy feed independent from saved animal community shortcuts", async () => {
     window.localStorage.setItem("townpet:animal-interests:v1", JSON.stringify(["DOG", "CAT"]));
     const fetchMock = vi.fn<typeof fetch>(() =>
       Promise.resolve(response({ items: [], page: { nextCursor: null, hasNext: false } })),
@@ -142,7 +142,7 @@ describe("Publication feed journeys", () => {
 
     await screen.findByRole("heading", { name: "전체글" });
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&animals=DOG%2CCAT",
+      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL",
       expect.objectContaining({ credentials: "include" }),
     );
   });
