@@ -91,6 +91,6 @@ describe("Credentials journeys", () => {
       await screen.findByRole("heading", { name: "내 동네와 반려동물 설정" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "서울 마포구" })).toBeInTheDocument();
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
   });
 });

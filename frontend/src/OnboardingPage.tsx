@@ -1,7 +1,9 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, catalogApi, memberApi } from "./api/client";
 import type { Member, Neighborhood } from "./api/client";
+import { useAuth } from "./auth/AuthContext";
+import { useAbortableRequest } from "./hooks/useAbortableRequest";
 
 type PetDraft = {
   key: string;
@@ -9,68 +11,35 @@ type PetDraft = {
   species: string;
 };
 
-let nextPetKey = 0;
-
-function createPetDraft(name = "", species = "DOG"): PetDraft {
-  nextPetKey += 1;
-  return { key: `pet-${nextPetKey}`, name, species };
-}
-
 export default function OnboardingPage() {
   const navigate = useNavigate();
-  const [member, setMember] = useState<Member | null>(null);
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
+  const { member: authMember, status: authStatus } = useAuth();
+  const { data: neighborhoods, error: neighborhoodError, loading: neighborhoodsLoading } = useAbortableRequest<Neighborhood[]>((signal) => catalogApi.neighborhoods(signal), []);
+  const [updatedMember, setUpdatedMember] = useState<Member | null>(null);
   const [bio, setBio] = useState("");
   const [neighborhoodId, setNeighborhoodId] = useState("");
   const [pets, setPets] = useState<PetDraft[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const nextPetKey = useRef(0);
+  const createPetDraft = (name = "", species = "DOG"): PetDraft => {
+    nextPetKey.current += 1;
+    return { key: `pet-${nextPetKey.current}`, name, species };
+  };
+  const member = updatedMember ?? authMember;
+  const options = neighborhoods ?? [];
+  const loading = authStatus === "loading" || neighborhoodsLoading;
   useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-
-    Promise.all([
-      memberApi.current(controller.signal),
-      catalogApi.neighborhoods(controller.signal),
-    ])
-      .then(([currentMember, options]) => {
-        if (!active) {
-          return;
-        }
-        setMember(currentMember);
-        if (currentMember.role === "MODERATOR") {
-          navigate("/admin", { replace: true });
-          return;
-        }
-        setNeighborhoods(options);
-        setBio(currentMember.bio ?? "");
-        setNeighborhoodId(currentMember.neighborhoodId ?? options[0]?.id ?? "");
-        setPets(currentMember.pets.map((pet) => createPetDraft(pet.name, pet.species)));
-      })
-      .catch((requestError: unknown) => {
-        if (!active || (requestError instanceof DOMException && requestError.name === "AbortError")) {
-          return;
-        }
-        if (requestError instanceof ApiError && requestError.status === 401) {
-          navigate("/login?next=/onboarding", { replace: true });
-          return;
-        }
-        setError("온보딩 정보를 불러오지 못했습니다.");
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [navigate]);
+    if (authStatus === "anonymous") { navigate("/login?next=/onboarding", { replace: true }); return; }
+    if (authMember?.role === "MODERATOR") { navigate("/admin", { replace: true }); return; }
+    if (!authMember || !neighborhoods) return;
+    setBio(authMember.bio ?? "");
+    setNeighborhoodId(authMember.neighborhoodId ?? neighborhoods[0]?.id ?? "");
+    setPets(authMember.pets.map((pet) => createPetDraft(pet.name, pet.species)));
+  }, [authMember, authStatus, navigate, neighborhoods]);
+  useEffect(() => { if (authStatus === "error" || neighborhoodError) setError("온보딩 정보를 불러오지 못했습니다."); }, [authStatus, neighborhoodError]);
 
   function updatePet(key: string, field: "name" | "species", value: string) {
     setPets((current) =>
@@ -95,7 +64,7 @@ export default function OnboardingPage() {
         neighborhoodId,
         pets: pets.map((pet) => ({ name: pet.name.trim(), species: pet.species })),
       });
-      setMember(updated);
+      setUpdatedMember(updated);
       setSaved(true);
     } catch (requestError) {
       setError(
@@ -161,7 +130,7 @@ export default function OnboardingPage() {
               <option value="" disabled>
                 동네를 선택해 주세요
               </option>
-              {neighborhoods.map((neighborhood) => (
+              {options.map((neighborhood) => (
                 <option key={neighborhood.id} value={neighborhood.id}>
                   {neighborhood.name}
                 </option>
