@@ -22,6 +22,10 @@ const snapshot: TownPetPerformanceSnapshot = {
 };
 let observersInstalled = false;
 
+if (isBrowser && import.meta.env.DEV) {
+  window.__townpetPerformance = snapshot;
+}
+
 function getSnapshot() {
   if (isBrowser) window.__townpetPerformance = snapshot;
   return snapshot;
@@ -41,15 +45,16 @@ export function recordApiTiming(path: string, status: number, durationMs: number
 export function recordRouteTiming(path: string, durationMs: number) {
   if (!isBrowser || !import.meta.env.DEV) return;
   const timings = getSnapshot().route;
-  timings.push({ path, durationMs: Math.round(durationMs) });
+  timings.push({ path: normalizePath(path), durationMs: Math.round(durationMs) });
   if (timings.length > 50) timings.splice(0, timings.length - 50);
 }
 
 export function installPerformanceObservers() {
-  if (!isBrowser || !import.meta.env.DEV || typeof PerformanceObserver === "undefined") return;
+  if (!isBrowser || !import.meta.env.DEV) return;
+  getSnapshot();
+  if (typeof PerformanceObserver === "undefined") return;
   if (observersInstalled) return;
   observersInstalled = true;
-  getSnapshot();
   try {
     new PerformanceObserver((list) => {
       const latest = list.getEntries().at(-1);
