@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,6 +34,12 @@ public class AdoptionController {
     if (limit < 1 || limit > 50)
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
     return adoptions.list(limit).stream().map(AdoptionController::response).toList();
+  }
+
+  @GetMapping("/{id}")
+  Response get(@PathVariable UUID id) {
+    return adoptions.find(id).map(AdoptionController::response)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
 
   @PostMapping

@@ -25,6 +25,7 @@ import AdminCorrectionPage from "./AdminCorrectionPage";
 import AdminModerationLogsPage from "./AdminModerationLogsPage";
 import CorrectionCreatePage from "./CorrectionCreatePage";
 import AdoptionPage from "./AdoptionPage";
+import AdoptionDetailPage from "./AdoptionDetailPage";
 import TownLandingPage from "./TownLandingPage";
 import BreedLoungePage from "./BreedLoungePage";
 import NeighborhoodMapPage from "./NeighborhoodMapPage";
@@ -165,6 +166,7 @@ export default function App() {
         <Route path="/corrections/new" element={<CorrectionCreatePage />} />
         <Route path="/best" element={<BestPage />} />
         <Route path="/boards/adoption" element={<AdoptionPage />} />
+        <Route path="/adoptions/:adoptionId" element={<AdoptionDetailPage />} />
         <Route path="/towns/:townSlug" element={<TownLandingPage />} />
         <Route path="/towns/:townSlug/:sectionSlug" element={<TownSectionPage />} />
         <Route path="/towns/:townSlug/:sectionSlug" element={<PublicationFeedPage memberView={false} />} />
