@@ -554,6 +554,7 @@ h1, h2, p { margin: 0; }
 .publication-detail-card, .publication-comments { box-shadow: var(--surface-shadow); }
 .publication-detail-heading { border-bottom-color: var(--surface-border); }
 .publication-detail-heading h1, .publication-author-row strong, .publication-comments-heading h2 { color: var(--text); }
+.publication-comments-heading h2 { margin: 0; }
 .publication-author-row p, .publication-comment-meta, .publication-login-prompt, .publication-comments-state { color: var(--muted-text); }
 .publication-engagement-row, .publication-comments-heading, .publication-comment-form { border-color: var(--surface-border); }
 .engagement-button, .engagement-stat { min-height: 34px; border-color: var(--surface-border-strong); border-radius: var(--radius-md); color: var(--text-soft); }
