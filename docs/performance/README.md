@@ -4,11 +4,12 @@
 
 ## 현재 상태
 
-- 상태: **측정 전 계획 확정 단계**
+- 상태: **S0~S2 기준선 및 첫 query 개선 측정 완료**
 - 백엔드 release candidate gate: 통과
 - PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` 대표 queue 검증: 통과
 - PostgreSQL 동시 조회수 upsert 160건 검증: 통과
-- HTTP 부하 테스트와 p50/p95/p99 처리량 측정: 아직 없음
+- HTTP smoke·baseline 측정: public/member/feed 시나리오 완료
+- 첫 개선: global feed keyset 정렬용 복합 인덱스 V054 전후 비교 완료
 - Redis·Kafka 도입 비교: 기준선 측정 후 판단
 
 현재 확인된 query-plan·동시성 테스트와 실제 HTTP 부하 테스트를 혼동하지 않는다. 기존 근거는 [ReleaseCandidateQueryPlanTest.java](../../src/test/java/com/townpet/performance/ReleaseCandidateQueryPlanTest.java), 설계 설명은 [technical-notes.md](../report/technical-notes.md)에 있다.
@@ -21,6 +22,8 @@
 4. [redis-kafka-evaluation.md](redis-kafka-evaluation.md): 기준선 이후 확장 기술 판단 규칙
 5. [results/README.md](results/README.md): 실행 결과 기록 형식
 6. `results/<date>-<scenario>-<commit>.md`: 실제 실행 결과
+
+S0~S2 기준선은 [2026-08-12-s0-s2-baseline.md](results/2026-08-12-s0-s2-baseline.md), 첫 번째 재현 가능한 before/after 결과는 [2026-08-12-public-feed-index.md](results/2026-08-12-public-feed-index.md)에서 확인한다.
 
 ## 문서 규칙
 

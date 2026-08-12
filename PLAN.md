@@ -4,7 +4,7 @@
 
 공개 배포 전에 TownPet 백엔드의 성능을 재현 가능한 부하로 측정하고, 병목을 한 번에 하나씩 개선한다. 최종 완료는 대표 사용자 흐름·상태 경합·혼합 부하에서 수치와 DB 무결성 근거가 문서화되고, Redis·Kafka 도입 여부가 측정 결과와 운영 trade-off로 결정된 상태다.
 
-성능 계획·시나리오·결과 형식은 [`docs/performance/README.md`](docs/performance/README.md)를 기준으로 한다. 아직 HTTP p50/p95/p99와 처리량을 측정하지 않았으며, 기존 query-plan·동시성 테스트를 HTTP 부하 결과로 표현하지 않는다.
+성능 계획·시나리오·결과 형식은 [`docs/performance/README.md`](docs/performance/README.md)를 기준으로 한다. S0~S2와 공개 feed 인덱스 before/after는 측정됐고, S3~S8과 반복 baseline은 남아 있다. 기존 query-plan·동시성 테스트를 HTTP 부하 결과로 표현하지 않는다.
 
 ## Active
 
@@ -33,7 +33,8 @@
 1. **S0~S2를 실행한다.**
    - 범위: smoke, public read, member read
    - 검증: 1 VU baseline → 5 VU calibration → 10/20/40 VU ramp. 3회 반복 후 p50/p95/p99·처리량·오류율·DB pool을 기록한다.
-   - 완료: [scenarios.md](docs/performance/scenarios.md)의 S0~S2 결과 문서가 `baseline` 상태로 작성된다.
+   - 현재: smoke와 public/member baseline, focused feed before/after가 실행됐다. 결과는 [2026-08-12-public-feed-index.md](docs/performance/results/2026-08-12-public-feed-index.md)에 기록했다.
+   - 남은 일: S0~S2를 baseline profile로 3회 반복하고 p99·DB resource snapshot을 추가한다.
 
 2. **S3~S6을 실행한다.**
    - 범위: write burst, 상태 경합, moderator/admin, media I/O

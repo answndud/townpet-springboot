@@ -1,0 +1,30 @@
+server:
+  port: ${TOWNPET_PERF_PORT:8081}
+  shutdown: graceful
+
+spring:
+  datasource:
+    url: ${TOWNPET_PERF_DB_URL:jdbc:postgresql://localhost:54331/townpet_perf}
+    username: ${TOWNPET_PERF_DB_USERNAME:townpet_perf}
+    password: ${TOWNPET_PERF_DB_PASSWORD:townpet_perf_local}
+    hikari:
+      connection-timeout: ${TOWNPET_PERF_DB_CONNECTION_TIMEOUT:3000}
+  flyway:
+    enabled: true
+
+townpet:
+  security:
+    secure-cookies: false
+  demo-data:
+    enabled: true
+  media:
+    local-root: ${TOWNPET_PERF_MEDIA_ROOT:./build/performance/media}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never
