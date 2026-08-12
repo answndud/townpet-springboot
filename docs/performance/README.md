@@ -4,13 +4,14 @@
 
 ## 현재 상태
 
-- 상태: **S0~S2 기준선 및 첫 query 개선 측정 완료**
+- 상태: **S0~S8 대표 workload 측정 완료**
 - 백엔드 release candidate gate: 통과
 - PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` 대표 queue 검증: 통과
 - PostgreSQL 동시 조회수 upsert 160건 검증: 통과
 - HTTP smoke·baseline 측정: public/member/feed 시나리오 완료
 - 첫 개선: global feed keyset 정렬용 복합 인덱스 V054 전후 비교 완료
-- Redis·Kafka 도입 비교: 기준선 측정 후 판단
+- S3~S8: write·contention·moderator·media·mixed·spike·30분 soak 결과 기록 완료
+- Redis·Kafka: 현재 병목 근거가 없어 deferred
 
 현재 확인된 query-plan·동시성 테스트와 실제 HTTP 부하 테스트를 혼동하지 않는다. 기존 근거는 [ReleaseCandidateQueryPlanTest.java](../../src/test/java/com/townpet/performance/ReleaseCandidateQueryPlanTest.java), 설계 설명은 [technical-notes.md](../report/technical-notes.md)에 있다.
 
@@ -23,7 +24,7 @@
 5. [results/README.md](results/README.md): 실행 결과 기록 형식
 6. `results/<date>-<scenario>-<commit>.md`: 실제 실행 결과
 
-S0~S2 기준선은 [2026-08-12-s0-s2-baseline.md](results/2026-08-12-s0-s2-baseline.md), 첫 번째 재현 가능한 before/after 결과는 [2026-08-12-public-feed-index.md](results/2026-08-12-public-feed-index.md)에서 확인한다.
+S0~S2 반복 기준선은 [2026-08-12-s0-s2-baseline.md](results/2026-08-12-s0-s2-baseline.md), S3~S8 대표 workload는 [2026-08-12-s3-s8-workloads.md](results/2026-08-12-s3-s8-workloads.md), 첫 번째 재현 가능한 before/after 결과는 [2026-08-12-public-feed-index.md](results/2026-08-12-public-feed-index.md)에서 확인한다.
 
 ## 문서 규칙
 

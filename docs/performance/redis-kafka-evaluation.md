@@ -95,4 +95,6 @@ Redis·Kafka 실험은 아래 네 조건을 한 세트로 기록한다.
 
 ## 현재 판단
 
-첫 기준선 이전에는 Redis와 Kafka 모두 `deferred`다. 현재 코드의 대표 병목은 먼저 query plan·pagination·transaction·pool 측정으로 확인해야 하며, 수치가 없는 상태에서 캐시나 broker를 추가하는 것은 성능 개선으로 인정하지 않는다.
+S0~S8 측정 이후에도 Redis와 Kafka는 `deferred`다. 100,000건 public feed의 V054 index after p95가 5.01ms였고, mixed baseline p95 20.95ms·30분 soak p95 18.03ms에서 cache가 해결할 DB read bottleneck이 확인되지 않았다. Kafka 역시 write·mixed 요청에서 후속 작업 backlog나 consumer lag을 측정해야 할 필요가 나타나지 않았다.
+
+따라서 지금은 후보 기술을 production path에 추가하지 않는다. 이후 VPS에서 DB CPU·connection/lock wait 또는 notification/projection backlog가 실제로 확인되면, 그때 같은 fixture와 동일 VU로 `postgres-only`와 `candidate-enabled`를 비교하고 failure-mode·rollback까지 기록한다. 현재 결과는 “Redis/Kafka가 불필요하다”가 아니라 “현재 증거로는 비용을 정당화할 병목이 없다”는 판단이다.

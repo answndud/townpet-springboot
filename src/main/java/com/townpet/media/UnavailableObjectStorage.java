@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("!local & !test & !e2e")
+@Profile("!local & !perf & !test & !e2e")
 class UnavailableObjectStorage implements ObjectStoragePort {
   @Override
   public String createUploadUrl(

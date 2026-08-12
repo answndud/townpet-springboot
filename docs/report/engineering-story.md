@@ -89,3 +89,14 @@ Spring Method Security를 활성화하고 `/api/admin/**`, 신고 compatibility 
 
 - 근거: `6366d41`, `dab5527`, `7de4416`, `StableSecurityProblemHandlers`, `PublicationRepository`, `RequestTraceFilter`, 관련 architecture·identity·publication test
 - trade-off: bulk update는 대량 moderation에 효율적이지만 JPA entity lifecycle callback이 필요한 규칙에는 적용하지 않는다. 요청 로그는 진단 가능성을 높이는 대신 path 식별자가 포함될 수 있어 query와 민감 body는 기록하지 않는다.
+
+## 9. 성능 개선은 인프라 추가보다 측정 루프로 닫았다
+
+기존에 적용된 feed keyset·복합 인덱스·atomic view upsert·capacity row lock·목록 상한을 HTTP 부하로 다시 표현할 수 있도록 전용 perf DB, deterministic fixture, k6 시나리오를 만들었다. 먼저 100,000건 feed에서 인덱스 전후를 같은 조건으로 재생해 p95 67.13ms→5.01ms를 확인했고, 그 뒤 write·moderator·media·mixed·contention·30분 soak을 실행했다.
+
+실행 중에는 k6 세션 cookie 누락으로 반복 write가 403이 되고, moderator fixture hash 불일치로 401이 되는 문제를 발견했다. 결과를 숨기지 않고 하네스와 seed를 수정한 뒤 유효한 run만 채택했다. capacity 경합은 10개 정원 불변식을 지켰지만 p95 약 1.19초의 row-lock 비용이 드러났고, 20 VU spike에서는 Docker host bridge 단일 timeout을 애플리케이션 오류와 분리했다. soak 종료 heap은 약 98MB였지만 RSS가 55→276MB까지 변해 native memory를 운영 환경에서 재측정할 후속 과제로 남겼다.
+
+현재 public feed p95와 mixed/soak 결과에서 Redis cache 또는 Kafka broker가 해결할 병목은 입증되지 않았다. 따라서 두 인프라는 추가하지 않고 deferred로 결정했으며, 실제 DB CPU·queue backlog·eventual-consistency 요구가 생길 때 동일 fixture의 candidate-enabled 비교를 시작한다.
+
+- 근거: [`docs/performance/results/2026-08-12-public-feed-index.md`](../performance/results/2026-08-12-public-feed-index.md), [`docs/performance/results/2026-08-12-s0-s2-baseline.md`](../performance/results/2026-08-12-s0-s2-baseline.md), [`docs/performance/results/2026-08-12-s3-s8-workloads.md`](../performance/results/2026-08-12-s3-s8-workloads.md)
+- trade-off: local Docker bridge와 JVM RSS는 운영 네트워크·메모리의 대체 증거가 아니므로 배포 전 VPS에서 spike/soak을 재실행한다.
