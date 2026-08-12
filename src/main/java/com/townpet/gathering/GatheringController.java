@@ -1,6 +1,5 @@
 package com.townpet.gathering;
 
-import com.townpet.catalog.api.ValidAnimalCommunityCodes;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -44,8 +43,7 @@ class GatheringController {
             r.description(),
             r.location(),
             r.startsAt(),
-            r.capacity(),
-            r.animalCommunityCodes()));
+            r.capacity()));
   }
 
   @PostMapping("/{id}/participants")
@@ -101,9 +99,7 @@ class GatheringController {
       @NotBlank @Size(max = 5000) String description,
       @NotBlank @Size(max = 200) String location,
       @NotNull Instant startsAt,
-      @Min(2) @Max(100) int capacity,
-      @Nullable @Size(max = 12) @ValidAnimalCommunityCodes
-          Collection<@Size(max = 40) String> animalCommunityCodes) {}
+      @Min(2) @Max(100) int capacity) {}
 
   record Response(
       UUID id,

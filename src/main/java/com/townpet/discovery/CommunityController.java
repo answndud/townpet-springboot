@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
@@ -39,7 +40,10 @@ class CommunityController {
           Map.entry("volunteer", "VOLUNTEER"),
           Map.entry("showcase", "PET_SHOWCASE"),
           Map.entry("product-reviews", "PRODUCT_REVIEW"));
-
+  private static final Set<String> ANIMAL_BOARD_CODES =
+      Set.of("all", "free", "questions", "showcase", "product-reviews");
+  private static final Set<String> ANIMAL_BOARD_TYPES =
+      Set.of("FREE_BOARD", "QA_QUESTION", "PET_SHOWCASE", "PRODUCT_REVIEW");
   private final CommunityFeed feed;
 
   CommunityController(CommunityFeed feed) {
@@ -60,6 +64,10 @@ class CommunityController {
       @RequestParam(required = false) LocalDate to) {
     String normalizedAnimal = normalizeAnimalCode(animalCode);
     String normalizedBoard = normalizeBoard(board);
+    if (!ANIMAL_BOARD_CODES.contains(normalizedBoard)) {
+      throw new ResponseStatusException(
+          HttpStatus.NOT_FOUND, "Common boards are not nested under an animal board");
+    }
     if (from != null && to != null && to.isBefore(from)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed date range");
     }
@@ -76,12 +84,12 @@ class CommunityController {
                   from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
                   to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
                   null,
-                  boardType(normalizedBoard))
+                  boardTypes(normalizedBoard))
               : feed.listCommunity(
                   memberId(principal),
                   audience == FeedController.FeedAudience.VIEWER,
                   normalizedAnimal.toUpperCase(java.util.Locale.ROOT),
-                  boardType(normalizedBoard),
+                  boardTypes(normalizedBoard),
                   cursor,
                   limit,
                   query,
@@ -114,9 +122,8 @@ class CommunityController {
     return board;
   }
 
-  @Nullable
-  private static String boardType(String board) {
-    return "all".equals(board) ? null : BOARD_TYPES.get(board);
+  private static Set<String> boardTypes(String board) {
+    return "all".equals(board) ? ANIMAL_BOARD_TYPES : Set.of(BOARD_TYPES.get(board));
   }
 
   @Nullable

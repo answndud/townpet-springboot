@@ -1,12 +1,10 @@
 package com.townpet.welfare;
 
-import com.townpet.catalog.api.AnimalCommunityTagger;
 import com.townpet.common.UuidV7;
 import java.sql.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,11 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 class HospitalReviewService {
   private static final int PUBLIC_LIMIT = 100;
   private final JdbcTemplate jdbc;
-  private final AnimalCommunityTagger communityTags;
 
-  HospitalReviewService(JdbcTemplate jdbc, AnimalCommunityTagger communityTags) {
+  HospitalReviewService(JdbcTemplate jdbc) {
     this.jdbc = jdbc;
-    this.communityTags = communityTags;
   }
 
   @Transactional(readOnly = true)
@@ -51,13 +47,7 @@ class HospitalReviewService {
   }
 
   @Transactional
-  Review create(
-      UUID author,
-      String name,
-      String address,
-      int rating,
-      String body,
-      @Nullable Collection<String> animalCommunityCodes) {
+  Review create(UUID author, String name, String address, int rating, String body) {
     UUID id = UuidV7.randomUuid();
     try {
       jdbc.update(
@@ -71,7 +61,6 @@ class HospitalReviewService {
     } catch (org.springframework.dao.DataIntegrityViolationException e) {
       throw new IllegalStateException("Already reviewed this hospital");
     }
-    communityTags.replace("HOSPITAL_REVIEW", id, animalCommunityCodes);
     return find(id).orElseThrow();
   }
 

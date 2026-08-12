@@ -65,7 +65,6 @@ class GroupBuyCompatibilityController {
         listing.title(),
         listing.description(),
         listing.priceKrw(),
-        java.util.List.of(),
         listing.createdAt(),
         listing.updatedAt(),
         listing.version());
