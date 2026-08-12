@@ -35,6 +35,13 @@ spring:
         jdbc:
           time_zone: UTC
 
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+logging:
+  pattern:
+    level: "%5p [traceId=%X{traceId}]"
+
 server:
   shutdown: graceful
   error:
