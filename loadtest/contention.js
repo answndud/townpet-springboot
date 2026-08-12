@@ -1,10 +1,15 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
+import { Counter, Rate, Trend } from "k6/metrics";
 import { BASE_URL, authHeaders, csrf, loginPerfMember, optionsFor } from "./common.js";
 
 const CASE = __ENV.CONTENTION_CASE || "views";
 const PUBLICATION_ID = __ENV.PERF_PUBLICATION_ID || "4714c8aa-9118-6008-184f-6683425eeb1c";
 const OPPORTUNITY_ID = __ENV.PERF_OPPORTUNITY_ID || "c1f4c885-b7ce-4fa4-ee11-d98535ca14dd";
+const capacityApplyDuration = new Trend("capacity_apply_duration", true);
+const capacitySuccess = new Counter("capacity_success");
+const capacityConflict = new Counter("capacity_conflict");
+const capacityExpected = new Rate("capacity_expected_response");
 
 export const options = CASE === "capacity"
   ? {
@@ -17,9 +22,14 @@ export const options = CASE === "capacity"
         },
       },
       summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
-      // Capacity conflicts wait behind the single opportunity row lock. Keep a
-      // separate threshold so expected 409s are not mistaken for a read SLA.
-      thresholds: { checks: ["rate>0.99"], http_req_duration: ["p(95)<1500"] },
+      // Capacity conflicts wait behind the single opportunity row lock. Measure
+      // the apply endpoint separately so one-time BCrypt login is not counted
+      // as capacity latency.
+      thresholds: {
+        checks: ["rate>0.99"],
+        capacity_apply_duration: ["p(95)<1000"],
+        capacity_expected_response: ["rate>0.99"],
+      },
     }
   : optionsFor();
 
@@ -49,6 +59,11 @@ export default function () {
     check(response, {
       "capacity response is created or conflict": (item) => item.status === 201 || item.status === 409,
     });
+    capacityApplyDuration.add(response.timings.duration);
+    const expected = response.status === 201 || response.status === 409;
+    capacityExpected.add(expected);
+    if (response.status === 201) capacitySuccess.add(1);
+    if (response.status === 409) capacityConflict.add(1);
     return;
   }
 
