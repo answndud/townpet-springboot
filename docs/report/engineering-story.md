@@ -67,3 +67,14 @@ Spring Method Security를 활성화하고 `/api/admin/**`, 신고 compatibility 
 ## 면접에서 강조할 핵심
 
 “처음부터 모든 기술을 넣었다”가 아니라, 사전 제약으로 정한 선택과 실제 실패 후 수정한 선택을 구분한다. 각 답변은 상황, 선택한 경계, 재현 가능한 test, 남은 trade-off 순서로 말한다. 아직 측정하지 않은 성능이나 구현하지 않은 기능은 성과로 주장하지 않는다.
+
+## 7. release-candidate 재감사에서 경쟁 조건을 저장소까지 내렸다
+
+첫 release-candidate gate가 통과한 뒤에도 목록·상태·metric 코드를 다시 읽어 실제 경합을 가정했다. 조회수는 `find → save` 구조에서 첫 두 요청이 동시에 insert할 수 있었고, volunteer 신청은 `FULL` 상태를 응답에만 표현할 뿐 capacity를 원자적으로 제한하지 않았다. 병원 신고도 애플리케이션의 중복 조회만으로는 병렬 요청을 막을 수 없었다.
+
+조회수는 PostgreSQL `INSERT ... ON CONFLICT DO UPDATE ... RETURNING`으로 바꾸고, volunteer 신청은 대상 opportunity row lock 아래에서 count·insert·`FULL` 전이를 수행했다. 병원 신고에는 open case partial unique index를 추가하고 충돌을 `409`로 수렴시켰다. 미디어 첨부는 publication row lock을 사용해 동시에 다섯 개 제한을 넘지 않도록 했고, 돌봄 수락은 request lock과 application version 증가를 함께 적용했다.
+
+이 변경은 단순 unit test가 아니라 Testcontainers PostgreSQL의 `EXPLAIN (ANALYZE, BUFFERS)`와 160개 병렬 metric upsert fixture로 검증했다. Docker 재기동 중에는 호스트의 Docker build cache가 PostgreSQL migration을 막는 `No space left on device`를 실제로 재현했고, 프로젝트 volume을 삭제하지 않고 build cache만 정리한 뒤 Flyway `V052`, health/readiness, seed 2회 반복을 다시 확인했다.
+
+- 근거: `c1f5c68`, `V052__moderator_case_open_flag_uniqueness.sql`, `ReleaseCandidateQueryPlanTest`, Docker compose health/seed output
+- trade-off: row/advisory lock과 partial index는 단일 VPS 규모에서 충분한 일관성을 제공하지만, 실제 운영 부하·replica·queue 요구가 생기면 별도 부하 측정과 확장 설계가 필요하다.
