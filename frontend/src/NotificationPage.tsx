@@ -5,6 +5,16 @@ import { ApiError, notificationApi, type Notification } from "./api/client";
 export default function NotificationPage() {
   const navigate = useNavigate(); const [items, setItems] = useState<Notification[]>([]); const [unreadOnly, setUnreadOnly] = useState(false); const [unreadCount, setUnreadCount] = useState(0); const [error, setError] = useState<string | null>(null);
   useEffect(() => { Promise.all([notificationApi.list(unreadOnly), notificationApi.unreadCount()]).then(([next, count]) => { setItems(next); setUnreadCount(count.count); }).catch((e: unknown) => { if (e instanceof ApiError && e.status === 401) navigate("/login?next=/notifications", { replace: true }); else setError("알림을 불러오지 못했습니다."); }); }, [navigate, unreadOnly]);
-  async function read(item: Notification) { if (item.readAt) return; const updated = await notificationApi.markRead(item.id); setItems((current) => current.map((candidate) => candidate.id === item.id ? updated : candidate)); setUnreadCount((count) => Math.max(0, count - 1)); }
+  async function read(item: Notification) {
+    if (item.readAt) return;
+    try {
+      const updated = await notificationApi.markRead(item.id);
+      setItems((current) => current.map((candidate) => candidate.id === item.id ? updated : candidate));
+      setUnreadCount((count) => Math.max(0, count - 1));
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) navigate("/login?next=/notifications", { replace: true });
+      else setError("알림을 읽음 처리하지 못했습니다.");
+    }
+  }
   return <main className="page notification-page"><section className="localcare-hero"><p className="eyebrow">NOTIFICATIONS</p><h1>알림 {unreadCount ? <span className="publication-chip publication-chip-primary">읽지 않음 {unreadCount}</span> : null}</h1><p>내 활동과 TownPet 운영 소식을 확인하세요.</p></section>{error ? <p role="alert">{error}</p> : null}<button className="button button-soft" type="button" onClick={() => setUnreadOnly((current) => !current)}>{unreadOnly ? "전체 알림 보기" : "읽지 않은 알림만"}</button><section className="notification-list">{items.map((item) => <button className={item.readAt ? "surface-card notification-item read" : "surface-card notification-item"} key={item.id} type="button" onClick={() => void read(item)}><span className="publication-chip">{item.type}</span><h2>{item.title}</h2><p>{item.body}</p><small>{new Date(item.createdAt).toLocaleString("ko-KR")}</small></button>)}</section>{!items.length && !error ? <p className="surface-card">새 알림이 없습니다.</p> : null}<Link className="publication-text-link" to="/">홈으로</Link></main>;
 }
