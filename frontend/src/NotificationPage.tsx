@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, notificationApi, type Notification } from "./api/client";
 import { useAbortableRequest } from "./hooks/useAbortableRequest";
+import { formatDateTime } from "./utils/date";
 
 export default function NotificationPage() {
   const navigate = useNavigate();
@@ -41,5 +42,5 @@ export default function NotificationPage() {
     }
   }
 
-  return <main className="page notification-page"><section className="localcare-hero"><p className="eyebrow">NOTIFICATIONS</p><h1>알림 {unreadCount ? <span className="publication-chip publication-chip-primary">읽지 않음 {unreadCount}</span> : null}</h1><p>내 활동과 TownPet 운영 소식을 확인하세요.</p></section>{error ? <p role="alert">{error}</p> : null}<button className="button button-soft" type="button" onClick={() => setUnreadOnly((current) => !current)}>{unreadOnly ? "전체 알림 보기" : "읽지 않은 알림만"}</button><section className="notification-list" aria-busy={loading}>{items.map((item) => <button className={item.readAt ? "surface-card notification-item read" : "surface-card notification-item"} key={item.id} type="button" disabled={readingId === item.id} onClick={() => void read(item)}><span className="publication-chip">{item.type}</span><h2>{item.title}</h2><p>{item.body}</p><small>{new Date(item.createdAt).toLocaleString("ko-KR")}</small></button>)}</section>{!items.length && !error && !loading ? <p className="surface-card">새 알림이 없습니다.</p> : null}<Link className="publication-text-link" to="/">홈으로</Link></main>;
+  return <main className="page notification-page"><section className="localcare-hero"><p className="eyebrow">NOTIFICATIONS</p><h1>알림 {unreadCount ? <span className="publication-chip publication-chip-primary">읽지 않음 {unreadCount}</span> : null}</h1><p>내 활동과 TownPet 운영 소식을 확인하세요.</p></section>{error ? <p role="alert">{error}</p> : null}<button className="button button-soft" type="button" onClick={() => setUnreadOnly((current) => !current)}>{unreadOnly ? "전체 알림 보기" : "읽지 않은 알림만"}</button><section className="notification-list" aria-busy={loading}>{items.map((item) => <button className={item.readAt ? "surface-card notification-item read" : "surface-card notification-item"} key={item.id} type="button" disabled={readingId === item.id} onClick={() => void read(item)}><span className="publication-chip">{item.type}</span><h2>{item.title}</h2><p>{item.body}</p><small>{formatDateTime(item.createdAt)}</small></button>)}</section>{!items.length && !error && !loading ? <p className="surface-card">새 알림이 없습니다.</p> : null}<Link className="publication-text-link" to="/">홈으로</Link></main>;
 }
