@@ -3,8 +3,9 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, gatheringApi, type Gathering } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
+import { formatDateMediumTime } from "../../utils/date";
 
-function date(value: string) { return new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); }
+function date(value: string) { return formatDateMediumTime(value); }
 
 export function GatheringListPage() {
   const { member } = useAuth();
