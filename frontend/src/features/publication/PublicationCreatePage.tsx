@@ -3,63 +3,39 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ApiError,
   catalogApi,
-  memberApi,
   publicationApi,
   mediaApi,
-  type Member,
   type Neighborhood,
   type PublicationScope,
 } from "../../api/client";
+import { useAuth } from "../../auth/AuthContext";
+import { useAbortableRequest } from "../../hooks/useAbortableRequest";
 
 const TITLE_MAX_LENGTH = 120;
 const BODY_MAX_LENGTH = 20_000;
 
 export default function PublicationCreatePage() {
   const navigate = useNavigate();
-  const [member, setMember] = useState<Member | null>(null);
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
+  const { member, status: authStatus } = useAuth();
+  const { data: neighborhoods, error: neighborhoodError, loading: neighborhoodsLoading } = useAbortableRequest<Neighborhood[]>((signal) => catalogApi.neighborhoods(signal), []);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [scope, setScope] = useState<PublicationScope>("GLOBAL");
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [partialPublicationId, setPartialPublicationId] = useState<string | null>(null);
 
+  const loading = authStatus === "loading" || neighborhoodsLoading;
   useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
+    if (authStatus === "anonymous") navigate("/login?next=/posts/new", { replace: true });
+  }, [authStatus, navigate]);
+  useEffect(() => {
+    if (neighborhoodError) setError("글 작성 정보를 불러오지 못했습니다.");
+    if (authStatus === "error") setError("로그인 상태를 확인하지 못했습니다.");
+  }, [authStatus, neighborhoodError]);
 
-    Promise.all([
-      memberApi.current(controller.signal),
-      catalogApi.neighborhoods(controller.signal),
-    ])
-      .then(([currentMember, options]) => {
-        if (!active) return;
-        setMember(currentMember);
-        setNeighborhoods(options);
-      })
-      .catch((requestError: unknown) => {
-        if (!active || (requestError instanceof DOMException && requestError.name === "AbortError")) {
-          return;
-        }
-        if (requestError instanceof ApiError && requestError.status === 401) {
-          navigate("/login?next=/posts/new", { replace: true });
-          return;
-        }
-        setError("글 작성 정보를 불러오지 못했습니다.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [navigate]);
-
-  const neighborhood = neighborhoods.find((item) => item.id === member?.neighborhoodId) ?? null;
+  const neighborhood = (neighborhoods ?? []).find((item) => item.id === member?.neighborhoodId) ?? null;
   const canSubmit =
     !submitting &&
     Boolean(title.trim()) &&
@@ -71,6 +47,8 @@ export default function PublicationCreatePage() {
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
+    setPartialPublicationId(null);
+    let createdPublicationId: string | null = null;
     try {
       const publication = await publicationApi.create({
         title: title.trim(),
@@ -78,6 +56,7 @@ export default function PublicationCreatePage() {
         scope,
         ...(scope === "LOCAL" && neighborhood ? { neighborhoodId: neighborhood.id } : {}),
       });
+      createdPublicationId = publication.id;
       if (file) {
         const bytes = await file.arrayBuffer();
         const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -94,10 +73,13 @@ export default function PublicationCreatePage() {
         return;
       }
       setError(
-        requestError instanceof ApiError && requestError.status === 400
+        createdPublicationId
+          ? "글은 등록됐지만 첨부 파일을 연결하지 못했습니다. 아래 글에서 내용을 확인한 뒤 필요하면 다시 첨부해 주세요."
+          : requestError instanceof ApiError && requestError.status === 400
           ? "제목, 본문과 공개 범위를 확인해 주세요."
           : "글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       );
+      if (createdPublicationId) setPartialPublicationId(createdPublicationId);
     } finally {
       setSubmitting(false);
     }
@@ -226,7 +208,7 @@ export default function PublicationCreatePage() {
           </aside>
         </div>
 
-        {error ? <p className="form-error publication-error" role="alert">{error}</p> : null}
+        {error ? <p className="form-error publication-error" role="alert">{error} {partialPublicationId ? <Link className="publication-text-link" to={`/posts/${partialPublicationId}`}>등록된 글 열기</Link> : null}</p> : null}
         <footer className="publication-submit-row">
           <Link className="publication-text-link" to="/feed">취소</Link>
           <button className="button button-primary" type="submit" disabled={!canSubmit}>
