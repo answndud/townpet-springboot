@@ -121,27 +121,26 @@ public class PublicationFeed {
       int limit,
       @Nullable String searchQuery,
       @Nullable String scopeFilter) {
-    Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
-    UUID viewerNeighborhoodId =
-        viewerMemberId == null || !includeViewerNeighborhood
-            ? null
-            : members
-                .findPublicationContext(viewerMemberId)
-                .map(MemberDirectory.MemberPublicationContext::neighborhoodId)
-                .orElse(null);
+    return list(viewerMemberId, includeViewerNeighborhood, encodedCursor, limit, searchQuery, scopeFilter, null, null);
+  }
 
+  @Transactional(readOnly = true)
+  public Page list(
+      @Nullable UUID viewerMemberId, boolean includeViewerNeighborhood, @Nullable String encodedCursor,
+      int limit, @Nullable String searchQuery, @Nullable String scopeFilter,
+      @Nullable Instant from, @Nullable Instant to) {
+    Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
+    UUID viewerNeighborhoodId = viewerMemberId == null || !includeViewerNeighborhood ? null
+        : members.findPublicationContext(viewerMemberId).map(MemberDirectory.MemberPublicationContext::neighborhoodId).orElse(null);
     Condition visible = SCOPE.eq("GLOBAL");
-    if (viewerNeighborhoodId != null) {
-      visible = visible.or(SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId)));
-    }
+    if (viewerNeighborhoodId != null) visible = visible.or(SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId)));
     if (scopeFilter != null && !scopeFilter.isBlank()) {
-      if (scopeFilter.equalsIgnoreCase("LOCAL")) {
-        visible = SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId));
-      } else if (scopeFilter.equalsIgnoreCase("GLOBAL")) {
-        visible = SCOPE.eq("GLOBAL");
-      }
+      if (scopeFilter.equalsIgnoreCase("LOCAL")) visible = SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId));
+      else if (scopeFilter.equalsIgnoreCase("GLOBAL")) visible = SCOPE.eq("GLOBAL");
     }
     Condition condition = LIFECYCLE.eq("ACTIVE").and(visible);
+    if (from != null) condition = condition.and(CREATED_AT.ge(from.atOffset(ZoneOffset.UTC)));
+    if (to != null) condition = condition.and(CREATED_AT.lt(to.atOffset(ZoneOffset.UTC)));
     if (searchQuery != null && !searchQuery.isBlank()) {
       String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
       condition = condition.and(TITLE.likeIgnoreCase(term).or(BODY.likeIgnoreCase(term)));
