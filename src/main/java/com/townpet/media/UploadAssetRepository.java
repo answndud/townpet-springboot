@@ -8,6 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 interface UploadAssetRepository extends JpaRepository<UploadAssetEntity, UUID> {
   Optional<UploadAssetEntity> findByIdAndOwnerMemberId(UUID id, UUID ownerMemberId);
 
-  java.util.List<UploadAssetEntity> findByStatusAndExpiresAtBefore(
+  java.util.List<UploadAssetEntity> findTop500ByStatusAndExpiresAtBeforeOrderByExpiresAtAscIdAsc(
       MediaAssetStatus status, Instant expiresAt);
 }

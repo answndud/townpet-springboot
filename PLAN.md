@@ -8,14 +8,29 @@
 
 ## Current status
 
-P1~P3 구현 덩어리는 `100cac6`에서 반영했고, 아래 완료 판정의 fresh gate와 Docker local evidence를 통과했다. 현재는 backend release candidate 상태이며 공개 배포는 시작하지 않는다. 이후에는 배포를 시작할 때만 Backlog의 G9를 실행한다.
-
-- Gradle `clean check migrationTest`, `performanceTest`, `bootJar`: 통과
-- Docker backend health/readiness, Flyway `051`, demo seed 2회 반복: 통과
-- parity inventory: `104 total / 95 verified / 9 excluded / 0 pending`
-- 남은 것은 production 외부 인프라·TLS·백업·모니터링이며 G9 범위다.
+이전 release-candidate 커밋(`fb7241d`)을 다시 감사해 발견한 동시성·상태·용량·멱등성 결함을 수정했다. 현재 변경은 `V052`와 원자적 조회수·capacity enforcement·첨부 직렬화·이벤트 오류 구분을 포함하며, fresh backend gate와 Docker runtime evidence를 통과했다. 공개 배포는 시작하지 않는다.
 
 ## Active
+
+### 재감사 사이클 - 실제 충돌·성능·재기동 결함을 닫는다
+
+1. **상태·동시성 불변식을 실제 저장소에서 고정한다.**
+   - 파일: `care/`, `welfare/VolunteerService.java`, `media/MediaService.java`, `publication/PublicationMetricsController.java`, `db/migration/V052__moderator_case_open_flag_uniqueness.sql`
+   - 변경: 돌봄 수락 row lock·bulk version 증가, volunteer capacity와 `FULL` 전이, 병원 신고 open 중복 unique index, publication metric atomic upsert, media publication row lock, exact location pair validation을 유지한다.
+   - 검증: care/media/welfare test, PostgreSQL concurrency test, migration startup, Docker seed.
+   - 완료: 경쟁 요청이 중복·초과·lost update를 만들지 않고 충돌은 409로 수렴한다.
+
+2. **조회 성능 검증을 실제 PostgreSQL plan으로 고정한다.**
+   - 파일: `build.gradle.kts`, `src/test/java/com/townpet/performance/ReleaseCandidateQueryPlanTest.java`, `docs/report/technical-notes.md`
+   - 변경: `performanceTest`가 전체 테스트를 중복 실행하지 않고 query-plan/concurrent-upsert fixture만 실행하게 하며, 대표 queue index 사용을 `EXPLAIN (ANALYZE, BUFFERS)`로 확인한다.
+   - 검증: `./gradlew performanceTest --no-daemon`.
+   - 완료: 성능 주장이 작은 fixture의 측정 범위를 넘지 않고, index와 atomic write 근거가 재현된다.
+
+3. **clean runtime과 전체 gate를 다시 통과시킨다.**
+   - 파일: `deploy/compose/local.yml`, `scripts/seed-local-demo.sh`, backend test/build 경로
+   - 변경: Docker backend를 새 image로 재기동해 Flyway `052` 적용, health/readiness, seed→seed 멱등성을 확인한다. 이후 전체 backend gate를 fresh run한다.
+   - 검증: `./gradlew clean check migrationTest performanceTest --no-daemon`, `./gradlew bootJar --no-daemon`, `./scripts/validate-release-candidate.sh`, Docker health/seed.
+   - 완료: 모든 새 변경이 green이고, untracked/secret/generated artifact 없이 commit 가능한 상태다.
 
 ### P1 - 백엔드 기능·계약·권한을 닫는다
 

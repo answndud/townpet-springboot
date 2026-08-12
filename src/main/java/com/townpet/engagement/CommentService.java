@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,7 +93,7 @@ class CommentService {
                       new NotificationEvent(
                           recipient, memberId, "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
       return comment;
-    } catch (DataAccessException exception) {
+    } catch (DataIntegrityViolationException exception) {
       throw new CommentPublicationNotFoundException();
     }
   }

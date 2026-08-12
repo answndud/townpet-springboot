@@ -56,6 +56,8 @@ class LostFoundSightingController {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (LostFoundAlertStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Alert does not accept sightings");
+    } catch (IllegalArgumentException exception) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Exact location is incomplete");
     }
   }
 

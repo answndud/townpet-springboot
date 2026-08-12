@@ -32,8 +32,12 @@ class AcquisitionEventController {
               request.route(),
               hash(request.anonymousKey()),
               request.clientEventId()));
-    } catch (DataIntegrityViolationException ignored) {
-      // Replayed client event is already recorded; keep the endpoint idempotent.
+    } catch (DataIntegrityViolationException exception) {
+      if (request.clientEventId() == null
+          || events.findByClientEventId(request.clientEventId()).isEmpty()) {
+        throw exception;
+      }
+      // A replayed client event is already recorded; keep the endpoint idempotent.
     }
   }
 
