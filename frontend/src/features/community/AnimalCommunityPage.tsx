@@ -212,7 +212,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
         ))}
       </nav>
 
-      <form className="surface-card community-search" onSubmit={submitSearch}>
+      <form className="search-panel" onSubmit={submitSearch}>
         <label>{mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"}<input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder="제목이나 내용" /></label>
         <button className="button button-soft" type="submit">검색</button>
       </form>
