@@ -26,7 +26,7 @@
 
 ## 로컬 실행
 
-프로젝트 루트에서 다음 명령을 실행하면 Docker 이미지가 없거나 PostgreSQL volume을 새로 만든 경우에도 schema migration과 fixture 주입을 다시 수행한다.
+실행 방식별 Docker·IntelliJ 명령은 [로컬 서버 실행 workflow](./local-development-workflow.md)를 따른다. 백엔드가 migration을 완료하고 PostgreSQL이 healthy인 뒤 아래 명령을 실행하면 fixture만 주입한다. 이 스크립트는 Docker 서비스 시작이나 이미지 빌드를 수행하지 않는다.
 
 ```bash
 ./scripts/seed-local-demo.sh
@@ -51,10 +51,11 @@ corepack pnpm -C frontend dev
 - `/care`: 열린 돌봄 요청 1개, 매칭된 요청 1개와 지원·후기 흐름
 - `/admin`: 운영 관리자 계정으로 신고·운영 기능 확인
 
-`migration/fixtures/local-demo.sql`은 fixture가 소유한 고정 UUID와 두 fixture 게시글의 상호작용만 먼저 지운 뒤 다시 넣으므로 같은 명령을 반복해도 다른 로컬 데이터는 건드리지 않는다. PostgreSQL volume 자체를 비운 뒤에도 동일한 명령으로 계정과 샘플 데이터를 복원할 수 있다.
+`migration/fixtures/local-demo.sql`은 fixture가 소유한 고정 UUID와 두 fixture 게시글의 상호작용만 먼저 지운 뒤 다시 넣으므로 같은 명령을 반복해도 다른 로컬 데이터는 건드리지 않는다. PostgreSQL volume 자체를 비운 경우에는 먼저 PostgreSQL과 백엔드를 실행해 Flyway migration을 완료한 뒤 동일한 명령으로 계정과 샘플 데이터를 복원한다.
 
 ```bash
 docker compose -f deploy/compose/local.yml down -v
+# 방법 A 또는 방법 B로 PostgreSQL과 백엔드를 먼저 실행한 뒤
 ./scripts/seed-local-demo.sh
 ```
 
