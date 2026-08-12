@@ -38,7 +38,8 @@ public class MemberController {
     }
     MemberEntity member = findMember(principal);
     MemberProfileEntity profile = profiles.findByMemberId(member.getId()).orElse(null);
-    return toResponse(member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
+    return toResponse(
+        principal, member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
   }
 
   @PutMapping("/me/onboarding")
@@ -46,6 +47,7 @@ public class MemberController {
   MemberResponse updateOnboarding(
       @AuthenticationPrincipal UserDetails principal,
       @Valid @RequestBody OnboardingRequest request) {
+    requireMemberRole(principal);
     MemberEntity member = findMember(principal);
     if (request.neighborhoodId() == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "neighborhoodId is required");
@@ -72,7 +74,7 @@ public class MemberController {
                         UUID.randomUUID(), member.getId(), pet.name(), pet.species()))
             .toList();
     pets.saveAll(savedPets);
-    return toResponse(member, profile, savedPets);
+    return toResponse(principal, member, profile, savedPets);
   }
 
   @PutMapping("/me/profile")
@@ -80,6 +82,7 @@ public class MemberController {
   MemberResponse updateProfile(
       @AuthenticationPrincipal UserDetails principal,
       @Valid @RequestBody ProfileUpdateRequest request) {
+    requireMemberRole(principal);
     MemberEntity member = findMember(principal);
     MemberProfileEntity profile =
         profiles
@@ -105,7 +108,8 @@ public class MemberController {
                   return created;
                 });
     profiles.save(profile);
-    return toResponse(member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
+    return toResponse(
+        principal, member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
   }
 
   private MemberEntity findMember(UserDetails principal) {
@@ -128,11 +132,24 @@ public class MemberController {
     return memberId;
   }
 
+  private static void requireMemberRole(UserDetails principal) {
+    if (principal == null
+        || principal.getAuthorities().stream()
+            .anyMatch(authority -> "ROLE_MODERATOR".equals(authority.getAuthority()))) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Staff accounts do not use member profile settings");
+    }
+  }
+
   private static MemberResponse toResponse(
-      MemberEntity member, @Nullable MemberProfileEntity profile, List<MemberPetEntity> pets) {
+      UserDetails principal,
+      MemberEntity member,
+      @Nullable MemberProfileEntity profile,
+      List<MemberPetEntity> pets) {
     return new MemberResponse(
         member.getId(),
         member.getNickname(),
+        role(principal),
         profile == null ? null : profile.getBio(),
         profile == null ? null : profile.getNeighborhoodId(),
         profile == null || profile.isShowPublicPosts(),
@@ -141,6 +158,15 @@ public class MemberController {
         pets.stream()
             .map(pet -> new PetResponse(pet.getId(), pet.getName(), pet.getSpecies()))
             .toList());
+  }
+
+  private static String role(UserDetails principal) {
+    return principal.getAuthorities().stream()
+        .map(org.springframework.security.core.GrantedAuthority::getAuthority)
+        .filter(authority -> authority.startsWith("ROLE_"))
+        .map(authority -> authority.substring("ROLE_".length()))
+        .findFirst()
+        .orElse("MEMBER");
   }
 
   record OnboardingRequest(
@@ -170,6 +196,7 @@ public class MemberController {
   record MemberResponse(
       UUID id,
       String nickname,
+      String role,
       @Nullable String bio,
       @Nullable UUID neighborhoodId,
       boolean showPublicPosts,
