@@ -11,19 +11,9 @@ import {
   type Publication,
   type Reaction,
   type TrustReportReason,
-  type Member,
 } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
+import { formatDateTimeLong } from "../../utils/date";
 
 type CommentItemProps = {
   comment: Comment;
@@ -58,7 +48,7 @@ function CommentItem({
     <article className={comment.parentCommentId ? "publication-comment publication-comment-reply" : "publication-comment"} data-comment-id={comment.id}>
       <div className="publication-comment-meta">
         <strong>TownPet 회원</strong>
-        <time dateTime={comment.createdAt}>{formatDate(comment.createdAt)}</time>
+        <time dateTime={comment.createdAt}>{formatDateTimeLong(comment.createdAt)}</time>
         {memberViewer && viewerId === comment.authorId ? (
           <button className="text-button" type="button" onClick={() => onDelete(comment)}>
             삭제
@@ -108,9 +98,9 @@ export default function PublicationDetailPage() {
   const location = useLocation();
   const { member: authMember } = useAuth();
   const guestView = location.pathname.endsWith("/guest");
+  const viewerId = authMember?.id ?? null;
+  const viewerRole = authMember?.role ?? null;
   const [publication, setPublication] = useState<Publication | null>(null);
-  const [viewerId, setViewerId] = useState<string | null>(null);
-  const [viewerRole, setViewerRole] = useState<Member["role"] | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -180,11 +170,6 @@ export default function PublicationDetailPage() {
   }, [publicationId]);
 
   useEffect(() => {
-    setViewerId(authMember?.id ?? null);
-    setViewerRole(authMember?.role ?? null);
-  }, [authMember?.id, authMember?.role]);
-
-  useEffect(() => {
     if (!publication) return;
     const memberCanBookmark = authMember?.role === "MEMBER";
     const controller = new AbortController();
@@ -232,7 +217,7 @@ export default function PublicationDetailPage() {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
       });
     return () => controller.abort();
-  }, [publication, viewerId]);
+  }, [publication?.authorId, viewerId]);
 
   const memberViewer = viewerRole === "MEMBER";
   const moderatorViewer = viewerRole === "MODERATOR";
@@ -509,7 +494,7 @@ export default function PublicationDetailPage() {
             <span className="publication-avatar" aria-hidden="true">T</span>
             <div>
               <Link to={`/members/${publication.authorId}`}><strong>TownPet 회원</strong></Link>
-              <p>{formatDate(publication.createdAt)}</p>
+              <p>{formatDateTimeLong(publication.createdAt)}</p>
             </div>
           </div>
           {viewCount !== null ? <span className="publication-view-count">조회 {viewCount.toLocaleString("ko-KR")}</span> : null}
