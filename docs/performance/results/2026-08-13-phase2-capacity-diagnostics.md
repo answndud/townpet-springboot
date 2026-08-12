@@ -5,7 +5,7 @@
 - 실행일: 2026-08-13
 - application commit under test: `944959e7e50d63d03d4b7a2fc94cd32617c3ac03`
 - k6 harness change: recorded in the commit that adds this result document
-- 상태: `improved`
+- 상태: `accepted` (측정 하네스 보정; production 알고리즘 변경 없음)
 - 목적: 1차 capacity contention의 aggregate p95에서 BCrypt 로그인 비용과 실제 volunteer application 비용을 분리한다.
 - 결론: 같은 opportunity row를 잠그는 정책은 capacity 불변식을 지키는 데 필요한 상태로 유지한다. 실제 application endpoint의 p95는 238.98ms였고, 20건 모두 예상 응답(201 10건, 409 10건)으로 수렴했다.
 

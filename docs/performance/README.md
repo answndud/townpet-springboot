@@ -12,7 +12,7 @@
 - 첫 개선: global feed keyset 정렬용 복합 인덱스 V054 전후 비교 완료
 - S3~S8: write·contention·moderator·media·mixed·spike·30분 soak 결과 기록 완료
 - 2차: capacity 경합에서 로그인 비용과 실제 application latency를 분리해 재측정 완료
-- 3차: capacity lock query에서 필요한 컬럼만 읽도록 줄이고 전후 경합을 비교 완료
+- 3차: capacity lock query projection 후보를 전후 20회 재검증하고 개선을 기각, 기존 구현 유지
 - Redis·Kafka: 현재 병목 근거가 없어 deferred
 
 현재 확인된 query-plan·동시성 테스트와 실제 HTTP 부하 테스트를 혼동하지 않는다. 기존 근거는 [ReleaseCandidateQueryPlanTest.java](../../src/test/java/com/townpet/performance/ReleaseCandidateQueryPlanTest.java), 설계 설명은 [technical-notes.md](../report/technical-notes.md)에 있다.
