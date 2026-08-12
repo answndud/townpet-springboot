@@ -8,6 +8,8 @@ import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -28,6 +30,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /** Converts transport validation failures into the stable RFC 9457 contract. */
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class GlobalProblemHandler {
   private static final Logger log = LoggerFactory.getLogger(GlobalProblemHandler.class);
   private static final String TRACE_HEADER = "X-Trace-Id";
