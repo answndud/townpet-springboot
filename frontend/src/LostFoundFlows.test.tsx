@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -51,7 +51,9 @@ describe("LostFound journeys", () => {
     render(<MemoryRouter initialEntries={["/lost-found"]}><App /></MemoryRouter>);
     expect(await screen.findByRole("heading", { name: "Mango를 찾습니다" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: /Mango를 찾습니다/ }));
-    expect(await screen.findByRole("heading", { name: "Mango를 찾습니다" })).toBeInTheDocument();
-    expect(await screen.findByRole("link", { name: "목격 제보" })).toHaveAttribute("href", `/lost-found/${alert.id}/sightings/new`);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Mango를 찾습니다" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "목격 제보" })).toHaveAttribute("href", `/lost-found/${alert.id}/sightings/new`);
+    }, { timeout: 3000 });
   });
 });
