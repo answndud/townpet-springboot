@@ -8,6 +8,8 @@ interface ObjectStoragePort {
 
   Optional<StoredObject> inspect(String objectKey);
 
+  void store(String objectKey, String contentType, byte[] content);
+
   void delete(String objectKey);
 }
 

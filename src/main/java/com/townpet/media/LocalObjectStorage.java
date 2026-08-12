@@ -26,11 +26,16 @@ class LocalObjectStorage implements ObjectStoragePort {
     return Optional.ofNullable(objects.get(objectKey));
   }
 
-  void put(String objectKey, String contentType, byte[] content) {
+  @Override
+  public void store(String objectKey, String contentType, byte[] content) {
     objects.put(
         objectKey,
         new StoredObject(
             contentType, content.length, sha256(content), MediaContentSniffer.detect(content)));
+  }
+
+  void put(String objectKey, String contentType, byte[] content) {
+    store(objectKey, contentType, content);
   }
 
   @Override

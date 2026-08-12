@@ -49,6 +49,25 @@ class MediaService implements MediaOperations {
   }
 
   @Transactional
+  UploadAssetEntity uploadContent(UUID ownerMemberId, UUID assetId, String contentType, byte[] content) {
+    UploadAssetEntity asset = ownedAsset(ownerMemberId, assetId);
+    if (asset.getStatus() != MediaAssetStatus.UPLOADING || !asset.getExpiresAt().isAfter(Instant.now())) {
+      throw new MediaAssetStateException();
+    }
+    if (!asset.getContentType().equalsIgnoreCase(contentType) || asset.getByteSize() != content.length) {
+      throw new MediaObjectMismatchException();
+    }
+    storage.store(asset.getObjectKey(), contentType, content);
+    StoredObject stored = storage.inspect(asset.getObjectKey()).orElseThrow(MediaObjectNotFoundException::new);
+    if (!stored.checksumSha256().equalsIgnoreCase(asset.getChecksumSha256())
+        || !stored.detectedContentType().equals(asset.getContentType())) {
+      storage.delete(asset.getObjectKey());
+      throw new MediaObjectMismatchException();
+    }
+    return asset;
+  }
+
+  @Transactional
   UploadAssetEntity finalizeUpload(UUID ownerMemberId, UUID assetId, String checksumSha256) {
     UploadAssetEntity asset = ownedAsset(ownerMemberId, assetId);
     StoredObject object =
