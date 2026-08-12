@@ -1,10 +1,9 @@
 import { FormEvent, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, careApi, type CareApplication, type CareAssignment, type CareRequest } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
 import { formatDateTime } from "../../utils/date";
-import AnimalCommunitySelector, { initialAnimalCommunityCodes } from "../member/AnimalCommunitySelector";
 
 const statusLabel = { OPEN: "모집 중", MATCHED: "매칭됨", CANCELLED: "취소", EXPIRED: "만료" } as const;
 
@@ -77,11 +76,9 @@ export function CareDetailPage() {
 
 export function CareCreatePage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [animalCommunityCodes, setAnimalCommunityCodes] = useState<string[]>(() => initialAnimalCommunityCodes(searchParams));
   const [form, setForm] = useState({ title: "", description: "", location: "", startsAt: "", endsAt: "", rewardHint: "" });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  async function submit(event: FormEvent) { event.preventDefault(); if (saving) return; setSaving(true); setError(null); try { await careApi.create({ ...form, startsAt: new Date(form.startsAt).toISOString(), endsAt: new Date(form.endsAt).toISOString(), ...(animalCommunityCodes.length ? { animalCommunityCodes } : {}) }); navigate("/care"); } catch (requestError) { if (requestError instanceof ApiError && requestError.status === 401) navigate("/login?next=/care/new"); else setError("돌봄 요청 내용을 확인해 주세요."); } finally { setSaving(false); } }
-  return <main className="page localcare-page"><section className="localcare-hero"><p className="eyebrow">CARE REQUEST</p><h1>돌봄 요청 작성</h1></section><form className="surface-card publication-fields" onSubmit={submit}><AnimalCommunitySelector value={animalCommunityCodes} onChange={setAnimalCommunityCodes} /><label>제목<input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label><label>설명<textarea required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label><label>장소<input required value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></label><label>시작 시각<input required type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} /></label><label>종료 시각<input required type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} /></label><label>참고 reward<input value={form.rewardHint} onChange={(e) => setForm({ ...form, rewardHint: e.target.value })} /></label>{error ? <p role="alert">{error}</p> : null}<button className="button button-primary" disabled={saving} type="submit">{saving ? "등록 중..." : "등록"}</button></form></main>;
+  async function submit(event: FormEvent) { event.preventDefault(); if (saving) return; setSaving(true); setError(null); try { await careApi.create({ ...form, startsAt: new Date(form.startsAt).toISOString(), endsAt: new Date(form.endsAt).toISOString() }); navigate("/care"); } catch (requestError) { if (requestError instanceof ApiError && requestError.status === 401) navigate("/login?next=/care/new"); else setError("돌봄 요청 내용을 확인해 주세요."); } finally { setSaving(false); } }
+  return <main className="page localcare-page"><section className="localcare-hero"><p className="eyebrow">COMMON BOARD · CARE</p><h1>돌봄 요청 작성</h1><p>모든 동물 가족이 함께 볼 수 있는 공통 돌봄 게시판에 요청을 올려 보세요.</p></section><form className="surface-card publication-fields" onSubmit={submit}><label>제목<input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label><label>설명<textarea required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label><label>장소<input required value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></label><label>시작 시각<input required type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} /></label><label>종료 시각<input required type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} /></label><label>참고 reward<input value={form.rewardHint} onChange={(e) => setForm({ ...form, rewardHint: e.target.value })} /></label>{error ? <p role="alert">{error}</p> : null}<button className="button button-primary" disabled={saving} type="submit">{saving ? "등록 중..." : "등록"}</button></form></main>;
 }

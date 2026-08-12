@@ -127,7 +127,7 @@ export function AnimalInterestSettings({ embedded = false }: { embedded?: boolea
           detail: { codes: selected, memberId },
         }),
       );
-      setStatusMessage("관심 동물을 저장했습니다.");
+      setStatusMessage("동물 게시판 설정을 저장했습니다.");
     } catch {
       storeInterests(selected, memberId);
       setStatusMessage("서버와 연결되지 않아 이 브라우저에 임시 저장했습니다.");
@@ -143,18 +143,18 @@ export function AnimalInterestSettings({ embedded = false }: { embedded?: boolea
         type="button"
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-controls="animal-interest-menu"
+        aria-controls="animal-board-settings"
         onClick={() => setOpen((current) => !current)}
       >
-        관심 동물<span aria-hidden="true">⌄</span>
+        동물 게시판<span aria-hidden="true">⌄</span>
       </button> : null}
       <div
-        id="animal-interest-menu"
+        id="animal-board-settings"
         className="header-menu-panel interest-menu-panel"
         role={embedded ? "region" : "dialog"}
-        aria-label="관심 동물 설정"
+        aria-label="동물 게시판 설정"
       >
-        <p className="interest-menu-description">보고 싶은 동물을 체크하고 저장하세요.</p>
+        <p className="interest-menu-description">자주 방문할 동물 게시판을 선택하고 저장하세요.</p>
         <div className="interest-groups">
           {ANIMAL_INTEREST_GROUPS.map((group) => (
             <fieldset className="interest-group" key={group.label}>
@@ -282,25 +282,25 @@ export default function AnimalInterestMenu() {
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-controls="animal-community-menu"
+        aria-controls="animal-board-menu"
         onClick={() => setOpen((current) => !current)}
         onKeyDown={handleKeyDown}
       >
-        관심 동물<span aria-hidden="true">⌄</span>
+        동물 게시판<span aria-hidden="true">⌄</span>
       </button>
-      <div id="animal-community-menu" className="header-menu-panel interest-menu-panel animal-community-menu" role="menu" aria-label="동물 커뮤니티" onKeyDown={handleMenuKeyDown}>
+      <div id="animal-board-menu" className="header-menu-panel interest-menu-panel animal-community-menu" role="menu" aria-label="동물 게시판" onKeyDown={handleMenuKeyDown}>
         <div className="animal-community-menu-heading">
-          <strong>동물 커뮤니티</strong>
+          <strong>동물 게시판</strong>
           <span>동물별 게시판으로 이동</span>
         </div>
-        <NavLink ref={(element) => { if (element) menuItemsRef.current[0] = element; }} role="menuitem" to="/animals/all" onClick={() => setOpen(false)}>전체 동물</NavLink>
+        <NavLink ref={(element) => { if (element) menuItemsRef.current[0] = element; }} role="menuitem" to="/animals/all" onClick={() => setOpen(false)}>전체 동물 게시판</NavLink>
         {codes.map((code, index) => (
           <NavLink key={code} ref={(element) => { if (element) menuItemsRef.current[index + 1] = element; }} role="menuitem" to={`/animals/${code.toLowerCase()}`} onClick={() => setOpen(false)}>
-            {animalLabel(code)} 커뮤니티
+            {animalLabel(code)} 게시판
           </NavLink>
         ))}
-        <NavLink ref={(element) => { if (element) menuItemsRef.current[codes.length + 1] = element; }} className="animal-community-settings" role="menuitem" to="/settings/animal-interests" onClick={() => setOpen(false)}>
-          관심 동물 관리
+        <NavLink ref={(element) => { if (element) menuItemsRef.current[codes.length + 1] = element; }} className="animal-community-settings" role="menuitem" to="/settings/animal-boards" onClick={() => setOpen(false)}>
+          동물 게시판 관리
         </NavLink>
       </div>
     </div>

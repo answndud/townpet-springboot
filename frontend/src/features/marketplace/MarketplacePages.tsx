@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
   marketplaceApi,
@@ -9,7 +9,6 @@ import {
 } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
-import AnimalCommunitySelector, { initialAnimalCommunityCodes } from "../member/AnimalCommunitySelector";
 import { formatDateTime } from "../../utils/date";
 
 const KIND_LABELS: Record<MarketplaceListingKind, string> = {
@@ -125,8 +124,6 @@ export function MarketplaceDetailPage() {
 export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { edit?: boolean; initialKind?: MarketplaceListingKind }) {
   const { listingId = "" } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [animalCommunityCodes, setAnimalCommunityCodes] = useState<string[]>(() => initialAnimalCommunityCodes(searchParams));
   const [kind, setKind] = useState<MarketplaceListingKind>(initialKind);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -137,7 +134,7 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
   const { data: loadedItem, error: loadError, loading } = useAbortableRequest<MarketplaceListing | null>((signal) => edit ? marketplaceApi.detail(listingId, signal) : Promise.resolve(null), [edit, listingId]);
   useEffect(() => {
     if (!loadedItem) return;
-    setKind(loadedItem.kind); setTitle(loadedItem.title); setDescription(loadedItem.description); setPrice(loadedItem.priceKrw === null ? "" : String(loadedItem.priceKrw)); setVersion(loadedItem.version); setAnimalCommunityCodes((current) => loadedItem.animalCommunityCodes ?? current);
+    setKind(loadedItem.kind); setTitle(loadedItem.title); setDescription(loadedItem.description); setPrice(loadedItem.priceKrw === null ? "" : String(loadedItem.priceKrw)); setVersion(loadedItem.version);
   }, [loadedItem]);
   useEffect(() => { if (loadError) setError("수정할 listing을 불러오지 못했습니다."); }, [loadError]);
 
@@ -150,8 +147,8 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
     try {
       const input = { kind, title: title.trim(), description: description.trim(), priceKrw };
       const item = edit
-        ? await marketplaceApi.update(listingId, { ...input, version, animalCommunityCodes })
-        : await marketplaceApi.create({ ...input, ...(animalCommunityCodes.length ? { animalCommunityCodes } : {}) });
+        ? await marketplaceApi.update(listingId, { ...input, version })
+        : await marketplaceApi.create(input);
       navigate(`/marketplace/${item.id}`);
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) { navigate(`/login?next=${edit ? `/marketplace/${listingId}/edit` : "/marketplace/new"}`); return; }
@@ -161,9 +158,8 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
 
   if (edit && loading) return <main className="page marketplace-page"><section className="surface-card" role="status">수정 정보를 불러오는 중...</section></main>;
   return (
-    <main className="page marketplace-page"><section className="marketplace-hero"><div><p className="eyebrow">MARKETPLACE</p><h1>{edit ? "거래 글 수정" : "새 거래 글"}</h1><p>가격과 상태를 분명하게 적어 이웃이 쉽게 판단할 수 있게 해 주세요.</p></div></section>
+    <main className="page marketplace-page"><section className="marketplace-hero"><div><p className="eyebrow">COMMON BOARD · MARKETPLACE</p><h1>{edit ? "거래 글 수정" : "새 거래 글"}</h1><p>모든 동물 가족이 함께 보는 공통게시판에 가격과 상태를 분명하게 적어 주세요.</p></div></section>
       <form className="surface-card marketplace-form" onSubmit={submit} noValidate>
-        <AnimalCommunitySelector value={animalCommunityCodes} onChange={setAnimalCommunityCodes} />
         <label>거래 유형<select value={kind} disabled={edit} onChange={(event) => setKind(event.target.value as MarketplaceListingKind)}>{(Object.keys(KIND_LABELS) as MarketplaceListingKind[]).map((option) => <option key={option} value={option}>{KIND_LABELS[option]}</option>)}</select></label>
         <label>제목<input maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="예: 강아지 이동장 판매해요" /></label>
         <label>설명<textarea maxLength={5000} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="상태, 거래 방법과 주의사항을 적어 주세요." /></label>
