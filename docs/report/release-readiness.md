@@ -10,6 +10,8 @@ G1~G8을 로컬·CI에서 재현할 수 있는 현재 릴리스 상태만 기록
 - `frontend/node_modules/.bin/vitest run`: 7개 파일, 14개 테스트 통과
 - `frontend/node_modules/.bin/vite build --config vite.config.ts`: production bundle 생성 통과
 - `frontend/e2e/parity-shell.spec.ts`: Chromium desktop/mobile shell smoke 4개 통과
+- `migration/fixtures/logical-fixture.yaml`: guest/member/moderator와 Care·검색·신고 대표 시나리오를 고정된 logical fixture로 연결
+- `src/test/java/com/townpet/care/CareControllerTest.java`: Care Request → Application → Assignment → Feedback 전체 상태 전이 통과
 - `docker compose -f deploy/compose/portfolio.yml config`: 필요한 환경 변수를 주입한 VPS용 Compose 해석 성공
 - `deploy/Caddyfile`: React history fallback과 `/api` reverse proxy를 단일 public entrypoint로 구성
 - `TOWNPET_DOMAIN`을 설정하면 같은 Caddy 구성이 로컬 `:80` 또는 VPS 도메인의 자동 HTTPS site address로 동작한다.
@@ -23,5 +25,6 @@ G1~G8을 로컬·CI에서 재현할 수 있는 현재 릴리스 상태만 기록
 ## 현재 한계
 
 - 실제 VPS에서 DNS/TLS 리허설은 아직 실행하지 않았다. 이번 복구 리허설은 임시 local Compose 환경이며, VPS 자격·DNS·TLS 상태를 대체하지 않는다.
+- 배포 전 local runtime은 `SPRING_PROFILES_ACTIVE=local`에서 filesystem media adapter와 demo reset script를 사용한다. 외부 SMTP와 object storage는 G9에서 결정한다.
 - `excluded` 항목은 현재 제품 범위 밖이며 ADR에 근거를 둔다.
 - 성능 수치는 bundle 생성과 Web Vital 수집 경로만 확인했으며, SLA나 처리량을 주장하지 않는다.

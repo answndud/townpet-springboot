@@ -8,7 +8,7 @@
 
 ## Active
 
-### P1 - 제품 parity와 ADR 판정을 실제 근거로 닫는다 (진행 중)
+### P1 - 제품 parity와 ADR 판정을 실제 근거로 닫는다 ✅ completed (2026-08-12)
 
 - 파일: `docs/parity/matrix.yaml`, `ADR.md`, `src/main/java/com/townpet/{care,discovery,media,marketplace,localguide}/`, `frontend/src/`, `frontend/e2e/`, `src/test/java/`
 - 변경:
@@ -21,9 +21,9 @@
   - `./scripts/validate-parity-matrix.sh`
   - 관련 backend integration test와 frontend Vitest
   - 변경된 page family의 Chromium desktop/mobile Playwright journey
-- 완료: `pending`이 없다는 숫자가 아니라 모든 `verified`·`excluded` 행에 재현 가능한 근거 또는 ADR 결정이 있고, Care·Search·Best·GroupBuy·Guide·Commercial·Media의 남은 의미 공백이 설명 없이 남지 않는다.
+- 완료: Care 전체 상태 전이 evidence와 ADR-0035 근거를 추가했고, Search·Best·GroupBuy·Guide·Commercial·Media의 현재 범위·제외 이유·대표 evidence를 matrix에 연결했다. `pending=0`은 실제 근거 또는 ADR 결정으로 설명된다.
 
-### P2 - 배포 없이도 완결되는 local/portfolio runtime을 만든다
+### P2 - 배포 없이도 완결되는 local/portfolio runtime을 만든다 ✅ completed (2026-08-12)
 
 - 파일: `src/main/java/com/townpet/operations/`, `src/main/java/com/townpet/media/`, `src/main/java/com/townpet/identity/`, `src/main/resources/`, `deploy/compose/local.yml`, `deploy/portfolio.env.example`, `migration/`
 - 변경:
@@ -36,9 +36,9 @@
   - clean Docker PostgreSQL에서 migration → seed → reset → 재실행을 반복하고 row scope·idempotency를 SQL로 확인
   - demo flag on/off, local email capture, upload success/failure, 권한 거부 integration test
   - `./scripts/frontend-backend-smoke.sh`
-- 완료: 외부 서비스 계정 없이 새 개발 환경에서 합성 demo 사용자로 로그인·작성·신고·관리자 검토·Care·media 제한/사용 흐름을 재현할 수 있고, reset을 여러 번 실행해도 데이터가 오염되지 않는다.
+- 완료: `local` profile의 filesystem media adapter, demo credential gate, scoped/idempotent demo reset script, local Compose backend, Care runtime을 추가했다. 외부 서비스 계정 없이 합성 demo 사용자와 local DB로 핵심 흐름을 재현할 수 있다.
 
-### P3 - 배포 전 release candidate evidence를 고정한다
+### P3 - 배포 전 release candidate evidence를 고정한다 ✅ completed (2026-08-12)
 
 - 파일: `.github/workflows/`, `scripts/`, `migration/fixtures/`, `docs/parity/`, `docs/report/`, `frontend/e2e/`, `README.md`
 - 변경:
@@ -53,7 +53,7 @@
   - `./scripts/validate-parity-matrix.sh`
   - `cd frontend && ./node_modules/.bin/playwright test --config=playwright.config.ts`
   - `./scripts/frontend-backend-smoke.sh`
-- 완료: 새 환경에서 위 명령만으로 기능·권한·오류·화면·migration·fixture evidence를 재현할 수 있고, 면접에서 “무엇을 구현했고 무엇을 ADR로 제외했는지”를 코드와 테스트로 설명할 수 있다.
+- 완료: logical fixture에 대표 Care·검색·신고 시나리오를 연결하고, release-candidate validator가 parity matrix·fixture·shell script를 검사한다. backend/frontend/browser gate와 함께 기능·권한·오류·화면·migration evidence를 재현할 수 있다.
 
 ## Backlog
 
