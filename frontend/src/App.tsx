@@ -5,7 +5,6 @@ import PasswordResetPage from "./PasswordResetPage";
 import VerifyEmailPage from "./VerifyEmailPage";
 import LegalPage from "./LegalPage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
-import HomePopularSection from "./features/discovery/HomePopularSection";
 import { installPerformanceObservers, recordRouteTiming } from "./utils/performance";
 
 const OnboardingPage = lazy(() => import("./OnboardingPage"));
@@ -72,15 +71,6 @@ function preloadRoute(href: string) {
   const path = href.split("?", 1)[0];
   void ROUTE_PRELOADERS.get(path)?.();
 }
-
-const TOPIC_LINKS = [
-  ["지도 만들기", "/campaigns/neighborhood-map"],
-  ["분실/목격", "/lost-found"],
-  ["동물병원", "/hospital-reviews"],
-  ["산책코스", "/guides?q=산책"],
-  ["질문/답변", "/gatherings"],
-  ["중고거래", "/marketplace"],
-] as const;
 
 const PUBLIC_BOARD_LINKS = [
   ["전체 공개 피드", "/feed/guest"],
@@ -288,41 +278,14 @@ function AuthError() {
   return <main className="page placeholder-page"><section className="surface-card"><p className="form-error" role="alert">로그인 상태를 확인하지 못했습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><button className="button button-soft" type="button" onClick={refresh}>다시 시도</button></section></main>;
 }
 
-function HomePage() {
-  const { member } = useAuth();
+function RootRoute() {
+  const { status, member } = useAuth();
 
-  return (
-    <main className="page page-home">
-      <section className="hero-section">
-        <p className="eyebrow">동네 반려생활 정보</p>
-        <h1>우리 동네 반려생활 정보</h1>
-        <p className="hero-copy">
-          동물병원, 산책코스, 분실동물, 입양, 중고거래 정보를 지역별로 찾고 공유하는 동네 반려생활
-          정보 커뮤니티입니다.
-        </p>
-        <div className="hero-actions">
-          <Link className="button button-primary" to="/feed/guest">
-            전체 피드
-          </Link>
-          {member?.role !== "MODERATOR" ? <Link className="button button-soft" to="/onboarding">내 동네 설정</Link> : null}
-        </div>
-      </section>
-      <HomePopularSection />
-      <section className="topic-section" aria-labelledby="topic-title">
-        <div>
-          <h2 id="topic-title">관심 주제</h2>
-          <p>분실, 병원, 산책처럼 자주 찾는 정보를 바로 확인하세요.</p>
-        </div>
-        <div className="topic-list">
-          {TOPIC_LINKS.map(([label, href]) => (
-            <Link className="topic-chip" key={href} to={href}>
-              {label}
-            </Link>
-          ))}
-        </div>
-      </section>
-    </main>
-  );
+  if (status === "loading") {
+    return <main className="page placeholder-page"><section className="surface-card" role="status">피드를 준비하는 중...</section></main>;
+  }
+
+  return <PublicationFeedPage memberView={status === "authenticated" && member?.role === "MEMBER"} />;
 }
 
 function PlaceholderPage() {
@@ -388,7 +351,7 @@ function AppShell() {
         <Suspense fallback={<main className="page placeholder-page"><section className="surface-card" role="status">화면을 준비하는 중...</section></main>}>
           <RoutePerformanceProbe path={routeKey} startedAt={routeStartRef.current.startedAt} />
           <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/password/reset" element={<PasswordResetPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
