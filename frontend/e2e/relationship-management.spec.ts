@@ -28,7 +28,7 @@ test("member follows and blocks a different publication author", async ({ page }
   page.on("pageerror", (error) => browserErrors.push(error.message));
   const browser = page.context().browser();
   if (!browser) throw new Error("Browser is required");
-  const targetContext = await browser.newContext({ baseURL: "http://127.0.0.1:5173" });
+  const targetContext = await browser.newContext({ baseURL: "http://localhost:5173" });
   const targetPage = await targetContext.newPage();
   await loginViaApi(targetPage, "demo-member-2@townpet.local");
   await targetPage.goto("/posts/new");

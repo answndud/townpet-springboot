@@ -11,12 +11,13 @@ export default defineConfig({
     "reaction-management.spec.ts",
     "bookmark-management.spec.ts",
     "relationship-management.spec.ts",
+    "parity-shell.spec.ts",
   ],
   fullyParallel: false,
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:5173",
+    baseURL: "http://localhost:5173",
     trace: "on-first-retry",
   },
   projects: [
