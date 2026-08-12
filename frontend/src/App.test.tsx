@@ -16,6 +16,12 @@ describe("TownPet Vite shell", () => {
     expect(screen.getByRole("heading", { name: "우리 동네 반려생활 정보" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "전체 피드" })).toHaveAttribute("href", "/feed/guest");
     expect(screen.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: "본문으로 바로가기" })).toHaveAttribute("href", "#main-content");
+  });
+
+  it("updates the document title for direct routes", () => {
+    render(<MemoryRouter initialEntries={["/marketplace"]}><App /></MemoryRouter>);
+    expect(document.title).toBe("TownPet | 동네 거래");
   });
 
   it("renders the identity vertical slice login form", () => {
