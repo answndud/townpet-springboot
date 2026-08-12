@@ -57,7 +57,7 @@ describe("Publication feed journeys", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole("heading", { name: "공개 반려생활 피드" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "첫 번째 전체 글" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "더 보기" }));
     expect(await screen.findByRole("heading", { name: "두 번째 전체 글" })).toBeInTheDocument();

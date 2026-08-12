@@ -4,6 +4,7 @@ import LoginPage from "./LoginPage";
 import PasswordResetPage from "./PasswordResetPage";
 import VerifyEmailPage from "./VerifyEmailPage";
 import LegalPage from "./LegalPage";
+import HomeFeedPage from "./HomeFeedPage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { installPerformanceObservers, recordRouteTiming } from "./utils/performance";
 
@@ -73,16 +74,13 @@ function preloadRoute(href: string) {
 }
 
 const PUBLIC_BOARD_LINKS = [
-  ["전체 공개 피드", "/feed/guest"],
+  ["전체글", "/"],
   ["입양", "/boards/adoption"],
   ["분실·목격", "/lost-found"],
 ] as const;
 
 const MEMBER_BOARD_LINKS = [
-  ["내 피드", "/feed"],
-  ["전체 공개 피드", "/feed/guest"],
-  ["입양", "/boards/adoption"],
-  ["분실·목격", "/lost-found"],
+  ...PUBLIC_BOARD_LINKS,
 ] as const;
 
 const MEMBER_ACCOUNT_LINKS = [
@@ -277,13 +275,13 @@ function AuthError() {
 }
 
 function RootRoute() {
-  const { status, member } = useAuth();
+  const { status } = useAuth();
 
   if (status === "loading") {
     return <main className="page placeholder-page"><section className="surface-card" role="status">피드를 준비하는 중...</section></main>;
   }
 
-  return <PublicationFeedPage memberView={status === "authenticated" && member?.role === "MEMBER"} />;
+  return <HomeFeedPage />;
 }
 
 function PlaceholderPage() {

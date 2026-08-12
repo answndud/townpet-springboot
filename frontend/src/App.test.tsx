@@ -26,13 +26,14 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/"]}><App /><LocationProbe /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "공개 반려생활 피드" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "이번 주말 산책 코스 추천받아요" })).toHaveAttribute(
       "href",
       "/posts/00000000-0000-4000-8000-000000000301",
     );
     expect(screen.getByTestId("location")).toHaveTextContent("/");
-    expect(screen.queryByRole("heading", { name: "인기글" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "전체글" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "인기글" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("opens the member feed instead of a separate home page for members", async () => {
@@ -46,9 +47,10 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/"]}><App /><LocationProbe /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "내 동네와 전체 새 글" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
     expect(screen.getByTestId("location")).toHaveTextContent("/");
-    expect(screen.queryByRole("heading", { name: "인기글" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "전체글" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "인기글" })).toBeInTheDocument();
   });
 
   it("updates the document title for direct routes", () => {
@@ -86,12 +88,12 @@ describe("TownPet Vite shell", () => {
     expect(boardMenu).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(boardMenu);
     expect(boardMenu).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("menuitem", { name: "내 피드" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "전체글" })).toBeVisible();
 
     fireEvent.keyDown(boardMenu, { key: "ArrowDown" });
-    await waitFor(() => expect(screen.getByRole("menuitem", { name: "내 피드" })).toHaveFocus());
-    fireEvent.keyDown(screen.getByRole("menuitem", { name: "내 피드" }), { key: "ArrowDown" });
-    expect(screen.getByRole("menuitem", { name: "전체 공개 피드" })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole("menuitem", { name: "전체글" })).toHaveFocus());
+    fireEvent.keyDown(screen.getByRole("menuitem", { name: "전체글" }), { key: "ArrowDown" });
+    expect(screen.getByRole("menuitem", { name: "입양" })).toHaveFocus();
 
     fireEvent.keyDown(boardMenu, { key: "Escape" });
     expect(boardMenu).toHaveAttribute("aria-expanded", "false");
@@ -111,7 +113,7 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/admin"]}><App /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "내 동네와 전체 새 글" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "운영 콘솔" })).not.toBeInTheDocument();
   });
 
@@ -137,7 +139,7 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/onboarding"]}><App /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "공개 반려생활 피드" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "내 동네와 반려동물 설정" })).not.toBeInTheDocument();
   });
 

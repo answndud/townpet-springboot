@@ -388,7 +388,7 @@ export default function PublicationDetailPage() {
         <div className="publication-detail-chips">
           <span className="publication-chip publication-chip-primary">자유게시판</span>
           <span className="publication-chip">
-            {publication.scope === "LOCAL" ? "내 동네" : "전체 공개"}
+            {publication.scope === "LOCAL" ? "내 동네" : "전체"}
           </span>
         </div>
         <header className="publication-detail-heading">
