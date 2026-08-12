@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
@@ -23,6 +23,83 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+type CommentItemProps = {
+  comment: Comment;
+  children: ReactNode;
+  isReplying: boolean;
+  memberViewer: boolean;
+  viewerId: string | null;
+  commentBody: string;
+  commentSubmitting: boolean;
+  onDelete: (comment: Comment) => void;
+  onReply: (comment: Comment) => void;
+  onCancelReply: () => void;
+  onChangeBody: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+};
+
+function CommentItem({
+  comment,
+  children,
+  isReplying,
+  memberViewer,
+  viewerId,
+  commentBody,
+  commentSubmitting,
+  onDelete,
+  onReply,
+  onCancelReply,
+  onChangeBody,
+  onSubmit,
+}: CommentItemProps) {
+  return (
+    <article className={comment.parentCommentId ? "publication-comment publication-comment-reply" : "publication-comment"} data-comment-id={comment.id}>
+      <div className="publication-comment-meta">
+        <strong>TownPet 회원</strong>
+        <time dateTime={comment.createdAt}>{formatDate(comment.createdAt)}</time>
+        {memberViewer && viewerId === comment.authorId ? (
+          <button className="text-button" type="button" onClick={() => onDelete(comment)}>
+            삭제
+          </button>
+        ) : null}
+        {memberViewer ? (
+          <button className="text-button" type="button" onClick={() => onReply(comment)} aria-expanded={isReplying}>
+            답글
+          </button>
+        ) : null}
+      </div>
+      {comment.parentCommentId ? <span className="publication-comment-reply-label">답글</span> : null}
+      <p>{comment.body}</p>
+      {isReplying ? (
+        <form className="publication-comment-form publication-comment-form-inline" aria-label="답글 작성" onSubmit={onSubmit} noValidate>
+          <div className="publication-replying">
+            <span>{comment.body.slice(0, 60)}에 답글 작성 중</span>
+            <button className="text-button" type="button" onClick={onCancelReply}>취소</button>
+          </div>
+          <label>
+            답글
+            <textarea
+              aria-label="답글"
+              maxLength={5000}
+              value={commentBody}
+              onChange={(event) => onChangeBody(event.target.value)}
+              placeholder="반려생활에 도움이 되는 이야기를 남겨 주세요."
+              autoFocus
+            />
+          </label>
+          <div className="publication-comment-submit">
+            <span className="field-help">{commentBody.length.toLocaleString()}/5,000</span>
+            <button className="button button-primary" type="submit" disabled={commentSubmitting || !commentBody.trim()}>
+              {commentSubmitting ? "등록 중..." : "답글 등록"}
+            </button>
+          </div>
+        </form>
+      ) : null}
+      {children}
+    </article>
+  );
 }
 
 export default function PublicationDetailPage() {
@@ -144,6 +221,35 @@ export default function PublicationDetailPage() {
 
   const memberViewer = viewerRole === "MEMBER";
   const moderatorViewer = viewerRole === "MODERATOR";
+  const commentsByParent = new Map<string | null, Comment[]>();
+  for (const comment of comments) {
+    const siblings = commentsByParent.get(comment.parentCommentId) ?? [];
+    siblings.push(comment);
+    commentsByParent.set(comment.parentCommentId, siblings);
+  }
+
+  function renderComments(parentCommentId: string | null): ReactNode {
+    return (commentsByParent.get(parentCommentId) ?? []).map((comment) => (
+      <CommentItem
+        comment={comment}
+        key={comment.id}
+        isReplying={replyingTo?.id === comment.id}
+        memberViewer={memberViewer}
+        viewerId={viewerId}
+        commentBody={commentBody}
+        commentSubmitting={commentSubmitting}
+        onDelete={deleteComment}
+        onReply={setReplyingTo}
+        onCancelReply={() => setReplyingTo(null)}
+        onChangeBody={setCommentBody}
+        onSubmit={createComment}
+      >
+        {(commentsByParent.get(comment.id) ?? []).length ? (
+          <div className="publication-comment-children">{renderComments(comment.id)}</div>
+        ) : null}
+      </CommentItem>
+    ));
+  }
 
   async function setPublicationReaction() {
     if (!publication || reactionSubmitting) return;
@@ -477,38 +583,11 @@ export default function PublicationDetailPage() {
         ) : comments.length === 0 ? (
           <p className="publication-comments-state">첫 번째 댓글을 남겨 보세요.</p>
         ) : (
-          <div className="publication-comment-list">
-            {comments.map((comment) => (
-              <article className="publication-comment" key={comment.id}>
-                <div className="publication-comment-meta">
-                  <strong>TownPet 회원</strong>
-                  <time dateTime={comment.createdAt}>{formatDate(comment.createdAt)}</time>
-                  {memberViewer && viewerId === comment.authorId ? (
-                    <button className="text-button" type="button" onClick={() => deleteComment(comment)}>
-                      삭제
-                    </button>
-                  ) : null}
-                  {memberViewer ? (
-                    <button className="text-button" type="button" onClick={() => setReplyingTo(comment)}>
-                      답글
-                    </button>
-                  ) : null}
-                </div>
-                {comment.parentCommentId ? <span className="publication-comment-reply-label">답글</span> : null}
-                <p>{comment.body}</p>
-              </article>
-            ))}
-          </div>
+          <div className="publication-comment-list">{renderComments(null)}</div>
         )}
-        {memberViewer || (guestView && !viewerId) ? (
-          <form className="publication-comment-form" onSubmit={createComment} noValidate>
+        {(memberViewer || (guestView && !viewerId)) && !replyingTo ? (
+          <form className="publication-comment-form" aria-label="댓글 작성" onSubmit={createComment} noValidate>
             {guestView && !viewerId ? <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} /></label> : null}
-            {replyingTo ? (
-              <div className="publication-replying">
-                <span>{replyingTo.body.slice(0, 60)}에 답글 작성 중</span>
-                <button className="text-button" type="button" onClick={() => setReplyingTo(null)}>취소</button>
-              </div>
-            ) : null}
             <label>
               댓글
               <textarea
