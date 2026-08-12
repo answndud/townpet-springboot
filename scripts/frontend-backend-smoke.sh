@@ -30,10 +30,12 @@ for _ in {1..60}; do
 done
 curl --fail --silent http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"'
 
-corepack pnpm -C frontend install --frozen-lockfile >/dev/null
-corepack pnpm -C frontend build >/dev/null
-corepack pnpm -C frontend preview --host 127.0.0.1 >"${frontend_log}" 2>&1 &
+cd "${ROOT_DIR}/frontend"
+corepack pnpm install --frozen-lockfile >/dev/null
+corepack pnpm build >/dev/null
+corepack pnpm preview --host 127.0.0.1 >"${frontend_log}" 2>&1 &
 frontend_pid=$!
+cd "${ROOT_DIR}"
 for _ in {1..30}; do
   if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then break; fi
   sleep 1
