@@ -7,7 +7,7 @@ async function login(page: import("@playwright/test").Page, email: string) {
   await page.getByLabel("이메일").fill(email);
   await page.getByLabel("비밀번호", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "이메일로 로그인" }).click();
-  await expect(page).toHaveURL(/\/feed$/);
+  await expect.poll(() => new URL(page.url()).pathname).toBe("/feed");
 }
 
 async function loginViaApi(page: import("@playwright/test").Page, email: string) {
@@ -28,7 +28,7 @@ test("member follows and blocks a different publication author", async ({ page }
   page.on("pageerror", (error) => browserErrors.push(error.message));
   const browser = page.context().browser();
   if (!browser) throw new Error("Browser is required");
-  const targetContext = await browser.newContext({ baseURL: "http://localhost:5173" });
+  const targetContext = await browser.newContext({ baseURL: "http://127.0.0.1:4173" });
   const targetPage = await targetContext.newPage();
   await loginViaApi(targetPage, "demo-member-2@townpet.local");
   await targetPage.goto("/posts/new");
@@ -41,7 +41,7 @@ test("member follows and blocks a different publication author", async ({ page }
   const targetUrl = targetPage.url();
   await targetContext.close();
 
-  await loginViaApi(page, "demo-member-1@townpet.local");
+  await login(page, "demo-member-1@townpet.local");
   await page.goto(targetUrl);
   const follow = page.getByRole("button", { name: /팔로우/ });
   const block = page.getByRole("button", { name: /차단/ });
