@@ -3,10 +3,12 @@ package com.townpet.engagement;
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.publication.api.GuestDirectory;
 import com.townpet.relationship.api.BlockDirectory;
+import com.townpet.notification.api.NotificationEvent;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataAccessException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,13 +19,16 @@ class CommentService {
   private final PublicationAccess publications;
   private final BlockDirectory blocks;
   private final GuestDirectory guests;
+  private final ApplicationEventPublisher events;
 
   CommentService(
-      CommentRepository comments, PublicationAccess publications, BlockDirectory blocks, GuestDirectory guests) {
+      CommentRepository comments, PublicationAccess publications, BlockDirectory blocks, GuestDirectory guests,
+      ApplicationEventPublisher events) {
     this.comments = comments;
     this.publications = publications;
     this.blocks = blocks;
     this.guests = guests;
+    this.events = events;
   }
 
   @Transactional
@@ -35,7 +40,10 @@ class CommentService {
           .orElseThrow(CommentNotFoundException::new);
       if (!parent.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
     }
-    return comments.saveAndFlush(CommentEntity.forGuest(publicationId, guest.internalId(), parentCommentId, body));
+    CommentEntity comment = comments.saveAndFlush(CommentEntity.forGuest(publicationId, guest.internalId(), parentCommentId, body));
+    publications.activeAuthorMemberId(publicationId).ifPresent(recipient -> events.publishEvent(
+        new NotificationEvent(recipient, null, "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
+    return comment;
   }
 
   @Transactional(readOnly = true)
@@ -54,7 +62,10 @@ class CommentService {
       if (!parent.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
     }
     try {
-      return comments.saveAndFlush(new CommentEntity(publicationId, memberId, parentCommentId, body.trim()));
+      CommentEntity comment = comments.saveAndFlush(new CommentEntity(publicationId, memberId, parentCommentId, body.trim()));
+      publications.activeAuthorMemberId(publicationId).ifPresent(recipient -> events.publishEvent(
+          new NotificationEvent(recipient, memberId, "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
+      return comment;
     } catch (DataAccessException exception) {
       throw new CommentPublicationNotFoundException();
     }
