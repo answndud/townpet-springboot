@@ -6,8 +6,10 @@ function date(value: string) { return new Intl.DateTimeFormat("ko-KR", { dateSty
 
 export function GatheringListPage() {
   const [items, setItems] = useState<Gathering[]>([]); const [error, setError] = useState<string | null>(null);
+  const [viewerRole, setViewerRole] = useState<Member["role"] | null>(null);
   useEffect(() => { gatheringApi.list().then(setItems).catch(() => setError("모임을 불러오지 못했습니다.")); }, []);
-  return <main className="page gathering-page"><section className="localcare-hero"><p className="eyebrow">TOWNPET GATHERING</p><h1>함께 걷고 함께 배우는 모임</h1><p>동네 반려생활 모임의 일정과 남은 자리를 확인하세요.</p><Link className="button button-primary" to="/gatherings/new">모임 만들기</Link></section>{error ? <p role="alert">{error}</p> : null}<section className="gathering-grid">{items.map((item) => <Link className="surface-card gathering-card" key={item.id} to={`/gatherings/${item.id}`}><span className="publication-chip publication-chip-primary">{item.participantCount}/{item.capacity}명</span><h2>{item.title}</h2><p>{item.description}</p><small>{date(item.startsAt)} · {item.location}</small></Link>)}</section>{!items.length && !error ? <p className="surface-card">예정된 모임이 없습니다.</p> : null}</main>;
+  useEffect(() => { const controller = new AbortController(); memberApi.current(controller.signal).then((member) => setViewerRole(member.role)).catch(() => setViewerRole(null)); return () => controller.abort(); }, []);
+  return <main className="page gathering-page"><section className="localcare-hero"><p className="eyebrow">TOWNPET GATHERING</p><h1>함께 걷고 함께 배우는 모임</h1><p>동네 반려생활 모임의 일정과 남은 자리를 확인하세요.</p>{viewerRole !== "MODERATOR" ? <Link className="button button-primary" to="/gatherings/new">모임 만들기</Link> : null}</section>{error ? <p role="alert">{error}</p> : null}<section className="gathering-grid">{items.map((item) => <Link className="surface-card gathering-card" key={item.id} to={`/gatherings/${item.id}`}><span className="publication-chip publication-chip-primary">{item.participantCount}/{item.capacity}명</span><h2>{item.title}</h2><p>{item.description}</p><small>{date(item.startsAt)} · {item.location}</small></Link>)}</section>{!items.length && !error ? <p className="surface-card">예정된 모임이 없습니다.</p> : null}</main>;
 }
 
 export function GatheringDetailPage() {
