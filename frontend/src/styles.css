@@ -76,7 +76,7 @@ nav a.active { color: var(--brand); text-decoration: underline; text-decoration-
 .animal-community-selector legend { margin-bottom: 4px; color: var(--text); font-size: 13px; font-weight: 700; }
 .animal-community-selector .interest-group > strong { display: block; margin-bottom: 5px; color: var(--text-soft); font-size: 12px; }
 .animal-community-selector .interest-options { gap: 8px 14px; }
-.community-page { max-width: 1120px; }
+.page.community-page, .page.feed-page { max-width: 1120px; }
 .community-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid var(--surface-border); border-radius: var(--radius-lg); background: rgba(255,255,255,.86); padding: 22px 24px; }
 .community-hero h1 { margin-top: 7px; color: var(--text); font-size: clamp(1.65rem, 4vw, 2.2rem); letter-spacing: -.04em; }
 .community-hero p:not(.eyebrow) { max-width: 680px; margin-top: 8px; color: var(--text-soft); font-size: 13px; line-height: 1.65; }
@@ -271,7 +271,6 @@ h1, h2, p { margin: 0; }
 .publication-state-page .surface-card { width: min(100%, 620px); }
 .publication-state-page h1 { margin-top: 10px; color: #10284a; }
 .publication-state-page .button { margin-top: 16px; }
-.feed-page { max-width: 980px; }
 .feed-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid #d9e5f7; border-radius: 12px; background: rgba(255,255,255,.84); padding: 18px 20px; }
 .feed-hero h1 { margin-top: 6px; color: #10284a; font-size: clamp(1.6rem, 4vw, 2rem); letter-spacing: -.035em; }
 .feed-hero p:not(.eyebrow) { max-width: 660px; margin-top: 7px; color: #4f678d; font-size: 13px; line-height: 1.65; }
@@ -513,7 +512,7 @@ h1, h2, p { margin: 0; }
   .publication-comment-submit { align-items: stretch; flex-direction: column; }
   .publication-comment-submit .field-help { align-self: flex-start; }
   .publication-comment-submit .button { width: 100%; }
-  .feed-page { padding-inline: 12px; }
+  .community-page, .feed-page { padding-inline: 12px; }
   .feed-hero { align-items: end; padding: 15px; }
   .feed-hero p:not(.eyebrow) { font-size: 12px; }
   .feed-hero .button { padding-inline: 13px; }
