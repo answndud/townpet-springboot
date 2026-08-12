@@ -1,5 +1,5 @@
-import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { ReactNode, useEffect, useState } from "react";
 import LoginPage from "./LoginPage";
 import OnboardingPage from "./OnboardingPage";
 import PasswordResetPage from "./PasswordResetPage";
@@ -40,6 +40,8 @@ import AdminModeratorCasePage from "./AdminModeratorCasePage";
 import { CareCreatePage, CareDetailPage, CareListPage } from "./features/care/CarePages";
 import VolunteerPage from "./VolunteerPage";
 import HospitalReviewPage from "./HospitalReviewPage";
+import { ApiError, memberApi } from "./api/client";
+import type { Member } from "./api/client";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -50,12 +52,98 @@ const TOPIC_LINKS = [
   ["중고거래", "/marketplace"],
 ] as const;
 
+const PUBLIC_BOARD_LINKS = [
+  ["전체 공개 피드", "/feed/guest"],
+  ["인기 게시글", "/best"],
+  ["입양", "/boards/adoption"],
+  ["분실·목격", "/lost-found"],
+] as const;
+
+const MEMBER_BOARD_LINKS = [
+  ["내 피드", "/feed"],
+  ["전체 공개 피드", "/feed/guest"],
+  ["인기 게시글", "/best"],
+  ["입양", "/boards/adoption"],
+  ["분실·목격", "/lost-found"],
+] as const;
+
+const MARKETPLACE_LINKS = [
+  ["동네 거래", "/marketplace"],
+  ["동물병원 후기", "/hospital-reviews"],
+  ["봉사 기회", "/volunteer"],
+  ["산책·질문 모임", "/gatherings"],
+  ["이웃 돌봄", "/care"],
+] as const;
+
+function HeaderMenu({
+  label,
+  links,
+}: {
+  label: string;
+  links: ReadonlyArray<readonly [string, string]>;
+}) {
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname, location.search]);
+
+  return (
+    <div className={`header-menu${open ? " open" : ""}`}>
+      <button
+        className="header-menu-trigger"
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        {label}<span aria-hidden="true">⌄</span>
+      </button>
+      <div className="header-menu-panel" role="menu" aria-label={`${label} 바로가기`}>
+        {links.map(([linkLabel, href]) => (
+          <NavLink key={href} role="menuitem" to={href} onClick={() => setOpen(false)}>
+            {linkLabel}
+          </NavLink>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Header() {
   const location = useLocation();
-  const publicHeader = ["/", "/guides", "/campaigns/neighborhood-map", "/towns", "/marketplace"].some(
-    (path) => location.pathname === path || location.pathname.startsWith(`${path}/`),
-  );
-  const guestFeedHeader = location.pathname === "/feed/guest";
+  const [member, setMember] = useState<Member | null>(null);
+
+  useEffect(() => {
+    if (["/login", "/password", "/verify-email", "/onboarding"].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`))) return;
+    let active = true;
+    let controller: AbortController | null = null;
+    const loadMember = () => {
+      controller?.abort();
+      controller = new AbortController();
+      memberApi.current().then((nextMember) => {
+        if (active) setMember(nextMember);
+      }).catch((requestError: unknown) => {
+        if (active && !(requestError instanceof DOMException && requestError.name === "AbortError")) {
+          setMember(null);
+        }
+      });
+    };
+    const handleAuthChange = () => {
+      setMember(null);
+      loadMember();
+    };
+    loadMember();
+    window.addEventListener("townpet:auth-change", handleAuthChange);
+    return () => {
+      active = false;
+      controller?.abort();
+      window.removeEventListener("townpet:auth-change", handleAuthChange);
+    };
+  }, [location.pathname]);
+
+  const boardLinks = member ? MEMBER_BOARD_LINKS : PUBLIC_BOARD_LINKS;
 
   return (
     <header className="site-header">
@@ -63,25 +151,59 @@ function Header() {
         <Link className="brand" to="/" aria-label="TownPet 홈으로 이동">
           <img src="/townpet-logo.svg" alt="TownPet" />
         </Link>
-        {publicHeader || guestFeedHeader ? (
-          <nav aria-label="공개 안내 페이지 주요 이동">
-            <NavLink to="/feed/guest">게시판</NavLink>
+        {member ? (
+          member.role === "MODERATOR" ? (
+            <nav aria-label="운영자 주요 이동" className="desktop-nav">
+              <NavLink to="/admin">운영 콘솔</NavLink>
+              <NavLink to="/feed/guest">공개 피드</NavLink>
+            </nav>
+          ) : (
+            <nav aria-label="주요 이동" className="desktop-nav">
+            <HeaderMenu label="게시판" links={boardLinks} />
+              <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
+              <NavLink className="desktop-nav-secondary" to="/notifications">알림</NavLink>
+            <HeaderMenu label="거래" links={MARKETPLACE_LINKS} />
+            </nav>
+          )
+        ) : (
+          <nav aria-label="공개 안내 페이지 주요 이동" className="desktop-nav">
+            <HeaderMenu label="게시판" links={PUBLIC_BOARD_LINKS} />
             <NavLink to="/login" data-testid="header-login-link-home">
               로그인
             </NavLink>
-          </nav>
-        ) : (
-          <nav aria-label="주요 이동" className="desktop-nav">
-            <NavLink to="/feed">게시판</NavLink>
-            <NavLink to="/profile">내 프로필</NavLink>
-            <NavLink to="/notifications">알림</NavLink>
-            <NavLink to="/marketplace">거래</NavLink>
-            <NavLink to="/login">로그인</NavLink>
           </nav>
         )}
       </div>
     </header>
   );
+}
+
+function ModeratorRoute({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    memberApi.current(controller.signal)
+      .then((member) => {
+        if (member.role === "MODERATOR") setAllowed(true);
+        else navigate("/", { replace: true });
+      })
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+        if (requestError instanceof ApiError && requestError.status === 401) {
+          navigate("/login?next=/admin", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
+      });
+    return () => controller.abort();
+  }, [navigate]);
+
+  if (allowed !== true) {
+    return <main className="page placeholder-page"><section className="surface-card" role="status">운영자 권한을 확인하는 중...</section></main>;
+  }
+  return <>{children}</>;
 }
 
 function HomePage() {
@@ -196,21 +318,20 @@ export default function App() {
         <Route path="/hospital-reviews" element={<HospitalReviewPage />} />
         <Route path="/towns/:townSlug" element={<TownLandingPage />} />
         <Route path="/towns/:townSlug/:sectionSlug" element={<TownSectionPage />} />
-        <Route path="/towns/:townSlug/:sectionSlug" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/lounges/breeds/:breedCode" element={<BreedLoungePage />} />
-        <Route path="/admin/reports" element={<AdminReportsPage />} />
-        <Route path="/admin/reports/:reportId" element={<AdminReportsPage />} />
-        <Route path="/admin" element={<AdminHomePage />} />
-        <Route path="/admin/ops" element={<AdminHomePage />} />
-        <Route path="/admin/auth-audits" element={<AdminAuthAuditsPage />} />
-        <Route path="/admin/breeds" element={<AdminBreedsPage />} />
-        <Route path="/admin/care-feedbacks" element={<AdminModeratorCasePage />} />
-        <Route path="/admin/corrections" element={<AdminCorrectionPage />} />
-        <Route path="/admin/hospital-review-flags" element={<AdminModeratorCasePage />} />
-        <Route path="/admin/moderation-logs" element={<AdminModerationLogsPage />} />
-        <Route path="/admin/moderation/direct" element={<AdminModeratorCasePage />} />
-        <Route path="/admin/personalization" element={<AdminPersonalizationPage />} />
-        <Route path="/admin/policies" element={<AdminPoliciesPage />} />
+        <Route path="/admin/reports" element={<ModeratorRoute><AdminReportsPage /></ModeratorRoute>} />
+        <Route path="/admin/reports/:reportId" element={<ModeratorRoute><AdminReportsPage /></ModeratorRoute>} />
+        <Route path="/admin" element={<ModeratorRoute><AdminHomePage /></ModeratorRoute>} />
+        <Route path="/admin/ops" element={<ModeratorRoute><AdminHomePage /></ModeratorRoute>} />
+        <Route path="/admin/auth-audits" element={<ModeratorRoute><AdminAuthAuditsPage /></ModeratorRoute>} />
+        <Route path="/admin/breeds" element={<ModeratorRoute><AdminBreedsPage /></ModeratorRoute>} />
+        <Route path="/admin/care-feedbacks" element={<ModeratorRoute><AdminModeratorCasePage /></ModeratorRoute>} />
+        <Route path="/admin/corrections" element={<ModeratorRoute><AdminCorrectionPage /></ModeratorRoute>} />
+        <Route path="/admin/hospital-review-flags" element={<ModeratorRoute><AdminModeratorCasePage /></ModeratorRoute>} />
+        <Route path="/admin/moderation-logs" element={<ModeratorRoute><AdminModerationLogsPage /></ModeratorRoute>} />
+        <Route path="/admin/moderation/direct" element={<ModeratorRoute><AdminModeratorCasePage /></ModeratorRoute>} />
+        <Route path="/admin/personalization" element={<ModeratorRoute><AdminPersonalizationPage /></ModeratorRoute>} />
+        <Route path="/admin/policies" element={<ModeratorRoute><AdminPoliciesPage /></ModeratorRoute>} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/campaigns/neighborhood-map" element={<NeighborhoodMapPage />} />

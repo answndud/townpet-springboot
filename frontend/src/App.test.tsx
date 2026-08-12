@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -22,6 +22,61 @@ describe("TownPet Vite shell", () => {
   it("updates the document title for direct routes", () => {
     render(<MemoryRouter initialEntries={["/marketplace"]}><App /></MemoryRouter>);
     expect(document.title).toBe("TownPet | 동네 거래");
+  });
+
+  it("keeps authenticated navigation when visiting public routes", async () => {
+    vi.stubGlobal("fetch", vi.fn((input) => {
+      const path = String(input);
+      const body = path.includes("/api/v1/members/me")
+        ? {
+            id: "00000000-0000-4000-8000-000000000201",
+            nickname: "demo-member-1",
+            role: "MEMBER",
+            bio: null,
+            neighborhoodId: null,
+            pets: [],
+            showPublicPosts: true,
+            showPublicComments: true,
+            showPublicPets: true,
+            showPublicReactions: true,
+          }
+        : { items: [], page: { nextCursor: null, hasNext: false } };
+      return Promise.resolve(new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } }));
+    }));
+
+    render(<MemoryRouter initialEntries={["/best"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
+    expect(screen.queryByTestId("header-login-link-home")).not.toBeInTheDocument();
+    expect(screen.getByRole("menu", { name: "게시판 바로가기" })).toBeInTheDocument();
+    const boardMenu = screen.getByRole("button", { name: /게시판/ });
+    expect(boardMenu).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(boardMenu);
+    expect(boardMenu).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("menuitem", { name: "내 피드" })).toBeVisible();
+  });
+
+  it("does not render the moderator console for a member", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify({
+        id: "00000000-0000-4000-8000-000000000201",
+        nickname: "demo-member-1",
+        role: "MEMBER",
+        bio: null,
+        neighborhoodId: null,
+        pets: [],
+        showPublicPosts: true,
+        showPublicComments: true,
+        showPublicPets: true,
+        showPublicReactions: true,
+      }), { status: 200, headers: { "content-type": "application/json" } }))),
+    );
+
+    render(<MemoryRouter initialEntries={["/admin"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "우리 동네 반려생활 정보" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "운영 콘솔" })).not.toBeInTheDocument();
   });
 
   it("renders the identity vertical slice login form", () => {

@@ -37,6 +37,7 @@ export type Member = {
   showPublicPosts: boolean;
   showPublicComments: boolean;
   showPublicPets: boolean;
+  showPublicReactions: boolean;
 };
 
 export type PublicMember = Omit<Member, "role">;
@@ -239,6 +240,18 @@ export async function getCsrfToken(): Promise<string> {
   return response.token;
 }
 
+let currentMemberRequest: Promise<Member> | null = null;
+
+function currentMember(signal?: AbortSignal) {
+  if (currentMemberRequest) return currentMemberRequest;
+  const request = apiFetch<Member>("/api/v1/members/me", { signal });
+  const sharedRequest = request.finally(() => {
+    if (currentMemberRequest === sharedRequest) currentMemberRequest = null;
+  });
+  currentMemberRequest = sharedRequest;
+  return sharedRequest;
+}
+
 async function mutate<T>(path: string, init: RequestInit): Promise<T> {
   await getCsrfToken();
   return apiFetch<T>(path, init);
@@ -247,15 +260,19 @@ async function mutate<T>(path: string, init: RequestInit): Promise<T> {
 const jsonHeaders = { "content-type": "application/json" };
 
 export const authApi = {
-  login(email: string, password: string) {
-    return mutate<Session>("/api/v1/auth/sessions", {
+  async login(email: string, password: string) {
+    const session = await mutate<Session>("/api/v1/auth/sessions", {
       method: "POST",
       headers: jsonHeaders,
       body: JSON.stringify({ email: email.trim(), password }),
     });
+    window.dispatchEvent(new Event("townpet:auth-change"));
+    return session;
   },
-  logout() {
-    return mutate<void>("/api/v1/auth/sessions/current", { method: "DELETE" });
+  async logout() {
+    const result = await mutate<void>("/api/v1/auth/sessions/current", { method: "DELETE" });
+    window.dispatchEvent(new Event("townpet:auth-change"));
+    return result;
   },
   requestPasswordReset(email: string) {
     return mutate<void>("/api/v1/auth/password-resets", {
@@ -288,9 +305,7 @@ export const authApi = {
 };
 
 export const memberApi = {
-  current(signal?: AbortSignal) {
-    return apiFetch<Member>("/api/v1/members/me", { signal });
-  },
+  current: currentMember,
   profile(memberId: string, signal?: AbortSignal) {
     return apiFetch<PublicMember>(`/api/v1/members/${encodeURIComponent(memberId)}`, { signal });
   },
@@ -312,7 +327,7 @@ export const memberApi = {
       body: JSON.stringify(input),
     });
   },
-  updateProfile(input: { bio: string; showPublicPosts: boolean; showPublicComments: boolean; showPublicPets: boolean }) {
+  updateProfile(input: { bio: string; showPublicPosts: boolean; showPublicComments: boolean; showPublicPets: boolean; showPublicReactions: boolean }) {
     return mutate<Member>("/api/v1/members/me/profile", {
       method: "PUT",
       headers: jsonHeaders,
@@ -362,7 +377,7 @@ export const adminModerationApi = {
   reviewReport(id: string, status: "REVIEWED" | "REJECTED") { return mutate(`/api/admin/reports/${encodeURIComponent(id)}`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ status }) }); },
   setPublicationVisibility(id: string, visible: boolean, reason: string) { return mutate<{ id: string; lifecycle: string }>(`/api/admin/moderation/posts/${encodeURIComponent(id)}/visibility`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ visible, reason }) }); },
   memberAction(action: "sanction" | "hide-content" | "restore-content", memberId: string, reason: string) { return mutate<{ memberId: string; action: string; affectedPublications: number }>(`/api/admin/moderation/users/${action}`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ memberId, reason }) }); },
-  mediaCleanup(dryRun: boolean) { return mutate<{ expiredCount: number; expiredBytes: number; deletedCount: number; inspectedAt: string }>(`/api/v1/operations/media/uploads/cleanup?dryRun=${dryRun}`, { method: "POST" }); },
+  mediaCleanup(dryRun: boolean) { return mutate<{ candidateCount: number; candidateBytes: number; deletedCount: number; observedAt: string }>(`/api/v1/operations/media/uploads/cleanup?dryRun=${dryRun}`, { method: "POST" }); },
 };
 export const adminPolicyApi = {
   get(key: string, signal?: AbortSignal) { return apiFetch<PolicyDocument>(`/api/admin/policies?key=${encodeURIComponent(key)}`, { signal }); },

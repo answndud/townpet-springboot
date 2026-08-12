@@ -30,7 +30,17 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .brand img { width: auto; height: 34px; }
 nav { display: flex; align-items: center; gap: 6px; }
 nav a { display: inline-flex; min-height: 36px; align-items: center; padding: 0 8px; color: #315484; font-size: 13px; font-weight: 600; }
+nav a:hover { color: #2563eb; }
 nav a.active { color: #2563eb; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.header-menu { position: relative; }
+.header-menu-trigger { display: inline-flex; min-height: 36px; align-items: center; gap: 5px; border: 0; background: transparent; padding: 0 8px; color: #315484; font: inherit; font-size: 13px; font-weight: 600; }
+.header-menu-trigger:hover { color: #2563eb; }
+.header-menu-trigger span { color: #7b91ae; font-size: 11px; transition: transform .16s ease; }
+.header-menu:hover .header-menu-trigger span, .header-menu:focus-within .header-menu-trigger span { transform: rotate(180deg); }
+.header-menu-panel { position: absolute; z-index: 10; top: calc(100% + 4px); left: 0; display: grid; min-width: 168px; gap: 2px; visibility: hidden; border: 1px solid #d6e2f1; border-radius: 9px; background: #fff; padding: 6px; box-shadow: 0 12px 28px rgba(30, 63, 116, .14); opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity .14s ease, transform .14s ease, visibility .14s ease; }
+.header-menu:hover .header-menu-panel, .header-menu:focus-within .header-menu-panel, .header-menu.open .header-menu-panel { visibility: visible; opacity: 1; pointer-events: auto; transform: translateY(0); }
+.header-menu-panel a { min-height: 32px; justify-content: flex-start; border-radius: 6px; padding: 0 10px; color: #315484; font-size: 12px; white-space: nowrap; }
+.header-menu-panel a:hover, .header-menu-panel a:focus-visible { background: #edf5ff; color: #285a9f; text-decoration: none; }
 .page { width: 100%; max-width: 1180px; margin: 0 auto; padding: 24px 16px 56px; }
 .hero-section { padding: 24px 0 28px; }
 .eyebrow, .card-label { color: #486894; font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
@@ -348,7 +358,8 @@ h1, h2, p { margin: 0; }
 @media (max-width: 640px) {
   .header-inner { padding: 8px 12px; }
   .brand img { height: 32px; }
-  .desktop-nav a:nth-child(2), .desktop-nav a:nth-child(3) { display: none; }
+  .desktop-nav-secondary { display: none; }
+  .header-menu-panel { position: fixed; top: 51px; right: 12px; left: auto; }
   .page { padding: 22px 16px 44px; }
   .hero-section { padding-top: 16px; }
   .hero-copy { font-size: 15px; }
