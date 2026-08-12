@@ -12,7 +12,7 @@ for file in \
   bash -n "$file"
 done
 test -f "$ROOT_DIR/scripts/performance/seed.sql"
-for file in "$ROOT_DIR"/loadtest/{common,smoke,public-read,feed-read,member-read}.js; do
+for file in "$ROOT_DIR"/loadtest/{common,smoke,public-read,feed-read,member-read,write,contention,moderator,media,mixed}.js; do
   test -f "$file" || { echo "missing: $file" >&2; exit 1; }
 done
 echo "performance execution scripts are syntactically valid"
