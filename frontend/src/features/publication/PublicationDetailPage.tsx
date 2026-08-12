@@ -16,6 +16,18 @@ import { useAuth } from "../../auth/AuthContext";
 import { formatDateTimeLong } from "../../utils/date";
 import { PublicationCommentThread } from "./components/PublicationCommentThread";
 
+function ActionIcon({ type }: { type: "like" | "bookmark" }) {
+  return (
+    <svg className="publication-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      {type === "like" ? (
+        <path d="M20.8 8.7c0 5.5-8.8 10.2-8.8 10.2S3.2 14.2 3.2 8.7C3.2 6.2 5 4.5 7.3 4.5c1.8 0 3.2 1 4.1 2.4.9-1.4 2.3-2.4 4.1-2.4 2.3 0 5.3 1.7 5.3 4.2Z" />
+      ) : (
+        <path d="M6 3.5h12v17l-6-3.7-6 3.7v-17Z" />
+      )}
+    </svg>
+  );
+}
+
 export default function PublicationDetailPage() {
   const { publicationId = "" } = useParams();
   const navigate = useNavigate();
@@ -398,49 +410,49 @@ export default function PublicationDetailPage() {
             <button className="button button-primary" type="submit" disabled={guestManagePassword.length < 8}>수정 저장</button>
           </form>
         ) : <div className="publication-body">{publication.body}</div>}
-        <div className="publication-reaction-row">
-          {memberViewer ? (
-            <button
-              className={reaction.active ? "reaction-button active" : "reaction-button"}
-              type="button"
-              aria-label={reaction.active ? "좋아요 취소" : "좋아요"}
-              aria-pressed={reaction.active}
-              disabled={reactionLoading || reactionSubmitting}
-              onClick={setPublicationReaction}
-            >
-              <span aria-hidden="true">♥</span> 좋아요 {reaction.count}
-            </button>
-          ) : moderatorViewer ? (
-            <span className="reaction-button" aria-label="좋아요 수">♥ 좋아요 {reaction.count}</span>
-          ) : (
-            <Link className="reaction-button" to={`/login?next=/posts/${publication.id}`}>
-              <span aria-hidden="true">♥</span> 좋아요 {reaction.count}
-            </Link>
-          )}
-          <span className="publication-reaction-help">회원당 한 번만 표시됩니다.</span>
-          {memberViewer ? (
-            <button
-              className={bookmark.active ? "reaction-button bookmark-button active" : "reaction-button bookmark-button"}
-              type="button"
-              aria-label={bookmark.active ? "저장 취소" : "저장"}
-              aria-pressed={bookmark.active}
-              disabled={bookmarkLoading || bookmarkSubmitting}
-              onClick={setPublicationBookmark}
-            >
-              <span aria-hidden="true">🔖</span> 저장
-            </button>
-          ) : moderatorViewer ? (
-            <span className="reaction-button bookmark-button" aria-label="회원 전용 저장">🔖 저장은 회원 전용</span>
-          ) : (
-            <Link className="reaction-button bookmark-button" to={`/login?next=/posts/${publication.id}`}>
-              <span aria-hidden="true">🔖</span> 저장
-            </Link>
-          )}
-          <span className="publication-reaction-help">나만 볼 수 있게 저장합니다.</span>
-          {memberViewer && viewerId !== publication.authorId ? (
-            <>
+        <div className="publication-engagement-row">
+          <div className="publication-engagement-group" aria-label="게시글 반응">
+            {memberViewer ? (
               <button
-                className="reaction-button relationship-button"
+                className={reaction.active ? "engagement-button engagement-button-like active" : "engagement-button engagement-button-like"}
+                type="button"
+                aria-label={reaction.active ? "좋아요 취소" : "좋아요"}
+                aria-pressed={reaction.active}
+                disabled={reactionLoading || reactionSubmitting}
+                onClick={setPublicationReaction}
+              >
+                <ActionIcon type="like" /> 좋아요 {reaction.count}
+              </button>
+            ) : moderatorViewer ? (
+              <span className="engagement-stat" aria-label="좋아요 수"><ActionIcon type="like" /> 좋아요 {reaction.count}</span>
+            ) : (
+              <Link className="engagement-button engagement-button-like" to={`/login?next=/posts/${publication.id}`}>
+                <ActionIcon type="like" /> 좋아요 {reaction.count}
+              </Link>
+            )}
+            {memberViewer ? (
+              <button
+                className={bookmark.active ? "engagement-button engagement-button-bookmark active" : "engagement-button engagement-button-bookmark"}
+                type="button"
+                aria-label={bookmark.active ? "저장 취소" : "저장"}
+                aria-pressed={bookmark.active}
+                disabled={bookmarkLoading || bookmarkSubmitting}
+                onClick={setPublicationBookmark}
+              >
+                <ActionIcon type="bookmark" /> 저장
+              </button>
+            ) : moderatorViewer ? (
+              <span className="engagement-note">저장은 회원 전용</span>
+            ) : (
+              <Link className="engagement-button engagement-button-bookmark" to={`/login?next=/posts/${publication.id}`}>
+                <ActionIcon type="bookmark" /> 저장
+              </Link>
+            )}
+          </div>
+          {memberViewer && viewerId !== publication.authorId ? (
+            <div className="publication-engagement-group publication-relationship-actions" aria-label="작성자 관계">
+              <button
+                className={relationship.following ? "engagement-button active" : "engagement-button"}
                 type="button"
                 aria-label={relationship.following ? "팔로우 취소" : "팔로우"}
                 aria-pressed={relationship.following}
@@ -450,7 +462,7 @@ export default function PublicationDetailPage() {
                 {relationship.following ? "팔로잉" : "팔로우"}
               </button>
               <button
-                className={relationship.blocking ? "reaction-button relationship-button active" : "reaction-button relationship-button"}
+                className={relationship.blocking ? "engagement-button engagement-button-danger active" : "engagement-button engagement-button-danger"}
                 type="button"
                 aria-label={relationship.blocking ? "차단 해제" : "차단"}
                 aria-pressed={relationship.blocking}
@@ -459,8 +471,11 @@ export default function PublicationDetailPage() {
               >
                 {relationship.blocking ? "차단 해제" : "차단"}
               </button>
-            </>
+            </div>
           ) : null}
+          <p className="publication-engagement-help">
+            {moderatorViewer ? "좋아요 수만 확인할 수 있습니다." : memberViewer ? "좋아요는 한 번만, 저장한 글은 프로필에서 다시 볼 수 있어요." : "로그인하면 좋아요와 저장을 사용할 수 있어요."}
+          </p>
         </div>
       </article>
       <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading" aria-busy={commentsLoading}>
@@ -469,7 +484,6 @@ export default function PublicationDetailPage() {
             <p className="eyebrow">COMMUNITY</p>
             <h2 id="comments-heading">댓글 {comments.length}</h2>
           </div>
-          <span className="publication-chip">작성자만 삭제</span>
         </div>
         {commentError ? <p className="form-error publication-error" role="alert">{commentError}</p> : null}
         {commentsLoading ? (
@@ -493,7 +507,7 @@ export default function PublicationDetailPage() {
             />
           </div>
         )}
-        {(memberViewer || (guestView && !viewerId)) && !replyingTo ? (
+        {!replyingTo && (memberViewer || (guestView && !viewerId)) ? (
           <form className="publication-comment-form" aria-label="댓글 작성" onSubmit={createComment} noValidate>
             {guestView && !viewerId ? <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} /></label> : null}
             <label>
@@ -513,11 +527,13 @@ export default function PublicationDetailPage() {
               </button>
             </div>
           </form>
-        ) : (
+        ) : !replyingTo && moderatorViewer ? (
+          <p className="publication-login-prompt">운영자 계정은 일반 회원용 댓글을 작성할 수 없습니다.</p>
+        ) : !replyingTo ? (
           <p className="publication-login-prompt">
             <Link to={`/login?next=/posts/${publication.id}#comments`}>로그인</Link>하면 댓글을 남길 수 있어요.
           </p>
-        )}
+        ) : null}
       </section>
     </main>
   );
