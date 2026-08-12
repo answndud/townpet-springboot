@@ -138,6 +138,7 @@ export type LocalResource = {
 export type Gathering = { id: string; hostMemberId: string; title: string; description: string; location: string; startsAt: string; capacity: number; participantCount: number; status: "ACTIVE" | "CANCELLED"; joined: boolean; version: number };
 export type TrustReportReason = "SPAM" | "ABUSE" | "PRIVACY" | "ILLEGAL" | "OTHER";
 export type Notification = { id: string; type: string; title: string; body: string; readAt: string | null; createdAt: string };
+export type PolicyDocument = { key: string; title: string; body: string; updatedAt: string };
 
 export type CreatePublicationInput = {
   title: string;
@@ -359,6 +360,10 @@ export const adminModerationApi = {
   setPublicationVisibility(id: string, visible: boolean, reason: string) { return mutate<{ id: string; lifecycle: string }>(`/api/admin/moderation/posts/${encodeURIComponent(id)}/visibility`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ visible, reason }) }); },
   memberAction(action: "sanction" | "hide-content" | "restore-content", memberId: string, reason: string) { return mutate<{ memberId: string; action: string; affectedPublications: number }>(`/api/admin/moderation/users/${action}`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ memberId, reason }) }); },
   mediaCleanup(dryRun: boolean) { return mutate<{ expiredCount: number; expiredBytes: number; deletedCount: number; inspectedAt: string }>(`/api/v1/operations/media/uploads/cleanup?dryRun=${dryRun}`, { method: "POST" }); },
+};
+export const adminPolicyApi = {
+  get(key: string, signal?: AbortSignal) { return apiFetch<PolicyDocument>(`/api/admin/policies?key=${encodeURIComponent(key)}`, { signal }); },
+  update(input: { key: string; title: string; body: string }) { return mutate<PolicyDocument>("/api/admin/policies", { method: "PUT", headers: jsonHeaders, body: JSON.stringify(input) }); },
 };
 
 export const notificationApi = {
