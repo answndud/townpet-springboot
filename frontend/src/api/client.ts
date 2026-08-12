@@ -115,6 +115,7 @@ export type Bookmark = {
 export type PublicationStats = { viewCount: number };
 export type CareRequest = { id: string; requesterMemberId: string; title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint: string | null; status: "OPEN" | "MATCHED" | "CANCELLED" | "EXPIRED"; createdAt: string; updatedAt: string; version: number };
 export type CareApplication = { id: string; requestId: string; applicantMemberId: string; message: string; status: "PENDING" | "ACCEPTED" | "DECLINED" | "WITHDRAWN"; createdAt: string; updatedAt: string; version: number };
+export type VolunteerOpportunity = { id: string; publisherMemberId: string; title: string; description: string; organization: string; location: string; startsAt: string; capacity: number; status: string; createdAt: string; updatedAt: string; version: number };
 
 export type Relationship = {
   following: boolean;
@@ -531,6 +532,7 @@ export const careApi = {
   apply(requestId: string, message: string) { return mutate<CareApplication>(`/api/v1/care/requests/${encodeURIComponent(requestId)}/applications`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ message }) }); },
   accept(requestId: string, applicationId: string, version: number) { return mutate<{ id: string; requestId: string; caregiverMemberId: string; status: string; version: number }>(`/api/v1/care/requests/${encodeURIComponent(requestId)}/applications/${encodeURIComponent(applicationId)}/accept`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ version }) }); },
 };
+export const volunteerApi = { list(signal?: AbortSignal) { return apiFetch<VolunteerOpportunity[]>("/api/v1/volunteer", { signal }); }, apply(id: string, message: string) { return mutate<void>(`/api/v1/volunteer/${encodeURIComponent(id)}/applications`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ message }) }); } };
 
 export const marketplaceApi = {
   list(kind?: MarketplaceListingKind, limit = 20, signal?: AbortSignal) {

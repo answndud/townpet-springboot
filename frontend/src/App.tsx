@@ -36,6 +36,7 @@ import BestPage from "./BestPage";
 import AdminPersonalizationPage from "./AdminPersonalizationPage";
 import AdminModeratorCasePage from "./AdminModeratorCasePage";
 import { CareCreatePage, CareDetailPage, CareListPage } from "./features/care/CarePages";
+import VolunteerPage from "./VolunteerPage";
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -167,6 +168,7 @@ export default function App() {
         <Route path="/best" element={<BestPage />} />
         <Route path="/boards/adoption" element={<AdoptionPage />} />
         <Route path="/adoptions/:adoptionId" element={<AdoptionDetailPage />} />
+        <Route path="/volunteer" element={<VolunteerPage />} />
         <Route path="/towns/:townSlug" element={<TownLandingPage />} />
         <Route path="/towns/:townSlug/:sectionSlug" element={<TownSectionPage />} />
         <Route path="/towns/:townSlug/:sectionSlug" element={<PublicationFeedPage memberView={false} />} />
