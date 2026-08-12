@@ -1,46 +1,76 @@
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { KeyboardEvent, ReactNode, useEffect, useRef, useState } from "react";
+import { lazy, KeyboardEvent, ReactNode, Suspense, useEffect, useRef, useState } from "react";
 import LoginPage from "./LoginPage";
-import OnboardingPage from "./OnboardingPage";
 import PasswordResetPage from "./PasswordResetPage";
-import ProfilePage from "./ProfilePage";
 import VerifyEmailPage from "./VerifyEmailPage";
-import PublicMemberProfilePage from "./PublicMemberProfilePage";
-import PublicationCreatePage from "./features/publication/PublicationCreatePage";
-import PublicationDetailPage from "./features/publication/PublicationDetailPage";
-import PublicationEditPage from "./features/publication/PublicationEditPage";
-import PublicationFeedPage from "./features/publication/PublicationFeedPage";
-import GuestPublicationCreatePage from "./features/publication/GuestPublicationCreatePage";
-import { MarketplaceDetailPage, MarketplaceFormPage, MarketplaceListPage } from "./features/marketplace/MarketplacePages";
-import { LostFoundAlertFormPage, LostFoundDetailPage, LostFoundExactLocationPage, LostFoundListPage, LostFoundSightingFormPage } from "./features/lostfound/LostFoundPages";
-import { LocalCareDetailPage, LocalCareListPage } from "./features/localcare/LocalCarePages";
-import { GatheringCreatePage, GatheringDetailPage, GatheringListPage } from "./features/gathering/GatheringPages";
-import NotificationPage from "./NotificationPage";
-import AdminPoliciesPage from "./AdminPoliciesPage";
 import LegalPage from "./LegalPage";
-import PersonalPostsPage from "./features/publication/PersonalPostsPage";
-import SearchPage from "./features/publication/SearchPage";
-import AdminReportsPage from "./AdminReportsPage";
-import AdminHomePage from "./AdminHomePage";
-import AdminAuthAuditsPage from "./AdminAuthAuditsPage";
-import AdminCorrectionPage from "./AdminCorrectionPage";
-import AdminModerationLogsPage from "./AdminModerationLogsPage";
-import CorrectionCreatePage from "./CorrectionCreatePage";
-import AdoptionPage from "./AdoptionPage";
-import AdoptionDetailPage from "./AdoptionDetailPage";
-import TownLandingPage from "./TownLandingPage";
-import BreedLoungePage from "./BreedLoungePage";
-import NeighborhoodMapPage from "./NeighborhoodMapPage";
-import TownSectionPage from "./TownSectionPage";
-import PostSightingsPage from "./PostSightingsPage";
-import AdminBreedsPage from "./AdminBreedsPage";
-import BestPage from "./BestPage";
-import AdminPersonalizationPage from "./AdminPersonalizationPage";
-import AdminModeratorCasePage from "./AdminModeratorCasePage";
-import { CareCreatePage, CareDetailPage, CareListPage } from "./features/care/CarePages";
-import VolunteerPage from "./VolunteerPage";
-import HospitalReviewPage from "./HospitalReviewPage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
+import { installPerformanceObservers, recordRouteTiming } from "./utils/performance";
+
+const OnboardingPage = lazy(() => import("./OnboardingPage"));
+const ProfilePage = lazy(() => import("./ProfilePage"));
+const NotificationPage = lazy(() => import("./NotificationPage"));
+const AdminPoliciesPage = lazy(() => import("./AdminPoliciesPage"));
+const AdminReportsPage = lazy(() => import("./AdminReportsPage"));
+const AdminHomePage = lazy(() => import("./AdminHomePage"));
+const AdminAuthAuditsPage = lazy(() => import("./AdminAuthAuditsPage"));
+const AdminCorrectionPage = lazy(() => import("./AdminCorrectionPage"));
+const AdminModerationLogsPage = lazy(() => import("./AdminModerationLogsPage"));
+const AdminBreedsPage = lazy(() => import("./AdminBreedsPage"));
+const AdminPersonalizationPage = lazy(() => import("./AdminPersonalizationPage"));
+const AdminModeratorCasePage = lazy(() => import("./AdminModeratorCasePage"));
+const PublicMemberProfilePage = lazy(() => import("./PublicMemberProfilePage"));
+const PublicationCreatePage = lazy(() => import("./features/publication/PublicationCreatePage"));
+const PublicationDetailPage = lazy(() => import("./features/publication/PublicationDetailPage"));
+const PublicationEditPage = lazy(() => import("./features/publication/PublicationEditPage"));
+const PublicationFeedPage = lazy(() => import("./features/publication/PublicationFeedPage"));
+const GuestPublicationCreatePage = lazy(() => import("./features/publication/GuestPublicationCreatePage"));
+const MarketplaceDetailPage = lazy(() => import("./features/marketplace/MarketplacePages").then(({ MarketplaceDetailPage }) => ({ default: MarketplaceDetailPage })));
+const MarketplaceFormPage = lazy(() => import("./features/marketplace/MarketplacePages").then(({ MarketplaceFormPage }) => ({ default: MarketplaceFormPage })));
+const MarketplaceListPage = lazy(() => import("./features/marketplace/MarketplacePages").then(({ MarketplaceListPage }) => ({ default: MarketplaceListPage })));
+const LostFoundAlertFormPage = lazy(() => import("./features/lostfound/LostFoundPages").then(({ LostFoundAlertFormPage }) => ({ default: LostFoundAlertFormPage })));
+const LostFoundDetailPage = lazy(() => import("./features/lostfound/LostFoundPages").then(({ LostFoundDetailPage }) => ({ default: LostFoundDetailPage })));
+const LostFoundExactLocationPage = lazy(() => import("./features/lostfound/LostFoundPages").then(({ LostFoundExactLocationPage }) => ({ default: LostFoundExactLocationPage })));
+const LostFoundListPage = lazy(() => import("./features/lostfound/LostFoundPages").then(({ LostFoundListPage }) => ({ default: LostFoundListPage })));
+const LostFoundSightingFormPage = lazy(() => import("./features/lostfound/LostFoundPages").then(({ LostFoundSightingFormPage }) => ({ default: LostFoundSightingFormPage })));
+const LocalCareDetailPage = lazy(() => import("./features/localcare/LocalCarePages").then(({ LocalCareDetailPage }) => ({ default: LocalCareDetailPage })));
+const LocalCareListPage = lazy(() => import("./features/localcare/LocalCarePages").then(({ LocalCareListPage }) => ({ default: LocalCareListPage })));
+const GatheringCreatePage = lazy(() => import("./features/gathering/GatheringPages").then(({ GatheringCreatePage }) => ({ default: GatheringCreatePage })));
+const GatheringDetailPage = lazy(() => import("./features/gathering/GatheringPages").then(({ GatheringDetailPage }) => ({ default: GatheringDetailPage })));
+const GatheringListPage = lazy(() => import("./features/gathering/GatheringPages").then(({ GatheringListPage }) => ({ default: GatheringListPage })));
+const PersonalPostsPage = lazy(() => import("./features/publication/PersonalPostsPage"));
+const SearchPage = lazy(() => import("./features/publication/SearchPage"));
+const CorrectionCreatePage = lazy(() => import("./CorrectionCreatePage"));
+const AdoptionPage = lazy(() => import("./AdoptionPage"));
+const AdoptionDetailPage = lazy(() => import("./AdoptionDetailPage"));
+const TownLandingPage = lazy(() => import("./TownLandingPage"));
+const BreedLoungePage = lazy(() => import("./BreedLoungePage"));
+const NeighborhoodMapPage = lazy(() => import("./NeighborhoodMapPage"));
+const TownSectionPage = lazy(() => import("./TownSectionPage"));
+const PostSightingsPage = lazy(() => import("./PostSightingsPage"));
+const BestPage = lazy(() => import("./BestPage"));
+const CareCreatePage = lazy(() => import("./features/care/CarePages").then(({ CareCreatePage }) => ({ default: CareCreatePage })));
+const CareDetailPage = lazy(() => import("./features/care/CarePages").then(({ CareDetailPage }) => ({ default: CareDetailPage })));
+const CareListPage = lazy(() => import("./features/care/CarePages").then(({ CareListPage }) => ({ default: CareListPage })));
+const VolunteerPage = lazy(() => import("./VolunteerPage"));
+const HospitalReviewPage = lazy(() => import("./HospitalReviewPage"));
+
+const ROUTE_PRELOADERS = new Map<string, () => Promise<unknown>>([
+  ["/feed", () => import("./features/publication/PublicationFeedPage")],
+  ["/feed/guest", () => import("./features/publication/PublicationFeedPage")],
+  ["/best", () => import("./BestPage")],
+  ["/boards/adoption", () => import("./AdoptionPage")],
+  ["/marketplace", () => import("./features/marketplace/MarketplacePages")],
+  ["/lost-found", () => import("./features/lostfound/LostFoundPages")],
+  ["/care", () => import("./features/care/CarePages")],
+  ["/gatherings", () => import("./features/gathering/GatheringPages")],
+  ["/admin", () => import("./AdminHomePage")],
+]);
+
+function preloadRoute(href: string) {
+  const path = href.split("?", 1)[0];
+  void ROUTE_PRELOADERS.get(path)?.();
+}
 
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
@@ -155,7 +185,7 @@ function HeaderMenu({
       </button>
       <div id={`${label}-menu`} className="header-menu-panel" role="menu" aria-label={`${label} 바로가기`} onKeyDown={handleMenuKeyDown}>
         {links.map(([linkLabel, href]) => (
-          <NavLink key={href} ref={(element) => { if (element) menuItemsRef.current[links.findIndex(([, linkHref]) => linkHref === href)] = element; }} role="menuitem" to={href} onClick={() => setOpen(false)}>
+          <NavLink key={href} ref={(element) => { if (element) menuItemsRef.current[links.findIndex(([, linkHref]) => linkHref === href)] = element; }} role="menuitem" to={href} onMouseEnter={() => preloadRoute(href)} onFocus={() => preloadRoute(href)} onClick={() => setOpen(false)}>
             {linkLabel}
           </NavLink>
         ))}
@@ -165,7 +195,6 @@ function HeaderMenu({
 }
 
 function Header() {
-  const location = useLocation();
   const { status, member } = useAuth();
 
   const boardLinks = member ? MEMBER_BOARD_LINKS : PUBLIC_BOARD_LINKS;
@@ -326,6 +355,18 @@ function AppShell() {
   const location = useLocation();
 
   useEffect(() => {
+    installPerformanceObservers();
+  }, []);
+
+  useEffect(() => {
+    const startedAt = typeof performance === "undefined" ? 0 : performance.now();
+    const frame = window.requestAnimationFrame(() => {
+      if (startedAt) recordRouteTiming(`${location.pathname}${location.search}`, performance.now() - startedAt);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
     const titleByPath: Array<[string, string]> = [
       ["/login", "로그인"],
       ["/password/reset", "비밀번호 재설정"],
@@ -347,7 +388,8 @@ function AppShell() {
       <a className="skip-link" href="#main-content">본문으로 바로가기</a>
       <Header />
       <div id="main-content" tabIndex={-1}>
-        <Routes>
+        <Suspense fallback={<main className="page placeholder-page"><section className="surface-card" role="status">화면을 준비하는 중...</section></main>}>
+          <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/password/reset" element={<PasswordResetPage />} />
@@ -416,7 +458,8 @@ function AppShell() {
         <Route path="/lost-found/:alertId" element={<LostFoundDetailPage />} />
         <Route path="/posts/:publicationId/sightings" element={<MemberRoute><PostSightingsPage /></MemberRoute>} />
         <Route path="*" element={<PlaceholderPage />} />
-        </Routes>
+          </Routes>
+        </Suspense>
       </div>
     </div>
   );

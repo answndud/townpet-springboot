@@ -52,6 +52,6 @@ describe("LostFound journeys", () => {
     expect(await screen.findByRole("heading", { name: "Mango를 찾습니다" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: /Mango를 찾습니다/ }));
     expect(await screen.findByRole("heading", { name: "Mango를 찾습니다" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "목격 제보" })).toHaveAttribute("href", `/lost-found/${alert.id}/sightings/new`);
+    expect(await screen.findByRole("link", { name: "목격 제보" })).toHaveAttribute("href", `/lost-found/${alert.id}/sightings/new`);
   });
 });

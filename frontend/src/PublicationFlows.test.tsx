@@ -178,7 +178,7 @@ describe("Publication journeys", () => {
     );
 
     expect(await screen.findByRole("region", { name: "댓글 3" })).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: "답글" })[0]);
+    fireEvent.click((await screen.findAllByRole("button", { name: "답글" }))[0]);
 
     const replyForm = await screen.findByRole("form", { name: "답글 작성" });
     const selectedComment = document.querySelector(`[data-comment-id="${rootComment.id}"]`);
