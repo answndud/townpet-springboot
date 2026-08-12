@@ -11,7 +11,7 @@ export default function BreedLoungePage() {
     const controller = new AbortController();
     Promise.all([
       catalogApi.breed(breedCode, controller.signal),
-      apiFetch<FeedPage>(`/api/lounges/breeds/${encodeURIComponent(breedCode)}/posts`, { signal: controller.signal }),
+      apiFetch<FeedPage>(`/api/lounges/breeds/${encodeURIComponent(breedCode)}/posts?audience=GLOBAL&scope=ALL`, { signal: controller.signal }),
     ]).then(([loadedBreed, loadedFeed]) => { setBreed(loadedBreed); setFeed(loadedFeed); }).catch((requestError: unknown) => { setError(requestError instanceof ApiError && requestError.status === 404 ? "품종 lounge를 찾을 수 없습니다." : "품종 정보를 불러오지 못했습니다."); });
     return () => controller.abort();
   }, [breedCode]);
