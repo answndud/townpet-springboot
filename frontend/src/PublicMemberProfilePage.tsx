@@ -13,7 +13,7 @@ export default function PublicMemberProfilePage() {
   const { member: viewer } = useAuth();
   const { data: profile, error: profileError, loading: profileLoading } = useAbortableRequest<PublicMember>((signal) => memberApi.profile(memberId, signal), [memberId]);
   const [tab, setTab] = useState<ActivityTab>("posts");
-  const { data: activity, loading: activityLoading } = useAbortableRequest<Activity>((signal) => tab === "posts" ? memberApi.publicPublications(memberId, signal) : tab === "comments" ? memberApi.publicComments(memberId, signal) : memberApi.publicReactions(memberId, signal), [memberId, tab]);
+  const { data: activity, loading: activityLoading } = useAbortableRequest<Activity>((signal) => !profile ? Promise.resolve([] as Activity) : tab === "posts" ? memberApi.publicPublications(memberId, signal) : tab === "comments" ? memberApi.publicComments(memberId, signal) : memberApi.publicReactions(memberId, signal), [memberId, profile?.id, tab]);
   const { data: relationship, retry: reloadRelationship } = useAbortableRequest<Relationship | null>((signal) => viewer && viewer.id !== memberId ? publicationApi.relationship(memberId, signal) : Promise.resolve(null), [viewer?.id, memberId]);
   const [saving, setSaving] = useState(false);
   const error = profileError instanceof ApiError && profileError.status === 401 ? "로그인이 필요합니다." : profileError instanceof ApiError && profileError.status === 404 ? "존재하지 않는 회원입니다." : profileError ? "프로필을 불러오지 못했습니다." : null;
