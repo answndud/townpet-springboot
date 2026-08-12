@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -54,6 +54,11 @@ describe("TownPet Vite shell", () => {
     fireEvent.click(boardMenu);
     expect(boardMenu).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("menuitem", { name: "내 피드" })).toBeVisible();
+
+    fireEvent.keyDown(boardMenu, { key: "ArrowDown" });
+    await waitFor(() => expect(screen.getByRole("menuitem", { name: "내 피드" })).toHaveFocus());
+    fireEvent.keyDown(screen.getByRole("menuitem", { name: "내 피드" }), { key: "ArrowDown" });
+    expect(screen.getByRole("menuitem", { name: "전체 공개 피드" })).toHaveFocus();
 
     fireEvent.keyDown(boardMenu, { key: "Escape" });
     expect(boardMenu).toHaveAttribute("aria-expanded", "false");
