@@ -51,7 +51,7 @@
    - 파일: 병목이 확인된 service/repository/migration과 `docs/performance/results/`
    - 변경: query/index/pagination/transaction/pool 중 원인이 확인된 한 항목만 수정하고 동일 조건으로 before/after를 비교한다.
    - 검증: 수정 전후 동일 fixture·VU·duration·warm-up 재실행.
-   - 완료: V054 feed index before/after와 row-lock capacity trade-off를 결과 문서에 남겼다. 2차에서 login 비용을 분리한 capacity 전용 metric으로 실제 application p95를 재측정했고, 결과는 [2026-08-13-phase2-capacity-diagnostics.md](docs/performance/results/2026-08-13-phase2-capacity-diagnostics.md)에 있다.
+   - 완료: V054 feed index before/after와 row-lock capacity trade-off를 결과 문서에 남겼다. 2차에서 login 비용을 분리한 capacity 전용 metric으로 실제 application p95를 재측정하고, 3차에서 lock query projection을 줄여 전후 경합을 비교했다. 결과는 [phase2](docs/performance/results/2026-08-13-phase2-capacity-diagnostics.md)와 [phase3](docs/performance/results/2026-08-13-phase3-capacity-query-shape.md)에 있다.
 
 2. **Redis 후보를 평가한다.** `deferred`
    - 파일: `docs/performance/redis-kafka-evaluation.md`, 후보 구현과 관련 test
