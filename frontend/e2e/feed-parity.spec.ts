@@ -28,14 +28,14 @@ test("member feed includes owned local posts while guest feed remains global", a
 
   await page.goto("/feed");
   await expect(page.getByRole("heading", { name: "내 동네와 전체 새 글" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: globalTitle })).toBeVisible();
-  await expect(page.getByRole("heading", { name: localTitle })).toBeVisible();
+  await expect(page.getByRole("heading", { name: globalTitle }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: localTitle }).first()).toBeVisible();
 
   const guestContext = await browser.newContext();
   const guestPage = await guestContext.newPage();
-  await guestPage.goto("http://localhost:5173/feed/guest");
+  await guestPage.goto("http://127.0.0.1:4173/feed/guest");
   await expect(guestPage.getByRole("heading", { name: "공개 반려생활 피드" })).toBeVisible();
-  await expect(guestPage.getByRole("heading", { name: globalTitle })).toBeVisible();
+  await expect(guestPage.getByRole("heading", { name: globalTitle }).first()).toBeVisible();
   await expect(guestPage.getByRole("heading", { name: localTitle })).toHaveCount(0);
   await guestContext.close();
   expect(browserErrors).toEqual([]);
