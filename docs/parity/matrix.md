@@ -24,7 +24,7 @@
 
 ```text
 ./gradlew parityInventoryTest
-corepack pnpm -C frontend test -- parity
+(cd frontend && corepack pnpm test -- parity)
 ```
 
 `ParityInventoryTest`는 YAML count·중복·경로 형식을 검증한다. `frontend/src/parity/normalize.ts`의 테스트는 두 target payload가 volatile 값만 다를 때 동일하다고 판단하는지 검증한다.

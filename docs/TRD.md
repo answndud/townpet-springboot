@@ -519,11 +519,11 @@ Domain 완료는 다음을 모두 요구한다.
 ./gradlew migrationTest
 ./gradlew mutationTest
 ./gradlew performanceTest
-corepack pnpm -C frontend install --frozen-lockfile
-corepack pnpm -C frontend lint
-corepack pnpm -C frontend typecheck
-corepack pnpm -C frontend test
-corepack pnpm -C frontend test:e2e
+(cd frontend && corepack pnpm install --frozen-lockfile)
+(cd frontend && corepack pnpm lint)
+(cd frontend && corepack pnpm typecheck)
+(cd frontend && corepack pnpm test)
+(cd frontend && corepack pnpm test:e2e)
 docker compose -f deploy/compose/local.yml config
 docker build -t townpet-springboot:local .
 ```

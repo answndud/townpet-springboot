@@ -35,8 +35,9 @@
 백엔드는 `http://localhost:8080`, PostgreSQL은 `localhost:54329`, MinIO 콘솔은 `http://localhost:9001`에서 확인할 수 있다. 프론트엔드는 별도 터미널에서 실행한다.
 
 ```bash
-corepack pnpm -C frontend install --frozen-lockfile
-corepack pnpm -C frontend dev
+cd frontend
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
 ```
 
 프론트엔드 개발 서버는 보통 `http://localhost:5173`이다. `/login`에서 위 계정으로 로그인한 다음 아래 화면을 확인한다.

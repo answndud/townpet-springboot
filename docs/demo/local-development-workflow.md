@@ -52,8 +52,9 @@ docker compose -f deploy/compose/local.yml ps
 
 ```bash
 cd /Users/alex/project/townpet-springboot
-corepack pnpm -C frontend install --frozen-lockfile
-corepack pnpm -C frontend dev
+cd frontend
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
 ```
 
 의존성이 이미 설치되어 있으면 `install`은 생략한다. Vite는 [http://localhost:5173](http://localhost:5173)에서 실행되고 `/api` 요청은 `http://localhost:8080`으로 proxy된다.

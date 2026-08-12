@@ -99,11 +99,11 @@ P1 application foundation과 P2 Identity·Member·Catalog의 초기 vertical sli
 
 ```bash
 ./gradlew clean check migrationTest
-corepack pnpm -C frontend install --frozen-lockfile
-corepack pnpm -C frontend typecheck
-corepack pnpm -C frontend test
-corepack pnpm -C frontend build
-corepack pnpm -C frontend test:e2e
+(cd frontend && corepack pnpm install --frozen-lockfile)
+(cd frontend && corepack pnpm typecheck)
+(cd frontend && corepack pnpm test)
+(cd frontend && corepack pnpm build)
+(cd frontend && corepack pnpm test:e2e)
 ./scripts/frontend-backend-smoke.sh
 ```
 
