@@ -178,6 +178,7 @@ describe("Publication journeys", () => {
     );
 
     expect(await screen.findByRole("region", { name: "댓글 3" })).toBeInTheDocument();
+    expect(screen.queryByText("작성자만 삭제")).not.toBeInTheDocument();
     fireEvent.click((await screen.findAllByRole("button", { name: "답글" }))[0]);
 
     const replyForm = await screen.findByRole("form", { name: "답글 작성" });
@@ -185,6 +186,7 @@ describe("Publication journeys", () => {
     expect(replyForm.parentElement).toBe(selectedComment);
     expect(selectedComment?.querySelector(`[data-comment-id="${childComment.id}"]`)).toBeInTheDocument();
     expect(screen.queryByRole("form", { name: "댓글 작성" })).not.toBeInTheDocument();
+    expect(screen.queryByText("하면 댓글을 남길 수 있어요.")).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "답글" })).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: "취소" }));
     expect(screen.getAllByRole("button", { name: "답글" })[0]).toHaveFocus();
