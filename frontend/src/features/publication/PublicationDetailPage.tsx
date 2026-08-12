@@ -11,6 +11,7 @@ import {
   type Relationship,
   type Publication,
   type Reaction,
+  type TrustReportReason,
 } from "../../api/client";
 
 function formatDate(value: string) {
@@ -54,6 +55,9 @@ export default function PublicationDetailPage() {
   const [relationshipSubmitting, setRelationshipSubmitting] = useState(false);
   const [shareSubmitting, setShareSubmitting] = useState(false);
   const [viewCount, setViewCount] = useState<number | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<TrustReportReason>("OTHER");
+  const [reportDetail, setReportDetail] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -263,10 +267,12 @@ export default function PublicationDetailPage() {
   }
 
   async function reportPublication() {
-    if (!publication || !window.confirm("이 게시글을 신고할까요?")) return;
+    if (!publication) return;
     try {
-      await trustApi.report({ targetType: "PUBLICATION", targetId: publication.id, reason: "OTHER" });
+      await trustApi.report({ targetType: "PUBLICATION", targetId: publication.id, reason: reportReason, detail: reportDetail.trim() || undefined });
       setMutationError("신고가 접수되었습니다. 운영팀이 확인합니다.");
+      setReportOpen(false);
+      setReportDetail("");
     } catch (requestError) {
       setMutationError(requestError instanceof ApiError && requestError.status === 409 ? "이미 신고한 게시글입니다." : "신고를 접수하지 못했습니다.");
     }
@@ -340,9 +346,17 @@ export default function PublicationDetailPage() {
           <button className="button button-soft" type="button" disabled={shareSubmitting} onClick={sharePublication}>
             {shareSubmitting ? "공유 중..." : "공유"}
           </button>
-          {viewerId && viewerId !== publication.authorId ? <button className="button button-soft" type="button" onClick={reportPublication}>신고</button> : null}
+          {viewerId && viewerId !== publication.authorId ? <button className="button button-soft" type="button" onClick={() => setReportOpen((current) => !current)}>신고</button> : null}
         </div>
       </div>
+      {reportOpen ? (
+        <form className="surface-card publication-fields" onSubmit={(event) => { event.preventDefault(); void reportPublication(); }}>
+          <h2>게시글 신고</h2>
+          <label>사유<select value={reportReason} onChange={(event) => setReportReason(event.target.value as TrustReportReason)}><option value="SPAM">스팸·홍보</option><option value="ABUSE">욕설·괴롭힘</option><option value="PRIVACY">개인정보 노출</option><option value="ILLEGAL">불법·위험 정보</option><option value="OTHER">기타</option></select></label>
+          <label>상세 설명<textarea maxLength={1000} value={reportDetail} onChange={(event) => setReportDetail(event.target.value)} placeholder="운영팀이 확인할 내용을 적어 주세요." /></label>
+          <div className="profile-actions"><button className="button button-primary" type="submit">신고 접수</button><button className="button button-soft" type="button" onClick={() => setReportOpen(false)}>취소</button></div>
+        </form>
+      ) : null}
       {mutationError ? (
         <p className="form-error publication-error" role="alert">{mutationError}</p>
       ) : null}
