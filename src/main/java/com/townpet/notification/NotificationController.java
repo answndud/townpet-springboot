@@ -19,10 +19,21 @@ class NotificationController {
   }
 
   @GetMapping
-  List<Response> list(@AuthenticationPrincipal UserDetails principal) {
-    return notifications.findByRecipientMemberIdOrderByCreatedAtDesc(memberId(principal)).stream()
+  List<Response> list(
+      @AuthenticationPrincipal UserDetails principal,
+      @RequestParam(defaultValue = "false") boolean unread) {
+    UUID memberId = memberId(principal);
+    var items = unread
+        ? notifications.findByRecipientMemberIdAndReadAtIsNullOrderByCreatedAtDesc(memberId)
+        : notifications.findByRecipientMemberIdOrderByCreatedAtDesc(memberId);
+    return items.stream()
         .map(NotificationController::response)
         .toList();
+  }
+
+  @GetMapping("/unread-count")
+  CountResponse unreadCount(@AuthenticationPrincipal UserDetails principal) {
+    return new CountResponse(notifications.countByRecipientMemberIdAndReadAtIsNull(memberId(principal)));
   }
 
   @PatchMapping("/{id}/read")
@@ -56,4 +67,6 @@ class NotificationController {
 
   record Response(
       UUID id, String type, String title, String body, @Nullable Instant readAt, Instant createdAt) {}
+
+  record CountResponse(long count) {}
 }
