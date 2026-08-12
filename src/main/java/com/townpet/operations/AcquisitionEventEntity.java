@@ -23,14 +23,19 @@ class AcquisitionEventEntity {
   @Column(nullable = false)
   private Instant createdAt;
 
+  @Nullable private UUID clientEventId;
+
   protected AcquisitionEventEntity() {}
 
   AcquisitionEventEntity(
-      UUID id, String eventName, String route, @Nullable String anonymousKeyHash) {
+      UUID id, String eventName, String route, @Nullable String anonymousKeyHash, @Nullable UUID clientEventId) {
     this.id = id;
     this.eventName = eventName;
     this.route = route;
     this.anonymousKeyHash = anonymousKeyHash;
     this.createdAt = Instant.now();
+    this.clientEventId = clientEventId;
   }
+
+  @Nullable UUID getClientEventId() { return clientEventId; }
 }
