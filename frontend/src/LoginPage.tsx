@@ -6,8 +6,12 @@ import { ApiError, authApi } from "./api/client";
 const DEMO_EMAIL = "demo-member-1@townpet.local";
 const DEMO_PASSWORD = "townpet-demo-123!";
 
-function safeNextPath(candidate: string | null) {
-  return candidate?.startsWith("/") && !candidate.startsWith("//") ? candidate : "/profile";
+function safeNextPath(candidate: string | null, role: "MEMBER" | "MODERATOR") {
+  return candidate?.startsWith("/") && !candidate.startsWith("//")
+    ? candidate
+    : role === "MODERATOR"
+      ? "/admin"
+      : "/profile";
 }
 
 export default function LoginPage() {
@@ -25,8 +29,8 @@ export default function LoginPage() {
     setSubmitting(true);
     setError(null);
     try {
-      await authApi.login(email, password);
-      navigate(safeNextPath(searchParams.get("next")));
+      const session = await authApi.login(email, password);
+      navigate(safeNextPath(searchParams.get("next"), session.role));
     } catch (requestError) {
       setError(
         requestError instanceof ApiError && requestError.status === 401

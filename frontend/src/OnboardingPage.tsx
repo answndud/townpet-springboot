@@ -41,6 +41,10 @@ export default function OnboardingPage() {
           return;
         }
         setMember(currentMember);
+        if (currentMember.role === "MODERATOR") {
+          navigate("/admin", { replace: true });
+          return;
+        }
         setNeighborhoods(options);
         setBio(currentMember.bio ?? "");
         setNeighborhoodId(currentMember.neighborhoodId ?? options[0]?.id ?? "");
