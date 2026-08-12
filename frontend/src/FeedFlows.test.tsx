@@ -106,4 +106,22 @@ describe("Publication feed journeys", () => {
       expect.objectContaining({ credentials: "include" }),
     );
   });
+
+  it("executes a guest search when opened from a direct URL", async () => {
+    const fetchMock = vi.fn<typeof fetch>((input) => {
+      if (String(input).includes("/api/v1/feed?")) {
+        return Promise.resolve(response({ items: [publication("0198f342-13d7-7000-8000-000000000004", "산책 검색 결과")], page: { nextCursor: null, hasNext: false } }));
+      }
+      return Promise.resolve(response({ title: "Unauthorized" }, 401));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<MemoryRouter initialEntries={["/search/guest?q=산책"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "산책 검색 결과" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&query=%EC%82%B0%EC%B1%85",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
 });
