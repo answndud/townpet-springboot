@@ -15,6 +15,7 @@ import { LostFoundAlertFormPage, LostFoundDetailPage, LostFoundExactLocationPage
 import { LocalCareDetailPage, LocalCareListPage } from "./features/localcare/LocalCarePages";
 import { GatheringCreatePage, GatheringDetailPage, GatheringListPage } from "./features/gathering/GatheringPages";
 import NotificationPage from "./NotificationPage";
+import AdminPoliciesPage from "./AdminPoliciesPage";
 import LegalPage from "./LegalPage";
 import PersonalPostsPage from "./features/publication/PersonalPostsPage";
 import SearchPage from "./features/publication/SearchPage";
@@ -187,7 +188,7 @@ export default function App() {
         <Route path="/admin/moderation-logs" element={<AdminModerationLogsPage />} />
         <Route path="/admin/moderation/direct" element={<AdminModeratorCasePage />} />
         <Route path="/admin/personalization" element={<AdminPersonalizationPage />} />
-        <Route path="/admin/policies" element={<LegalPage />} />
+        <Route path="/admin/policies" element={<AdminPoliciesPage />} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/campaigns/neighborhood-map" element={<NeighborhoodMapPage />} />
