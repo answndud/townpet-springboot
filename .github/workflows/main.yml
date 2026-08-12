@@ -27,6 +27,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: corepack enable
       - run: ./scripts/validate-parity-matrix.sh
+      - run: ./scripts/validate-release-candidate.sh
       - run: ./gradlew clean check migrationTest --no-daemon
       - run: corepack pnpm install --frozen-lockfile
         working-directory: frontend

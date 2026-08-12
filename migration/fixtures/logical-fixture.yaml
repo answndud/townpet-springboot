@@ -20,6 +20,29 @@ records:
     title: 산책하기 좋은 동네 정보
     scope: LOCAL
     author: member
+  careRequest:
+    title: 저녁 산책 돌봄
+    status: OPEN
+    requester: member
+  marketplaceListing:
+    kind: SELL
+    status: AVAILABLE
+  lostFoundAlert:
+    kind: LOST
+    visibility: PUBLIC_APPROXIMATE
+scenarios:
+  - id: care-owner-accept-complete
+    actors: [member, staff]
+    steps: [create_request, apply, accept, in_progress, complete, feedback]
+    expected: [OPEN, MATCHED, IN_PROGRESS, COMPLETED]
+  - id: guest-search
+    actors: [guest]
+    steps: [search, filter_scope, open_detail]
+    expected: [200, 200, 200]
+  - id: moderator-report-review
+    actors: [member, staff]
+    steps: [report, review, restore]
+    expected: [OPEN, REVIEWED, ACTIVE]
 normalization:
   replaceUuid: <uuid>
   replaceTimestamp: <timestamp>
