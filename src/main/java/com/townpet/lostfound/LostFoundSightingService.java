@@ -30,6 +30,9 @@ class LostFoundSightingService {
       double longitude,
       Double exactLatitude,
       Double exactLongitude) {
+    if ((exactLatitude == null) != (exactLongitude == null)) {
+      throw new IllegalArgumentException("Exact latitude and longitude must be provided together");
+    }
     LostFoundAlertService.AlertView alert =
         alerts.find(alertId).orElseThrow(LostFoundAlertNotFoundException::new);
     if (alert.status() != LostFoundAlertStatus.ACTIVE) {

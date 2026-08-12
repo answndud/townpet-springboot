@@ -2,6 +2,7 @@ package com.townpet.publication;
 
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -10,24 +11,25 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/posts/{publicationId}")
 class PublicationMetricsController {
   private final PublicationService publications;
-  private final PublicationMetricRepository metrics;
+  private final JdbcTemplate jdbc;
 
-  PublicationMetricsController(
-      PublicationService publications, PublicationMetricRepository metrics) {
+  PublicationMetricsController(PublicationService publications, JdbcTemplate jdbc) {
     this.publications = publications;
-    this.metrics = metrics;
+    this.jdbc = jdbc;
   }
 
   @PostMapping("/view")
   @Transactional
   ViewResponse view(@PathVariable UUID publicationId) {
     requireVisible(publicationId);
-    PublicationMetricEntity metric =
-        metrics
-            .findById(publicationId)
-            .orElseGet(() -> metrics.save(new PublicationMetricEntity(publicationId)));
-    metric.increment();
-    return new ViewResponse(metric.getViewCount());
+    Long viewCount =
+        jdbc.queryForObject(
+            "INSERT INTO publication_metric (publication_id, view_count) VALUES (?, 1) "
+                + "ON CONFLICT (publication_id) DO UPDATE SET view_count = "
+                + "publication_metric.view_count + 1 RETURNING view_count",
+            Long.class,
+            publicationId);
+    return new ViewResponse(viewCount == null ? 1 : viewCount);
   }
 
   @GetMapping("/stats")
@@ -35,7 +37,14 @@ class PublicationMetricsController {
   ViewResponse stats(@PathVariable UUID publicationId) {
     requireVisible(publicationId);
     return new ViewResponse(
-        metrics.findById(publicationId).map(PublicationMetricEntity::getViewCount).orElse(0L));
+        jdbc
+            .query(
+                "SELECT view_count FROM publication_metric WHERE publication_id = ?",
+                (rs, rowNum) -> rs.getLong("view_count"),
+                publicationId)
+            .stream()
+            .findFirst()
+            .orElse(0L));
   }
 
   @PostMapping("/share")

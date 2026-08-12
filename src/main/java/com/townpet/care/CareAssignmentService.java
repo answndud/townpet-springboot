@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import java.time.Instant;
 import java.util.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +38,7 @@ class CareAssignmentService {
   CareAssignmentEntity accept(UUID requester, UUID requestId, UUID applicationId, long appVersion) {
     CareRequestEntity request =
         requests
-            .findByIdAndStatus(requestId, CareRequestStatus.OPEN)
+            .findForUpdateByIdAndStatus(requestId, CareRequestStatus.OPEN)
             .orElseThrow(NoSuchElementException::new);
     if (!request.getRequesterMemberId().equals(requester)) throw new SecurityException();
     if (assignments.findByRequestId(requestId).isPresent())
@@ -49,12 +50,7 @@ class CareAssignmentService {
     if (application.getVersion() != appVersion) throw new IllegalStateException("version conflict");
     application.changeStatus(CareApplicationStatus.ACCEPTED);
     applications.save(application);
-    for (CareApplicationEntity other :
-        applications.findByRequestIdOrderByCreatedAtAscIdAsc(requestId)) {
-      if (!other.getId().equals(application.getId())
-          && other.getStatus() == CareApplicationStatus.PENDING)
-        other.changeStatus(CareApplicationStatus.DECLINED);
-    }
+    applications.declineOtherPending(requestId, application.getId(), Instant.now());
     CareAssignmentEntity assignment =
         assignments.save(new CareAssignmentEntity(requestId, application.getApplicantMemberId()));
     request.markMatched();

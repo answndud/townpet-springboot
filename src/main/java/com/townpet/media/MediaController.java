@@ -90,6 +90,8 @@ class MediaController {
     } catch (MediaObjectMismatchException exception) {
       throw new ResponseStatusException(
           HttpStatus.UNPROCESSABLE_ENTITY, "Uploaded object does not match metadata");
+    } catch (MediaInputNotAllowedException exception) {
+      throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Upload is too large");
     } catch (MediaAssetStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not active");
     } catch (java.io.IOException exception) {
