@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ApiError, gatheringApi, type Gathering } from "../../api/client";
+import { ApiError, gatheringApi, memberApi, type Gathering, type Member } from "../../api/client";
 
 function date(value: string) { return new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); }
 
@@ -11,12 +11,12 @@ export function GatheringListPage() {
 }
 
 export function GatheringDetailPage() {
-  const { gatheringId = "" } = useParams(); const navigate = useNavigate(); const [item, setItem] = useState<Gathering | null>(null); const [error, setError] = useState<string | null>(null); const [saving, setSaving] = useState(false);
-  useEffect(() => { gatheringApi.detail(gatheringId).then(setItem).catch((e: unknown) => setError(e instanceof ApiError && e.status === 404 ? "모임을 찾을 수 없습니다." : "모임을 불러오지 못했습니다.")); }, [gatheringId]);
+  const { gatheringId = "" } = useParams(); const navigate = useNavigate(); const [item, setItem] = useState<Gathering | null>(null); const [viewer, setViewer] = useState<Member | null>(null); const [error, setError] = useState<string | null>(null); const [saving, setSaving] = useState(false);
+  useEffect(() => { Promise.all([gatheringApi.detail(gatheringId), memberApi.current().catch(() => null)]).then(([loaded, current]) => { setItem(loaded); setViewer(current); }).catch((e: unknown) => setError(e instanceof ApiError && e.status === 404 ? "모임을 찾을 수 없습니다." : "모임을 불러오지 못했습니다.")); }, [gatheringId]);
   async function change(action: "join" | "leave" | "cancel") { setSaving(true); try { setItem(await gatheringApi[action](gatheringId)); } catch (e) { if (e instanceof ApiError && e.status === 401) navigate(`/login?next=/gatherings/${gatheringId}`); else setError(e instanceof ApiError ? e.message : "요청을 처리하지 못했습니다."); } finally { setSaving(false); } }
   if (error && !item) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/gatherings">목록으로</Link></section></main>;
   if (!item) return <main className="page placeholder-page"><section className="surface-card" role="status">모임을 불러오는 중...</section></main>;
-  return <main className="page gathering-page"><Link className="publication-text-link" to="/gatherings">목록으로</Link><article className="surface-card gathering-detail"><span className="publication-chip publication-chip-primary">{item.participantCount}/{item.capacity}명 참여</span><h1>{item.title}</h1><p>{item.description}</p><dl><dt>일시</dt><dd>{date(item.startsAt)}</dd><dt>장소</dt><dd>{item.location}</dd></dl>{error ? <p className="form-error" role="alert">{error}</p> : null}<div className="profile-actions">{item.status === "ACTIVE" && !item.joined ? <button className="button button-primary" disabled={saving || item.participantCount >= item.capacity} onClick={() => change("join")}>참여하기</button> : null}{item.joined ? <button className="button button-soft" disabled={saving} onClick={() => change("leave")}>참여 취소</button> : null}</div></article></main>;
+  return <main className="page gathering-page"><Link className="publication-text-link" to="/gatherings">목록으로</Link><article className="surface-card gathering-detail"><span className="publication-chip publication-chip-primary">{item.participantCount}/{item.capacity}명 참여</span><h1>{item.title}</h1><p>{item.description}</p><dl><dt>일시</dt><dd>{date(item.startsAt)}</dd><dt>장소</dt><dd>{item.location}</dd></dl>{error ? <p className="form-error" role="alert">{error}</p> : null}<div className="profile-actions">{item.status === "ACTIVE" && !item.joined && viewer?.id !== item.hostMemberId ? <button className="button button-primary" disabled={saving || item.participantCount >= item.capacity} onClick={() => change("join")}>참여하기</button> : null}{item.joined ? <button className="button button-soft" disabled={saving} onClick={() => change("leave")}>참여 취소</button> : null}{item.status === "ACTIVE" && viewer?.id === item.hostMemberId ? <button className="button button-danger" disabled={saving} onClick={() => change("cancel")}>모임 취소</button> : null}</div></article></main>;
 }
 
 export function GatheringCreatePage() {
