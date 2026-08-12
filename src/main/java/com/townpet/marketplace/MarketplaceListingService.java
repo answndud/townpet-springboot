@@ -1,11 +1,9 @@
 package com.townpet.marketplace;
 
-import com.townpet.catalog.api.AnimalCommunityTagger;
 import com.townpet.common.UuidV7;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,11 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class MarketplaceListingService {
   private final JdbcTemplate jdbc;
-  private final AnimalCommunityTagger communityTags;
 
-  MarketplaceListingService(JdbcTemplate jdbc, AnimalCommunityTagger communityTags) {
+  MarketplaceListingService(JdbcTemplate jdbc) {
     this.jdbc = jdbc;
-    this.communityTags = communityTags;
   }
 
   @Transactional
@@ -30,17 +26,6 @@ class MarketplaceListingService {
       String title,
       String description,
       Long priceKrw) {
-    return create(ownerMemberId, kind, title, description, priceKrw, null);
-  }
-
-  @Transactional
-  ListingView create(
-      UUID ownerMemberId,
-      MarketplaceListingKind kind,
-      String title,
-      String description,
-      Long priceKrw,
-      @org.springframework.lang.Nullable Collection<String> animalCommunityCodes) {
     UUID id = UuidV7.randomUuid();
     jdbc.update(
         "INSERT INTO market_listing "
@@ -52,7 +37,6 @@ class MarketplaceListingService {
         title.trim(),
         description.trim(),
         priceKrw);
-    communityTags.replace("MARKETPLACE", id, animalCommunityCodes);
     return find(id).orElseThrow();
   }
 
@@ -135,18 +119,6 @@ class MarketplaceListingService {
       String description,
       Long priceKrw,
       long version) {
-    return update(ownerMemberId, listingId, title, description, priceKrw, version, null);
-  }
-
-  @Transactional
-  ListingView update(
-      UUID ownerMemberId,
-      UUID listingId,
-      String title,
-      String description,
-      Long priceKrw,
-      long version,
-      @org.springframework.lang.Nullable Collection<String> animalCommunityCodes) {
     ListingView current = findAny(listingId);
     if (!current.ownerMemberId().equals(ownerMemberId)) {
       throw new MarketplaceListingOwnershipException();
@@ -166,9 +138,6 @@ class MarketplaceListingService {
             ownerMemberId,
             version);
     if (updated != 1) throw new MarketplaceListingStateException();
-    if (animalCommunityCodes != null) {
-      communityTags.replace("MARKETPLACE", listingId, animalCommunityCodes);
-    }
     return findAny(listingId);
   }
 

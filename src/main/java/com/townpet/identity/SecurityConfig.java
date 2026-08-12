@@ -116,6 +116,8 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/communities/*/feed")
                   .permitAll()
+                  .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/feed")
+                  .permitAll()
                   .requestMatchers(
                       HttpMethod.POST, "/api/v1/operations/web-vitals", "/api/metrics/web-vitals")
                   .permitAll()
