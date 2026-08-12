@@ -41,6 +41,9 @@ class MemberModerationController {
         credentials
             .findByMemberId(request.memberId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    if (request.memberId().equals(memberId(principal))) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Moderator cannot target self");
+    }
     String action =
         http.getRequestURI().endsWith("restore-content") ? "RESTORE_CONTENT" : "HIDE_CONTENT";
     int affected =
@@ -59,6 +62,9 @@ class MemberModerationController {
         credentials
             .findByMemberId(request.memberId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    if (request.memberId().equals(memberId(principal))) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Moderator cannot target self");
+    }
     credential.setEnabled(false);
     recordAction(
         memberId(principal), request.memberId(), request.memberId(), "SANCTION", request.reason());
@@ -85,7 +91,10 @@ class MemberModerationController {
         reason);
   }
 
-  record MemberRequest(@NotNull UUID memberId, String reason) {}
+  record MemberRequest(
+      @NotNull UUID memberId,
+      @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 1000)
+          String reason) {}
 
   record Response(UUID memberId, String action, int affectedPublications) {}
 }

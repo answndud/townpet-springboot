@@ -1,5 +1,6 @@
 package com.townpet.common.web;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -43,6 +44,26 @@ class GlobalProblemHttpTest {
         .perform(get("/api/v1/catalog/neighborhoods/does-not-exist"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"))
+        .andExpect(header().exists(RequestTraceFilter.HEADER));
+  }
+
+  @Test
+  void securityFilterAuthenticationFailureUsesProblemContract() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/members/me"))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"))
+        .andExpect(jsonPath("$.traceId").isNotEmpty())
+        .andExpect(header().exists(RequestTraceFilter.HEADER));
+  }
+
+  @Test
+  void securityFilterAuthorizationFailureUsesProblemContract() throws Exception {
+    mockMvc
+        .perform(get("/api/admin/policies").with(user("member").roles("MEMBER")))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("FORBIDDEN"))
+        .andExpect(jsonPath("$.traceId").isNotEmpty())
         .andExpect(header().exists(RequestTraceFilter.HEADER));
   }
 }

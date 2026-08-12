@@ -1,6 +1,7 @@
 package com.townpet.trustsafety;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
@@ -30,7 +31,8 @@ class BulkReportController {
   }
 
   record Request(
-      @NotEmpty List<UUID> ids, @Pattern(regexp = "OPEN|REVIEWED|REJECTED") String status) {}
+      @NotEmpty @jakarta.validation.constraints.Size(max = 100) List<UUID> ids,
+      @NotBlank @Pattern(regexp = "REVIEWED|REJECTED") String status) {}
 
   record Response(int updated, String status) {}
 }

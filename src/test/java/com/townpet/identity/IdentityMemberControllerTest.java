@@ -204,6 +204,32 @@ class IdentityMemberControllerTest {
   }
 
   @Test
+  void moderatorCannotSanctionSelf() throws Exception {
+    CredentialEntity credential = credentials.findByMemberId(MODERATOR_ID).orElseThrow();
+    credential.verifyEmail(java.time.Instant.now());
+    credentials.save(credential);
+    MvcResult login =
+        mockMvc
+            .perform(
+                post("/api/v1/auth/sessions")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"moderator@example.com\",\"password\":\"password123!\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+    mockMvc
+        .perform(
+            post("/api/admin/moderation/users/sanction")
+                .cookie(sessionCookie(login))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"memberId\":\"" + MODERATOR_ID + "\",\"reason\":\"self-target check\"}"))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
   void moderatorCannotUseGuestWriteFlow() throws Exception {
     CredentialEntity credential = credentials.findByMemberId(MODERATOR_ID).orElseThrow();
     credential.verifyEmail(java.time.Instant.now());
