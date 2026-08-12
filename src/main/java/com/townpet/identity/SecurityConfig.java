@@ -106,6 +106,8 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/lounges/breeds/*/groupbuys")
                   .permitAll()
+                  .requestMatchers(HttpMethod.GET, "/api/lounges/breeds/*/posts")
+                  .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/feed")
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/feed/popular")
