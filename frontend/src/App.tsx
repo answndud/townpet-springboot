@@ -75,9 +75,9 @@ function preloadRoute(href: string) {
 const TOPIC_LINKS = [
   ["지도 만들기", "/campaigns/neighborhood-map"],
   ["분실/목격", "/lost-found"],
-  ["동물병원", "/feed/guest?type=HOSPITAL_REVIEW"],
-  ["산책코스", "/feed/guest?type=WALK_ROUTE"],
-  ["질문/답변", "/feed/guest?type=QA_QUESTION"],
+  ["동물병원", "/hospital-reviews"],
+  ["산책코스", "/guides?q=산책"],
+  ["질문/답변", "/gatherings"],
   ["중고거래", "/marketplace"],
 ] as const;
 

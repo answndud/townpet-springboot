@@ -53,9 +53,9 @@ export function MarketplaceListPage() {
       <MarketplaceHeader action={viewerRole !== "MODERATOR"} />
       <div className="marketplace-toolbar">
         <div className="marketplace-filters" aria-label="거래 유형 필터">
-          <button className={!kind ? "market-filter active" : "market-filter"} type="button" onClick={() => setKind("")}>전체</button>
+          <button className={!kind ? "market-filter active" : "market-filter"} aria-pressed={!kind} type="button" onClick={() => setKind("")}>전체</button>
           {(Object.keys(KIND_LABELS) as MarketplaceListingKind[]).map((option) => (
-            <button className={kind === option ? "market-filter active" : "market-filter"} key={option} type="button" onClick={() => setKind(option)}>{KIND_LABELS[option]}</button>
+            <button className={kind === option ? "market-filter active" : "market-filter"} aria-pressed={kind === option} key={option} type="button" onClick={() => setKind(option)}>{KIND_LABELS[option]}</button>
           ))}
         </div>
         <span className="marketplace-count">{listings.length}개</span>
