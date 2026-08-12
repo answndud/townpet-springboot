@@ -44,7 +44,12 @@ class PublicationController {
     try {
       PublicationEntity publication =
           publications.create(
-              memberId, request.scope(), request.neighborhoodId(), request.title(), request.body());
+              memberId,
+              request.scope(),
+              request.neighborhoodId(),
+              request.animalInterestCode(),
+              request.title(),
+              request.body());
       return ResponseEntity.created(URI.create("/api/v1/publications/" + publication.getId()))
           .body(toResponse(publication));
     } catch (PublicationPolicyException exception) {
@@ -83,6 +88,7 @@ class PublicationController {
               request.version(),
               request.scope(),
               request.neighborhoodId(),
+              request.animalInterestCode(),
               request.title(),
               request.body()));
     } catch (PublicationPolicyException exception) {
@@ -164,6 +170,7 @@ class PublicationController {
         publication.getScope(),
         publication.getAuthorMemberId(),
         publication.getNeighborhoodId(),
+        publication.getAnimalInterestCode(),
         publication.getTitle(),
         publication.getBody(),
         publication.getLifecycle(),
@@ -176,13 +183,15 @@ class PublicationController {
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 20000) String body,
       @NotNull PublicationScope scope,
-      @Nullable UUID neighborhoodId) {}
+      @Nullable UUID neighborhoodId,
+      @Nullable @Size(max = 40) String animalInterestCode) {}
 
   record EditPublicationRequest(
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 20000) String body,
       @NotNull PublicationScope scope,
       @Nullable UUID neighborhoodId,
+      @Nullable @Size(max = 40) String animalInterestCode,
       @NotNull @Min(0) Long version) {}
 
   record DeletePublicationRequest(@NotNull @Min(0) Long version) {}
@@ -195,10 +204,38 @@ class PublicationController {
       PublicationScope scope,
       @Nullable UUID authorId,
       @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
       String title,
       String body,
       PublicationLifecycle lifecycle,
       Instant createdAt,
       Instant updatedAt,
-      long version) {}
+      long version) {
+    PublicationResponse(
+        UUID id,
+        PublicationType type,
+        PublicationScope scope,
+        @Nullable UUID authorId,
+        @Nullable UUID neighborhoodId,
+        String title,
+        String body,
+        PublicationLifecycle lifecycle,
+        Instant createdAt,
+        Instant updatedAt,
+        long version) {
+      this(
+          id,
+          type,
+          scope,
+          authorId,
+          neighborhoodId,
+          null,
+          title,
+          body,
+          lifecycle,
+          createdAt,
+          updatedAt,
+          version);
+    }
+  }
 }

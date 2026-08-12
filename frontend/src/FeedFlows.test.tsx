@@ -13,20 +13,26 @@ function response(body: unknown, status = 200) {
 function publication(id: string, title: string, scope: "GLOBAL" | "LOCAL" = "GLOBAL") {
   return {
     id,
+    kind: "PUBLICATION",
     type: "FREE_BOARD",
     title,
     body: `${title} 본문입니다.`,
     scope,
     authorId: "00000000-0000-4000-8000-000000000201",
     neighborhoodId: scope === "LOCAL" ? "00000000-0000-4000-8000-000000000101" : null,
+    status: "ACTIVE",
     lifecycle: "ACTIVE",
     createdAt: "2026-08-10T09:00:00Z",
     updatedAt: "2026-08-10T09:00:00Z",
     version: 0,
+    href: `/posts/${id}`,
   };
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  window.localStorage.clear();
+  vi.unstubAllGlobals();
+});
 
 describe("Publication feed journeys", () => {
   it("loads the public feed and appends the stable-cursor page", async () => {
@@ -124,4 +130,36 @@ describe("Publication feed journeys", () => {
       expect.objectContaining({ credentials: "include" }),
     );
   });
+
+  it("passes saved animal interests to the feed request", async () => {
+    window.localStorage.setItem("townpet:animal-interests:v1", JSON.stringify(["DOG", "CAT"]));
+    const fetchMock = vi.fn<typeof fetch>(() =>
+      Promise.resolve(response({ items: [], page: { nextCursor: null, hasNext: false } })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<MemoryRouter initialEntries={["/feed/guest"]}><App /></MemoryRouter>);
+
+    await screen.findByRole("heading", { name: "전체글" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&animals=DOG%2CCAT",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
+
+  it("passes a board type from the URL to the feed request", async () => {
+    const fetchMock = vi.fn<typeof fetch>(() =>
+      Promise.resolve(response({ items: [], page: { nextCursor: null, hasNext: false } })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<MemoryRouter initialEntries={["/feed/guest?type=QA_QUESTION"]}><App /></MemoryRouter>);
+
+    await screen.findByRole("heading", { name: "전체글" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&type=QA_QUESTION",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
+
 });

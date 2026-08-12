@@ -31,6 +31,10 @@ class PublicationEntity {
 
   @Nullable private UUID neighborhoodId;
 
+  @Nullable
+  @Column(length = 40)
+  private String animalInterestCode;
+
   @Column(nullable = false, length = 120)
   private String title;
 
@@ -57,11 +61,22 @@ class PublicationEntity {
       @Nullable UUID neighborhoodId,
       String title,
       String body) {
+    this(authorMemberId, scope, neighborhoodId, null, title, body);
+  }
+
+  PublicationEntity(
+      UUID authorMemberId,
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
+      String title,
+      String body) {
     this.id = UuidV7.randomUuid();
     this.authorMemberId = authorMemberId;
     this.type = PublicationType.FREE_BOARD;
     this.scope = scope;
     this.neighborhoodId = neighborhoodId;
+    this.animalInterestCode = animalInterestCode;
     this.title = title;
     this.body = body;
     this.lifecycle = PublicationLifecycle.ACTIVE;
@@ -110,6 +125,11 @@ class PublicationEntity {
     return neighborhoodId;
   }
 
+  @Nullable
+  String getAnimalInterestCode() {
+    return animalInterestCode;
+  }
+
   String getTitle() {
     return title;
   }
@@ -140,8 +160,19 @@ class PublicationEntity {
       String title,
       String body,
       Instant changedAt) {
+    edit(scope, neighborhoodId, null, title, body, changedAt);
+  }
+
+  void edit(
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
+      String title,
+      String body,
+      Instant changedAt) {
     this.scope = scope;
     this.neighborhoodId = neighborhoodId;
+    this.animalInterestCode = animalInterestCode;
     this.title = title;
     this.body = body;
     this.updatedAt = changedAt;

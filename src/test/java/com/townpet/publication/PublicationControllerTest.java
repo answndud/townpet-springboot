@@ -70,6 +70,11 @@ class PublicationControllerTest {
 
   @BeforeEach
   void resetPublicationState() {
+    // V021/V022 contain public catalog demo rows; isolate publication feed
+    // assertions from those rows because /api/v1/feed is now an aggregate feed.
+    jdbc.update("DELETE FROM gathering_participant");
+    jdbc.update("DELETE FROM gathering");
+    jdbc.update("DELETE FROM local_resource");
     jdbc.update("DELETE FROM relationship_block");
     jdbc.update("DELETE FROM engagement_reaction");
     jdbc.update("DELETE FROM publication");
@@ -267,6 +272,118 @@ class PublicationControllerTest {
     mockMvc
         .perform(get("/api/v1/feed").queryParam("cursor", "not-a-cursor"))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void feedKeepsGeneralPostsAndFiltersAnimalSpecificPosts() throws Exception {
+    UUID generalId = UUID.fromString("00000000-0000-4000-8000-000000000321");
+    UUID dogId = UUID.fromString("00000000-0000-4000-8000-000000000322");
+    UUID catId = UUID.fromString("00000000-0000-4000-8000-000000000323");
+    insertPublication(generalId, "일반 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:03:00Z");
+    insertPublicationWithAnimal(dogId, "강아지 산책", "DOG", "2026-08-10T10:02:00Z");
+    insertPublicationWithAnimal(catId, "고양이 놀이", "CAT", "2026-08-10T10:01:00Z");
+
+    mockMvc
+        .perform(get("/api/v1/feed").queryParam("audience", "GLOBAL").queryParam("animals", "DOG"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items[0].id").value(generalId.toString()))
+        .andExpect(jsonPath("$.items[1].animalInterestCode").value("DOG"));
+
+    mockMvc
+        .perform(get("/api/v1/feed").queryParam("animals", "NOPE"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(1))
+        .andExpect(jsonPath("$.items[0].animalInterestCode").doesNotExist());
+  }
+
+  @Test
+  void publicFeedProjectsCommunityBoardItemsWithTheirDetailLinks() throws Exception {
+    OffsetDateTime now = OffsetDateTime.parse("2026-08-10T12:00:00Z");
+    jdbc.update(
+        "INSERT INTO market_listing (id, owner_member_id, kind, status, title, description, price_krw, created_at, updated_at, version) "
+            + "VALUES (?, ?, 'SELL', 'AVAILABLE', '이동장 판매', '깨끗하게 사용한 이동장입니다.', 20000, ?, ?, 0)",
+        UUID.fromString("00000000-0000-4000-8000-000000000331"),
+        MEMBER_ID,
+        now,
+        now);
+    jdbc.update(
+        "INSERT INTO adoption_listing (id, publisher_member_id, neighborhood_id, title, description, species, breed, status, created_at, updated_at, version) "
+            + "VALUES (?, ?, ?, '믹스견 입양', '신중한 상담 후 입양을 진행합니다.', 'DOG', '믹스', 'OPEN', ?, ?, 0)",
+        UUID.fromString("00000000-0000-4000-8000-000000000332"),
+        MEMBER_ID,
+        NEIGHBORHOOD_ID,
+        now.minusMinutes(1),
+        now.minusMinutes(1));
+    jdbc.update(
+        "INSERT INTO lost_found_alert (id, reporter_member_id, kind, status, title, description, last_seen_at, approx_location, created_at, updated_at, version) "
+            + "VALUES (?, ?, 'LOST', 'ACTIVE', '강아지를 찾습니다', '발견하면 안전하게 제보해 주세요.', ?, ST_SetSRID(ST_MakePoint(126.9, 37.55), 4326)::geography, ?, ?, 0)",
+        UUID.fromString("00000000-0000-4000-8000-000000000333"),
+        MEMBER_ID,
+        now,
+        now.minusMinutes(2),
+        now.minusMinutes(2));
+    jdbc.update(
+        "INSERT INTO hospital_review (id, author_member_id, hospital_name, address, rating, body, created_at, updated_at, version) "
+            + "VALUES (?, ?, 'TownPet 동물병원', '서울 마포구', 5, '설명이 친절했습니다.', ?, ?, 0)",
+        UUID.fromString("00000000-0000-4000-8000-000000000334"),
+        MEMBER_ID,
+        now.minusMinutes(3),
+        now.minusMinutes(3));
+    jdbc.update(
+        "INSERT INTO gathering (id, host_member_id, title, description, location, starts_at, capacity, status, created_at, version) "
+            + "VALUES (?, ?, '저녁 산책 모임', '천천히 함께 걸어요.', '망원나들목', ?, 8, 'ACTIVE', ?, 0)",
+        UUID.fromString("00000000-0000-4000-8000-000000000335"),
+        MEMBER_ID,
+        now.plusDays(1),
+        now.minusMinutes(4));
+    jdbc.update(
+        "INSERT INTO care_request (id, requester_member_id, title, description, location, starts_at, ends_at, reward_hint, status, created_at, updated_at, version) "
+            + "VALUES (?, ?, '주말 돌봄 요청', '사료와 물을 확인해 주세요.', '망원동', ?, ?, NULL, 'OPEN', ?, ?, 0)",
+        UUID.fromString("00000000-0000-4000-8000-000000000336"),
+        MEMBER_ID,
+        now.plusDays(2),
+        now.plusDays(2).plusHours(2),
+        now.minusMinutes(5),
+        now.minusMinutes(5));
+    jdbc.update(
+        "INSERT INTO volunteer_opportunity (id, publisher_member_id, title, description, organization, location, starts_at, capacity, status, created_at, updated_at, version) "
+            + "VALUES (?, ?, '보호소 산책 봉사', '동물 산책을 도와주세요.', 'TownPet 보호소', '마포구', ?, 10, 'OPEN', ?, ?, 0)",
+        UUID.fromString("00000000-0000-4000-8000-000000000337"),
+        MEMBER_ID,
+        now.plusDays(3),
+        now.minusMinutes(6),
+        now.minusMinutes(6));
+    jdbc.update(
+        "INSERT INTO local_resource (id, kind, title, summary, content, source_name, source_url, updated_at) "
+            + "VALUES (?, 'LOCAL_GUIDE', '산책 가이드', '동네 산책 팁입니다.', '자세한 안내입니다.', 'TownPet 운영팀', NULL, ?)",
+        UUID.fromString("00000000-0000-4000-8000-000000000338"),
+        now.minusMinutes(7));
+
+    mockMvc
+        .perform(get("/api/v1/feed").queryParam("audience", "GLOBAL").queryParam("limit", "20"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(8))
+        .andExpect(
+            jsonPath("$.items[*].kind")
+                .value(
+                    org.hamcrest.Matchers.containsInAnyOrder(
+                        "MARKETPLACE",
+                        "ADOPTION",
+                        "LOST_FOUND",
+                        "HOSPITAL_REVIEW",
+                        "GATHERING",
+                        "CARE_REQUEST",
+                        "VOLUNTEER",
+                        "RESOURCE")))
+        .andExpect(
+            jsonPath("$.items[?(@.kind == 'MARKETPLACE')].href")
+                .value(
+                    org.hamcrest.Matchers.contains(
+                        "/marketplace/00000000-0000-4000-8000-000000000331")))
+        .andExpect(
+            jsonPath("$.items[?(@.kind == 'ADOPTION')].animalInterestCode")
+                .value(org.hamcrest.Matchers.contains("DOG")));
   }
 
   @Test
@@ -492,6 +609,21 @@ class PublicationControllerTest {
         title,
         title + " 본문",
         lifecycle,
+        timestamp,
+        timestamp);
+  }
+
+  private void insertPublicationWithAnimal(
+      UUID id, String title, String animalInterestCode, String createdAt) {
+    OffsetDateTime timestamp = OffsetDateTime.parse(createdAt);
+    jdbc.update(
+        "INSERT INTO publication (id, author_member_id, type, scope, neighborhood_id, animal_interest_code, title, body, "
+            + "lifecycle, created_at, updated_at, version) VALUES (?, ?, 'FREE_BOARD', 'GLOBAL', NULL, ?, ?, ?, 'ACTIVE', ?, ?, 0)",
+        id,
+        MEMBER_ID,
+        animalInterestCode,
+        title,
+        title + " 본문",
         timestamp,
         timestamp);
   }
