@@ -39,7 +39,11 @@ test("member creates, reloads, and deletes a publication comment", async ({ page
   await expect(page.getByText(comment)).toBeVisible();
 
   page.once("dialog", (dialog) => dialog.accept());
+  const deleteCommentResponse = page.waitForResponse(
+    (response) => response.url().includes("/comments") && response.request().method() === "DELETE",
+  );
   await page.getByRole("button", { name: "삭제", exact: true }).last().click();
+  expect((await deleteCommentResponse).status()).toBe(204);
   await expect(page.getByText(comment)).toHaveCount(0);
   await page.reload();
   await expect(page.getByText(comment)).toHaveCount(0);
