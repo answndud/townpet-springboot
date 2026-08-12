@@ -112,9 +112,9 @@ export function MarketplaceDetailPage() {
         <div className="marketplace-detail-meta"><span>TownPet 회원</span><span>·</span><time dateTime={listing.createdAt}>{formatDateTime(listing.createdAt)}</time></div>
         {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
         {owner && (listing.status === "AVAILABLE" || listing.status === "RESERVED") ? <div className="marketplace-actions">
-          {listing.status === "AVAILABLE" ? <button className="button button-primary" disabled={changing} onClick={() => changeStatus("RESERVED")}>예약 처리</button> : <button className="button button-soft" disabled={changing} onClick={() => changeStatus("AVAILABLE")}>예약 취소</button>}
-          <button className="button button-soft" disabled={changing} onClick={() => changeStatus("COMPLETED")}>거래 완료</button>
-          <button className="button button-danger" disabled={changing} onClick={() => changeStatus("CANCELLED")}>게시글 취소</button>
+          {listing.status === "AVAILABLE" ? <button className="button button-primary" type="button" disabled={changing} onClick={() => changeStatus("RESERVED")}>예약 처리</button> : <button className="button button-soft" type="button" disabled={changing} onClick={() => changeStatus("AVAILABLE")}>예약 취소</button>}
+          <button className="button button-soft" type="button" disabled={changing} onClick={() => changeStatus("COMPLETED")}>거래 완료</button>
+          <button className="button button-danger" type="button" disabled={changing} onClick={() => changeStatus("CANCELLED")}>게시글 취소</button>
         </div> : null}
       </article>
     </main>

@@ -463,7 +463,7 @@ export default function PublicationDetailPage() {
           ) : null}
         </div>
       </article>
-      <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading">
+      <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading" aria-busy={commentsLoading}>
         <div className="publication-comments-heading">
           <div>
             <p className="eyebrow">COMMUNITY</p>
