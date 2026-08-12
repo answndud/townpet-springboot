@@ -206,6 +206,58 @@ function ModeratorRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function MemberRoute({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    memberApi.current(controller.signal)
+      .then((member) => {
+        if (member.role === "MEMBER") setAllowed(true);
+        else navigate("/feed/guest", { replace: true });
+      })
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+        if (requestError instanceof ApiError && requestError.status === 401) {
+          navigate(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`, { replace: true });
+        } else {
+          navigate("/feed/guest", { replace: true });
+        }
+      });
+    return () => controller.abort();
+  }, [navigate]);
+
+  if (allowed !== true) {
+    return <main className="page placeholder-page"><section className="surface-card" role="status">회원 권한을 확인하는 중...</section></main>;
+  }
+  return <>{children}</>;
+}
+
+function NonModeratorRoute({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    memberApi.current(controller.signal)
+      .then((member) => {
+        if (member.role === "MODERATOR") navigate("/feed/guest", { replace: true });
+        else setAllowed(true);
+      })
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
+        setAllowed(true);
+      });
+    return () => controller.abort();
+  }, [navigate]);
+
+  if (allowed !== true) {
+    return <main className="page placeholder-page"><section className="surface-card" role="status">접근 권한을 확인하는 중...</section></main>;
+  }
+  return <>{children}</>;
+}
+
 function HomePage() {
   return (
     <main className="page page-home">
@@ -300,17 +352,17 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/password/reset" element={<PasswordResetPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/onboarding" element={<MemberRoute><OnboardingPage /></MemberRoute>} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/notifications" element={<NotificationPage />} />
+        <Route path="/notifications" element={<MemberRoute><NotificationPage /></MemberRoute>} />
         <Route path="/privacy" element={<LegalPage />} />
         <Route path="/terms" element={<LegalPage />} />
-        <Route path="/my-posts" element={<PersonalPostsPage />} />
-        <Route path="/saved" element={<PersonalPostsPage saved />} />
-        <Route path="/bookmarks" element={<PersonalPostsPage saved />} />
+        <Route path="/my-posts" element={<MemberRoute><PersonalPostsPage /></MemberRoute>} />
+        <Route path="/saved" element={<MemberRoute><PersonalPostsPage saved /></MemberRoute>} />
+        <Route path="/bookmarks" element={<MemberRoute><PersonalPostsPage saved /></MemberRoute>} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/search/guest" element={<SearchPage guest />} />
-        <Route path="/corrections/new" element={<CorrectionCreatePage />} />
+        <Route path="/corrections/new" element={<MemberRoute><CorrectionCreatePage /></MemberRoute>} />
         <Route path="/best" element={<BestPage />} />
         <Route path="/boards/adoption" element={<AdoptionPage />} />
         <Route path="/adoptions/:adoptionId" element={<AdoptionDetailPage />} />
@@ -325,44 +377,44 @@ export default function App() {
         <Route path="/admin/ops" element={<ModeratorRoute><AdminHomePage /></ModeratorRoute>} />
         <Route path="/admin/auth-audits" element={<ModeratorRoute><AdminAuthAuditsPage /></ModeratorRoute>} />
         <Route path="/admin/breeds" element={<ModeratorRoute><AdminBreedsPage /></ModeratorRoute>} />
-        <Route path="/admin/care-feedbacks" element={<ModeratorRoute><AdminModeratorCasePage /></ModeratorRoute>} />
+        <Route path="/admin/care-feedbacks" element={<ModeratorRoute><AdminModeratorCasePage initialQueue="care-feedbacks" /></ModeratorRoute>} />
         <Route path="/admin/corrections" element={<ModeratorRoute><AdminCorrectionPage /></ModeratorRoute>} />
-        <Route path="/admin/hospital-review-flags" element={<ModeratorRoute><AdminModeratorCasePage /></ModeratorRoute>} />
+        <Route path="/admin/hospital-review-flags" element={<ModeratorRoute><AdminModeratorCasePage initialQueue="hospital-review-flags" /></ModeratorRoute>} />
         <Route path="/admin/moderation-logs" element={<ModeratorRoute><AdminModerationLogsPage /></ModeratorRoute>} />
-        <Route path="/admin/moderation/direct" element={<ModeratorRoute><AdminModeratorCasePage /></ModeratorRoute>} />
+        <Route path="/admin/moderation/direct" element={<ModeratorRoute><AdminModeratorCasePage initialQueue="moderation/direct" /></ModeratorRoute>} />
         <Route path="/admin/personalization" element={<ModeratorRoute><AdminPersonalizationPage /></ModeratorRoute>} />
         <Route path="/admin/policies" element={<ModeratorRoute><AdminPoliciesPage /></ModeratorRoute>} />
         <Route path="/guides" element={<LocalCareListPage />} />
         <Route path="/guides/:resourceId" element={<LocalCareDetailPage />} />
         <Route path="/campaigns/neighborhood-map" element={<NeighborhoodMapPage />} />
         <Route path="/commercial" element={<MarketplaceListPage />} />
-        <Route path="/lounges/breeds/:breedCode/groupbuys/new" element={<MarketplaceFormPage initialKind="GROUP_BUY" />} />
+        <Route path="/lounges/breeds/:breedCode/groupbuys/new" element={<MemberRoute><MarketplaceFormPage initialKind="GROUP_BUY" /></MemberRoute>} />
         <Route path="/gatherings" element={<GatheringListPage />} />
         <Route path="/care" element={<CareListPage />} />
-        <Route path="/care/new" element={<CareCreatePage />} />
+        <Route path="/care/new" element={<MemberRoute><CareCreatePage /></MemberRoute>} />
         <Route path="/care/:requestId" element={<CareDetailPage />} />
-        <Route path="/gatherings/new" element={<GatheringCreatePage />} />
+        <Route path="/gatherings/new" element={<MemberRoute><GatheringCreatePage /></MemberRoute>} />
         <Route path="/gatherings/:gatheringId" element={<GatheringDetailPage />} />
         <Route path="/members/:memberId" element={<PublicMemberProfilePage />} />
         <Route path="/users/:memberId" element={<PublicMemberProfilePage />} />
-        <Route path="/posts/new" element={<PublicationCreatePage />} />
-        <Route path="/guest/posts/new" element={<GuestPublicationCreatePage />} />
-        <Route path="/posts/:publicationId/edit" element={<PublicationEditPage />} />
+        <Route path="/posts/new" element={<MemberRoute><PublicationCreatePage /></MemberRoute>} />
+        <Route path="/guest/posts/new" element={<NonModeratorRoute><GuestPublicationCreatePage /></NonModeratorRoute>} />
+        <Route path="/posts/:publicationId/edit" element={<MemberRoute><PublicationEditPage /></MemberRoute>} />
         <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />
         <Route path="/posts/:publicationId/guest" element={<PublicationDetailPage />} />
-        <Route path="/feed" element={<PublicationFeedPage memberView />} />
+        <Route path="/feed" element={<MemberRoute><PublicationFeedPage memberView /></MemberRoute>} />
         <Route path="/feed/guest" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/marketplace" element={<MarketplaceListPage />} />
-        <Route path="/marketplace/new" element={<MarketplaceFormPage />} />
-        <Route path="/marketplace/:listingId/edit" element={<MarketplaceFormPage edit />} />
+        <Route path="/marketplace/new" element={<MemberRoute><MarketplaceFormPage /></MemberRoute>} />
+        <Route path="/marketplace/:listingId/edit" element={<MemberRoute><MarketplaceFormPage edit /></MemberRoute>} />
         <Route path="/marketplace/:listingId" element={<MarketplaceDetailPage />} />
         <Route path="/lost-found" element={<LostFoundListPage />} />
-        <Route path="/lost-found/new" element={<LostFoundAlertFormPage />} />
-        <Route path="/lost/new" element={<LostFoundAlertFormPage />} />
-        <Route path="/lost-found/:alertId/sightings/new" element={<LostFoundSightingFormPage />} />
-        <Route path="/lost-found/sightings/:sightingId/exact" element={<LostFoundExactLocationPage />} />
+        <Route path="/lost-found/new" element={<MemberRoute><LostFoundAlertFormPage /></MemberRoute>} />
+        <Route path="/lost/new" element={<MemberRoute><LostFoundAlertFormPage /></MemberRoute>} />
+        <Route path="/lost-found/:alertId/sightings/new" element={<MemberRoute><LostFoundSightingFormPage /></MemberRoute>} />
+        <Route path="/lost-found/sightings/:sightingId/exact" element={<MemberRoute><LostFoundExactLocationPage /></MemberRoute>} />
         <Route path="/lost-found/:alertId" element={<LostFoundDetailPage />} />
-        <Route path="/posts/:publicationId/sightings" element={<PostSightingsPage />} />
+        <Route path="/posts/:publicationId/sightings" element={<MemberRoute><PostSightingsPage /></MemberRoute>} />
         <Route path="*" element={<PlaceholderPage />} />
         </Routes>
       </div>
