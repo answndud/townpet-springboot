@@ -24,6 +24,7 @@ jobs:
           cache: gradle
       - uses: gradle/actions/setup-gradle@v4
       - run: ./scripts/validate-parity-matrix.sh
+      - run: ./scripts/validate-release-candidate.sh
       - run: ./gradlew clean check migrationTest --no-daemon
 
   frontend:
