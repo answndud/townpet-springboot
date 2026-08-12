@@ -20,5 +20,10 @@ class UnavailableObjectStorage implements ObjectStoragePort {
   }
 
   @Override
+  public void store(String objectKey, String contentType, byte[] content) {
+    throw new IllegalStateException("Object storage is not configured");
+  }
+
+  @Override
   public void delete(String objectKey) {}
 }

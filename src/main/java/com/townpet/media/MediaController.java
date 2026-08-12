@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -56,6 +59,28 @@ class MediaController {
           HttpStatus.UNPROCESSABLE_ENTITY, "Uploaded object does not match metadata");
     } catch (MediaAssetStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not finalizable");
+    }
+  }
+
+  @PutMapping(value = "/{assetId}/content", consumes = "multipart/form-data")
+  MediaResponse uploadContent(
+      @AuthenticationPrincipal UserDetails principal,
+      @PathVariable UUID assetId,
+      @RequestPart("file") MultipartFile file) {
+    try {
+      String contentType = file.getContentType();
+      if (contentType == null || contentType.isBlank()) {
+        throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Missing content type");
+      }
+      return toResponse(media.uploadContent(memberId(principal), assetId, contentType, file.getBytes()));
+    } catch (MediaAssetNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (MediaObjectMismatchException exception) {
+      throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Uploaded object does not match metadata");
+    } catch (MediaAssetStateException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not active");
+    } catch (java.io.IOException exception) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read upload");
     }
   }
 
