@@ -45,10 +45,10 @@ export function LostFoundListPage() {
         </div>
         <span className="marketplace-count">{alerts.length}건</span>
       </div>
-      <form className="lostfound-radius" onSubmit={(event) => { event.preventDefault(); setSubmitted({ latitude, longitude, radius }); }}>
-        <label>위도<input inputMode="decimal" value={latitude} onChange={(event) => setLatitude(event.target.value)} placeholder="예: 37.55" /></label>
-        <label>경도<input inputMode="decimal" value={longitude} onChange={(event) => setLongitude(event.target.value)} placeholder="예: 126.91" /></label>
-        <label>반경(m)<input type="number" min="1" max="100000" value={radius} onChange={(event) => setRadius(event.target.value)} /></label>
+      <form className="lostfound-radius search-panel search-panel-location" onSubmit={(event) => { event.preventDefault(); setSubmitted({ latitude, longitude, radius }); }}>
+        <label><span>위도</span><input inputMode="decimal" value={latitude} onChange={(event) => setLatitude(event.target.value)} placeholder="예: 37.55" /></label>
+        <label><span>경도</span><input inputMode="decimal" value={longitude} onChange={(event) => setLongitude(event.target.value)} placeholder="예: 126.91" /></label>
+        <label><span>반경(m)</span><input type="number" min="1" max="100000" value={radius} onChange={(event) => setRadius(event.target.value)} /></label>
         <button className="button button-soft" type="submit">근처 검색</button>
       </form>
       {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
