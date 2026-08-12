@@ -5,8 +5,9 @@ import { adminModerationApi, ApiError, apiFetch, getCsrfToken } from "./api/clie
 type CaseItem = { id: string; caseType: string; targetType: string; targetId: string | null; subject: string; detail: string | null; status: string; createdAt: string; resolvedAt: string | null };
 const labels: Record<string, string> = { "care-feedbacks": "돌봄 feedback", "hospital-review-flags": "병원 review flag", "moderation/direct": "직접 moderation" };
 
-export default function AdminModeratorCasePage() {
-  const { queue = "care-feedbacks" } = useParams();
+export default function AdminModeratorCasePage({ initialQueue }: { initialQueue?: string }) {
+  const { queue: routeQueue } = useParams();
+  const queue = routeQueue ?? initialQueue ?? "care-feedbacks";
   const navigate = useNavigate();
   const [items, setItems] = useState<CaseItem[]>([]);
   const [error, setError] = useState<string | null>(null);
