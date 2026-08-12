@@ -42,6 +42,10 @@ WHERE email = 'demo-moderator@townpet.local';
 CREATE TEMP TABLE perf_publication_ids ON COMMIT DROP AS
 SELECT id FROM publication WHERE title LIKE 'perf-%';
 
+DELETE FROM content_animal_community
+WHERE content_kind = 'PUBLICATION'
+  AND content_id IN (SELECT id FROM perf_publication_ids);
+
 DELETE FROM trust_report WHERE detail = 'performance-fixture';
 DELETE FROM volunteer_opportunity WHERE title LIKE 'perf-opportunity-%';
 DELETE FROM publication_metric

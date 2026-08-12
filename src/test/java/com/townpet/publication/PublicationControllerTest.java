@@ -72,6 +72,7 @@ class PublicationControllerTest {
   void resetPublicationState() {
     // V021/V022 contain public catalog demo rows; isolate publication feed
     // assertions from those rows because /api/v1/feed is now an aggregate feed.
+    jdbc.update("DELETE FROM content_animal_community");
     jdbc.update("DELETE FROM gathering_participant");
     jdbc.update("DELETE FROM gathering");
     jdbc.update("DELETE FROM local_resource");
@@ -165,6 +166,88 @@ class PublicationControllerTest {
   }
 
   @Test
+  void animalCommunityFeedKeepsAnimalAndBoardBoundaries() throws Exception {
+    Cookie session = login();
+    MvcResult created =
+        mockMvc
+            .perform(
+                post("/api/v1/publications")
+                    .cookie(session)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        """
+                        {
+                          "title": "강아지 질문",
+                          "body": "강아지 산책 질문입니다.",
+                          "type": "QA_QUESTION",
+                          "scope": "GLOBAL",
+                          "animalCommunityCodes": ["DOG", "CAT"]
+                        }
+                        """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.animalCommunityCodes[0]").value("DOG"))
+            .andExpect(jsonPath("$.animalCommunityCodes[1]").value("CAT"))
+            .andReturn();
+    String publicationId =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(created.getResponse().getContentAsString())
+            .path("id")
+            .asText();
+
+    mockMvc
+        .perform(
+            put("/api/v1/publications/{publicationId}", publicationId)
+                .cookie(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "title": "강아지 질문 수정",
+                      "body": "기존 다중 동물 태그를 유지합니다.",
+                      "scope": "GLOBAL",
+                      "version": 0
+                    }
+                    """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.animalCommunityCodes[0]").value("DOG"))
+        .andExpect(jsonPath("$.animalCommunityCodes[1]").value("CAT"));
+
+    mockMvc
+        .perform(get("/api/v1/communities/dog/feed?board=questions&audience=GLOBAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.animalCode").value("dog"))
+        .andExpect(jsonPath("$.board").value("questions"))
+        .andExpect(jsonPath("$.items[0].title").value("강아지 질문 수정"))
+        .andExpect(jsonPath("$.items[0].animalCode").value("DOG"));
+
+    mockMvc
+        .perform(get("/api/v1/communities/cat/feed?board=questions&audience=GLOBAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].title").value("강아지 질문 수정"))
+        .andExpect(jsonPath("$.items[0].animalCode").value("CAT"));
+
+    mockMvc
+        .perform(
+            post("/api/v1/publications")
+                .cookie(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    """
+                    {
+                      "title": "잘못된 태그",
+                      "body": "알 수 없는 동물 코드는 거부합니다.",
+                      "scope": "GLOBAL",
+                      "animalCommunityCodes": ["NOT_AN_ANIMAL"]
+                    }
+                    """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
+  }
+
+  @Test
   void creationRequiresAuthenticationValidInputAndOwnedLocalNeighborhood() throws Exception {
     String localRequest =
         """
@@ -226,6 +309,9 @@ class PublicationControllerTest {
     insertPublication(globalNewId, "새 전체 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:04:00Z");
     insertPublication(
         localOwnedId, "내 동네 글", "LOCAL", NEIGHBORHOOD_ID, "ACTIVE", "2026-08-10T10:03:00Z");
+    jdbc.update(
+        "INSERT INTO content_animal_community (content_kind, content_id, animal_code) VALUES ('PUBLICATION', ?, 'DOG')",
+        localOwnedId);
     insertPublication(
         localOtherId, "다른 동네 글", "LOCAL", OTHER_NEIGHBORHOOD_ID, "ACTIVE", "2026-08-10T10:02:00Z");
     insertPublication(globalOldId, "이전 전체 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:01:00Z");
@@ -268,6 +354,21 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].id").value(globalNewId.toString()))
         .andExpect(jsonPath("$.items[1].id").value(globalOldId.toString()));
+
+    mockMvc
+        .perform(get("/api/v1/feed").queryParam("scope", "LOCAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items").isEmpty());
+
+    mockMvc
+        .perform(get("/api/v1/communities/dog/feed").queryParam("scope", "LOCAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items").isEmpty());
+
+    mockMvc
+        .perform(get("/api/v1/communities/dog/feed").cookie(login()).queryParam("scope", "LOCAL"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].id").value(localOwnedId.toString()));
 
     mockMvc
         .perform(get("/api/v1/feed").queryParam("cursor", "not-a-cursor"))

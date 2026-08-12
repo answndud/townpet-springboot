@@ -71,9 +71,27 @@ class PublicationEntity {
       @Nullable String animalInterestCode,
       String title,
       String body) {
+    this(
+        authorMemberId,
+        PublicationType.FREE_BOARD,
+        scope,
+        neighborhoodId,
+        animalInterestCode,
+        title,
+        body);
+  }
+
+  PublicationEntity(
+      UUID authorMemberId,
+      PublicationType type,
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
+      String title,
+      String body) {
     this.id = UuidV7.randomUuid();
     this.authorMemberId = authorMemberId;
-    this.type = PublicationType.FREE_BOARD;
+    this.type = type;
     this.scope = scope;
     this.neighborhoodId = neighborhoodId;
     this.animalInterestCode = animalInterestCode;
@@ -170,6 +188,18 @@ class PublicationEntity {
       String title,
       String body,
       Instant changedAt) {
+    edit(type, scope, neighborhoodId, animalInterestCode, title, body, changedAt);
+  }
+
+  void edit(
+      PublicationType type,
+      PublicationScope scope,
+      @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
+      String title,
+      String body,
+      Instant changedAt) {
+    this.type = type;
     this.scope = scope;
     this.neighborhoodId = neighborhoodId;
     this.animalInterestCode = animalInterestCode;

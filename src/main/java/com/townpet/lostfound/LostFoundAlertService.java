@@ -1,8 +1,10 @@
 package com.townpet.lostfound;
 
+import com.townpet.catalog.api.AnimalCommunityTagger;
 import com.townpet.common.UuidV7;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class LostFoundAlertService {
   private final JdbcTemplate jdbc;
+  private final AnimalCommunityTagger communityTags;
 
-  LostFoundAlertService(JdbcTemplate jdbc) {
+  LostFoundAlertService(JdbcTemplate jdbc, AnimalCommunityTagger communityTags) {
     this.jdbc = jdbc;
+    this.communityTags = communityTags;
   }
 
   @Transactional
@@ -27,7 +31,8 @@ class LostFoundAlertService {
       String description,
       Instant lastSeenAt,
       double latitude,
-      double longitude) {
+      double longitude,
+      @Nullable Collection<String> animalCommunityCodes) {
     UUID id = UuidV7.randomUuid();
     jdbc.update(
         "INSERT INTO lost_found_alert "
@@ -41,6 +46,7 @@ class LostFoundAlertService {
         Timestamp.from(lastSeenAt),
         longitude,
         latitude);
+    communityTags.replace("LOST_FOUND", id, animalCommunityCodes);
     return find(id).orElseThrow();
   }
 
