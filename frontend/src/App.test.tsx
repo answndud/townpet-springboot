@@ -173,6 +173,7 @@ describe("TownPet Vite shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "게시판" }));
     expect(screen.getByRole("menuitem", { name: "동물병원 후기" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "반려동물 자랑" })).toHaveAttribute("href", "/feed/guest?type=PET_SHOWCASE");
+    expect(screen.queryByRole("menuitem", { name: "인기 게시글" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "관심 동물" }));
     expect(screen.getByRole("dialog", { name: "관심 동물 설정" })).toBeInTheDocument();
