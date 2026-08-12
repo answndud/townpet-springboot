@@ -61,12 +61,11 @@ class VolunteerService {
 
   @Transactional
   void apply(UUID applicant, UUID id, String message) {
-    Opportunity opportunity =
+    CapacityState opportunity =
         jdbc
             .query(
-                "SELECT id,publisher_member_id,title,description,organization,location,starts_at,capacity,status,created_at,updated_at,version "
-                    + "FROM volunteer_opportunity WHERE id = ? FOR UPDATE",
-                (rs, row) -> map(rs),
+                "SELECT capacity,status FROM volunteer_opportunity WHERE id = ? FOR UPDATE",
+                (rs, row) -> new CapacityState(rs.getInt("capacity"), rs.getString("status")),
                 id)
             .stream()
             .findFirst()
@@ -118,6 +117,8 @@ class VolunteerService {
         r.getTimestamp("updated_at").toInstant(),
         r.getLong("version"));
   }
+
+  private record CapacityState(int capacity, String status) {}
 
   record Opportunity(
       UUID id,
