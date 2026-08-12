@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +24,12 @@ class AcquisitionEventController {
   @PostMapping("/api/acquisition/events")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   void record(@Valid @RequestBody EventRequest request) {
-    events.save(
-        new AcquisitionEventEntity(
-            UuidV7.randomUuid(),
-            request.eventName(),
-            request.route(),
-            hash(request.anonymousKey())));
+    try {
+      events.save(new AcquisitionEventEntity(UuidV7.randomUuid(), request.eventName(), request.route(),
+          hash(request.anonymousKey()), request.clientEventId()));
+    } catch (DataIntegrityViolationException ignored) {
+      // Replayed client event is already recorded; keep the endpoint idempotent.
+    }
   }
 
   private static @Nullable String hash(@Nullable String value) {
@@ -46,5 +48,6 @@ class AcquisitionEventController {
   record EventRequest(
       @NotBlank @Size(max = 80) String eventName,
       @NotBlank @Size(max = 200) String route,
-      @Size(max = 200) String anonymousKey) {}
+      @Size(max = 200) String anonymousKey,
+      @Nullable UUID clientEventId) {}
 }

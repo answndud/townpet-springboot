@@ -8,6 +8,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
+import org.springframework.dao.DataIntegrityViolationException;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,7 +24,11 @@ class SearchEventController {
   @PostMapping("/api/search/log")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   void record(@Valid @RequestBody SearchLogRequest request) {
-    events.save(new SearchEventEntity(UuidV7.randomUuid(), hash(request.query()), request.route()));
+    try {
+      events.save(new SearchEventEntity(UuidV7.randomUuid(), hash(request.query()), request.route(), request.clientEventId()));
+    } catch (DataIntegrityViolationException ignored) {
+      // Replayed client event is already recorded; keep the endpoint idempotent.
+    }
   }
 
   private static String hash(String value) {
@@ -38,5 +45,6 @@ class SearchEventController {
   }
 
   record SearchLogRequest(
-      @NotBlank @Size(max = 200) String query, @NotBlank @Size(max = 200) String route) {}
+      @NotBlank @Size(max = 200) String query, @NotBlank @Size(max = 200) String route,
+      @Nullable UUID clientEventId) {}
 }
