@@ -2,10 +2,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi, memberApi } from "./api/client";
 import type { Member } from "./api/client";
+import { useAuth } from "./auth/AuthContext";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const [member, setMember] = useState<Member | null>(null);
+  const { member: authMember, status: authStatus } = useAuth();
+  const [updatedMember, setUpdatedMember] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [savingVisibility, setSavingVisibility] = useState(false);
@@ -15,18 +17,17 @@ export default function ProfilePage() {
   const [showPublicPets, setShowPublicPets] = useState(true);
   const [showPublicReactions, setShowPublicReactions] = useState(true);
 
+  const member = updatedMember ?? authMember;
   useEffect(() => {
-    memberApi
-      .current()
-      .then((current) => {
-        setMember(current);
-        setShowPublicPosts(current.showPublicPosts);
-        setShowPublicComments(current.showPublicComments);
-        setShowPublicPets(current.showPublicPets);
-        setShowPublicReactions(current.showPublicReactions);
-      })
-      .catch(() => setError("로그인이 만료되었습니다."));
-  }, []);
+    if (authStatus === "anonymous") { navigate("/login?next=/profile", { replace: true }); return; }
+    if (authStatus === "error") { setError("로그인 상태를 확인하지 못했습니다."); return; }
+    if (!authMember) return;
+    setUpdatedMember(null);
+    setShowPublicPosts(authMember.showPublicPosts);
+    setShowPublicComments(authMember.showPublicComments);
+    setShowPublicPets(authMember.showPublicPets);
+    setShowPublicReactions(authMember.showPublicReactions);
+  }, [authMember, authStatus, navigate]);
 
   async function logout() {
     setLoggingOut(true);
@@ -54,7 +55,7 @@ export default function ProfilePage() {
         showPublicPets,
         showPublicReactions,
       });
-      setMember(updated);
+      setUpdatedMember(updated);
       setVisibilitySaved(true);
     } catch {
       setError("공개 범위 설정을 저장하지 못했습니다.");

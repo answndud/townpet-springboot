@@ -21,6 +21,7 @@ export function useAbortableRequest<T>(
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
+    setData(null);
     setLoading(true);
     setError(null);
     latestRequest.current(controller.signal)
