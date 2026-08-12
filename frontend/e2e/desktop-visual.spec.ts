@@ -82,6 +82,7 @@ for (const viewport of [
       await expect(page.getByText(comment.body)).toBeVisible();
       await page.getByRole("button", { name: "답글" }).click();
       await expect(page.getByRole("form", { name: "답글 작성" })).toBeVisible();
+      await page.evaluate(() => window.scrollTo(0, 0));
       await expect(page).toHaveScreenshot(`${viewport.name}-reply-composer.png`, { animations: "disabled", caret: "hide" });
     });
   });
