@@ -32,12 +32,11 @@ class MediaController {
   MediaResponse create(
       @AuthenticationPrincipal UserDetails principal,
       @Valid @RequestBody CreateUploadRequest request) {
-    return toResponse(
-        media.create(
-            memberId(principal),
-            request.checksumSha256(),
-            request.contentType(),
-            request.byteSize()));
+    try {
+      return toResponse(media.create(memberId(principal), request.checksumSha256(), request.contentType(), request.byteSize()));
+    } catch (MediaInputNotAllowedException exception) {
+      throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media metadata");
+    }
   }
 
   @PostMapping("/{assetId}/finalize")

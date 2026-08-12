@@ -25,13 +25,20 @@ class MediaService implements MediaOperations {
   @Transactional
   UploadAssetEntity create(
       UUID ownerMemberId, String checksumSha256, String contentType, long byteSize) {
+    String normalizedType = contentType.trim().toLowerCase(java.util.Locale.ROOT);
+    if (!java.util.Set.of("image/jpeg", "image/png", "image/gif", "application/pdf")
+            .contains(normalizedType)
+        || byteSize < 1
+        || byteSize > 10 * 1024 * 1024) {
+      throw new MediaInputNotAllowedException();
+    }
     Instant now = Instant.now();
     return assets.save(
         new UploadAssetEntity(
             ownerMemberId,
             "uploads/" + ownerMemberId + "/" + UUID.randomUUID(),
             checksumSha256,
-            contentType.trim(),
+            normalizedType,
             byteSize,
             now.plus(1, ChronoUnit.HOURS)));
   }
@@ -100,6 +107,8 @@ class MediaService implements MediaOperations {
 }
 
 final class MediaAssetNotFoundException extends RuntimeException {}
+
+final class MediaInputNotAllowedException extends RuntimeException {}
 
 final class MediaAssetStateException extends RuntimeException {}
 
