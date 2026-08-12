@@ -51,6 +51,7 @@ describe("TownPet Vite shell", () => {
 
     expect(await screen.findByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
     expect(screen.queryByTestId("header-login-link-home")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "이웃 활동" })).toBeInTheDocument();
     expect(screen.getByRole("menu", { name: "게시판 바로가기" })).toBeInTheDocument();
     const boardMenu = screen.getByRole("button", { name: /게시판/ });
     expect(boardMenu).toHaveAttribute("aria-expanded", "false");

@@ -49,8 +49,8 @@ function CommentItem({
       <div className="publication-comment-meta">
         <strong>TownPet 회원</strong>
         <time dateTime={comment.createdAt}>{formatDateTimeLong(comment.createdAt)}</time>
-        {memberViewer && viewerId === comment.authorId ? <button className="text-button" type="button" onClick={() => onDelete(comment)}>삭제</button> : null}
-        {memberViewer ? <button ref={replyButtonRef} className="text-button" type="button" onClick={() => onReply(comment)} aria-expanded={isReplying} aria-controls={`reply-form-${comment.id}`}>답글</button> : null}
+        {memberViewer && viewerId === comment.authorId ? <button className="text-button comment-action comment-action-danger" type="button" onClick={() => onDelete(comment)}>삭제</button> : null}
+        {memberViewer ? <button ref={replyButtonRef} className="text-button comment-action" type="button" onClick={() => onReply(comment)} aria-expanded={isReplying} aria-controls={`reply-form-${comment.id}`}>답글</button> : null}
       </div>
       {comment.parentCommentId ? <span className="publication-comment-reply-label">답글</span> : null}
       <p>{comment.body}</p>
@@ -58,7 +58,7 @@ function CommentItem({
         <form id={`reply-form-${comment.id}`} className="publication-comment-form publication-comment-form-inline" aria-label="답글 작성" onSubmit={onSubmit} noValidate>
           <div className="publication-replying">
             <span>{comment.body.slice(0, 60)}에 답글 작성 중</span>
-            <button className="text-button" type="button" onClick={onCancelReply}>취소</button>
+            <button className="text-button comment-action" type="button" onClick={onCancelReply}>취소</button>
           </div>
           <label>
             답글

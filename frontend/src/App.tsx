@@ -101,7 +101,7 @@ const MEMBER_ACCOUNT_LINKS = [
   ["알림", "/notifications"],
 ] as const;
 
-const MARKETPLACE_LINKS = [
+const NEIGHBORHOOD_ACTIVITY_LINKS = [
   ["동네 거래", "/marketplace"],
   ["동물병원 후기", "/hospital-reviews"],
   ["봉사 기회", "/volunteer"],
@@ -216,7 +216,7 @@ function Header() {
             <HeaderMenu label="게시판" links={boardLinks} />
               <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
               <NavLink className="desktop-nav-secondary" to="/notifications">알림</NavLink>
-            <HeaderMenu label="거래" links={MARKETPLACE_LINKS} />
+            <HeaderMenu label="이웃 활동" links={NEIGHBORHOOD_ACTIVITY_LINKS} />
             <HeaderMenu className="mobile-only-menu" label="더보기" links={MEMBER_ACCOUNT_LINKS} />
             </nav>
           )
