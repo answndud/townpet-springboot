@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useMemo } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef } from "react";
 import { type Comment } from "../../../api/client";
 import { formatDateTimeLong } from "../../../utils/date";
 
@@ -36,13 +36,21 @@ function CommentItem({
   onChangeBody,
   onSubmit,
 }: CommentItemProps) {
+  const replyButtonRef = useRef<HTMLButtonElement>(null);
+  const wasReplying = useRef(false);
+
+  useEffect(() => {
+    if (wasReplying.current && !isReplying) replyButtonRef.current?.focus();
+    wasReplying.current = isReplying;
+  }, [isReplying]);
+
   return (
     <article className={comment.parentCommentId ? "publication-comment publication-comment-reply" : "publication-comment"} data-comment-id={comment.id}>
       <div className="publication-comment-meta">
         <strong>TownPet 회원</strong>
         <time dateTime={comment.createdAt}>{formatDateTimeLong(comment.createdAt)}</time>
         {memberViewer && viewerId === comment.authorId ? <button className="text-button" type="button" onClick={() => onDelete(comment)}>삭제</button> : null}
-        {memberViewer ? <button className="text-button" type="button" onClick={() => onReply(comment)} aria-expanded={isReplying} aria-controls={`reply-form-${comment.id}`}>답글</button> : null}
+        {memberViewer ? <button ref={replyButtonRef} className="text-button" type="button" onClick={() => onReply(comment)} aria-expanded={isReplying} aria-controls={`reply-form-${comment.id}`}>답글</button> : null}
       </div>
       {comment.parentCommentId ? <span className="publication-comment-reply-label">답글</span> : null}
       <p>{comment.body}</p>
