@@ -50,7 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (credentialsRoute) {
       controllerRef.current?.abort();
-      setState({ status: "anonymous", member: null });
+      // Keep the transition unresolved until the next protected route can
+      // load the session. Setting `anonymous` here races with login's
+      // navigate() and can immediately redirect a successful login back to
+      // the credentials page.
+      setState({ status: "loading", member: null });
       return;
     }
     loadMember();
