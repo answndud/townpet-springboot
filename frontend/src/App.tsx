@@ -66,6 +66,11 @@ const MEMBER_BOARD_LINKS = [
   ["분실·목격", "/lost-found"],
 ] as const;
 
+const MEMBER_ACCOUNT_LINKS = [
+  ["내 프로필", "/profile"],
+  ["알림", "/notifications"],
+] as const;
+
 const MARKETPLACE_LINKS = [
   ["동네 거래", "/marketplace"],
   ["동물병원 후기", "/hospital-reviews"],
@@ -77,9 +82,11 @@ const MARKETPLACE_LINKS = [
 function HeaderMenu({
   label,
   links,
+  className,
 }: {
   label: string;
   links: ReadonlyArray<readonly [string, string]>;
+  className?: string;
 }) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -134,7 +141,7 @@ function HeaderMenu({
   }
 
   return (
-    <div ref={menuRef} className={`header-menu${open ? " open" : ""}`}>
+    <div ref={menuRef} className={`header-menu${className ? ` ${className}` : ""}${open ? " open" : ""}`}>
       <button
         className="header-menu-trigger"
         type="button"
@@ -181,6 +188,7 @@ function Header() {
               <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
               <NavLink className="desktop-nav-secondary" to="/notifications">알림</NavLink>
             <HeaderMenu label="거래" links={MARKETPLACE_LINKS} />
+            <HeaderMenu className="mobile-only-menu" label="더보기" links={MEMBER_ACCOUNT_LINKS} />
             </nav>
           )
         ) : (
