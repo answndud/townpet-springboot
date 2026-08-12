@@ -112,7 +112,7 @@ describe("Publication journeys", () => {
   });
 
   it("shows the public not-found state without requiring a session", async () => {
-    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(response({ title: "Not Found" }, 404)));
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(() => Promise.resolve(response({ title: "Not Found" }, 404))));
 
     render(
       <MemoryRouter initialEntries={[`/posts/${PUBLICATION_ID}`]}>
