@@ -18,6 +18,7 @@ import java.util.UUID;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.Record;
 import org.jooq.Table;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
@@ -62,45 +63,56 @@ public class PublicationFeed {
 
   @Transactional(readOnly = true)
   public Page popular(int limit) {
+    return new Page(
+        popularRanked(limit).stream().map(PopularItem::publication).toList(), null, false);
+  }
+
+  @Transactional(readOnly = true)
+  public List<PopularItem> popularRanked(int limit) {
     if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid popular limit");
     Table<?> METRIC = table(name("publication_metric")).as("m");
     Field<UUID> METRIC_ID = field(name("m", "publication_id"), UUID.class);
     Field<Long> VIEWS = field(name("m", "view_count"), Long.class);
-    List<Item> items =
-        query
-            .select(
-                ID,
-                AUTHOR_ID,
-                TYPE,
-                SCOPE,
-                NEIGHBORHOOD_ID,
-                TITLE,
-                BODY,
-                LIFECYCLE,
-                CREATED_AT,
-                UPDATED_AT,
-                VERSION)
-            .from(PUBLICATION)
-            .leftJoin(METRIC)
-            .on(METRIC_ID.eq(ID))
-            .where(LIFECYCLE.eq("ACTIVE").and(SCOPE.eq("GLOBAL")))
-            .orderBy(VIEWS.desc().nullsLast(), CREATED_AT.desc(), ID.desc())
-            .limit(limit)
-            .fetch(
-                record ->
-                    new Item(
-                        record.get(ID),
-                        record.get(TYPE),
-                        record.get(TITLE),
-                        record.get(BODY),
-                        record.get(SCOPE),
-                        record.get(AUTHOR_ID),
-                        record.get(NEIGHBORHOOD_ID),
-                        record.get(LIFECYCLE),
-                        record.get(CREATED_AT).toInstant(),
-                        record.get(UPDATED_AT).toInstant(),
-                        record.get(VERSION)));
-    return new Page(List.copyOf(items), null, false);
+    return query
+        .select(
+            ID,
+            AUTHOR_ID,
+            TYPE,
+            SCOPE,
+            NEIGHBORHOOD_ID,
+            TITLE,
+            BODY,
+            LIFECYCLE,
+            CREATED_AT,
+            UPDATED_AT,
+            VERSION,
+            VIEWS)
+        .from(PUBLICATION)
+        .leftJoin(METRIC)
+        .on(METRIC_ID.eq(ID))
+        .where(LIFECYCLE.eq("ACTIVE").and(SCOPE.eq("GLOBAL")))
+        .orderBy(VIEWS.desc().nullsLast(), CREATED_AT.desc(), ID.desc())
+        .limit(limit)
+        .fetch(record -> new PopularItem(toItem(record), valueOrZero(record.get(VIEWS))));
+  }
+
+  private static Item toItem(Record record) {
+    return new Item(
+        record.get(ID),
+        record.get(TYPE),
+        record.get(TITLE),
+        record.get(BODY),
+        record.get(SCOPE),
+        record.get(AUTHOR_ID),
+        record.get(NEIGHBORHOOD_ID),
+        record.get(LIFECYCLE),
+        record.get(CREATED_AT).toInstant(),
+        record.get(UPDATED_AT).toInstant(),
+        record.get(VERSION));
+  }
+
+  private static long valueOrZero(@Nullable Long value) {
+    return value == null ? 0L : value;
   }
 
   @Transactional(readOnly = true)
@@ -112,6 +124,8 @@ public class PublicationFeed {
       @Nullable String searchQuery) {
     return list(viewerMemberId, includeViewerNeighborhood, encodedCursor, limit, searchQuery, null);
   }
+
+  public record PopularItem(Item publication, long viewCount) {}
 
   @Transactional(readOnly = true)
   public Page list(
