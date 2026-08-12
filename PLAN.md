@@ -34,7 +34,7 @@ Legacy TownPet의 관찰 가능한 제품 동작을 Java 25·Spring Boot·Postgr
 - 검증: 검색·피드·알림 API integration test와 guest/member browser journey, 필요한 경우 query plan/latency snapshot.
 - 완료: 탐색·추천·알림 관련 Legacy 화면과 API가 새로고침·필터·권한·오류 상황에서도 같은 결과를 제공한다.
 
-### G6 - Media·Trust/Safety·Admin/Operations를 완성한다
+### G6 - Media·Trust/Safety·Admin/Operations를 완성한다 ✅ completed (2026-08-12)
 
 - 순서: G5 이후
 - 파일: `src/main/java/com/townpet/{media,trustsafety,operations}/`, `frontend/src/Admin*.tsx`, `CorrectionCreatePage.tsx`, `deploy/`, 관련 migration/test
@@ -46,7 +46,7 @@ Legacy TownPet의 관찰 가능한 제품 동작을 Java 25·Spring Boot·Postgr
 - 검증: authorization/security integration test, admin browser journey, upload/cleanup/backup script의 dry-run 및 restore rehearsal.
 - 완료: 일반 사용자의 신고부터 Moderator 처리·복구까지와 운영자 진단·repair가 권한 분리와 audit evidence를 갖고 동작한다.
 
-### G7 - React/Vite 화면을 시각·접근성·성능 기준으로 수렴한다
+### G7 - React/Vite 화면을 시각·접근성·성능 기준으로 수렴한다 (next active goal)
 
 - 순서: G2~G6의 기능이 안정된 뒤 묶어서 수행
 - 파일: `frontend/src/`, `frontend/e2e/`, `frontend/vite.config.ts`, `styles.css`, 정적 asset
