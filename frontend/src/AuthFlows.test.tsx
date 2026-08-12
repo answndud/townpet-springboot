@@ -22,7 +22,6 @@ describe("Credentials journeys", () => {
       .mockResolvedValueOnce(response({ token: "csrf-token" }))
       .mockResolvedValueOnce(response(undefined, 202));
     vi.stubGlobal("fetch", fetchMock);
-    document.cookie = "XSRF-TOKEN=csrf-token; path=/";
 
     render(
       <MemoryRouter initialEntries={["/password/reset"]}>
