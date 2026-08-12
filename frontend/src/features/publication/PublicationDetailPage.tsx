@@ -480,10 +480,7 @@ export default function PublicationDetailPage() {
       </article>
       <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading" aria-busy={commentsLoading}>
         <div className="publication-comments-heading">
-          <div>
-            <p className="eyebrow">COMMUNITY</p>
-            <h2 id="comments-heading">댓글 {comments.length}</h2>
-          </div>
+          <h2 id="comments-heading">댓글 {comments.length}</h2>
         </div>
         {commentError ? <p className="form-error publication-error" role="alert">{commentError}</p> : null}
         {commentsLoading ? (
