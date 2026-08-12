@@ -22,6 +22,7 @@ export type Neighborhood = {
   name: string;
 };
 export type Breed = { code: string; species: "DOG" | "CAT" | "OTHER"; name: string; description: string };
+export type AnimalInterest = { code: string; group: string; label: string; sortOrder: number };
 
 export type Pet = {
   id: string;
@@ -91,10 +92,29 @@ export type Publication = {
   scope: PublicationScope;
   authorId: string;
   neighborhoodId: string | null;
+  animalInterestCode?: string | null;
   lifecycle: "ACTIVE" | "DELETED";
   createdAt: string;
   updatedAt: string;
   version: number;
+};
+
+export type FeedItem = {
+  id: string;
+  kind: string;
+  type: string;
+  title: string;
+  body: string;
+  scope: PublicationScope;
+  authorId: string | null;
+  neighborhoodId: string | null;
+  animalInterestCode?: string | null;
+  status: string;
+  lifecycle: string;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+  href: string;
 };
 
 export type Comment = {
@@ -151,6 +171,7 @@ export type CreatePublicationInput = {
   body: string;
   scope: PublicationScope;
   neighborhoodId?: string;
+  animalInterestCode?: string | null;
 };
 
 export type EditPublicationInput = CreatePublicationInput & {
@@ -163,7 +184,7 @@ export type CreateCommentInput = {
 };
 
 export type FeedPage = {
-  items: Publication[];
+  items: FeedItem[];
   page: {
     nextCursor: string | null;
     hasNext: boolean;
@@ -400,6 +421,16 @@ export const memberApi = {
   bookmarks(signal?: AbortSignal) {
     return cachedGet<string[]>("member:bookmarks", "/api/v1/members/me/bookmarks", signal, 15_000);
   },
+  animalInterests(signal?: AbortSignal) {
+    return apiFetch<string[]>("/api/v1/members/me/preferences/animal-interests", { signal });
+  },
+  updateAnimalInterests(codes: string[]) {
+    return mutate<string[]>("/api/v1/members/me/preferences/animal-interests", {
+      method: "PUT",
+      headers: jsonHeaders,
+      body: JSON.stringify({ codes }),
+    });
+  },
   updateOnboarding(input: OnboardingInput) {
     return mutate<Member>("/api/v1/members/me/onboarding", {
       method: "PUT",
@@ -427,6 +458,9 @@ export const catalogApi = {
   breed(code: string, signal?: AbortSignal) {
     const path = `/api/v1/catalog/breeds/${encodeURIComponent(code)}`;
     return cachedGet<Breed>(`catalog:breed:${code}`, path, signal, 5 * 60_000);
+  },
+  animalInterests(signal?: AbortSignal) {
+    return cachedGet<AnimalInterest[]>("catalog:animal-interests", "/api/v1/catalog/animal-interests", signal, 5 * 60_000);
   },
 };
 
@@ -598,6 +632,8 @@ export const publicationApi = {
     scope = "ALL",
     from,
     to,
+    animalInterestCodes,
+    type,
   }: {
     audience?: "GLOBAL" | "VIEWER";
     cursor?: string;
@@ -607,12 +643,16 @@ export const publicationApi = {
     scope?: "ALL" | "GLOBAL" | "LOCAL";
     from?: string;
     to?: string;
+    animalInterestCodes?: string[];
+    type?: string;
   } = {}) {
     const search = new URLSearchParams({ audience, limit: String(limit), scope });
     if (cursor) search.set("cursor", cursor);
     if (query) search.set("query", query);
     if (from) search.set("from", from);
     if (to) search.set("to", to);
+    if (animalInterestCodes) search.set("animals", animalInterestCodes.join(","));
+    if (type) search.set("type", type);
     return apiFetch<FeedPage>(`/api/v1/feed?${search}`, { signal });
   },
 };

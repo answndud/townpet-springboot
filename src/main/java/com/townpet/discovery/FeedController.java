@@ -1,6 +1,5 @@
 package com.townpet.discovery;
 
-import com.townpet.publication.api.PublicationFeed;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -8,7 +7,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,10 +31,10 @@ import org.springframework.web.server.ResponseStatusException;
   "/api/lounges/breeds/{breedCode}/posts"
 })
 class FeedController {
-  private final PublicationFeed publications;
+  private final CommunityFeed feed;
 
-  FeedController(PublicationFeed publications) {
-    this.publications = publications;
+  FeedController(CommunityFeed feed) {
+    this.feed = feed;
   }
 
   @GetMapping
@@ -43,9 +44,11 @@ class FeedController {
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam(defaultValue = "ALL") FeedScope scope,
+      @RequestParam(required = false) @Size(max = 512) @Nullable String animals,
+      @RequestParam(required = false) @Size(max = 40) @Nullable String type,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
-    return listFeed(principal, audience, cursor, limit, null, scope, from, to);
+    return listFeed(principal, audience, cursor, limit, null, scope, animals, type, from, to);
   }
 
   @GetMapping(params = "query")
@@ -56,9 +59,11 @@ class FeedController {
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam @Size(max = 80) String query,
       @RequestParam(defaultValue = "ALL") FeedScope scope,
+      @RequestParam(required = false) @Size(max = 512) @Nullable String animals,
+      @RequestParam(required = false) @Size(max = 40) @Nullable String type,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
-    return listFeed(principal, audience, cursor, limit, query, scope, from, to);
+    return listFeed(principal, audience, cursor, limit, query, scope, animals, type, from, to);
   }
 
   private FeedResponse listFeed(
@@ -68,14 +73,16 @@ class FeedController {
       int limit,
       @Nullable String query,
       FeedScope scope,
+      @Nullable String animals,
+      @Nullable String type,
       @Nullable LocalDate from,
       @Nullable LocalDate to) {
     if (from != null && to != null && to.isBefore(from)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed date range");
     }
     try {
-      PublicationFeed.Page page =
-          publications.list(
+      CommunityFeed.Page page =
+          feed.list(
               memberId(principal),
               audience == FeedAudience.VIEWER,
               cursor,
@@ -83,7 +90,9 @@ class FeedController {
               query,
               scope.name(),
               from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
-              to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC));
+              to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+              parseAnimals(animals),
+              parseType(type));
       return new FeedResponse(
           page.items().stream().map(FeedController::toResponse).toList(),
           new PageInfo(page.nextCursor(), page.hasNext()));
@@ -104,37 +113,76 @@ class FeedController {
     }
   }
 
-  private static PublicationResponse toResponse(PublicationFeed.Item item) {
-    return new PublicationResponse(
-        item.id(),
-        item.type(),
+  private static FeedItemResponse toResponse(CommunityFeed.Item item) {
+    return new FeedItemResponse(
+        item.sourceId(),
+        item.itemKind(),
+        item.itemType(),
         item.title(),
-        item.body(),
+        item.summary(),
         item.scope(),
         item.authorId(),
         item.neighborhoodId(),
-        item.lifecycle(),
+        item.animalInterestCode(),
+        item.status(),
+        item.status(),
         item.createdAt(),
         item.updatedAt(),
-        item.version());
+        0L,
+        item.targetPath());
   }
 
-  record FeedResponse(List<PublicationResponse> items, PageInfo page) {}
+  record FeedResponse(List<FeedItemResponse> items, PageInfo page) {}
 
   record PageInfo(@Nullable String nextCursor, boolean hasNext) {}
 
-  record PublicationResponse(
+  record FeedItemResponse(
       UUID id,
+      String kind,
       String type,
       String title,
       String body,
       String scope,
-      UUID authorId,
+      @Nullable UUID authorId,
       @Nullable UUID neighborhoodId,
+      @Nullable String animalInterestCode,
+      String status,
       String lifecycle,
       Instant createdAt,
       Instant updatedAt,
-      long version) {}
+      long version,
+      @Nullable String href) {
+    FeedItemResponse(
+        UUID id,
+        String kind,
+        String type,
+        String title,
+        String body,
+        String scope,
+        @Nullable UUID authorId,
+        @Nullable UUID neighborhoodId,
+        String lifecycle,
+        Instant createdAt,
+        Instant updatedAt,
+        long version) {
+      this(
+          id,
+          kind,
+          type,
+          title,
+          body,
+          scope,
+          authorId,
+          neighborhoodId,
+          null,
+          lifecycle,
+          lifecycle,
+          createdAt,
+          updatedAt,
+          version,
+          null);
+    }
+  }
 
   enum FeedAudience {
     GLOBAL,
@@ -145,5 +193,30 @@ class FeedController {
     ALL,
     GLOBAL,
     LOCAL
+  }
+
+  @Nullable
+  private static Set<String> parseAnimals(@Nullable String raw) {
+    if (raw == null) return null;
+    if (raw.isBlank()) return Set.of();
+    return java.util.Arrays.stream(raw.split(","))
+        .map(String::trim)
+        .filter(value -> !value.isEmpty())
+        .peek(
+            value -> {
+              if (!value.matches("[A-Z0-9_]{1,40}")) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid animal filter");
+              }
+            })
+        .collect(Collectors.toUnmodifiableSet());
+  }
+
+  @Nullable
+  private static String parseType(@Nullable String raw) {
+    if (raw == null || raw.isBlank()) return null;
+    if (!raw.matches("[A-Z0-9_]{1,40}")) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid publication type filter");
+    }
+    return raw;
   }
 }

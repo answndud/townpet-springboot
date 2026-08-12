@@ -6,6 +6,7 @@ import VerifyEmailPage from "./VerifyEmailPage";
 import LegalPage from "./LegalPage";
 import HomeFeedPage from "./HomeFeedPage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
+import AnimalInterestMenu from "./features/member/AnimalInterestMenu";
 import { installPerformanceObservers, recordRouteTiming } from "./utils/performance";
 
 const OnboardingPage = lazy(() => import("./OnboardingPage"));
@@ -75,8 +76,17 @@ function preloadRoute(href: string) {
 
 const PUBLIC_BOARD_LINKS = [
   ["전체글", "/"],
+  ["자유게시판", "/feed/guest?type=FREE_BOARD"],
+  ["질문·답변", "/feed/guest?type=QA_QUESTION"],
   ["입양", "/boards/adoption"],
   ["분실·목격", "/lost-found"],
+  ["동물병원 후기", "/hospital-reviews"],
+  ["동네 모임", "/gatherings"],
+  ["동네 거래", "/marketplace"],
+  ["이웃 돌봄", "/care"],
+  ["봉사 기회", "/volunteer"],
+  ["반려동물 자랑", "/feed/guest?type=PET_SHOWCASE"],
+  ["용품 후기", "/feed/guest?type=PRODUCT_REVIEW"],
 ] as const;
 
 const MEMBER_BOARD_LINKS = [
@@ -196,20 +206,25 @@ function Header() {
           member.role === "MODERATOR" ? (
             <nav aria-label="운영자 주요 이동" className="desktop-nav">
               <NavLink to="/admin">운영 콘솔</NavLink>
-              <NavLink to="/feed/guest">공개 피드</NavLink>
+              <HeaderMenu label="게시판" links={PUBLIC_BOARD_LINKS} />
+              <AnimalInterestMenu />
+              <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
             </nav>
           ) : (
             <nav aria-label="주요 이동" className="desktop-nav">
-            <HeaderMenu label="게시판" links={boardLinks} />
+              <HeaderMenu label="게시판" links={boardLinks} />
+              <AnimalInterestMenu />
               <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
               <NavLink className="desktop-nav-secondary" to="/notifications">알림</NavLink>
-            <HeaderMenu label="이웃 활동" links={NEIGHBORHOOD_ACTIVITY_LINKS} />
-            <HeaderMenu className="mobile-only-menu" label="더보기" links={MEMBER_ACCOUNT_LINKS} />
+              <HeaderMenu label="이웃 활동" links={NEIGHBORHOOD_ACTIVITY_LINKS} />
+              <HeaderMenu className="mobile-only-menu" label="더보기" links={MEMBER_ACCOUNT_LINKS} />
             </nav>
           )
         ) : (
           <nav aria-label="공개 안내 페이지 주요 이동" className="desktop-nav">
             <HeaderMenu label="게시판" links={PUBLIC_BOARD_LINKS} />
+            <AnimalInterestMenu />
+            <NavLink to="/profile">내 프로필</NavLink>
             <NavLink to="/login" data-testid="header-login-link-home">
               로그인
             </NavLink>

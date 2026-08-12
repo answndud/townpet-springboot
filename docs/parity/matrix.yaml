@@ -14,7 +14,7 @@ audit:
   evidence:
     shell: [frontend/e2e/parity-shell.spec.ts, docs/parity/shell.md]
     auth: [frontend/e2e/auth-parity.spec.ts, src/test/java/com/townpet/identity/IdentityMemberControllerTest.java]
-    publication: [frontend/e2e/publication-parity.spec.ts, frontend/e2e/publication-management.spec.ts, src/test/java/com/townpet/publication/PublicationControllerTest.java]
+    publication: [frontend/e2e/publication-parity.spec.ts, frontend/e2e/publication-management.spec.ts, frontend/e2e/feed-parity.spec.ts, src/test/java/com/townpet/publication/PublicationControllerTest.java]
     engagement: [frontend/e2e/comment-management.spec.ts, frontend/e2e/reaction-management.spec.ts, frontend/e2e/bookmark-management.spec.ts]
     relationship: [frontend/e2e/relationship-management.spec.ts, src/test/java/com/townpet/relationship/RelationshipControllerTest.java]
     lostfound: [frontend/src/LostFoundFlows.test.tsx, src/test/java/com/townpet/lostfound/LostFoundAlertControllerTest.java]
@@ -93,9 +93,11 @@ pages:
   - path: /feed
     legacy: true
     spring: verified
+    evidence: [frontend/e2e/feed-parity.spec.ts, src/main/java/com/townpet/discovery/CommunityFeed.java]
   - path: /feed/guest
     legacy: true
     spring: verified
+    evidence: [frontend/e2e/feed-parity.spec.ts, src/main/java/com/townpet/discovery/CommunityFeed.java]
   - path: /guides/{guideSlug}
     legacy: true
     spring: verified
