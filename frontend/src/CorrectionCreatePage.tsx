@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ApiError, apiFetch, getCsrfToken } from "./api/client";
+import { ApiError, apiMutate } from "./api/client";
 
 export default function CorrectionCreatePage() {
   const navigate = useNavigate();
@@ -18,8 +18,7 @@ export default function CorrectionCreatePage() {
     setSaving(true);
     setError(null);
     try {
-      await getCsrfToken();
-      await apiFetch("/api/corrections", {
+      await apiMutate("/api/corrections", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ title: title.trim(), body: body.trim() }),
