@@ -171,6 +171,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
         <div className="feed-scope-tabs" role="group" aria-label="게시글 범위">
           <button
             className={scope === "ALL" ? "market-filter active" : "market-filter"}
+            aria-pressed={scope === "ALL"}
             type="button"
             onClick={() => setSearchParams(query ? { q: query } : {})}
           >
@@ -178,6 +179,7 @@ export default function PublicationFeedPage({ memberView }: PublicationFeedPageP
           </button>
           <button
             className={scope === "LOCAL" ? "market-filter active" : "market-filter"}
+            aria-pressed={scope === "LOCAL"}
             type="button"
             onClick={() => setSearchParams(query ? { q: query, scope: "LOCAL" } : { scope: "LOCAL" })}
           >

@@ -69,7 +69,7 @@ export default function ProfilePage() {
       <main className="page placeholder-page">
         <section className="surface-card">
           <p role="alert">{error}</p>
-          <button className="button button-primary" onClick={() => navigate("/login")}>로그인으로</button>
+          <button className="button button-primary" type="button" onClick={() => navigate("/login")}>로그인으로</button>
         </section>
       </main>
     );
@@ -116,7 +116,7 @@ export default function ProfilePage() {
               내 동네 설정
             </Link>
           ) : null}
-          <button className="button button-soft" onClick={logout} disabled={!member || loggingOut}>
+          <button className="button button-soft" type="button" onClick={logout} disabled={!member || loggingOut}>
             {loggingOut ? "로그아웃 중..." : "로그아웃"}
           </button>
         </div>
