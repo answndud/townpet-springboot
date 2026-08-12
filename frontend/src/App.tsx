@@ -74,7 +74,6 @@ function preloadRoute(href: string) {
 
 const PUBLIC_BOARD_LINKS = [
   ["전체 공개 피드", "/feed/guest"],
-  ["인기 게시글", "/best"],
   ["입양", "/boards/adoption"],
   ["분실·목격", "/lost-found"],
 ] as const;
@@ -82,7 +81,6 @@ const PUBLIC_BOARD_LINKS = [
 const MEMBER_BOARD_LINKS = [
   ["내 피드", "/feed"],
   ["전체 공개 피드", "/feed/guest"],
-  ["인기 게시글", "/best"],
   ["입양", "/boards/adoption"],
   ["분실·목격", "/lost-found"],
 ] as const;
