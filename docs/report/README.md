@@ -6,7 +6,8 @@
 
 1. [`engineering-story.md`](engineering-story.md): 어떤 순서로 기반을 만들었고 실제 실패에서 무엇을 바꿨는지
 2. [`technical-notes.md`](technical-notes.md): 현재 코드에서 설명할 수 있는 핵심 Java·Spring·DB·보안·테스트 지식
-3. 구현 범위와 전체 architecture는 canonical 문서와 [`../architecture/module-map.md`](../architecture/module-map.md), [`../parity/matrix.md`](../parity/matrix.md)를 참고한다.
+3. 성능 측정 계획과 결과는 [`../performance/README.md`](../performance/README.md)를 참고한다.
+4. 구현 범위와 전체 architecture는 canonical 문서와 [`../architecture/module-map.md`](../architecture/module-map.md), [`../parity/matrix.md`](../parity/matrix.md)를 참고한다.
 
 별도 interview question bank는 P2 핵심 도메인 구현 후 만든다. 지금 만들면 아직 구현하지 않은 기능을 경험처럼 암기하거나 같은 설명을 복제할 가능성이 크다.
 
