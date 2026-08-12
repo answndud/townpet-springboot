@@ -131,8 +131,7 @@ describe("Publication feed journeys", () => {
     );
   });
 
-  it("keeps the legacy feed independent from saved animal community shortcuts", async () => {
-    window.localStorage.setItem("townpet:animal-interests:v1", JSON.stringify(["DOG", "CAT"]));
+  it("keeps the legacy feed independent from animal board navigation", async () => {
     const fetchMock = vi.fn<typeof fetch>(() =>
       Promise.resolve(response({ items: [], page: { nextCursor: null, hasNext: false } })),
     );

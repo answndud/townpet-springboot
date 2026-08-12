@@ -22,7 +22,6 @@ export type Neighborhood = {
   name: string;
 };
 export type Breed = { code: string; species: "DOG" | "CAT" | "OTHER"; name: string; description: string };
-export type AnimalInterest = { code: string; group: string; label: string; sortOrder: number };
 
 export type Pet = {
   id: string;
@@ -431,16 +430,6 @@ export const memberApi = {
   bookmarks(signal?: AbortSignal) {
     return cachedGet<string[]>("member:bookmarks", "/api/v1/members/me/bookmarks", signal, 15_000);
   },
-  animalInterests(signal?: AbortSignal) {
-    return apiFetch<string[]>("/api/v1/members/me/preferences/animal-interests", { signal });
-  },
-  updateAnimalInterests(codes: string[]) {
-    return mutate<string[]>("/api/v1/members/me/preferences/animal-interests", {
-      method: "PUT",
-      headers: jsonHeaders,
-      body: JSON.stringify({ codes }),
-    });
-  },
   updateOnboarding(input: OnboardingInput) {
     return mutate<Member>("/api/v1/members/me/onboarding", {
       method: "PUT",
@@ -468,9 +457,6 @@ export const catalogApi = {
   breed(code: string, signal?: AbortSignal) {
     const path = `/api/v1/catalog/breeds/${encodeURIComponent(code)}`;
     return cachedGet<Breed>(`catalog:breed:${code}`, path, signal, 5 * 60_000);
-  },
-  animalInterests(signal?: AbortSignal) {
-    return cachedGet<AnimalInterest[]>("catalog:animal-interests", "/api/v1/catalog/animal-interests", signal, 5 * 60_000);
   },
 };
 

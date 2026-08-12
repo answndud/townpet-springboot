@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useParams, useSearchParams } from "react-router-dom";
 import { ApiError, commonBoardApi, communityApi, type FeedItem } from "../../api/client";
-import { ANIMAL_INTEREST_GROUPS } from "../member/AnimalInterestMenu";
+import { ANIMAL_BOARD_GROUPS } from "../member/AnimalBoardCatalog";
 import { useAuth } from "../../auth/AuthContext";
 
 export const ANIMAL_BOARD_TABS = [
@@ -40,7 +40,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const ANIMAL_LABELS = new Map(
-  ANIMAL_INTEREST_GROUPS.flatMap((group) => group.options.map((option) => [option.code, option.label] as const)),
+  ANIMAL_BOARD_GROUPS.flatMap((group) => group.options.map((option) => [option.code, option.label] as const)),
 );
 
 function normalizeAnimalCode(raw: string) {

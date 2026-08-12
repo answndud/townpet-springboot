@@ -52,30 +52,19 @@ nav a.active { color: var(--brand); text-decoration: underline; text-decoration-
 .header-menu:hover .header-menu-panel, .header-menu:focus-within .header-menu-panel, .header-menu.open .header-menu-panel { visibility: visible; opacity: 1; pointer-events: auto; transform: translateY(0); }
 .header-menu-panel a { min-height: 32px; justify-content: flex-start; border-radius: 6px; padding: 0 10px; color: #315484; font-size: 12px; white-space: nowrap; }
 .header-menu-panel a:hover, .header-menu-panel a:focus-visible { background: #edf5ff; color: #285a9f; text-decoration: none; }
-.interest-menu-panel { top: 100%; right: 0; left: auto; display: block; width: min(420px, calc(100vw - 24px)); max-height: min(680px, calc(100vh - 76px)); overflow: auto; padding: 14px; }
-.interest-menu-description { margin-bottom: 12px; color: var(--text-soft); font-size: 12px; line-height: 1.5; }
-.interest-groups { display: grid; gap: 12px; }
-.interest-group { min-width: 0; border: 0; padding: 0; }
-.interest-group legend { margin-bottom: 6px; color: var(--text); font-size: 12px; font-weight: 700; }
-.interest-options { display: flex; flex-wrap: wrap; gap: 6px 12px; }
-.interest-options label { display: inline-flex; align-items: center; gap: 5px; color: var(--text-soft); font-size: 12px; white-space: nowrap; }
-.interest-options input { accent-color: var(--brand); }
-.interest-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; border-top: 1px solid var(--surface-border); padding-top: 12px; }
-.interest-actions .button { min-height: 30px; padding: 0 9px; font-size: 11px; }
-.interest-status { margin-top: 8px; color: var(--brand-strong); font-size: 11px; }
-.animal-community-menu { display: grid; gap: 3px; min-width: 220px; }
-.animal-community-menu-heading { display: grid; gap: 3px; border-bottom: 1px solid var(--surface-border); margin: -2px 0 4px; padding: 4px 10px 10px; }
-.animal-community-menu-heading strong { color: var(--text); font-size: 13px; }
-.animal-community-menu-heading span { color: var(--muted-text); font-size: 11px; }
-.animal-community-settings { border-top: 1px solid var(--surface-border); margin-top: 4px; padding-top: 8px !important; color: var(--brand-strong) !important; }
-.interest-settings-page { max-width: 900px; }
-.interest-settings-card .header-menu { position: static; }
-.interest-settings-card .header-menu-panel { position: static; visibility: visible; width: 100%; max-height: none; transform: none; opacity: 1; pointer-events: auto; box-shadow: none; border: 0; padding: 0; }
-.interest-settings-card .interest-menu { display: block; }
+.animal-board-menu-panel { top: 100%; right: 0; left: auto; display: grid; gap: 3px; width: min(420px, calc(100vw - 24px)); max-height: min(680px, calc(100vh - 76px)); overflow: auto; padding: 6px; }
+.animal-board-menu-heading { display: grid; gap: 3px; border-bottom: 1px solid var(--surface-border); margin: -2px 0 4px; padding: 4px 10px 10px; }
+.animal-board-menu-heading strong { color: var(--text); font-size: 13px; }
+.animal-board-menu-heading span { color: var(--muted-text); font-size: 11px; }
+.animal-board-groups { display: grid; gap: 12px; }
+.animal-board-group { min-width: 0; border: 0; padding: 0; }
+.animal-board-options { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.animal-board-options label { display: inline-flex; align-items: center; gap: 5px; color: var(--text-soft); font-size: 12px; white-space: nowrap; }
+.animal-board-options input { accent-color: var(--brand); }
 .animal-community-selector { border: 0; margin: 0 0 16px; padding: 0; }
 .animal-community-selector legend { margin-bottom: 4px; color: var(--text); font-size: 13px; font-weight: 700; }
-.animal-community-selector .interest-group > strong { display: block; margin-bottom: 5px; color: var(--text-soft); font-size: 12px; }
-.animal-community-selector .interest-options { gap: 8px 14px; }
+.animal-community-selector .animal-board-group > strong { display: block; margin-bottom: 5px; color: var(--text-soft); font-size: 12px; }
+.animal-community-selector .animal-board-options { gap: 8px 14px; }
 .page.community-page, .page.feed-page { max-width: 1120px; }
 .community-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; border: 1px solid var(--surface-border); border-radius: var(--radius-lg); background: rgba(255,255,255,.86); padding: 22px 24px; }
 .community-hero h1 { margin-top: 7px; color: var(--text); font-size: clamp(1.65rem, 4vw, 2.2rem); letter-spacing: -.04em; }
@@ -465,7 +454,7 @@ h1, h2, p { margin: 0; }
   .desktop-nav-secondary { display: none; }
   .mobile-only-menu { display: block; }
   .header-menu-panel { position: fixed; top: 51px; right: 12px; left: auto; }
-  .interest-menu-panel { width: min(420px, calc(100vw - 24px)); }
+  .animal-board-menu-panel { top: 51px; width: min(420px, calc(100vw - 24px)); }
   .page { padding: 22px 16px 44px; }
   .community-hero { align-items: stretch; flex-direction: column; padding: 17px 15px; }
   .community-hero .button { align-self: flex-start; }

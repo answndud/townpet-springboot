@@ -6,7 +6,7 @@ import VerifyEmailPage from "./VerifyEmailPage";
 import LegalPage from "./LegalPage";
 import HomeFeedPage from "./HomeFeedPage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
-import AnimalInterestMenu from "./features/member/AnimalInterestMenu";
+import AnimalBoardMenu from "./features/member/AnimalBoardMenu";
 import { installPerformanceObservers, recordRouteTiming } from "./utils/performance";
 
 const OnboardingPage = lazy(() => import("./OnboardingPage"));
@@ -28,7 +28,6 @@ const PublicationEditPage = lazy(() => import("./features/publication/Publicatio
 const PublicationFeedPage = lazy(() => import("./features/publication/PublicationFeedPage"));
 const AnimalCommunityPage = lazy(() => import("./features/community/AnimalCommunityPage"));
 const CommonBoardPage = lazy(() => import("./features/community/AnimalCommunityPage").then(({ CommonBoardPage }) => ({ default: CommonBoardPage })));
-const AnimalInterestSettingsPage = lazy(() => import("./features/member/AnimalInterestSettingsPage"));
 const GuestPublicationCreatePage = lazy(() => import("./features/publication/GuestPublicationCreatePage"));
 const MarketplaceDetailPage = lazy(() => import("./features/marketplace/MarketplacePages").then(({ MarketplaceDetailPage }) => ({ default: MarketplaceDetailPage })));
 const MarketplaceFormPage = lazy(() => import("./features/marketplace/MarketplacePages").then(({ MarketplaceFormPage }) => ({ default: MarketplaceFormPage })));
@@ -193,13 +192,13 @@ function Header() {
           member.role === "MODERATOR" ? (
             <nav aria-label="운영자 주요 이동" className="desktop-nav">
               <NavLink to="/admin">운영 콘솔</NavLink>
-              <AnimalInterestMenu />
+              <AnimalBoardMenu />
               <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
               <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
             </nav>
           ) : (
             <nav aria-label="주요 이동" className="desktop-nav">
-              <AnimalInterestMenu />
+              <AnimalBoardMenu />
               <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
               <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
               <NavLink className="desktop-nav-secondary" to="/notifications">알림</NavLink>
@@ -208,7 +207,7 @@ function Header() {
           )
         ) : (
           <nav aria-label="공개 안내 페이지 주요 이동" className="desktop-nav">
-            <AnimalInterestMenu />
+            <AnimalBoardMenu />
             <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
             <NavLink to="/profile">내 프로필</NavLink>
             <NavLink to="/login" data-testid="header-login-link-home">
@@ -364,8 +363,6 @@ function AppShell() {
         <Route path="/password/reset" element={<PasswordResetPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/onboarding" element={<MemberRoute><OnboardingPage /></MemberRoute>} />
-        <Route path="/settings/animal-boards" element={<AnimalInterestSettingsPage />} />
-        <Route path="/settings/animal-interests" element={<Navigate to="/settings/animal-boards" replace />} />
         <Route path="/boards" element={<Navigate to="/boards/all" replace />} />
         <Route path="/boards/:boardCode" element={<CommonBoardPage />} />
         <Route path="/animals/all/:boardCode" element={<AnimalBoardRouteAlias />} />
