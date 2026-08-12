@@ -107,18 +107,9 @@ class PublicationService implements PublicationModeration {
   @Override
   @Transactional
   public int setAuthorContentVisibility(UUID authorMemberId, boolean visible) {
-    List<PublicationEntity> owned = publications.findByAuthorMemberId(authorMemberId);
-    java.time.Instant changedAt = java.time.Instant.now();
-    owned.forEach(
-        publication -> {
-          if (visible && publication.getLifecycle() == PublicationLifecycle.HIDDEN) {
-            publication.makeVisible(changedAt);
-          } else if (!visible && publication.getLifecycle() == PublicationLifecycle.ACTIVE) {
-            publication.hide(changedAt);
-          }
-        });
-    publications.saveAll(owned);
-    return owned.size();
+    PublicationLifecycle from = visible ? PublicationLifecycle.HIDDEN : PublicationLifecycle.ACTIVE;
+    PublicationLifecycle to = visible ? PublicationLifecycle.ACTIVE : PublicationLifecycle.HIDDEN;
+    return publications.updateLifecycleByAuthor(authorMemberId, from, to, java.time.Instant.now());
   }
 
   @Transactional
