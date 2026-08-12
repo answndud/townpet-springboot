@@ -1,4 +1,5 @@
 import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import LoginPage from "./LoginPage";
 import OnboardingPage from "./OnboardingPage";
 import PasswordResetPage from "./PasswordResetPage";
@@ -148,10 +149,31 @@ function PlaceholderPage() {
 }
 
 export default function App() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const titleByPath: Array<[string, string]> = [
+      ["/login", "로그인"],
+      ["/password/reset", "비밀번호 재설정"],
+      ["/verify-email", "이메일 인증"],
+      ["/onboarding", "내 동네 설정"],
+      ["/notifications", "알림"],
+      ["/marketplace", "동네 거래"],
+      ["/lost-found", "분실·목격"],
+      ["/search", "반려생활 정보 검색"],
+      ["/best", "인기 게시글"],
+      ["/admin", "운영 콘솔"],
+    ];
+    const match = titleByPath.find(([path]) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+    document.title = match ? `TownPet | ${match[1]}` : location.pathname === "/" ? "TownPet | 우리 동네 반려생활 정보" : "TownPet | 반려생활 커뮤니티";
+  }, [location.pathname]);
+
   return (
     <div className="app-shell-bg">
+      <a className="skip-link" href="#main-content">본문으로 바로가기</a>
       <Header />
-      <Routes>
+      <div id="main-content" tabIndex={-1}>
+        <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/password/reset" element={<PasswordResetPage />} />
@@ -221,7 +243,8 @@ export default function App() {
         <Route path="/lost-found/:alertId" element={<LostFoundDetailPage />} />
         <Route path="/posts/:publicationId/sightings" element={<PostSightingsPage />} />
         <Route path="*" element={<PlaceholderPage />} />
-      </Routes>
+        </Routes>
+      </div>
     </div>
   );
 }
