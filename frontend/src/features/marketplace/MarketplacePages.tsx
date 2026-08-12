@@ -48,6 +48,7 @@ function MarketplaceHeader({ action = true }: { action?: boolean }) {
 export function MarketplaceListPage() {
   const [kind, setKind] = useState<MarketplaceListingKind | "">("");
   const [items, setItems] = useState<MarketplaceListing[]>([]);
+  const [viewerRole, setViewerRole] = useState<Member["role"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,9 +65,15 @@ export function MarketplaceListPage() {
     return () => controller.abort();
   }, [kind]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    memberApi.current(controller.signal).then((member) => setViewerRole(member.role)).catch(() => setViewerRole(null));
+    return () => controller.abort();
+  }, []);
+
   return (
     <main className="page marketplace-page">
-      <MarketplaceHeader />
+      <MarketplaceHeader action={viewerRole !== "MODERATOR"} />
       <div className="marketplace-toolbar">
         <div className="marketplace-filters" aria-label="거래 유형 필터">
           <button className={!kind ? "market-filter active" : "market-filter"} type="button" onClick={() => setKind("")}>전체</button>
@@ -79,7 +86,7 @@ export function MarketplaceListPage() {
       {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
       {loading ? <section className="surface-card" role="status">거래 목록을 불러오는 중...</section> : null}
       {!loading && items.length === 0 ? (
-        <section className="surface-card marketplace-empty"><h2>아직 등록된 물품이 없습니다</h2><p>첫 번째 반려생활 물품을 올려 보세요.</p><Link className="button button-soft" to="/marketplace/new">물품 올리기</Link></section>
+        <section className="surface-card marketplace-empty"><h2>아직 등록된 물품이 없습니다</h2><p>첫 번째 반려생활 물품을 올려 보세요.</p>{viewerRole !== "MODERATOR" ? <Link className="button button-soft" to="/marketplace/new">물품 올리기</Link> : null}</section>
       ) : null}
       {!loading && items.length > 0 ? (
         <section className="marketplace-grid" aria-label="거래 목록">
