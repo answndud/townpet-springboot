@@ -243,8 +243,9 @@ export async function getCsrfToken(): Promise<string> {
 let currentMemberRequest: Promise<Member> | null = null;
 
 function currentMember(signal?: AbortSignal) {
+  if (signal) return apiFetch<Member>("/api/v1/members/me", { signal });
   if (currentMemberRequest) return currentMemberRequest;
-  const request = apiFetch<Member>("/api/v1/members/me", { signal });
+  const request = apiFetch<Member>("/api/v1/members/me");
   const sharedRequest = request.finally(() => {
     if (currentMemberRequest === sharedRequest) currentMemberRequest = null;
   });
