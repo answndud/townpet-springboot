@@ -17,7 +17,6 @@ export function CareListPage() {
 
 export function CareDetailPage() {
   const { requestId = "" } = useParams();
-  const navigate = useNavigate();
   const { member } = useAuth();
   const { data, error: requestError, loading, retry } = useAbortableRequest<{ request: CareRequest; applications: CareApplication[]; assignment: CareAssignment | null }>(async (signal) => {
     const request = await careApi.detail(requestId, signal);

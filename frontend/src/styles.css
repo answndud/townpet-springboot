@@ -381,6 +381,12 @@ h1, h2, p { margin: 0; }
 .notification-item h2 { margin: .65rem 0 .35rem; }
 .notification-item p { margin: 0 0 .5rem; }
 .notification-item small { color: var(--muted-text); }
+@media (min-width: 761px) {
+  .feed-item, .marketplace-card, .lostfound-card, .localcare-card, .gathering-card, .notification-item {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 180px;
+  }
+}
 @media (max-width: 760px) { .localcare-grid { grid-template-columns: 1fr; } .localcare-search { align-items: stretch; flex-direction: column; } .localcare-search .button { align-self: flex-start; } .localcare-hero { padding: 18px; } }
 @media (max-width: 760px) { .gathering-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
