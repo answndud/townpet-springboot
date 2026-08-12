@@ -247,7 +247,11 @@ function NonModeratorRoute({ children }: { children: ReactNode }) {
       })
       .catch((requestError: unknown) => {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-        setAllowed(true);
+        if (requestError instanceof ApiError && requestError.status === 401) {
+          setAllowed(true);
+        } else {
+          navigate("/feed/guest", { replace: true });
+        }
       });
     return () => controller.abort();
   }, [navigate]);
