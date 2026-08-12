@@ -341,7 +341,7 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
                 ) : null}
                 {item.animalInterestCode ? (
                   <span className="publication-chip">
-                    {ANIMAL_INTEREST_GROUPS.flatMap((group) => group.options).find((option) => option.code === item.animalInterestCode)?.label ?? "관심 동물"}
+                    {ANIMAL_INTEREST_GROUPS.flatMap((group) => group.options).find((option) => option.code === item.animalInterestCode)?.label ?? "동물 게시판"}
                   </span>
                 ) : null}
                 <span className="publication-chip">

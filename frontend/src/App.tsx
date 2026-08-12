@@ -1,4 +1,4 @@
-import { Link, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { lazy, KeyboardEvent, ReactNode, Suspense, useEffect, useRef, useState } from "react";
 import LoginPage from "./LoginPage";
 import PasswordResetPage from "./PasswordResetPage";
@@ -27,6 +27,7 @@ const PublicationDetailPage = lazy(() => import("./features/publication/Publicat
 const PublicationEditPage = lazy(() => import("./features/publication/PublicationEditPage"));
 const PublicationFeedPage = lazy(() => import("./features/publication/PublicationFeedPage"));
 const AnimalCommunityPage = lazy(() => import("./features/community/AnimalCommunityPage"));
+const CommonBoardPage = lazy(() => import("./features/community/AnimalCommunityPage").then(({ CommonBoardPage }) => ({ default: CommonBoardPage })));
 const AnimalInterestSettingsPage = lazy(() => import("./features/member/AnimalInterestSettingsPage"));
 const GuestPublicationCreatePage = lazy(() => import("./features/publication/GuestPublicationCreatePage"));
 const MarketplaceDetailPage = lazy(() => import("./features/marketplace/MarketplacePages").then(({ MarketplaceDetailPage }) => ({ default: MarketplaceDetailPage })));
@@ -45,7 +46,6 @@ const GatheringListPage = lazy(() => import("./features/gathering/GatheringPages
 const PersonalPostsPage = lazy(() => import("./features/publication/PersonalPostsPage"));
 const SearchPage = lazy(() => import("./features/publication/SearchPage"));
 const CorrectionCreatePage = lazy(() => import("./CorrectionCreatePage"));
-const AdoptionPage = lazy(() => import("./AdoptionPage"));
 const AdoptionCreatePage = lazy(() => import("./AdoptionCreatePage"));
 const AdoptionDetailPage = lazy(() => import("./AdoptionDetailPage"));
 const TownLandingPage = lazy(() => import("./TownLandingPage"));
@@ -64,7 +64,7 @@ const ROUTE_PRELOADERS = new Map<string, () => Promise<unknown>>([
   ["/feed", () => import("./features/publication/PublicationFeedPage")],
   ["/feed/guest", () => import("./features/publication/PublicationFeedPage")],
   ["/best", () => import("./BestPage")],
-  ["/boards/adoption", () => import("./AdoptionPage")],
+  ["/boards", () => import("./features/community/AnimalCommunityPage")],
   ["/marketplace", () => import("./features/marketplace/MarketplacePages")],
   ["/lost-found", () => import("./features/lostfound/LostFoundPages")],
   ["/care", () => import("./features/care/CarePages")],
@@ -77,20 +77,18 @@ function preloadRoute(href: string) {
   void ROUTE_PRELOADERS.get(path)?.();
 }
 
-const PUBLIC_BOARD_LINKS = [
-  ["전체글", "/animals/all"],
-  ["자유게시판", "/animals/all/free"],
-  ["질문·답변", "/animals/all/questions"],
-  ["입양", "/animals/all/adoption"],
-  ["분실·목격", "/animals/all/lost-found"],
-  ["동물병원 후기", "/animals/all/hospital-reviews"],
-  ["동네 모임", "/animals/all/gatherings"],
-  ["동네 거래", "/animals/all/marketplace"],
-  ["이웃 돌봄", "/animals/all/care"],
-  ["봉사 기회", "/animals/all/volunteer"],
-  ["반려동물 자랑", "/animals/all/showcase"],
-  ["용품 후기", "/animals/all/product-reviews"],
+const COMMON_BOARD_LINKS = [
+  ["전체 공통게시판", "/boards/all"],
+  ["입양", "/boards/adoption"],
+  ["분실·목격", "/boards/lost-found"],
+  ["동물병원 후기", "/boards/hospital-reviews"],
+  ["동네 모임", "/boards/gatherings"],
+  ["동네 거래", "/boards/marketplace"],
+  ["이웃 돌봄", "/boards/care"],
+  ["봉사 기회", "/boards/volunteer"],
 ] as const;
+
+const COMMON_BOARD_CODES = new Set(COMMON_BOARD_LINKS.map(([, href]) => href.split("/").pop()));
 
 const MEMBER_ACCOUNT_LINKS = [
   ["내 프로필", "/profile"],
@@ -195,14 +193,14 @@ function Header() {
           member.role === "MODERATOR" ? (
             <nav aria-label="운영자 주요 이동" className="desktop-nav">
               <NavLink to="/admin">운영 콘솔</NavLink>
-              <HeaderMenu label="게시판" links={PUBLIC_BOARD_LINKS} />
               <AnimalInterestMenu />
+              <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
               <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
             </nav>
           ) : (
             <nav aria-label="주요 이동" className="desktop-nav">
-              <HeaderMenu label="게시판" links={PUBLIC_BOARD_LINKS} />
               <AnimalInterestMenu />
+              <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
               <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
               <NavLink className="desktop-nav-secondary" to="/notifications">알림</NavLink>
               <HeaderMenu className="mobile-only-menu" label="더보기" links={MEMBER_ACCOUNT_LINKS} />
@@ -210,8 +208,8 @@ function Header() {
           )
         ) : (
           <nav aria-label="공개 안내 페이지 주요 이동" className="desktop-nav">
-            <HeaderMenu label="게시판" links={PUBLIC_BOARD_LINKS} />
             <AnimalInterestMenu />
+            <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
             <NavLink to="/profile">내 프로필</NavLink>
             <NavLink to="/login" data-testid="header-login-link-home">
               로그인
@@ -220,6 +218,15 @@ function Header() {
         )}
       </div>
     </header>
+  );
+}
+
+function AnimalBoardRouteAlias() {
+  const { boardCode = "" } = useParams();
+  return COMMON_BOARD_CODES.has(boardCode) ? (
+    <Navigate to={`/boards/${boardCode}`} replace />
+  ) : (
+    <AnimalCommunityPage />
   );
 }
 
@@ -331,6 +338,8 @@ function AppShell() {
       ["/password/reset", "비밀번호 재설정"],
       ["/verify-email", "이메일 인증"],
       ["/onboarding", "내 동네 설정"],
+      ["/boards", "공통게시판"],
+      ["/animals", "동물 게시판"],
       ["/notifications", "알림"],
       ["/marketplace", "동네 거래"],
       ["/lost-found", "분실·목격"],
@@ -355,9 +364,13 @@ function AppShell() {
         <Route path="/password/reset" element={<PasswordResetPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/onboarding" element={<MemberRoute><OnboardingPage /></MemberRoute>} />
-        <Route path="/settings/animal-interests" element={<AnimalInterestSettingsPage />} />
+        <Route path="/settings/animal-boards" element={<AnimalInterestSettingsPage />} />
+        <Route path="/settings/animal-interests" element={<Navigate to="/settings/animal-boards" replace />} />
+        <Route path="/boards" element={<Navigate to="/boards/all" replace />} />
+        <Route path="/boards/:boardCode" element={<CommonBoardPage />} />
+        <Route path="/animals/all/:boardCode" element={<AnimalBoardRouteAlias />} />
         <Route path="/animals/:animalCode" element={<AnimalCommunityPage />} />
-        <Route path="/animals/:animalCode/:boardCode" element={<AnimalCommunityPage />} />
+        <Route path="/animals/:animalCode/:boardCode" element={<AnimalBoardRouteAlias />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<MemberRoute><NotificationPage /></MemberRoute>} />
         <Route path="/privacy" element={<LegalPage />} />
@@ -369,7 +382,6 @@ function AppShell() {
         <Route path="/search/guest" element={<SearchPage guest />} />
         <Route path="/corrections/new" element={<MemberRoute><CorrectionCreatePage /></MemberRoute>} />
         <Route path="/best" element={<BestPage />} />
-        <Route path="/boards/adoption" element={<AdoptionPage />} />
         <Route path="/adoptions/new" element={<MemberRoute><AdoptionCreatePage /></MemberRoute>} />
         <Route path="/adoptions/:adoptionId" element={<AdoptionDetailPage />} />
         <Route path="/volunteer" element={<VolunteerPage />} />

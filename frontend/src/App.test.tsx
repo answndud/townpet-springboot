@@ -86,17 +86,17 @@ describe("TownPet Vite shell", () => {
     expect(await screen.findByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
     await waitFor(() => expect(screen.queryByTestId("header-login-link-home")).not.toBeInTheDocument());
     expect(screen.queryByRole("button", { name: "이웃 활동" })).not.toBeInTheDocument();
-    expect(screen.getByRole("menu", { name: "게시판 바로가기" })).toBeInTheDocument();
-    const boardMenu = screen.getByRole("button", { name: /게시판/ });
+    expect(screen.getByRole("menu", { name: "공통게시판 바로가기" })).toBeInTheDocument();
+    const boardMenu = screen.getByRole("button", { name: "공통게시판" });
     expect(boardMenu).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(boardMenu);
     expect(boardMenu).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("menuitem", { name: "전체글" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "전체 공통게시판" })).toBeVisible();
 
     fireEvent.keyDown(boardMenu, { key: "ArrowDown" });
-    await waitFor(() => expect(screen.getByRole("menuitem", { name: "전체글" })).toHaveFocus());
-    fireEvent.keyDown(screen.getByRole("menuitem", { name: "전체글" }), { key: "ArrowDown" });
-    expect(screen.getByRole("menuitem", { name: "자유게시판" })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole("menuitem", { name: "전체 공통게시판" })).toHaveFocus());
+    fireEvent.keyDown(screen.getByRole("menuitem", { name: "전체 공통게시판" }), { key: "ArrowDown" });
+    expect(screen.getByRole("menuitem", { name: "입양" })).toHaveFocus();
 
     fireEvent.keyDown(boardMenu, { key: "Escape" });
     expect(boardMenu).toHaveAttribute("aria-expanded", "false");
@@ -172,19 +172,19 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/feed/guest"]}><App /></MemoryRouter>);
 
-    expect(screen.getByRole("button", { name: "게시판" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "관심 동물" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "공통게시판" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "동물 게시판" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
-    fireEvent.click(screen.getByRole("button", { name: "게시판" }));
-    expect(screen.getByRole("menuitem", { name: "전체글" })).toHaveAttribute("href", "/animals/all");
-    expect(screen.getByRole("menuitem", { name: "동물병원 후기" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "반려동물 자랑" })).toHaveAttribute("href", "/animals/all/showcase");
+    fireEvent.click(screen.getByRole("button", { name: "공통게시판" }));
+    expect(screen.getByRole("menuitem", { name: "전체 공통게시판" })).toHaveAttribute("href", "/boards/all");
+    expect(screen.getByRole("menuitem", { name: "동물병원 후기" })).toHaveAttribute("href", "/boards/hospital-reviews");
+    expect(screen.queryByRole("menuitem", { name: "반려동물 자랑" })).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "인기 게시글" })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "관심 동물" }));
-    expect(screen.getByRole("menu", { name: "동물 커뮤니티" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "강아지 커뮤니티" })).toHaveAttribute("href", "/animals/dog");
-    expect(screen.getByRole("menuitem", { name: "관심 동물 관리" })).toHaveAttribute("href", "/settings/animal-interests");
+    fireEvent.click(screen.getByRole("button", { name: "동물 게시판" }));
+    expect(screen.getByRole("menu", { name: "동물 게시판" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "강아지 게시판" })).toHaveAttribute("href", "/animals/dog");
+    expect(screen.getByRole("menuitem", { name: "동물 게시판 관리" })).toHaveAttribute("href", "/settings/animal-boards");
   });
 
   it("keeps an explicitly empty interest list empty in the navigation menu", async () => {
@@ -196,10 +196,10 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/feed/guest"]}><App /></MemoryRouter>);
 
-    fireEvent.click(screen.getByRole("button", { name: "관심 동물" }));
-    expect(screen.getByRole("menuitem", { name: "전체 동물" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "관심 동물 관리" })).toBeInTheDocument();
-    expect(screen.queryByRole("menuitem", { name: "강아지 커뮤니티" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "동물 게시판" }));
+    expect(screen.getByRole("menuitem", { name: "전체 동물 게시판" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "동물 게시판 관리" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "강아지 게시판" })).not.toBeInTheDocument();
   });
 
   it("renders the reset and verification routes", () => {
