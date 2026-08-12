@@ -221,8 +221,8 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
       ...init?.headers,
     },
   });
-  recordApiTiming(path, response.status, startedAt ? performance.now() - startedAt : 0);
   const body = await response.text();
+  recordApiTiming(path, response.status, startedAt ? performance.now() - startedAt : 0);
 
   if (!response.ok) {
     let problem: ProblemDetail = {};
@@ -290,9 +290,35 @@ function cachedGet<T>(key: string, path: string, signal: AbortSignal | undefined
   return withAbortSignal(request, signal);
 }
 
-export async function getCsrfToken(): Promise<string> {
-  const response = await apiFetch<{ token: string }>("/api/v1/auth/csrf");
-  return response.token;
+let csrfRequest: Promise<string> | null = null;
+
+function csrfCookie() {
+  return document.cookie
+    .split("; ")
+    .find((cookie) => cookie.startsWith("XSRF-TOKEN="))
+    ?.split("=")[1];
+}
+
+export function getCsrfToken(): Promise<string> {
+  const cookieToken = csrfCookie();
+  if (cookieToken) return Promise.resolve(decodeURIComponent(cookieToken));
+  if (!csrfRequest) {
+    csrfRequest = apiFetch<{ token: string }>("/api/v1/auth/csrf")
+      .then((response) => response.token)
+      .finally(() => { csrfRequest = null; });
+  }
+  return csrfRequest;
+}
+
+export async function apiMutate<T>(path: string, init: RequestInit): Promise<T> {
+  const csrfToken = await getCsrfToken();
+  return apiFetch<T>(path, {
+    ...init,
+    headers: {
+      ...(init.headers ?? {}),
+      "X-XSRF-TOKEN": csrfToken,
+    },
+  });
 }
 
 function currentMember(signal?: AbortSignal) {
@@ -300,8 +326,7 @@ function currentMember(signal?: AbortSignal) {
 }
 
 async function mutate<T>(path: string, init: RequestInit): Promise<T> {
-  await getCsrfToken();
-  return apiFetch<T>(path, init);
+  return apiMutate<T>(path, init);
 }
 
 const jsonHeaders = { "content-type": "application/json" };

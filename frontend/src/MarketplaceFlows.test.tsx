@@ -23,7 +23,10 @@ const listing = {
   version: 0,
 };
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  document.cookie = "XSRF-TOKEN=; Max-Age=0; path=/";
+  vi.unstubAllGlobals();
+});
 
 describe("Marketplace journeys", () => {
   it("loads the public listing and creates a new listing", async () => {
@@ -52,6 +55,7 @@ describe("Marketplace journeys", () => {
       return Promise.resolve(response({}));
     });
     vi.stubGlobal("fetch", fetchMock);
+    document.cookie = "XSRF-TOKEN=csrf-token; path=/";
 
     render(
       <MemoryRouter initialEntries={["/marketplace"]}>
@@ -71,7 +75,11 @@ describe("Marketplace journeys", () => {
     expect(await screen.findByRole("heading", { name: "강아지 이동장" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/marketplace/listings",
-      expect.objectContaining({ method: "POST" }),
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ "X-XSRF-TOKEN": "csrf-token" }),
+      }),
     );
+    expect(fetchMock.mock.calls.filter(([input]) => String(input).endsWith("/api/v1/auth/csrf"))).toHaveLength(0);
   });
 });

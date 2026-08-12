@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { adminModerationApi, ApiError, apiFetch, getCsrfToken } from "./api/client";
+import { adminModerationApi, ApiError, apiFetch, apiMutate } from "./api/client";
 import { useAbortableRequest } from "./hooks/useAbortableRequest";
 import { formatDateTime } from "./utils/date";
 
@@ -34,8 +34,7 @@ export default function AdminModeratorCasePage({ initialQueue }: { initialQueue?
     setActionError(null);
     setNotice(null);
     try {
-      await getCsrfToken();
-      const updated = await apiFetch<CaseItem>(`/api/admin/${encodeURIComponent(queue)}/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status }) });
+      const updated = await apiMutate<CaseItem>(`/api/admin/${encodeURIComponent(queue)}/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status }) });
       void updated;
       retry();
     } catch (requestError) {
