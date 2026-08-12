@@ -3,6 +3,7 @@ package com.townpet.notification;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.lang.Nullable;
 
 @Entity
 @Table(name = "notification")
@@ -21,12 +22,21 @@ class NotificationEntity {
   @Column(nullable = false, length = 1000)
   private String body;
 
-  private Instant readAt;
+  @Nullable private Instant readAt;
 
   @Column(nullable = false)
   private Instant createdAt;
 
   protected NotificationEntity() {}
+
+  NotificationEntity(UUID id, UUID recipientMemberId, String type, String title, String body) {
+    this.id = id;
+    this.recipientMemberId = recipientMemberId;
+    this.type = type;
+    this.title = title;
+    this.body = body;
+    this.createdAt = Instant.now();
+  }
 
   UUID getId() {
     return id;
@@ -48,7 +58,7 @@ class NotificationEntity {
     return body;
   }
 
-  Instant getReadAt() {
+  @Nullable Instant getReadAt() {
     return readAt;
   }
 

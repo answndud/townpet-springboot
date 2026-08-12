@@ -2,8 +2,10 @@ package com.townpet.engagement;
 
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
+import com.townpet.notification.api.NotificationEvent;
 import java.util.UUID;
 import org.springframework.dao.DataAccessException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,12 +17,15 @@ class ReactionService {
   private final ReactionRepository reactions;
   private final PublicationAccess publications;
   private final BlockDirectory blocks;
+  private final ApplicationEventPublisher events;
 
   ReactionService(
-      ReactionRepository reactions, PublicationAccess publications, BlockDirectory blocks) {
+      ReactionRepository reactions, PublicationAccess publications, BlockDirectory blocks,
+      ApplicationEventPublisher events) {
     this.reactions = reactions;
     this.publications = publications;
     this.blocks = blocks;
+    this.events = events;
   }
 
   @Transactional(readOnly = true)
@@ -42,6 +47,8 @@ class ReactionService {
     if (active && existing.isEmpty()) {
       try {
         reactions.saveAndFlush(new ReactionEntity(publicationId, memberId, TYPE));
+        publications.activeAuthorMemberId(publicationId).ifPresent(recipient -> events.publishEvent(
+            new NotificationEvent(recipient, memberId, "REACTION", "새 공감이 도착했습니다", "게시글에 새로운 공감이 등록되었습니다.")));
       } catch (DataAccessException exception) {
         throw new ReactionPublicationNotFoundException();
       }

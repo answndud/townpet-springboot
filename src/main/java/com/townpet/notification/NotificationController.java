@@ -5,6 +5,7 @@ import java.util.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -54,5 +55,5 @@ class NotificationController {
   }
 
   record Response(
-      UUID id, String type, String title, String body, Instant readAt, Instant createdAt) {}
+      UUID id, String type, String title, String body, @Nullable Instant readAt, Instant createdAt) {}
 }
