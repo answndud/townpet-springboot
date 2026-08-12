@@ -222,7 +222,6 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     },
   });
   const body = await response.text();
-  recordApiTiming(path, response.status, startedAt ? performance.now() - startedAt : 0);
 
   if (!response.ok) {
     let problem: ProblemDetail = {};
@@ -233,10 +232,13 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
         problem = { detail: body };
       }
     }
+    recordApiTiming(path, response.status, startedAt ? performance.now() - startedAt : 0);
     throw new ApiError(response.status, problem);
   }
 
-  return (body ? JSON.parse(body) : undefined) as T;
+  const result = (body ? JSON.parse(body) : undefined) as T;
+  recordApiTiming(path, response.status, startedAt ? performance.now() - startedAt : 0);
+  return result;
 }
 
 type CachedGetEntry = { value: unknown; expiresAt: number };
