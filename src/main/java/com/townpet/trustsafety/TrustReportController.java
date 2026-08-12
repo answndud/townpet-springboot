@@ -89,7 +89,7 @@ class TrustReportController {
       @NotBlank @Size(max = 40) String reason,
       @Size(max = 1000) String detail) {}
 
-  record ReviewRequest(@Pattern(regexp = "REVIEWED|REJECTED") String status) {}
+  record ReviewRequest(@NotBlank @Pattern(regexp = "REVIEWED|REJECTED") String status) {}
 
   record ReportResponse(
       UUID id,
