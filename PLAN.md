@@ -8,11 +8,35 @@
 
 ## Current status
 
-이전 release-candidate 커밋(`fb7241d`)을 다시 감사해 발견한 동시성·상태·용량·멱등성 결함을 수정했다. 현재 변경은 `V052`와 원자적 조회수·capacity enforcement·첨부 직렬화·이벤트 오류 구분을 포함하며, fresh backend gate와 Docker runtime evidence를 통과했다. 공개 배포는 시작하지 않는다.
+이전 release-candidate(`fb7241d`)를 기준으로 백엔드만 세 차례 재감사했다. 1차는 보안 오류 계약·관리자 self-target·입력 상한, 2차는 대량 moderation update의 무제한 entity load와 실제 반영 건수 오류, 3차는 request trace·duration log와 graceful shutdown 상한을 닫았다. 현재 변경은 `6366d41`, `dab5527`, `7de4416`에 묶였고 각 사이클의 인접 테스트는 통과했다. 남은 것은 fresh 전체 backend gate와 Docker 재기동 대사이며, 공개 배포는 시작하지 않는다.
 
 ## Active
 
 ### 재감사 사이클 - 실제 충돌·성능·재기동 결함을 닫는다
+
+이번 최종 감사에서는 기능을 더 잘게 쪼개지 않고 아래 세 사이클을 완료했다. 마지막 통합 gate만 남겨 둔다.
+
+1. **보안·입력 경계** — `6366d41` 완료
+   - 인증 실패와 권한 부족을 동일한 ProblemDetail 계약으로 통일하고 trace id를 보존한다.
+   - 관리자 본인 제재를 차단하고 moderation reason·신고 상태·bulk ID에 서버 상한과 공백 검증을 적용한다.
+   - CSP report의 빈 body가 500으로 흐르지 않도록 명시적인 413/400 경계를 둔다.
+   - 검증: `GlobalProblemHttpTest`, `IdentityMemberControllerTest`.
+
+2. **상태·대량 처리 효율** — `dab5527` 완료
+   - 작성자별 콘텐츠 공개 범위 변경을 전체 entity load/save에서 조건부 bulk update로 바꾸고 version을 증가시킨다.
+   - moderation bulk 응답은 요청 수가 아니라 실제 존재·변경 대상 수를 반환한다.
+   - 작성자/lifecycle 복합 index와 Modulith/ArchUnit 경계를 함께 고정한다.
+   - 검증: publication·identity integration test, architecture migration test.
+
+3. **실행 관측·종료 안정성** — `7de4416` 완료
+   - 모든 요청에 method/path/status/duration과 trace id를 남기되 query string은 기록하지 않는다.
+   - 로그 pattern에 trace id를 연결하고 graceful shutdown phase를 20초로 제한한다.
+   - 검증: `RequestTraceFilterTest`, `GlobalProblemHttpTest`.
+
+4. **최종 통합 gate** — 진행 예정
+   - 위 사이클 이후 clean backend test, migration/performance, bootJar를 한 번만 fresh 실행한다.
+   - Docker 빈 volume에서 migration→health/readiness→demo seed 2회→재기동을 확인한다.
+   - 실패가 나오면 원인 수정 후 해당 gate만 재실행하고, 통과 전에는 “완료”라고 표현하지 않는다.
 
 1. **상태·동시성 불변식을 실제 저장소에서 고정한다.**
    - 파일: `care/`, `welfare/VolunteerService.java`, `media/MediaService.java`, `publication/PublicationMetricsController.java`, `db/migration/V052__moderator_case_open_flag_uniqueness.sql`

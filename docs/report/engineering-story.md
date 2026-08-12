@@ -78,3 +78,14 @@ Spring Method Security를 활성화하고 `/api/admin/**`, 신고 compatibility 
 
 - 근거: `c1f5c68`, `V052__moderator_case_open_flag_uniqueness.sql`, `ReleaseCandidateQueryPlanTest`, Docker compose health/seed output
 - trade-off: row/advisory lock과 partial index는 단일 VPS 규모에서 충분한 일관성을 제공하지만, 실제 운영 부하·replica·queue 요구가 생기면 별도 부하 측정과 확장 설계가 필요하다.
+
+## 8. 마지막 백엔드 감사에서 경계와 대량 처리의 숨은 결함을 닫았다
+
+기존 통합 테스트가 정상 사용자 흐름은 확인했지만, Spring Security filter에서 바로 끝나는 401·403 응답은 MVC의 ProblemDetail 규칙을 거치지 않는다는 점을 발견했다. 인증 entry point와 access denied handler를 identity 모듈 안에 두어 기계 판독 code와 trace id를 같은 응답으로 반환하게 했다. moderator가 자기 계정을 제재할 수 있는 운영 경계와 빈 reason·무제한 bulk ID 같은 입력 경계도 함께 닫았다.
+
+작성자 콘텐츠 공개 범위 변경은 모든 게시글을 JPA entity로 읽어 변경·저장하고 있었다. 게시글 수가 늘면 메모리와 flush 비용이 선형으로 커지고, 응답의 affected 수에도 이미 같은 상태인 row가 섞였다. 조건부 PostgreSQL bulk update로 ACTIVE↔HIDDEN row만 version과 updatedAt을 함께 갱신하고, 작성자/lifecycle index를 추가했다. 이때 entity·repository를 다른 모듈에 노출하지 않도록 Modulith named boundary를 유지했다.
+
+마지막으로 request trace를 response header에만 남기면 장애 시 서버 로그와 연결되지 않는 문제가 있어, query string을 제외한 method/path/status/duration을 MDC trace id와 함께 기록했다. graceful shutdown timeout도 명시해 종료가 무한정 대기하지 않게 했다. 이 세 변경은 작은 파일별 작업이 아니라 보안·데이터 효율·운영 진단이라는 세 개의 감사 사이클로 묶었고, 최종 판단은 fresh backend/Docker gate 이후로 유보한다.
+
+- 근거: `6366d41`, `dab5527`, `7de4416`, `StableSecurityProblemHandlers`, `PublicationRepository`, `RequestTraceFilter`, 관련 architecture·identity·publication test
+- trade-off: bulk update는 대량 moderation에 효율적이지만 JPA entity lifecycle callback이 필요한 규칙에는 적용하지 않는다. 요청 로그는 진단 가능성을 높이는 대신 path 식별자가 포함될 수 있어 query와 민감 body는 기록하지 않는다.
