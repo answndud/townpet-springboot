@@ -75,6 +75,13 @@ class CareRequestEntity {
     updatedAt = Instant.now();
   }
 
+  void markMatched() {
+    if (status != CareRequestStatus.OPEN)
+      throw new IllegalStateException("Care request is not open");
+    status = CareRequestStatus.MATCHED;
+    updatedAt = Instant.now();
+  }
+
   UUID getId() {
     return id;
   }

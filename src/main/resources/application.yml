@@ -38,5 +38,7 @@ management:
         include: health,info
 
 townpet:
+  demo-data:
+    enabled: ${TOWNPET_DEMO_DATA_ENABLED:true}
   build:
     version: "0.1.0-SNAPSHOT"

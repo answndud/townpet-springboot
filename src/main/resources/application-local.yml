@@ -1,0 +1,5 @@
+townpet:
+  demo-data:
+    enabled: true
+  media:
+    local-root: ./.townpet/uploads

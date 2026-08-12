@@ -19,6 +19,7 @@ audit:
     relationship: [frontend/e2e/relationship-management.spec.ts, src/test/java/com/townpet/relationship/RelationshipControllerTest.java]
     lostfound: [frontend/src/LostFoundFlows.test.tsx, src/test/java/com/townpet/lostfound/LostFoundAlertControllerTest.java]
     marketplace: [frontend/src/MarketplaceFlows.test.tsx, src/test/java/com/townpet/marketplace/MarketplaceListingControllerTest.java]
+    care: [frontend/src/features/care/CarePages.tsx, src/test/java/com/townpet/care/CareControllerTest.java]
   uncovered: []
 normalization:
   ignoredFields: [traceId, requestId, generatedAt]
