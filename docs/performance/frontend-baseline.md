@@ -13,28 +13,28 @@
 
 ## Route shell response
 
-| route | status | median | samples | bytes |
-|---|---:|---:|---|---:|
-| `/` | 200 | 5.09ms | 32.73 / 5.09 / 2.69 | 651 |
-| `/feed/guest` | 200 | 5.30ms | 5.46 / 5.30 / 3.86 | 651 |
-| `/marketplace` | 200 | 4.50ms | 5.61 / 4.50 / 4.22 | 651 |
-| `/lost-found` | 200 | 5.99ms | 5.60 / 6.41 / 5.99 | 651 |
-| `/guides?q=산책` | 200 | 10.81ms | 10.81 / 11.33 / 5.68 | 651 |
-| `/gatherings` | 200 | 4.13ms | 4.13 / 3.33 / 4.91 | 651 |
-| `/care` | 200 | 1.93ms | 1.75 / 1.93 / 2.13 | 651 |
+| route | status | median | p75 | samples | bytes |
+|---|---:|---:|---:|---|---:|
+| `/` | 200 | 4.30ms | 37.07ms | 37.07 / 4.30 / 4.04 | 651 |
+| `/feed/guest` | 200 | 4.46ms | 6.25ms | 6.25 / 3.67 / 4.46 | 651 |
+| `/marketplace` | 200 | 4.18ms | 4.72ms | 3.38 / 4.18 / 4.72 | 651 |
+| `/lost-found` | 200 | 3.15ms | 6.39ms | 3.15 / 2.97 / 6.39 | 651 |
+| `/guides?q=산책` | 200 | 3.25ms | 5.70ms | 3.25 / 5.70 / 3.01 | 651 |
+| `/gatherings` | 200 | 2.53ms | 2.85ms | 2.53 / 1.69 / 2.85 | 651 |
+| `/care` | 200 | 1.72ms | 1.92ms | 1.72 / 1.92 / 1.64 | 651 |
 
 ## Public API response
 
 API 샘플은 브라우저의 session·CSRF mutation이 아니라 public GET read 경로만 측정한다.
 
-| endpoint | status | median | samples | bytes |
-|---|---:|---:|---|---:|
-| `/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL` | 200 | 12.16ms | 23.40 / 11.41 / 12.16 | 6,908 |
-| `/api/v1/marketplace/listings?limit=30` | 200 | 11.90ms | 7.94 / 11.90 / 14.38 | 751 |
-| `/api/v1/lost-found/alerts?limit=20` | 200 | 7.87ms | 11.74 / 7.81 / 7.87 | 1,134 |
-| `/api/v1/local-resources?query=산책` | 200 | 6.65ms | 6.65 / 9.30 / 6.51 | 1,021 |
-| `/api/v1/gatherings` | 200 | 13.68ms | 14.70 / 13.68 / 10.10 | 1,528 |
-| `/api/v1/care/requests` | 200 | 7.43ms | 8.46 / 6.87 / 7.43 | 482 |
+| endpoint | status | median | p75 | samples | bytes |
+|---|---:|---:|---:|---|---:|
+| `/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL` | 200 | 10.20ms | 21.97ms | 21.97 / 9.69 / 10.20 | 6,908 |
+| `/api/v1/marketplace/listings?limit=30` | 200 | 11.68ms | 12.74ms | 11.68 / 12.74 / 11.20 | 751 |
+| `/api/v1/lost-found/alerts?limit=20` | 200 | 35.63ms | 48.17ms | 48.17 / 35.63 / 29.80 | 1,134 |
+| `/api/v1/local-resources?query=산책` | 200 | 10.03ms | 11.23ms | 10.03 / 11.23 / 9.86 | 1,021 |
+| `/api/v1/gatherings` | 200 | 8.42ms | 11.16ms | 11.16 / 7.73 / 8.42 | 1,528 |
+| `/api/v1/care/requests` | 200 | 8.37ms | 8.53ms | 8.37 / 8.53 / 6.79 | 482 |
 
 원본 JSON은 명령 실행 output이며, credential·session·개인정보를 저장하지 않는다. 이번 기준선은 API status, median, samples, bytes를 기록한다. 반복 수가 3회라 p75는 별도 해석하지 않는다.
 
@@ -45,8 +45,9 @@ API 샘플은 브라우저의 session·CSRF mutation이 아니라 public GET rea
 | entry JS raw | 320KB | build budget script로 검사 |
 | entry JS gzip | 100KB | build budget script로 검사 |
 | entry CSS raw | 50KB | build budget script로 검사 |
-| route shell median | 100ms local | 현재 1.93–10.81ms |
-| unexpected public GET 5xx | 0 | fresh run의 모든 route/API sample이 200; script도 5xx에서 실패 |
+| route shell median | 100ms local | 현재 1.72–4.46ms; p75 최대 37.07ms |
+| API median | 250ms local | 현재 8.37–35.63ms; p75 최대 48.17ms |
+| unexpected public GET 5xx | 0 | fresh run의 39개 sample이 모두 200; script도 5xx/budget 초과에서 실패 |
 
 ## Limitations and next run
 
