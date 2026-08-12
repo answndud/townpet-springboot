@@ -9,6 +9,7 @@ import {
 } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
+import { formatDateTime } from "../../utils/date";
 
 const KIND_LABELS: Record<MarketplaceListingKind, string> = {
   SELL: "판매",
@@ -22,14 +23,8 @@ const STATUS_LABELS: Record<MarketplaceListingStatus, string> = {
   COMPLETED: "거래 완료",
   CANCELLED: "취소됨",
 };
-const dateFormatter = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
-
 function formatPrice(price: number | null) {
   return price === null ? "무료 나눔" : `${price.toLocaleString("ko-KR")}원`;
-}
-
-function formatDate(value: string) {
-  return dateFormatter.format(new Date(value));
 }
 
 function MarketplaceHeader({ action = true }: { action?: boolean }) {
@@ -77,7 +72,7 @@ export function MarketplaceListPage() {
               <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[item.kind]}</span><span className="publication-chip">{STATUS_LABELS[item.status]}</span></div>
               <h2>{item.title}</h2><p>{item.description}</p>
               <strong>{formatPrice(item.priceKrw)}</strong>
-              <small>{formatDate(item.createdAt)}</small>
+              <small>{formatDateTime(item.createdAt)}</small>
             </Link>
           ))}
         </section>
@@ -114,7 +109,7 @@ export function MarketplaceDetailPage() {
       <article className="surface-card marketplace-detail-card">
         <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[listing.kind]}</span><span className="publication-chip">{STATUS_LABELS[listing.status]}</span></div>
         <h1>{listing.title}</h1><p className="marketplace-price">{formatPrice(listing.priceKrw)}</p><p className="marketplace-description">{listing.description}</p>
-        <div className="marketplace-detail-meta"><span>TownPet 회원</span><span>·</span><time dateTime={listing.createdAt}>{formatDate(listing.createdAt)}</time></div>
+        <div className="marketplace-detail-meta"><span>TownPet 회원</span><span>·</span><time dateTime={listing.createdAt}>{formatDateTime(listing.createdAt)}</time></div>
         {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
         {owner && (listing.status === "AVAILABLE" || listing.status === "RESERVED") ? <div className="marketplace-actions">
           {listing.status === "AVAILABLE" ? <button className="button button-primary" disabled={changing} onClick={() => changeStatus("RESERVED")}>예약 처리</button> : <button className="button button-soft" disabled={changing} onClick={() => changeStatus("AVAILABLE")}>예약 취소</button>}
