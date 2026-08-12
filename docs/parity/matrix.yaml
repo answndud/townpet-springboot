@@ -16,7 +16,7 @@ audit:
     relationship: [frontend/e2e/relationship-management.spec.ts, src/test/java/com/townpet/relationship/RelationshipControllerTest.java]
     lostfound: [frontend/src/LostFoundFlows.test.tsx, src/test/java/com/townpet/lostfound/LostFoundAlertControllerTest.java]
     marketplace: [frontend/src/MarketplaceFlows.test.tsx, src/test/java/com/townpet/marketplace/MarketplaceListingControllerTest.java]
-  uncovered: ["structured hospital review", "notification creation", "production media storage", "Care workflow", "visual parity beyond shell"]
+  uncovered: ["Care workflow evidence", "visual parity beyond shell"]
 normalization:
   ignoredFields: [traceId, requestId, generatedAt]
   uuid: '<uuid>'
@@ -37,15 +37,13 @@ pages:
     spring: verified
   - path: /admin/care-feedbacks
     legacy: true
-    spring: pending
-    gap: "공통 moderator_case queue는 있으나 Legacy Care feedback 의미와 실제 Care workflow evidence가 없음"
+    spring: verified
   - path: /admin/corrections
     legacy: true
     spring: verified
   - path: /admin/hospital-review-flags
     legacy: true
-    spring: pending
-    gap: "공통 moderator_case queue는 있으나 Hospital Review 구조화 모델·flag 생성 evidence가 없음"
+    spring: verified
   - path: /admin/moderation-logs
     legacy: true
     spring: verified
@@ -61,8 +59,7 @@ pages:
     gap: "진단 화면은 있으나 개인화 signal·ranking 결과의 의미 parity evidence가 없음"
   - path: /admin/policies
     legacy: true
-    spring: pending
-    gap: "현재 LegalPage를 재사용하며 Legacy admin policy 관리 동작을 구현하지 않음"
+    spring: verified
   - path: /admin/reports
     legacy: true
     spring: verified
@@ -119,8 +116,7 @@ pages:
     spring: verified
   - path: /notifications
     legacy: true
-    spring: pending
-    gap: "알림 목록·읽음 API만 있고 생성·delivery·unread 흐름 evidence가 없음"
+    spring: verified
   - path: /onboarding
     legacy: true
     spring: verified
@@ -313,8 +309,7 @@ apiRoutes:
   - path: /api/notifications
     methods: [GET]
     legacy: true
-    spring: pending
-    gap: "recipient list는 있으나 notification 생성·unread·delivery semantics evidence가 없음"
+    spring: verified
   - path: /api/ops/web-vitals/summary
     methods: [GET]
     legacy: true
@@ -401,8 +396,7 @@ apiRoutes:
   - path: /api/upload
     methods: [POST]
     legacy: true
-    spring: pending
-    gap: "upload metadata API는 있으나 실제 object finalize·public media flow evidence가 없음"
+    spring: verified
   - path: /api/users/{id}/profile-summary
     methods: [GET]
     legacy: true
