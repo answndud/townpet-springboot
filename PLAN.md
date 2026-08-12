@@ -55,7 +55,7 @@ Legacy TownPet의 관찰 가능한 제품 동작을 Java 25·Spring Boot·Postgr
   - 모바일·desktop 대표 viewport에서 navigation, form, modal, list/detail, admin 화면의 키보드·screen reader·focus·contrast를 맞춘다.
   - Vite asset hash, route fallback, API proxy, bundle·image loading과 주요 Web Vital을 측정해 회귀를 막는다.
 - 검증: `corepack pnpm -C frontend typecheck`, `corepack pnpm -C frontend test`, `corepack pnpm -C frontend build`, 대표 Playwright visual/browser smoke와 성능 snapshot.
-- 완료: 기능이 같은 것뿐 아니라 주요 page family의 시각·반응형·접근성·직접 URL 동작이 Legacy와 비교 가능한 수준이다. 공통 skip link·focus-visible·reduced-motion, route metadata, Vite hashed asset output을 적용했고 frontend typecheck/test/build가 통과했다. Playwright shell smoke는 로컬 Playwright 브라우저 바이너리 미설치로 실행 불가했다.
+- 완료: 기능이 같은 것뿐 아니라 주요 page family의 시각·반응형·접근성·직접 URL 동작이 Legacy와 비교 가능한 수준이다. 공통 skip link·focus-visible·reduced-motion, route metadata, Vite hashed asset output을 적용했고 frontend typecheck/test/build와 Chromium desktop/mobile shell smoke(4 tests)가 통과했다.
 
 ### G8 - 데이터·문서·품질 gate를 갖춘 재현 가능한 릴리스를 만든다
 
