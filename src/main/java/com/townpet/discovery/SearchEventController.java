@@ -31,8 +31,12 @@ class SearchEventController {
               hash(request.query()),
               request.route(),
               request.clientEventId()));
-    } catch (DataIntegrityViolationException ignored) {
-      // Replayed client event is already recorded; keep the endpoint idempotent.
+    } catch (DataIntegrityViolationException exception) {
+      if (request.clientEventId() == null
+          || events.findByClientEventId(request.clientEventId()).isEmpty()) {
+        throw exception;
+      }
+      // A replayed client event is already recorded; keep the endpoint idempotent.
     }
   }
 

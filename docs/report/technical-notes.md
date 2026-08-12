@@ -34,6 +34,7 @@
 - Follow/block 활성화는 단순 `find → save`가 아니라 PostgreSQL `ON CONFLICT DO NOTHING` upsert를 사용한다. 애플리케이션 멱등성 검사와 DB unique constraint를 함께 두고, 실제 병렬 MockMvc 요청에서도 한 원장만 남도록 검증한다. 관계 조회는 항상 authenticated principal을 viewer로 사용해 다른 회원의 상태를 읽거나 바꿀 수 없다.
 - Engagement는 `PublicationAccess.activeAuthorMemberId`와 `BlockDirectory`를 함께 사용해 publication 작성자 차단 정책을 재확인한다. 차단 회원의 댓글 목록·작성, reaction·bookmark 상태 조회·변경은 모두 `404`로 수렴하고, 비회원 공개 읽기는 유지해 UI별 정책 차이를 만들지 않는다.
 - V012는 세 engagement 원장에 PostgreSQL `BEFORE INSERT` guard를 추가한다. 애플리케이션 정책 조회와 block 전환 사이에 경합이 생겨도 차단된 actor의 새 원장 삽입은 DB에서 거부되며, 서비스는 이를 publication-not-found 정책 오류로 변환한다. 캐시는 도입하지 않아 별도 무효화나 stale state가 없다.
+- 목록 조회는 공개·운영 큐에 상한과 `(createdAt|startsAt, id)` tie-breaker를 사용한다. `V051`의 복합 index와 `ReleaseCandidateQueryPlanTest`의 PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` 검증으로 volunteer/trust queue가 의도한 index path를 갖는지 확인한다. 작은 local fixture에서 측정된 latency를 운영 SLA로 확대해석하지 않고, 실제 corpus가 커질 때 별도 부하 기준을 정한다.
 - block 해제 뒤에는 같은 authenticated principal이 댓글·reaction·bookmark를 다시 생성할 수 있어야 한다. `BlockedEngagementPolicyTest.unblockingRestoresEngagementCreationForTheSameMember`는 해제 요청 후 세 API가 성공하고 각 source row가 하나씩만 생성되는지 확인해, 차단 중 거부 정책과 해제 후 복구 정책이 분리되지 않도록 한다.
 - engagement 상태 검증은 HTTP 응답만 보지 않고 source row와 다시 읽은 요약을 함께 확인한다. 댓글 삭제는 row를 `DELETED`로 남기되 목록에서 제외하고, reaction·bookmark 비활성화는 원장을 제거해 count/active가 0 또는 false로 돌아가도록 `CommentControllerTest`, `ReactionControllerTest`, `BookmarkControllerTest`에서 검증한다.
 - Spring Modulith는 module/cycle을, ArchUnit은 내부 package와 type 노출 규칙을 검사한다.
@@ -69,6 +70,6 @@
 - 실제 email provider adapter, transaction 이후 durable delivery와 retry·bounce 처리
 - publication 복구와 media lifecycle
 - event retry/idempotency, concurrency mutation, generated jOOQ schema와 feed projection
-- 성능 수치, query plan, backup/restore와 배포 관측 evidence
+- 큰 corpus의 representative latency·query count, backup/restore와 배포 관측 evidence
 
 이 항목들은 구현·실험 근거가 생길 때 해당 절에 추가한다. 미리 일반론을 채우지 않는다.

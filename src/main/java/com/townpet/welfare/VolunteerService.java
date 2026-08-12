@@ -61,7 +61,31 @@ class VolunteerService {
 
   @Transactional
   void apply(UUID applicant, UUID id, String message) {
-    if (find(id).isEmpty()) throw new NoSuchElementException();
+    Opportunity opportunity =
+        jdbc
+            .query(
+                "SELECT id,publisher_member_id,title,description,organization,location,starts_at,capacity,status,created_at,updated_at,version "
+                    + "FROM volunteer_opportunity WHERE id = ? FOR UPDATE",
+                (rs, row) -> map(rs),
+                id)
+            .stream()
+            .findFirst()
+            .orElseThrow(NoSuchElementException::new);
+    if (!Set.of("OPEN", "FULL").contains(opportunity.status())) {
+      throw new IllegalStateException("Opportunity is closed");
+    }
+    Integer applicationCountValue =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM volunteer_application WHERE opportunity_id = ?",
+            Integer.class,
+            id);
+    int applicationCount = Objects.requireNonNullElse(applicationCountValue, 0);
+    if (applicationCount >= opportunity.capacity()) {
+      jdbc.update(
+          "UPDATE volunteer_opportunity SET status = 'FULL', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+          id);
+      throw new IllegalStateException("Opportunity is full");
+    }
     try {
       jdbc.update(
           "INSERT INTO volunteer_application(id,opportunity_id,applicant_member_id,message) VALUES(?,?,?,?)",
@@ -69,6 +93,11 @@ class VolunteerService {
           id,
           applicant,
           message.trim());
+      if (applicationCount + 1 >= opportunity.capacity()) {
+        jdbc.update(
+            "UPDATE volunteer_opportunity SET status = 'FULL', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            id);
+      }
     } catch (org.springframework.dao.DataIntegrityViolationException e) {
       throw new IllegalStateException("Already applied");
     }

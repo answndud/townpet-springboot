@@ -4,7 +4,7 @@ import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +38,7 @@ class BookmarkService {
     if (active && existing.isEmpty()) {
       try {
         bookmarks.saveAndFlush(new BookmarkEntity(publicationId, memberId));
-      } catch (DataAccessException exception) {
+      } catch (DataIntegrityViolationException exception) {
         throw new BookmarkPublicationNotFoundException();
       }
     } else if (!active) {

@@ -6,10 +6,12 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -25,6 +27,7 @@ class HospitalReviewFlagController {
   @PostMapping("/{reviewId}/flags")
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
+  @Transactional
   FlagResponse flag(
       @PathVariable UUID reviewId,
       @AuthenticationPrincipal UserDetails principal,
@@ -43,12 +46,16 @@ class HospitalReviewFlagController {
     if (open != null && open > 0)
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Already flagged");
     UUID id = UuidV7.randomUuid();
-    jdbc.update(
-        "INSERT INTO moderator_case (id, case_type, target_type, target_id, subject, detail) VALUES (?, 'HOSPITAL_REVIEW', 'HOSPITAL_REVIEW', ?, ?, ?)",
-        id,
-        reviewId,
-        request.reason(),
-        request.detail());
+    try {
+      jdbc.update(
+          "INSERT INTO moderator_case (id, case_type, target_type, target_id, subject, detail) VALUES (?, 'HOSPITAL_REVIEW', 'HOSPITAL_REVIEW', ?, ?, ?)",
+          id,
+          reviewId,
+          request.reason(),
+          request.detail());
+    } catch (DataIntegrityViolationException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Already flagged");
+    }
     return new FlagResponse(id, reviewId, "OPEN");
   }
 

@@ -2,6 +2,8 @@ package com.townpet.operations;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -132,10 +134,15 @@ class AdminModeratorCaseController {
     }
   }
 
-  record ReviewRequest(@NotBlank String status) {}
+  record ReviewRequest(
+      @NotBlank @jakarta.validation.constraints.Pattern(regexp = "REVIEWED|DISMISSED")
+          String status) {}
 
   record DirectRequest(
-      @NotBlank String targetType, UUID targetId, @NotBlank String action, String reason) {}
+      @NotBlank @Size(max = 80) String targetType,
+      @NotNull UUID targetId,
+      @NotBlank @Size(max = 80) String action,
+      @Size(max = 2000) String reason) {}
 
   record CaseResponse(
       UUID id,

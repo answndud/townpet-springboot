@@ -122,6 +122,11 @@ tasks.named<Test>("parityInventoryTest") {
         includeTestsMatching("com.townpet.parity.*")
     }
 }
+tasks.named<Test>("performanceTest") {
+    filter {
+        includeTestsMatching("com.townpet.performance.*")
+    }
+}
 
 tasks.named("check") {
     dependsOn(tasks.named("spotlessCheck"))

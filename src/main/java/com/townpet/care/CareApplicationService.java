@@ -37,7 +37,7 @@ class CareApplicationService {
     CareRequestEntity request =
         requests.findById(requestId).orElseThrow(NoSuchElementException::new);
     if (!request.getRequesterMemberId().equals(requester)) throw new SecurityException();
-    return applications.findByRequestIdOrderByCreatedAtAscIdAsc(requestId);
+    return applications.findTop100ByRequestIdOrderByCreatedAtAscIdAsc(requestId);
   }
 
   @Transactional
@@ -50,6 +50,12 @@ class CareApplicationService {
     CareRequestEntity request =
         requests.findById(requestId).orElseThrow(NoSuchElementException::new);
     if (!request.getRequesterMemberId().equals(requester)) throw new SecurityException();
+    if (request.getStatus() != CareRequestStatus.OPEN) {
+      throw new IllegalStateException("Request is no longer open");
+    }
+    if (status != CareApplicationStatus.ACCEPTED && status != CareApplicationStatus.DECLINED) {
+      throw new IllegalStateException("Only ACCEPTED or DECLINED is allowed");
+    }
     CareApplicationEntity application =
         applications
             .findByIdAndRequestId(applicationId, requestId)

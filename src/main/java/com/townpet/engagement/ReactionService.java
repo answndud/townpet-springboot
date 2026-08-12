@@ -5,7 +5,7 @@ import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,7 +60,7 @@ class ReactionService {
                             "REACTION",
                             "새 공감이 도착했습니다",
                             "게시글에 새로운 공감이 등록되었습니다.")));
-      } catch (DataAccessException exception) {
+      } catch (DataIntegrityViolationException exception) {
         throw new ReactionPublicationNotFoundException();
       }
     } else if (!active) {

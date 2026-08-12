@@ -69,6 +69,9 @@ class MediaService implements MediaOperations {
         || asset.getByteSize() != content.length) {
       throw new MediaObjectMismatchException();
     }
+    if (content.length > 10 * 1024 * 1024) {
+      throw new MediaInputNotAllowedException();
+    }
     if (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("image/")) {
       try {
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(content));
@@ -93,6 +96,10 @@ class MediaService implements MediaOperations {
   @Transactional
   UploadAssetEntity finalizeUpload(UUID ownerMemberId, UUID assetId, String checksumSha256) {
     UploadAssetEntity asset = ownedAsset(ownerMemberId, assetId);
+    if (asset.getStatus() != MediaAssetStatus.UPLOADING
+        || !asset.getExpiresAt().isAfter(Instant.now())) {
+      throw new MediaAssetStateException();
+    }
     StoredObject object =
         storage.inspect(asset.getObjectKey()).orElseThrow(MediaObjectNotFoundException::new);
     if (!object.contentType().equals(asset.getContentType())
@@ -110,7 +117,8 @@ class MediaService implements MediaOperations {
   @Transactional(readOnly = true)
   public CleanupReport inspectExpiredUploads(Instant now) {
     List<UploadAssetEntity> expired =
-        assets.findByStatusAndExpiresAtBefore(MediaAssetStatus.UPLOADING, now);
+        assets.findTop500ByStatusAndExpiresAtBeforeOrderByExpiresAtAscIdAsc(
+            MediaAssetStatus.UPLOADING, now);
     return new CleanupReport(
         expired.size(), expired.stream().mapToLong(UploadAssetEntity::getByteSize).sum(), 0, now);
   }
@@ -119,7 +127,8 @@ class MediaService implements MediaOperations {
   @Transactional
   public CleanupReport cleanupExpiredUploads(Instant now) {
     List<UploadAssetEntity> expired =
-        assets.findByStatusAndExpiresAtBefore(MediaAssetStatus.UPLOADING, now);
+        assets.findTop500ByStatusAndExpiresAtBeforeOrderByExpiresAtAscIdAsc(
+            MediaAssetStatus.UPLOADING, now);
     expired.forEach(asset -> storage.delete(asset.getObjectKey()));
     assets.deleteAll(expired);
     return new CleanupReport(
@@ -137,6 +146,8 @@ class MediaService implements MediaOperations {
             .activeAuthorMemberId(publicationId)
             .orElseThrow(MediaPublicationNotFoundException::new);
     if (!authorId.equals(ownerMemberId)) throw new MediaOwnershipException();
+    jdbc.queryForObject(
+        "SELECT id FROM publication WHERE id = ? FOR UPDATE", UUID.class, publicationId);
     Integer attachmentCount =
         jdbc.queryForObject(
             "SELECT COUNT(*) FROM upload_asset WHERE publication_id = ? AND status = 'ATTACHED'",
