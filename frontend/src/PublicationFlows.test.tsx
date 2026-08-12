@@ -273,7 +273,7 @@ describe("Publication journeys", () => {
     );
 
     fireEvent.click(await screen.findByRole("button", { name: "삭제" }));
-    expect(await screen.findByRole("heading", { name: "내 동네와 전체 새 글" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "내 피드" })).toBeInTheDocument();
     const deleteCall = fetchMock.mock.calls.find(([, init]) => init?.method === "DELETE");
     expect(deleteCall?.[1]?.body).toBe(JSON.stringify({ version: 1 }));
   });
