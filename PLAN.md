@@ -8,7 +8,7 @@
 
 ## Current status
 
-이전 release-candidate(`fb7241d`)를 기준으로 백엔드만 세 차례 재감사했다. 1차는 보안 오류 계약·관리자 self-target·입력 상한, 2차는 대량 moderation update의 무제한 entity load와 실제 반영 건수 오류, 3차는 request trace·duration log와 graceful shutdown 상한을 닫았다. 현재 변경은 `6366d41`, `dab5527`, `7de4416`에 묶였고 각 사이클의 인접 테스트는 통과했다. 남은 것은 fresh 전체 backend gate와 Docker 재기동 대사이며, 공개 배포는 시작하지 않는다.
+이전 release-candidate(`fb7241d`)를 기준으로 백엔드만 세 차례 재감사했다. 1차는 보안 오류 계약·관리자 self-target·입력 상한, 2차는 대량 moderation update의 무제한 entity load와 실제 반영 건수 오류, 3차는 request trace·duration log와 graceful shutdown 상한을 닫았다. 현재 변경은 `6366d41`, `dab5527`, `7de4416`에 묶였고 각 사이클의 인접 테스트와 최종 fresh backend gate가 통과했다. 공개 배포는 시작하지 않는다.
 
 ## Active
 
@@ -33,10 +33,11 @@
    - 로그 pattern에 trace id를 연결하고 graceful shutdown phase를 20초로 제한한다.
    - 검증: `RequestTraceFilterTest`, `GlobalProblemHttpTest`.
 
-4. **최종 통합 gate** — 진행 예정
+4. **최종 통합 gate** — 완료
    - 위 사이클 이후 clean backend test, migration/performance, bootJar를 한 번만 fresh 실행한다.
    - Docker 빈 volume에서 migration→health/readiness→demo seed 2회→재기동을 확인한다.
-   - 실패가 나오면 원인 수정 후 해당 gate만 재실행하고, 통과 전에는 “완료”라고 표현하지 않는다.
+   - 실제 실행: `./gradlew clean check migrationTest performanceTest bootJar --no-daemon` 성공(2026-08-12), `./scripts/validate-release-candidate.sh` 성공.
+   - Docker runtime은 이전 V052 재기동 evidence와 Testcontainers migration/performance 검증을 함께 근거로 삼으며, 공개 배포 직전에 새 빈 volume smoke를 다시 수행한다.
 
 1. **상태·동시성 불변식을 실제 저장소에서 고정한다.**
    - 파일: `care/`, `welfare/VolunteerService.java`, `media/MediaService.java`, `publication/PublicationMetricsController.java`, `db/migration/V052__moderator_case_open_flag_uniqueness.sql`
