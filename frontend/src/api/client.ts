@@ -290,6 +290,10 @@ function cachedGet<T>(key: string, path: string, signal: AbortSignal | undefined
   return withAbortSignal(request, signal);
 }
 
+function invalidateCachedGet(key: string) {
+  cachedGetEntries.delete(key);
+}
+
 let csrfRequest: Promise<string> | null = null;
 
 function csrfCookie() {
@@ -391,7 +395,9 @@ export const memberApi = {
     return apiFetch<PublicMemberReaction[]>(`/api/v1/members/${encodeURIComponent(memberId)}/reactions`, { signal });
   },
   myPosts(signal?: AbortSignal) { return apiFetch<Publication[]>("/api/v1/publications/mine", { signal }); },
-  bookmarks(signal?: AbortSignal) { return apiFetch<string[]>("/api/v1/members/me/bookmarks", { signal }); },
+  bookmarks(signal?: AbortSignal) {
+    return cachedGet<string[]>("member:bookmarks", "/api/v1/members/me/bookmarks", signal, 15_000);
+  },
   updateOnboarding(input: OnboardingInput) {
     return mutate<Member>("/api/v1/members/me/onboarding", {
       method: "PUT",
@@ -473,23 +479,26 @@ export const publicationApi = {
     });
   },
   detail(publicationId: string, signal?: AbortSignal) {
-    return apiFetch<Publication>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
-      signal,
-    });
+    const path = `/api/v1/publications/${encodeURIComponent(publicationId)}`;
+    return cachedGet<Publication>(`publication:${publicationId}`, path, signal, 30_000);
   },
-  edit(publicationId: string, input: EditPublicationInput) {
-    return mutate<Publication>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
+  async edit(publicationId: string, input: EditPublicationInput) {
+    const updated = await mutate<Publication>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
       method: "PUT",
       headers: jsonHeaders,
       body: JSON.stringify(input),
     });
+    invalidateCachedGet(`publication:${publicationId}`);
+    return updated;
   },
-  delete(publicationId: string, version: number) {
-    return mutate<void>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
+  async delete(publicationId: string, version: number) {
+    const result = await mutate<void>(`/api/v1/publications/${encodeURIComponent(publicationId)}`, {
       method: "DELETE",
       headers: jsonHeaders,
       body: JSON.stringify({ version }),
     });
+    invalidateCachedGet(`publication:${publicationId}`);
+    return result;
   },
   share(publicationId: string) {
     return mutate<{ path: string }>(`/api/posts/${encodeURIComponent(publicationId)}/share`, {
@@ -550,8 +559,8 @@ export const publicationApi = {
       { signal },
     );
   },
-  setBookmark(publicationId: string, active: boolean) {
-    return mutate<Bookmark>(
+  async setBookmark(publicationId: string, active: boolean) {
+    const result = await mutate<Bookmark>(
       `/api/v1/publications/${encodeURIComponent(publicationId)}/bookmark`,
       {
         method: "PUT",
@@ -559,6 +568,8 @@ export const publicationApi = {
         body: JSON.stringify({ active }),
       },
     );
+    invalidateCachedGet("member:bookmarks");
+    return result;
   },
   relationship(memberId: string, signal?: AbortSignal) {
     return apiFetch<Relationship>(
