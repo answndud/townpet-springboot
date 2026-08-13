@@ -15,11 +15,12 @@ docker compose -f deploy/compose/portfolio.yml config
 
 1. PostgreSQL·MinIO만 시작한다.
 2. health가 `healthy`가 될 때까지 기다린다.
-3. backend를 내부 네트워크에서 시작해 Flyway를 적용한다.
-4. `scripts/sanitize-production-demo.sh`를 dry-run으로 먼저 실행한다.
-5. 대상이 새 production DB인지 확인한 뒤 `TOWNPET_PRODUCTION_SANITIZE_APPLY=YES`로 1회 적용한다.
-6. `scripts/bootstrap-private-moderator.sh`로 비공개 moderator를 생성한다.
-7. backend health와 DB readiness를 확인한 뒤 web/Caddy를 시작한다.
+3. PostgreSQL bootstrap init script가 `postgis`·`citext`를 만들고 `APP_DB_USER` 권한을 부여했는지 확인한다. 이 전제가 없으면 Flyway V001이 의도적으로 중단된다.
+4. backend를 내부 네트워크에서 시작해 Flyway를 적용한다.
+5. `scripts/sanitize-production-demo.sh`를 dry-run으로 먼저 실행한다.
+6. 대상이 새 production DB인지 확인한 뒤 `TOWNPET_PRODUCTION_SANITIZE_APPLY=YES`로 1회 적용한다.
+7. `scripts/bootstrap-private-moderator.sh`로 비공개 moderator를 생성한다.
+8. backend health와 DB readiness를 확인한 뒤 web/Caddy를 시작한다.
 
 ## 기존 데이터 업데이트
 
