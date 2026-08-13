@@ -30,6 +30,12 @@ WHERE publication_id IN (
   WHERE id >= '00000000-0000-4000-8000-200000000001'::uuid
     AND id <= '00000000-0000-4000-8000-200000000048'::uuid
 );
+DELETE FROM publication_metric
+WHERE publication_id IN (
+  SELECT id FROM publication
+  WHERE id >= '00000000-0000-4000-8000-200000000001'::uuid
+    AND id <= '00000000-0000-4000-8000-200000000048'::uuid
+);
 DELETE FROM content_animal_community
 WHERE content_kind = 'PUBLICATION'
   AND content_id >= '00000000-0000-4000-8000-200000000001'::uuid
@@ -117,6 +123,40 @@ BEGIN
           0
         );
       END LOOP;
+    END LOOP;
+  END LOOP;
+END
+$$;
+
+-- Seed a visible HOT ranking for the local feed. The first eight animal posts
+-- receive descending LIKE counts (4 through 1, repeated), distributed across demo members
+-- so the popular endpoint returns several deterministic ranked examples.
+DO $$
+DECLARE
+  hot_post_no INTEGER;
+  reaction_no INTEGER;
+  publication_id UUID;
+  author_id UUID;
+  reaction_id UUID;
+BEGIN
+  FOR hot_post_no IN 1..8 LOOP
+    publication_id := ('00000000-0000-4000-8000-' || lpad((200000000000 + hot_post_no)::TEXT, 12, '0'))::UUID;
+    FOR reaction_no IN 1..(4 - ((hot_post_no - 1) % 4)) LOOP
+      reaction_id := ('00000000-0000-4000-8000-' || lpad((500000000000 + ((hot_post_no - 1) * 8) + reaction_no)::TEXT, 12, '0'))::UUID;
+      author_id := CASE ((hot_post_no + reaction_no) % 4)
+        WHEN 0 THEN '00000000-0000-4000-8000-000000000201'::UUID
+        WHEN 1 THEN '00000000-0000-4000-8000-000000000202'::UUID
+        WHEN 2 THEN '00000000-0000-4000-8000-000000000203'::UUID
+        ELSE '00000000-0000-4000-8000-000000000204'::UUID
+      END;
+      INSERT INTO engagement_reaction (id, publication_id, author_member_id, type, created_at)
+      VALUES (
+        reaction_id,
+        publication_id,
+        author_id,
+        'LIKE',
+        ('2026-08-12T' || lpad((10 + hot_post_no)::TEXT, 2, '0') || ':' || lpad(reaction_no::TEXT, 2, '0') || ':00+09:00')::TIMESTAMPTZ
+      );
     END LOOP;
   END LOOP;
 END
