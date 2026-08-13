@@ -15,8 +15,8 @@
    - SMTP provider의 TLS/SPF/DKIM·deliverability, MinIO public domain의 DNS/TLS/CORS, VPS offsite backup retention은 실제 운영 계정과 호스트에서 확인한다.
    - 로컬에서 증명할 수 없는 항목은 구현 완료로 포장하지 않고 [`docs/runbooks/external-production-checklist.md`](docs/runbooks/external-production-checklist.md)에 operator checklist로 남긴다.
 
-3. **최종 release gate를 한 번 실행한다.** (backend/frontend unit gate 완료, browser gate 미완료)
-   - 최신 backend/frontend 변경을 고정한 뒤 browser E2E의 오래된 제목·mock·visual snapshot 기준선을 현재 화면 계약에 맞추고, 54개 전체를 재실행한다.
+3. **최종 release gate를 한 번 실행한다.** (로컬 gate 완료)
+   - 최신 backend/frontend 변경을 고정한 뒤 backend/frontend unit·build, parity, compose/script, browser E2E를 재실행한다. (완료)
    - 결과와 재현 명령, 남은 외부 전제를 `docs/report/production-readiness-reassessment.md`에 갱신한다. 실제 공개 판정은 외부 운영 체크리스트가 채워진 뒤 별도로 한다.
 
 ## Deferred (trigger가 생길 때만)

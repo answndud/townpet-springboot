@@ -45,20 +45,20 @@ for (const viewport of [
 
     test.beforeEach(async ({ page }) => {
       await page.route("**/api/v1/members/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ detail: "Unauthorized" }) }));
-      await page.route("**/api/v1/feed*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [publication], page: { nextCursor: null, hasNext: false } }) }));
+      await page.route("**/api/v1/feed*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [publication], page: { nextCursor: null, hasNext: false, totalPages: 1 } }) }));
       await page.route("**/api/v1/publications/*/comments", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) }));
       await page.route("**/api/v1/publications/*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(publication) }));
     });
 
     test("keeps the home shell visually stable", async ({ page }) => {
       await page.goto("/");
-      await expect(page.getByRole("heading", { name: "우리 동네 반려생활 정보" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "HOT 글" })).toBeVisible();
       await expect(page).toHaveScreenshot(`${viewport.name}-home.png`, { animations: "disabled", caret: "hide" });
     });
 
     test("keeps the public feed layout visually stable", async ({ page }) => {
       await page.goto("/feed/guest");
-      await expect(page.getByRole("heading", { name: "공개 반려생활 피드" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "전체글" })).toBeVisible();
       await expect(page.getByRole("heading", { name: publication.title })).toBeVisible();
       await expect(page).toHaveScreenshot(`${viewport.name}-public-feed.png`, { animations: "disabled", caret: "hide" });
     });

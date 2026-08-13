@@ -28,7 +28,7 @@ test("member creates a free-board post and its public direct URL survives reload
   await expect(page).toHaveURL(/\/posts\/[0-9a-f-]+$/);
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
   await expect(page.getByText(body)).toBeVisible();
-  await expect(page.getByText("전체 공개", { exact: true })).toBeVisible();
+  await expect(page.getByText("전체", { exact: true })).toBeVisible();
 
   const directUrl = page.url();
   await page.reload();
