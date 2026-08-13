@@ -141,5 +141,5 @@ production profile을 다시 읽으며 `UnavailableAccountTokenDelivery`와 `Una
 일반 feed는 `(created_at, id)` 경계를 유지하고, HOT은 `(recommendation_count, created_at, id)`를 versioned URL-safe cursor로 확장했다. 두 조회 모두 `limit + 1`건으로 `hasNext`를 계산하고, 프론트는 필터 조합별 cursor chain을 메모리에 보관해 `page=N` 직접 접근도 앞 페이지 경계를 순서대로 확보한다. 페이지를 이동할 때는 누적하지 않고 현재 페이지로 교체해 번호와 목록 순위가 어긋나지 않게 했다.
 
 - 근거: [`../pagination-plan.md`](../pagination-plan.md), `PublicationFeed`, `BestFeedController`, `useCursorPagination`, `CursorPagination`, `PublicationControllerTest`
-- 검증: `./gradlew test --tests com.townpet.publication.PublicationControllerTest`, `corepack pnpm typecheck`, frontend 33 tests와 build budget
+- 검증: `./gradlew test --tests com.townpet.publication.PublicationControllerTest`, `corepack pnpm typecheck`, frontend 34 tests와 build budget
 - trade-off·한계: cursor 기반은 전체 페이지 수와 마지막 번호를 미리 알 수 없다. HOT 추천 수가 페이지 요청 사이에 바뀌면 snapshot이 아니므로, 완전한 순위 snapshot이나 서명 cursor는 실제 운영 요구가 생길 때 별도 결정한다.

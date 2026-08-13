@@ -7,7 +7,7 @@ G1~G8을 로컬·CI에서 재현할 수 있는 현재 릴리스 상태만 기록
 - `./gradlew clean check migrationTest`: backend unit/integration, Modulith, parity inventory, Spotless와 migration test 전체 통과
 - `scripts/validate-parity-matrix.sh`: 104개 page/API 행 중 `verified=95`, `excluded=9`, `pending=0` 확인
 - `frontend/node_modules/.bin/tsc -p frontend/tsconfig.json --noEmit`: 타입 검사 통과
-- `frontend/node_modules/.bin/vitest run`: 10개 파일, 33개 테스트 통과
+- `frontend/node_modules/.bin/vitest run`: 10개 파일, 34개 테스트 통과
 - `frontend/node_modules/.bin/vite build --config vite.config.ts`: production bundle 생성 통과
 - `frontend/e2e/parity-shell.spec.ts`: Chromium desktop/mobile shell smoke 4개 통과
 - `migration/fixtures/logical-fixture.yaml`: guest/member/moderator와 Care·검색·신고 대표 시나리오를 고정된 logical fixture로 연결
