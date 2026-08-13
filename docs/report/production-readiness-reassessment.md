@@ -130,6 +130,8 @@ Media cleanup의 현재 보장 범위도 명확히 했다. 운영 endpoint는 DB
 
 Runbook 상태도 실제 증거에 맞춰 조정했다. sanitize는 local DB dry-run과 shell syntax를 확인했지만 production apply는 아직 실행하지 않았으므로 “local 검증 완료·production 실행 전”으로 표시한다. 이는 운영 DB에 대한 destructive apply를 로컬 성공으로 과장하지 않기 위한 구분이다.
 
+local `reset-demo-data.sh`도 sanitize와 같은 데이터 격리 원칙을 따르도록 수정했다. 기존 reset은 익명 `search_event`·`acquisition_event`를 전체 삭제했지만, 이제 demo 소유 web-vital만 지우고 익명 telemetry는 보존한다. MEMBER/MODERATOR 권한 회귀 테스트와 sanitize dry-run은 이 변경 뒤에도 통과했다.
+
 추가 재현에서 실제 `townpet-postgres`와 격리된 PostgreSQL 18 client container를 연결해 sanitize dry-run을 실행했다. demo member 4명과 연결된 각 콘텐츠 삭제 문장이 끝까지 실행된 뒤 `ROLLBACK`되었고, 마지막 verification block도 통과했다. 이 과정에서 heredoc 내부의 `#` 주석이 PostgreSQL 문법이 아니라는 결함을 발견해 `--` 주석으로 수정했다. local DB는 rollback으로 보존했다.
 
 private moderator bootstrap도 별도 synthetic email로 실행해 `member_account`·`identity_credential` insert와 transaction commit을 확인한 뒤 두 row를 즉시 제거했다. 평문 비밀번호는 사용하지 않았고, production moderator credential이 local DB에 남지 않도록 정리했다.
