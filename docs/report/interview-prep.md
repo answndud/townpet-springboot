@@ -422,11 +422,11 @@ Redis가 항상 빠르다는 전제를 두지 않았다. 현재 public feed p95�
 - 외부 backup 보관, restore drill, RPO/RTO
 - 운영 관측 backend와 alerting
 
-### 현재 정책 결정이 필요한 것
+### 실제 배포 전 operator 확인이 필요한 것
 
-- production object storage: 현재 production profile은 `UnavailableObjectStorage`
-- 공개 demo seed와 scoped daily reset
-- email verification·password recovery를 SMTP와 함께 공개할지 여부
+- production object storage: private MinIO와 presigned flow는 구현됐고 실제 media domain DNS/TLS/CORS 확인이 남아 있다.
+- 공개 demo seed는 사용하지 않으며, production 초기 sanitize와 private moderator bootstrap을 1회 실행한다.
+- email verification·password recovery는 SMTP adapter와 local integration이 구현됐고 실제 provider TLS·deliverability 확인이 남아 있다.
 
 ### 현재 의도적으로 deferred인 것
 
