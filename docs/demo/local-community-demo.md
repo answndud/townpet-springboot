@@ -9,9 +9,11 @@
 | fixture | 내용 | 재실행 |
 | --- | --- | --- |
 | `migration/fixtures/local-demo.sql` | 기본 계정, 기존 커뮤니티 글 2개, 공통 게시판 기능 확인용 기본 항목 | 안전 |
-| `migration/fixtures/local-community-demo.sql` | 12개 동물 코드 × 4개 동물 게시판 유형 = 48개 글, 글마다 댓글 3개(대댓글 1개 포함), 공통 게시판별 추가 항목 3개 | 안전 |
+| `migration/fixtures/local-community-demo.sql` | 12개 동물 코드 × 4개 동물 게시판 유형 = 48개 글, 글마다 댓글 3개(대댓글 1개 포함), 상위 8개 글에 추천 4~1개, 공통 게시판별 추가 항목 3개 | 안전 |
 
 동물 게시판 글에는 `FREE_BOARD`, `QA_QUESTION`, `PET_SHOWCASE`, `PRODUCT_REVIEW` 유형을 각각 하나씩 넣었다. 댓글은 실제 `engagement_comment`와 댓글 API가 사용하는 publication에 연결되어 있으므로, 동물 게시판의 목록·상세·댓글·대댓글 화면을 바로 확인할 수 있다.
+
+상위 8개 동물 게시판 글에는 데모 회원들의 `LIKE` 추천을 4개부터 1개까지 반복해 넣었다. 계정별 중복 추천 제약을 지키면서도 HOT/인기글 화면에서 여러 글의 순위·추천 수·페이지 이동을 함께 확인할 수 있다. fixture를 다시 실행하면 이 추천도 고정 UUID 범위와 함께 재생성된다.
 
 공통 게시판의 입양·분실·거래·병원 후기·모임·돌봄·봉사는 현재 제품 구조상 각각 전용 테이블의 구조화된 항목이다. 따라서 이 fixture는 공통 게시판에 각 목록 항목을 추가한다. 현재 댓글 테이블은 publication만 참조하므로 전용 공통 게시판 항목에는 댓글을 저장하지 않는다. 이는 fixture 누락이 아니라 현재 API/스키마 경계이며, 공통 항목 댓글 기능은 별도의 제품·스키마 작업으로 다뤄야 한다.
 
@@ -47,11 +49,16 @@ docker compose -f deploy/compose/local.yml exec -T postgres \
     UNION ALL
     SELECT 'animal_comments', count(*) FROM engagement_comment
       WHERE publication_id >= '00000000-0000-4000-8000-200000000001'::uuid
-        AND publication_id <= '00000000-0000-4000-8000-200000000048'::uuid;
+        AND publication_id <= '00000000-0000-4000-8000-200000000048'::uuid
+    UNION ALL
+    SELECT 'hot_reactions', count(*) FROM engagement_reaction
+      WHERE publication_id >= '00000000-0000-4000-8000-200000000001'::uuid
+      AND publication_id <= '00000000-0000-4000-8000-200000000008'::uuid
+      AND type = 'LIKE';
   "
 ```
 
-기대값은 `animal_posts|48`, `animal_comments|144`이다. 공통 게시판은 기존 `local-demo.sql`의 항목과 이번 fixture의 추가 항목을 합쳐 화면에서 확인한다.
+기대값은 `animal_posts|48`, `animal_comments|144`, `hot_reactions|20`이다. 공통 게시판은 기존 `local-demo.sql`의 항목과 이번 fixture의 추가 항목을 합쳐 화면에서 확인한다.
 
 ## 이미지가 삭제되었을 때
 
