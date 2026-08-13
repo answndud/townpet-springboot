@@ -65,8 +65,18 @@
 - 검증: `./gradlew compileJava spotlessApply`, identity account tests, `frontend` typecheck, portfolio compose config
 - Media authorization: owner만 attached asset signed read URL을 받고 다른 member는 404가 되는 `MediaControllerTest` 추가
 - Frontend media client: production absolute presigned URL은 direct PUT하고 local/test relative URL은 기존 server upload로 fallback
+- 운영 경계 재감사: production sanitize는 member-owned 데이터만 지우고 익명 `search_event`·`acquisition_event`는 보존한다. private moderator bootstrap은 psql 변수 치환이 필요한 `DO` 블록을 제거하고 중복 email을 transaction 안에서 거절한다.
+- 계정 토큰 남용 방어: password reset·email verification 발급을 member별 시간당 3회로 제한한다. 제한되거나 존재하지 않는 email도 같은 `202` 응답을 사용해 enumeration을 만들지 않는다.
 
 아직 완료로 주장하지 않는 항목: MinIO CORS·public media domain의 실제 DNS/TLS, full browser UI flow against a fresh portfolio volume, 실제 SMTP provider deliverability, 실제 VPS offsite retention.
+
+## 재감사에서 수정한 위험
+
+초기 sanitize 스크립트는 member와 연결되지 않은 익명 telemetry 테이블까지 전체 삭제하고 있었다. production DB에 이미 의미 있는 분석 데이터가 있으면 demo 정리라는 목적을 넘어서는 삭제가 되므로 해당 문장을 제거하고 demo-scoped `web_vital_metric`만 유지했다. 이 결정으로 telemetry 보존과 demo identity/content 격리를 분리했다.
+
+private moderator bootstrap의 중복 검사도 PostgreSQL `DO` 블록 안에서 psql 변수를 참조하고 있어 실행 환경에 따라 치환되지 않을 수 있었다. transaction 내부 `SELECT ... \gset`와 psql 조건문으로 바꿔 중복 email을 명시적으로 중단하도록 했다. 평문 비밀번호는 여전히 받지 않는다.
+
+SMTP 발급 endpoint에는 member별 시간당 3회 상한을 추가했다. IP 기반 전역 limiter나 Redis는 현재 단일 인스턴스 목표에 비해 운영 복잡도가 크므로 도입하지 않았고, 공개 가입을 열기 전에는 edge rate limit과 별도 ADR을 추가로 검토한다.
 
 ## 운영 backup slice evidence
 
@@ -93,6 +103,8 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 - portfolio/local SMTP compose config와 Caddy validate 성공
 
 처음 `check` 실행에서는 Testcontainers PostgreSQL startup timeout으로 media test 2개가 실패했지만, 코드 오류가 아닌 Docker resource race를 확인한 뒤 같은 phase gate를 재실행해 전체 test와 `check`를 통과시켰다. 첫 실패도 숨기지 않고 이 문서에 남긴다.
+
+이번 운영 경계 재감사 뒤에도 `./gradlew check migrationTest`가 6분 3초에 다시 통과했고, `scripts/*.sh`·`deploy/*.sh` 전체 shell syntax와 `git diff --check`도 통과했다. 변경 범위에 맞춘 identity 테스트(`IdentityMemberControllerTest`, `AccountTokenDeliveryUnavailableTest`)도 별도로 통과했다.
 
 ## 면접에서 설명할 trade-off
 

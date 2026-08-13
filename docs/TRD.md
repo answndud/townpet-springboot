@@ -563,7 +563,7 @@ Scaffold 전에는 위 명령이 아직 존재하지 않는다. 최초 implement
 | EU latency | 한국 UX 지연 | CDN asset, server timing 분리, response budget, Korea synthetic |
 | Eventual projection leak | hidden content 노출 | final visibility gate, restriction priority event, reconciliation |
 | Exact location 노출 | privacy incident | public/private type 분리, encryption, no public projection, audit |
-| Demo credential abuse | content·storage 훼손 | rate limit, scope 제한, daily reset, admin 미공개 |
+| Demo credential abuse | content·storage 훼손 | 공개 credential 미노출, local·CI scope 제한, 계정 token rate limit, admin 미공개 |
 | Migration meaning loss | parity 실패 | source mapping, quarantine, counts·relations·sample reconciliation |
 | 무료 observability quota | signal loss | telemetry budget, normal trace·debug log 우선 축소, critical signal 유지 |
 

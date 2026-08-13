@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class EmailVerificationService {
+  private static final int MAX_REQUESTS_PER_HOUR = 3;
   private final CredentialRepository credentials;
   private final EmailVerificationTokenRepository tokens;
   private final AuthAuditRepository audit;
@@ -39,6 +40,10 @@ public class EmailVerificationService {
 
     Instant now = Instant.now();
     UUID memberId = credential.getMemberId();
+    if (tokens.countByMemberIdAndCreatedAtAfter(memberId, now.minus(1, ChronoUnit.HOURS))
+        >= MAX_REQUESTS_PER_HOUR) {
+      return;
+    }
     String rawToken = SecureToken.create();
     tokens.save(
         new EmailVerificationTokenEntity(

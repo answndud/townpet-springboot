@@ -13,6 +13,8 @@ public interface PasswordResetTokenRepository
   Optional<PasswordResetTokenEntity> findByTokenHashAndUsedAtIsNullAndExpiresAtAfter(
       String tokenHash, Instant now);
 
+  long countByMemberIdAndCreatedAtAfter(UUID memberId, Instant createdAt);
+
   @Modifying
   @Query(
       "delete from PasswordResetTokenEntity token where token.memberId = :memberId "

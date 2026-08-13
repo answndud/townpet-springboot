@@ -23,12 +23,14 @@ psql "$TOWNPET_PSQL_URL" -U "$TOWNPET_DB_USERNAME" -v ON_ERROR_STOP=1 \
   -v moderator_nickname="$TOWNPET_PRIVATE_MODERATOR_NICKNAME" \
   -v moderator_password_hash="$TOWNPET_PRIVATE_MODERATOR_PASSWORD_HASH" <<'SQL'
 BEGIN;
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM member_account WHERE email = :'moderator_email') THEN
-    RAISE EXCEPTION 'private moderator email already exists';
-  END IF;
-END $$;
+SELECT count(*) AS existing_moderator
+FROM member_account
+WHERE email = :'moderator_email'\gset
+\if :existing_moderator
+  \echo 'refusing private moderator bootstrap: email already exists'
+  ROLLBACK;
+  \quit 1
+\endif
 
 WITH new_member AS (
   INSERT INTO member_account (id, email, nickname)

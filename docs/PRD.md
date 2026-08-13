@@ -272,7 +272,7 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 - 49개 page와 55개 legacy API의 모든 parity 행이 `PASS` 또는 승인된 의도적 차이다.
 - Production artifact에 Next.js·Prisma·NextAuth server runtime이 없다.
 - Fresh clone에서 local PostgreSQL·PostGIS·object storage와 application을 재현할 수 있다.
-- Public showcase가 고정 demo account, scoped reset, TLS와 운영 SLO로 동작한다.
+- Portfolio sandbox는 공개 demo credential·reset UI 없이 동작하고, local·CI synthetic fixture와 production sanitize·TLS·운영 SLO 절차가 재현된다.
 - Backup restore, event·projection rebuild, failed deployment rollback을 실제로 수행한 증거가 있다.
 - README에서 5분 안에 실행 방법, architecture, 대표 문제 해결, 성능 전후와 공개 URL을 확인할 수 있다.
 

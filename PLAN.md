@@ -6,34 +6,18 @@
 
 ## Active
 
-1. **정책 문서와 production 경계를 정합화한다.**
-   - ADR-0013/0014/0022/0023/0029/0030, PRD, TRD를 현재 결정과 맞춘다.
-   - 공개 demo 계정·콘텐츠 없음, public signup 비활성, SMTP 활성, MinIO private media를 명시한다.
-   - 완료 조건: 코드·compose·문서의 production 기본값이 서로 모순되지 않는다.
+1. **운영 경계 감사 결과를 반영한다.**
+   - demo sanitize가 익명 telemetry를 삭제하지 않도록 범위를 제한하고, private moderator bootstrap이 중복 email을 안전하게 거절하도록 유지한다.
+   - account token 발급은 계정별 시간당 상한을 적용한다. 응답은 계속 generic `202`로 유지해 email enumeration을 막는다.
+   - 완료 조건: 스크립트 syntax·컴파일·identity 회귀 테스트가 통과하고 report에 실제 변경 근거가 남는다.
 
-2. **Production data isolation을 구현한다.**
-   - migration에 포함된 local demo identity/content가 web 노출 전에 제거되는 명시적 초기 sanitize를 추가한다.
-   - 일반 데이터가 있는 DB에서 중단하는 dry-run과 private operator bootstrap 절차를 제공한다.
-   - 완료 조건: 새 volume에서 migration 후 demo row·demo credential이 없음을 검증하고, local/test fixture는 유지된다.
+2. **외부 운영 전제의 마지막 확인 목록을 닫는다.**
+   - SMTP provider의 TLS/SPF/DKIM·deliverability, MinIO public domain의 DNS/TLS/CORS, VPS offsite backup retention은 실제 운영 계정과 호스트에서 확인한다.
+   - 로컬에서 증명할 수 없는 항목은 구현 완료로 포장하지 않고 runbook의 operator checklist로 남긴다.
 
-3. **SMTP account delivery를 완성한다.**
-   - Spring Mail 기반 verification/password reset 발송, commit 이후 처리, 재시도·idempotency, rate limit과 Mailpit local profile을 구현한다.
-   - public signup은 계속 비활성으로 둘 수 있지만 이메일 인증·복구 API가 production에서 503이 되지 않게 한다.
-   - 완료 조건: 성공·만료·중복·SMTP 실패·session revoke 흐름이 재현 가능하다.
-
-4. **Production media를 MinIO presigned flow로 전환한다.**
-   - private bucket, presigned PUT/GET, metadata finalize, 권한 검증, orphan/expiration cleanup과 object backup을 구현한다.
-   - 완료 조건: 이미지 업로드부터 게시물 연결·비공개 조회·삭제까지 browser 흐름이 동작하고 public URL로 우회할 수 없다.
-
-5. **최소 운영 기반을 완성한다.**
-   - PostgreSQL·MinIO paired backup/restore, health/readiness, 구조화 로그, 자원·backup·SMTP 실패 확인을 추가한다.
-   - `docs/runbooks/`에 배포, 재시작, backup/restore, 초기 sanitize, secret 교체, rollback을 기록한다.
-   - 완료 조건: fresh volume과 복구 volume에서 재현 가능한 절차와 evidence가 있다.
-
-6. **배포 전 기능·성능 release gate를 실행한다.**
-   - 권한·주요 사용자 여정·media/email 흐름과 VPS 유사 workload를 한 번에 검증한다.
-   - Redis·Kafka·검색엔진은 병목과 운영 이득이 측정될 때만 별도 ADR로 승격한다.
-   - 완료 조건: 측정한 결과와 미측정 한계를 `docs/report/`에 남기고 배포 여부를 판단한다.
+3. **최종 release gate를 한 번 실행한다.**
+   - 1·2번 변경 이후 backend/frontend 전체 gate, parity gate, compose/Caddy/script 검증과 핵심 권한·email·media 흐름을 재실행한다.
+   - 결과와 재현 명령, 남은 외부 전제를 `docs/report/production-readiness-reassessment.md`에 갱신한다.
 
 ## Deferred (trigger가 생길 때만)
 
