@@ -21,6 +21,7 @@
 - production sanitize는 초기 1회 명시적으로 실행하고, 일반 배포마다 자동 실행하지 않는다.
 - destructive command는 dry-run과 명시적 confirmation을 요구한다.
 - DB backup만 복원하고 object backup을 누락하지 않는다.
+- MinIO presigned URL은 backend 내부 endpoint가 아니라 `TOWNPET_MINIO_PUBLIC_ENDPOINT`로 서명한다.
 - 실행하지 않은 복구·rollback은 성공했다고 표현하지 않는다.
 
 ## 작성 순서

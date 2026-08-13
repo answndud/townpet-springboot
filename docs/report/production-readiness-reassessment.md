@@ -11,7 +11,7 @@
 | 영역 | 확인된 상태 | 위험 |
 |---|---|---|
 | 계정 이메일 | production은 `UnavailableAccountTokenDelivery`를 사용 | 인증·비밀번호 복구가 production에서 실패할 수 있음 |
-| 미디어 | production은 `UnavailableObjectStorage`, local은 filesystem 중심 | 공개 업로드가 production에서 실패하고 presigned 계약도 완성되지 않음 |
+| 미디어 | production은 이제 private MinIO adapter를 사용하도록 연결했지만 Caddy media domain·backup은 후속 작업 | 공개 업로드가 production에서 실패하던 경로를 제거했으나 운영 검증이 남음 |
 | demo identity | `V003`이 migration 중 4개 계정을 생성 | flag가 login만 막아도 row·소유 콘텐츠가 남을 수 있음 |
 | demo content | gathering·notification 등 migration insert 존재 | web 노출 전 정리하지 않으면 공개 데이터로 보일 수 있음 |
 | backup | guarded PostgreSQL script는 있으나 MinIO paired backup과 restore rehearsal 부족 | DB와 object metadata가 서로 어긋날 수 있음 |
@@ -56,6 +56,15 @@
 4. MinIO media vertical slice
 5. backup·observability·runbook
 6. fresh-volume 및 배포 전 release gate
+
+## 현재 구현 evidence
+
+- SMTP: `SmtpAccountTokenDelivery`, AES-GCM encrypted event payload, production retry listener, local/test synchronous capture
+- Media: `MinioObjectStorage`, private bucket initialization, presigned upload URL, direct frontend PUT path
+- Compose: portfolio profile에 PostgreSQL·MinIO·backend·web health dependency 추가
+- 검증: `./gradlew compileJava spotlessApply`, identity account tests, `frontend` typecheck, portfolio compose config
+
+아직 완료로 주장하지 않는 항목: MinIO CORS·public media domain의 실제 DNS/TLS, object backup/restore, browser upload against a fresh MinIO volume, SMTP provider delivery, production fresh-volume rehearsal.
 
 ## 면접에서 설명할 trade-off
 

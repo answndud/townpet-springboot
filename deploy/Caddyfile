@@ -15,3 +15,7 @@
     file_server
   }
 }
+
+{$TOWNPET_MEDIA_DOMAIN} {
+  reverse_proxy minio:9000
+}
