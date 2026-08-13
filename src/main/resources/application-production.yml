@@ -18,6 +18,14 @@ townpet:
     from: ${TOWNPET_EMAIL_FROM}
     public-base-url: ${TOWNPET_PUBLIC_BASE_URL}
     token-encryption-key: ${TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY}
+  media:
+    minio:
+      endpoint: ${TOWNPET_MINIO_ENDPOINT}
+      public-endpoint: ${TOWNPET_MINIO_PUBLIC_ENDPOINT}
+      access-key: ${TOWNPET_MINIO_ACCESS_KEY}
+      secret-key: ${TOWNPET_MINIO_SECRET_KEY}
+      bucket: ${TOWNPET_MINIO_BUCKET:townpet-media}
+      presign-expiry-seconds: ${TOWNPET_MINIO_PRESIGN_EXPIRY_SECONDS:900}
   security:
     secure-cookies: true
   demo-data:
