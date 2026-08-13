@@ -16,14 +16,18 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 class AcquisitionEventController {
   private final AcquisitionEventRepository events;
+  private final PublicIngressRateLimiter rateLimiter;
 
-  AcquisitionEventController(AcquisitionEventRepository events) {
+  AcquisitionEventController(
+      AcquisitionEventRepository events, PublicIngressRateLimiter rateLimiter) {
     this.events = events;
+    this.rateLimiter = rateLimiter;
   }
 
   @PostMapping("/api/acquisition/events")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   void record(@Valid @RequestBody EventRequest request) {
+    rateLimiter.requireCapacity();
     try {
       events.save(
           new AcquisitionEventEntity(
