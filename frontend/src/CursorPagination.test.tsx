@@ -4,6 +4,12 @@ import CursorPagination from "./components/CursorPagination";
 import { normalizeFeedPage } from "./api/client";
 
 describe("CursorPagination", () => {
+  it("hides the control row when there is only one page", () => {
+    const { container } = render(<CursorPagination page={1} totalPages={1} hasNext={false} onPageChange={vi.fn()} />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it("shows five nearby page numbers and first/last controls", () => {
     const onPageChange = vi.fn();
     render(<CursorPagination page={6} totalPages={12} hasNext onPageChange={onPageChange} />);

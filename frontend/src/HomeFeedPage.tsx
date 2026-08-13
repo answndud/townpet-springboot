@@ -97,6 +97,11 @@ export default function HomeFeedPage() {
     <main className="page feed-page">
       <header className="feed-hero">
         <div>
+          <p className="feed-location" aria-label="현재 위치">
+            <span>커뮤니티</span>
+            <span aria-hidden="true">/</span>
+            <strong>{popularView ? "HOT" : "전체글"}</strong>
+          </p>
           <h1>{popularView ? "HOT 글" : "전체글"}</h1>
         </div>
         {canWrite ? <Link className="button button-primary" to={writeHref}>글쓰기</Link> : null}
