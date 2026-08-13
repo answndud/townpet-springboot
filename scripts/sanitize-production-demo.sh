@@ -67,10 +67,10 @@ DELETE FROM lost_found_sighting_report WHERE reporter_member_id IN (SELECT id FR
 DELETE FROM lost_found_alert WHERE reporter_member_id IN (SELECT id FROM demo_members);
 DELETE FROM publication_metric WHERE publication_id IN (SELECT id FROM publication WHERE author_member_id IN (SELECT id FROM demo_members));
 DELETE FROM publication WHERE author_member_id IN (SELECT id FROM demo_members);
-# Search/acquisition events are anonymous telemetry and have no member-owner
-# foreign key. They are deliberately retained; deleting them here would make
-# a first production sanitize destructive to non-demo analytics. Only the
-# explicitly demo-scoped web-vital rows below are removed.
+-- Search/acquisition events are anonymous telemetry and have no member-owner
+-- foreign key. They are deliberately retained; deleting them here would make
+-- a first production sanitize destructive to non-demo analytics. Only the
+-- explicitly demo-scoped web-vital rows below are removed.
 DELETE FROM web_vital_metric WHERE route LIKE '/demo/%';
 DELETE FROM spring_session WHERE principal_name IN (SELECT id::text FROM demo_members);
 UPDATE policy_document SET updated_by = NULL WHERE updated_by IN (SELECT id FROM demo_members);
