@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ApiError, apiFetch, catalogApi, type Breed, type FeedPage, type Member } from "./api/client";
+import { ApiError, apiFetch, catalogApi, normalizeFeedPage, type Breed, type FeedPage, type Member } from "./api/client";
 import { useAuth } from "./auth/AuthContext";
 import { formatDateTime } from "./utils/date";
 
@@ -15,7 +15,7 @@ export default function BreedLoungePage() {
     const controller = new AbortController();
     Promise.all([
       catalogApi.breed(breedCode, controller.signal),
-      apiFetch<FeedPage>(`/api/lounges/breeds/${encodeURIComponent(breedCode)}/posts?audience=GLOBAL&scope=ALL`, { signal: controller.signal }),
+      apiFetch<FeedPage>(`/api/lounges/breeds/${encodeURIComponent(breedCode)}/posts?audience=GLOBAL&scope=ALL`, { signal: controller.signal }).then(normalizeFeedPage),
     ]).then(([loadedBreed, loadedFeed]) => { setBreed(loadedBreed); setFeed(loadedFeed); }).catch((requestError: unknown) => {
       if (requestError instanceof DOMException && requestError.name === "AbortError") return;
       if (controller.signal.aborted) return;
