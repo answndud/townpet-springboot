@@ -4,8 +4,10 @@ import com.townpet.publication.api.PublicationFeed;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -18,8 +20,10 @@ class BestFeedController {
   }
 
   @GetMapping
-  FeedResponse list() {
-    List<PublicationFeed.PopularItem> items = feed.popularRanked(30);
+  FeedResponse list(
+      @RequestParam(required = false) @Nullable String query,
+      @RequestParam(defaultValue = "ALL") String searchField) {
+    List<PublicationFeed.PopularItem> items = feed.popularRanked(30, query, searchField);
     return new FeedResponse(
         java.util.stream.IntStream.range(0, items.size())
             .mapToObj(index -> response(items.get(index), index + 1))

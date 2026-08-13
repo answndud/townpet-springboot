@@ -71,7 +71,21 @@ public class PublicationFeed {
 
   @Transactional(readOnly = true)
   public List<PopularItem> popularRanked(int limit) {
+    return popularRanked(limit, null, "ALL");
+  }
+
+  @Transactional(readOnly = true)
+  public List<PopularItem> popularRanked(
+      int limit, @Nullable String searchQuery, String searchField) {
     if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid popular limit");
+    if (searchQuery != null && searchQuery.length() > 80) {
+      throw new IllegalArgumentException("Invalid feed query");
+    }
+    if (!searchField.equalsIgnoreCase("ALL")
+        && !searchField.equalsIgnoreCase("TITLE")
+        && !searchField.equalsIgnoreCase("BODY")) {
+      throw new IllegalArgumentException("Invalid feed search field");
+    }
     Table<?> REACTION = table(name("engagement_reaction")).as("r");
     Field<UUID> REACTION_PUBLICATION_ID = field(name("r", "publication_id"), UUID.class);
     Field<String> REACTION_TYPE = field(name("r", "type"), String.class);
@@ -106,12 +120,25 @@ public class PublicationFeed {
         .from(PUBLICATION)
         .join(RECOMMENDATIONS)
         .on(RECOMMENDATION_PUBLICATION_ID.eq(ID))
-        .where(LIFECYCLE.eq("ACTIVE").and(SCOPE.eq("GLOBAL")))
+        .where(popularCondition(searchQuery, searchField))
         .orderBy(RECOMMENDATION_TOTAL.desc(), CREATED_AT.desc(), ID.desc())
         .limit(limit)
         .fetch(
             record ->
                 new PopularItem(toItem(record), valueOrZero(record.get(RECOMMENDATION_TOTAL))));
+  }
+
+  private static Condition popularCondition(@Nullable String searchQuery, String searchField) {
+    Condition condition = LIFECYCLE.eq("ACTIVE").and(SCOPE.eq("GLOBAL"));
+    if (searchQuery != null && !searchQuery.isBlank()) {
+      String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
+      if (searchField.equalsIgnoreCase("TITLE"))
+        condition = condition.and(TITLE.likeIgnoreCase(term));
+      else if (searchField.equalsIgnoreCase("BODY"))
+        condition = condition.and(BODY.likeIgnoreCase(term));
+      else condition = condition.and(TITLE.likeIgnoreCase(term).or(BODY.likeIgnoreCase(term)));
+    }
+    return condition;
   }
 
   private static Item toItem(Record record) {

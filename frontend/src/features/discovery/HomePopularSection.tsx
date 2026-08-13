@@ -15,11 +15,6 @@ type PopularFeedResponse = {
   items?: PopularPublication[];
 };
 
-function excerpt(body: string) {
-  const compact = body.replace(/\s+/g, " ").trim();
-  return compact.length > 92 ? `${compact.slice(0, 92)}…` : compact;
-}
-
 export default function HomePopularSection() {
   const { data, error, loading } = useAbortableRequest<PopularFeedResponse>(
     (signal) => apiFetch<PopularFeedResponse>("/api/v1/feed/popular", { signal }),
@@ -59,7 +54,6 @@ export default function HomePopularSection() {
                 <Link to={`/posts/${item.id}`}>
                   <h3>{item.title}</h3>
                 </Link>
-                <p>{excerpt(item.body)}</p>
               </div>
               <div className="home-popular-meta">
                 {item.recommendationCount !== undefined ? <span>추천 {item.recommendationCount}</span> : null}
