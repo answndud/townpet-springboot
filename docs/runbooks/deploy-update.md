@@ -7,6 +7,7 @@
 ```bash
 cd /Users/alex/project/townpet-springboot
 # 실제 secret이 들어간 별도 env-file을 사용한다. Git의 example 파일을 그대로 쓰지 않는다.
+./scripts/validate-portfolio-env.sh /secure/path/townpet.portfolio.env
 docker compose --env-file /secure/path/townpet.portfolio.env \
   -f deploy/compose/portfolio.yml config
 ./gradlew clean check migrationTest

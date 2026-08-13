@@ -114,6 +114,8 @@ Frontend frozen install·typecheck·Vitest 33개·production build도 통과했�
 
 Production profile의 `TOWNPET_EMAIL_ENABLED` 기본값도 제거했다. 이제 env가 누락되면 application binding 단계에서 시작이 실패하고, account delivery가 설정되지 않은 상태로 조용히 503을 내는 구성은 명시적으로 `false`를 넣은 경우에만 가능하다.
 
+추가로 `scripts/validate-portfolio-env.sh`를 만들어 production env-file이 placeholder·example domain·비HTTPS public URL을 포함하거나 SMTP를 비활성화한 경우 Compose 전에 실패하게 했다. 이 검사는 secret 값을 출력하지 않으며 실제 SMTP credential의 유효성이나 DNS deliverability까지 증명하지는 않는다.
+
 추가로 password reset 발급을 네 번 요청해도 네 요청 모두 `202 Accepted`이고 token row는 세 개만 생성되는 상한 테스트가 통과했다. 외부 SMTP·media domain·VPS 보존 정책은 [`docs/runbooks/external-production-checklist.md`](../runbooks/external-production-checklist.md)에 실제 배포 담당자가 채우는 미완료 전제로 분리했다.
 
 ## 면접에서 설명할 trade-off

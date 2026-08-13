@@ -15,6 +15,7 @@
 | rollback | 초안 | [`rollback.md`](rollback.md) |
 | SMTP local 검증 | 실행 가능 | [`email-local.md`](email-local.md) |
 | SMTP·media·VPS 외부 전제 | 배포 전 operator 확인 필요 | [`external-production-checklist.md`](external-production-checklist.md) |
+| production env policy | 실행 가능 | `scripts/validate-portfolio-env.sh` |
 | 최소 observability | 초안 | [`observability.md`](observability.md) |
 
 ## 공통 원칙
