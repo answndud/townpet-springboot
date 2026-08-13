@@ -8,12 +8,11 @@
 |---|---|---|
 | production demo sanitize | 초안 구현·검증 진행 중 | `scripts/sanitize-production-demo.sh` |
 | private moderator bootstrap | 초안 구현 | `scripts/bootstrap-private-moderator.sh` |
-| 배포·업데이트 | 미작성 | `deploy/compose/portfolio.yml` 기준으로 P4에서 작성 |
-| 재시작·장애 대응 | 미작성 | health/readiness와 함께 작성 |
-| PostgreSQL backup/restore | 부분 구현 | `deploy/backup-postgres.sh`, `deploy/restore-postgres.sh` |
-| MinIO backup/restore | 미구현 | media slice에서 추가 |
-| secret 교체 | 미작성 | SMTP·MinIO secret 확정 후 작성 |
-| rollback | 미작성 | image tag·migration 정책 확정 후 작성 |
+| 배포·업데이트 | 초안 | [`deploy-update.md`](deploy-update.md) |
+| 재시작·장애 대응 | 초안 | [`incident-restart.md`](incident-restart.md) |
+| PostgreSQL·MinIO paired backup/restore | 구현·local rehearsal 완료, VPS 검증 전 | `deploy/backup-portfolio.sh`, `deploy/restore-portfolio.sh` |
+| secret 교체 | 초안 | [`secret-rotation.md`](secret-rotation.md) |
+| rollback | 초안 | [`rollback.md`](rollback.md) |
 
 ## 공통 원칙
 
@@ -23,6 +22,7 @@
 - DB backup만 복원하고 object backup을 누락하지 않는다.
 - MinIO presigned URL은 backend 내부 endpoint가 아니라 `TOWNPET_MINIO_PUBLIC_ENDPOINT`로 서명한다.
 - 실행하지 않은 복구·rollback은 성공했다고 표현하지 않는다.
+- backup은 `manifest.txt`와 `manifest.sha256`가 생성된 경우에만 성공으로 기록한다.
 
 ## 작성 순서
 
@@ -32,3 +32,5 @@
 4. backup과 restore
 5. 장애 재시작과 rollback
 6. secret 교체와 만료 후 확인
+
+각 문서의 “초안”은 명령과 전제는 정리됐지만 실제 VPS 또는 fresh-volume에서 성공 evidence를 아직 만들지 않았다는 뜻이다.

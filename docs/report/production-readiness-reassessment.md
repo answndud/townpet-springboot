@@ -14,7 +14,7 @@
 | 미디어 | production은 이제 private MinIO adapter를 사용하도록 연결했지만 Caddy media domain·backup은 후속 작업 | 공개 업로드가 production에서 실패하던 경로를 제거했으나 운영 검증이 남음 |
 | demo identity | `V003`이 migration 중 4개 계정을 생성 | flag가 login만 막아도 row·소유 콘텐츠가 남을 수 있음 |
 | demo content | gathering·notification 등 migration insert 존재 | web 노출 전 정리하지 않으면 공개 데이터로 보일 수 있음 |
-| backup | guarded PostgreSQL script는 있으나 MinIO paired backup과 restore rehearsal 부족 | DB와 object metadata가 서로 어긋날 수 있음 |
+| backup | PostgreSQL·MinIO paired backup/restore script와 manifest checksum 추가, fresh-volume rehearsal은 진행 중 | 실제 VPS offsite retention은 아직 미확정 |
 | observability | health와 일부 metric은 있으나 SMTP·backup·MinIO 운영 신호 부족 | 장애를 사용자의 5xx로 처음 발견할 수 있음 |
 
 ## 재분류
@@ -64,7 +64,13 @@
 - Compose: portfolio profile에 PostgreSQL·MinIO·backend·web health dependency 추가
 - 검증: `./gradlew compileJava spotlessApply`, identity account tests, `frontend` typecheck, portfolio compose config
 
-아직 완료로 주장하지 않는 항목: MinIO CORS·public media domain의 실제 DNS/TLS, object backup/restore, browser upload against a fresh MinIO volume, SMTP provider delivery, production fresh-volume rehearsal.
+아직 완료로 주장하지 않는 항목: MinIO CORS·public media domain의 실제 DNS/TLS, browser upload against a fresh portfolio volume, SMTP provider delivery, 실제 VPS offsite retention.
+
+## 운영 backup slice evidence
+
+`deploy/backup-portfolio.sh`는 PostgreSQL custom dump와 MinIO bucket mirror를 같은 UTC backup id 디렉터리에 저장하고 manifest와 SHA-256 checksum을 함께 생성한다. `deploy/restore-portfolio.sh`는 checksum 검증과 명시적 destructive confirmation 이후 DB와 bucket을 함께 복원한다.
+
+로컬 Docker의 별도 `townpet_restore_test` database와 임시 MinIO bucket으로 rehearsal했다. synthetic object 1개와 member row 4개가 paired backup에서 복원됐고 manifest 검증이 통과했다. 원래 local DB와 bucket은 rehearsal 뒤 복원 대상과 임시 object를 제거해 변경하지 않았다. 이 결과는 offsite backup, retention, 실제 VPS volume 복구를 증명하지 않는다.
 
 ## 면접에서 설명할 trade-off
 
