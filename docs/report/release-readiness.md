@@ -69,6 +69,6 @@ production env·media/demo/email 정책 확인
 - `./gradlew clean check migrationTest --no-daemon`: backend 전체 성공(5분 42초).
 - frontend typecheck, Vitest 11개 파일·37개 테스트, production build와 bundle budget은 통과했다.
 - Playwright는 feed breadcrumb/pagination UI 변경에 맞춰 visual snapshot을 갱신한 뒤 desktop/mobile **54개 전체 통과**했다. 변경된 feed 소스·pagination 회귀 테스트·snapshot은 `69c18b3`에 함께 고정했다.
-- `scripts/security-static-check.sh`, 전체 shell syntax, Caddy 2.9 config validation은 통과했다. Trivy filesystem 재실행은 vulnerability DB 다운로드 중 Docker 내부 공간 부족으로 중단됐고, CI의 Trivy/dependency-review/image scan 결과가 공개 전 최종 증거가 되어야 한다.
+- `scripts/security-static-check.sh`, 전체 shell syntax, Caddy 2.9 config validation은 통과했다. Trivy filesystem scan은 GHCR vulnerability DB를 별도 cache volume으로 내려받아 HIGH/CRITICAL unfixed 결과 없이 종료했다. 컨테이너 image scan과 dependency review는 GitHub Actions에서도 확인해야 한다.
 
 따라서 이 시점의 저장소 내부 release candidate는 backend·frontend·parity·기능 E2E gate를 통과했다. 남은 저장소 외부 또는 CI 의존 항목은 GitHub Actions의 보안 scan 결과와 실제 VPS/SMTP/media/backup 환경 검증이며, 이를 local 성공으로 대체하지 않는다.
