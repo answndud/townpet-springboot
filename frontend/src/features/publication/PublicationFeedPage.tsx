@@ -59,7 +59,7 @@ function feedLabel(item: FeedItem) {
   return FEED_TYPE_LABELS[item.type ?? ""] ?? FEED_KIND_LABELS[item.kind ?? ""] ?? "반려생활 소식";
 }
 
-function PopularFeedList({ items, loading, error, page, hasNext, onPageChange }: { items: PopularFeedItem[]; loading: boolean; error: string | null; page: number; hasNext: boolean; onPageChange: (page: number) => void }) {
+function PopularFeedList({ items, loading, error, page, hasNext, totalPages, onPageChange }: { items: PopularFeedItem[]; loading: boolean; error: string | null; page: number; hasNext: boolean; totalPages: number; onPageChange: (page: number) => void }) {
   return (
     <section className="surface-card feed-list" aria-label="인기글 목록" aria-busy={loading}>
       {error ? <p className="form-error feed-error" role="alert">{error}</p> : null}
@@ -81,7 +81,7 @@ function PopularFeedList({ items, loading, error, page, hasNext, onPageChange }:
             </article>
           ))
         : null}
-      {!loading && !error && items.length > 0 ? <CursorPagination page={page} hasNext={hasNext} disabled={loading} onPageChange={onPageChange} /> : null}
+      {!loading && !error && items.length > 0 ? <CursorPagination page={page} hasNext={hasNext} totalPages={totalPages} disabled={loading} onPageChange={onPageChange} /> : null}
     </section>
   );
 }
@@ -210,7 +210,7 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
         </div>
       ) : null}
 
-      {popularView ? <PopularFeedList items={popularItems} loading={popularLoading} error={popularError} page={page} hasNext={popularFeed.hasNext} onPageChange={setPage} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : items.length === 0 ? (
+      {popularView ? <PopularFeedList items={popularItems} loading={popularLoading} error={popularError} page={page} hasNext={popularFeed.hasNext} totalPages={popularFeed.totalPages} onPageChange={setPage} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : items.length === 0 ? (
         <section className="surface-card feed-empty">
           <h2>{query ? "검색 결과가 없습니다" : "아직 표시할 글이 없습니다"}</h2>
           <p>{query ? "다른 검색어로 다시 시도해 보세요." : "첫 번째 반려생활 이야기를 나눠 보세요."}</p>
@@ -249,7 +249,7 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
               </article>
             );
           })}
-          <CursorPagination page={page} hasNext={feed.hasNext} disabled={feed.loading} onPageChange={setPage} />
+          <CursorPagination page={page} hasNext={feed.hasNext} totalPages={feed.totalPages} disabled={feed.loading} onPageChange={setPage} />
         </section>
       )}
     </main>

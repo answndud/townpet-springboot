@@ -28,7 +28,7 @@ function formatFeedDate(value: string) {
   return FEED_DATE_FORMATTER.format(new Date(value));
 }
 
-function HotFeedList({ items, loading, error, page, hasNext, onPageChange }: { items: PopularItem[]; loading: boolean; error: string | null; page: number; hasNext: boolean; onPageChange: (page: number) => void }) {
+function HotFeedList({ items, loading, error, page, hasNext, totalPages, onPageChange }: { items: PopularItem[]; loading: boolean; error: string | null; page: number; hasNext: boolean; totalPages: number; onPageChange: (page: number) => void }) {
   return (
     <section className="surface-card feed-list" aria-label="HOT 글 목록" aria-busy={loading}>
       {error ? <p className="form-error feed-error" role="alert">{error}</p> : null}
@@ -50,7 +50,7 @@ function HotFeedList({ items, loading, error, page, hasNext, onPageChange }: { i
             </article>
           ))
         : null}
-      {!loading && !error && items.length > 0 ? <CursorPagination page={page} hasNext={hasNext} disabled={loading} onPageChange={onPageChange} /> : null}
+      {!loading && !error && items.length > 0 ? <CursorPagination page={page} hasNext={hasNext} totalPages={totalPages} disabled={loading} onPageChange={onPageChange} /> : null}
     </section>
   );
 }
@@ -135,7 +135,7 @@ export default function HomeFeedPage() {
         </form>
       </div>
 
-      {popularView ? <HotFeedList items={popularItems} loading={popularLoading} error={popularError} page={page} hasNext={popularFeed.hasNext} onPageChange={setPage} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : loading ? (
+      {popularView ? <HotFeedList items={popularItems} loading={popularLoading} error={popularError} page={page} hasNext={popularFeed.hasNext} totalPages={popularFeed.totalPages} onPageChange={setPage} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : loading ? (
         <section className="surface-card feed-list" aria-busy="true" aria-label="전체글 목록">
           <p className="feed-empty" role="status">전체글을 불러오는 중...</p>
         </section>
@@ -161,7 +161,7 @@ export default function HomeFeedPage() {
               </div>
             </article>
           ))}
-          <CursorPagination page={page} hasNext={allFeed.hasNext} disabled={allFeed.loading} onPageChange={setPage} />
+          <CursorPagination page={page} hasNext={allFeed.hasNext} totalPages={allFeed.totalPages} disabled={allFeed.loading} onPageChange={setPage} />
         </section>
       )}
     </main>

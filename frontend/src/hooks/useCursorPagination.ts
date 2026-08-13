@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 export type CursorPage<T> = {
   items: T[];
-  page: { nextCursor: string | null; hasNext: boolean };
+  page: { nextCursor: string | null; hasNext: boolean; totalPages?: number };
 };
 
 type CursorCache<T> = {
@@ -27,11 +27,12 @@ export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKe
     loading: boolean;
     error: string | null;
     hasNext: boolean;
-  }>({ items: [], loading: true, error: null, hasNext: false });
+    totalPages: number;
+  }>({ items: [], loading: true, error: null, hasNext: false, totalPages: 1 });
 
   useEffect(() => {
     if (!enabled) {
-      setResult({ items: [], loading: false, error: null, hasNext: false });
+      setResult({ items: [], loading: false, error: null, hasNext: false, totalPages: 1 });
       return;
     }
     const controller = new AbortController();
@@ -43,12 +44,12 @@ export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKe
     const targetPage = Math.max(1, page);
     const cached = cache.pages.get(targetPage);
     if (cached) {
-      setResult({ items: cached.items, loading: false, error: null, hasNext: cached.page.hasNext });
+      setResult({ items: cached.items, loading: false, error: null, hasNext: cached.page.hasNext, totalPages: cached.page.totalPages ?? (cached.page.hasNext ? targetPage + 1 : targetPage) });
       return () => controller.abort();
     }
 
     let active = true;
-    setResult({ items: [], loading: true, error: null, hasNext: false });
+    setResult({ items: [], loading: true, error: null, hasNext: false, totalPages: 1 });
     void (async () => {
       try {
         let startPage = 1;
@@ -71,10 +72,10 @@ export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKe
         }
         if (!active || controller.signal.aborted) return;
         if (!currentPage || !cache.pages.has(targetPage)) {
-          setResult({ items: [], loading: false, error: "요청한 페이지를 찾을 수 없습니다.", hasNext: false });
+          setResult({ items: [], loading: false, error: "요청한 페이지를 찾을 수 없습니다.", hasNext: false, totalPages: 1 });
           return;
         }
-        setResult({ items: currentPage.items, loading: false, error: null, hasNext: currentPage.page.hasNext });
+        setResult({ items: currentPage.items, loading: false, error: null, hasNext: currentPage.page.hasNext, totalPages: currentPage.page.totalPages ?? (currentPage.page.hasNext ? targetPage + 1 : targetPage) });
       } catch (error) {
         if (!active || controller.signal.aborted) return;
         setResult((current) => ({ ...current, loading: false, error: error instanceof Error ? error.message : "게시글을 불러오지 못했습니다." }));

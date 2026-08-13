@@ -166,6 +166,7 @@ class CommunityFeed {
         condition = condition.and(AUTHOR_ID.isNull().or(AUTHOR_ID.notIn(blockedAuthorIds)));
       }
     }
+    int totalPages = totalPages(ITEMS, condition, limit);
     if (cursor != null) {
       OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
       condition =
@@ -213,7 +214,7 @@ class CommunityFeed {
             ? Cursor.encode(
                 items.getLast().createdAt(), items.getLast().itemKind(), items.getLast().sourceId())
             : null;
-    return new Page(items, nextCursor, hasNext);
+    return new Page(items, nextCursor, hasNext, totalPages);
   }
 
   private static void validateSearchField(String searchField) {
@@ -289,6 +290,7 @@ class CommunityFeed {
                 COMMUNITY_AUTHOR_ID.isNull().or(COMMUNITY_AUTHOR_ID.notIn(blockedAuthorIds)));
       }
     }
+    int totalPages = totalPages(COMMUNITY_ITEMS, condition, limit);
     if (cursor != null) {
       OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
       condition =
@@ -352,7 +354,12 @@ class CommunityFeed {
             ? Cursor.encode(
                 items.getLast().createdAt(), items.getLast().itemKind(), items.getLast().sourceId())
             : null;
-    return new Page(items, nextCursor, hasNext);
+    return new Page(items, nextCursor, hasNext, totalPages);
+  }
+
+  private int totalPages(Table<?> table, Condition condition, int limit) {
+    long totalCount = query.selectCount().from(table).where(condition).fetchOne(0, Long.class);
+    return Math.toIntExact((totalCount + limit - 1) / limit);
   }
 
   private static Item toItem(Record record) {
@@ -391,7 +398,7 @@ class CommunityFeed {
         : visible.or(scope.eq("LOCAL").and(neighborhoodId.eq(viewerNeighborhoodId)));
   }
 
-  record Page(List<Item> items, @Nullable String nextCursor, boolean hasNext) {}
+  record Page(List<Item> items, @Nullable String nextCursor, boolean hasNext, int totalPages) {}
 
   record Item(
       UUID sourceId,
