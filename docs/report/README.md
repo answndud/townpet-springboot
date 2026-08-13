@@ -16,6 +16,8 @@
 
 8. feed cursor pagination의 계약·페이지 복원·한계는 [`../pagination-plan.md`](../pagination-plan.md)를 참고한다.
 
+9. 저장소 내부 보안 경계와 남은 외부 전제는 [`security-review.md`](security-review.md)를 참고한다.
+
 별도 interview question bank는 P2 핵심 도메인 구현 후 만든다. 지금 만들면 아직 구현하지 않은 기능을 경험처럼 암기하거나 같은 설명을 복제할 가능성이 크다.
 
 `interview-prep.md`는 질문 bank만 모은 문서가 아니다. 프로젝트를 30초·2분·deep-dive로 설명하는 순서, 실제 사용자 흐름, 실패에서 수정한 경계, 수치 근거와 미완료 범위를 한곳에서 복기하기 위한 문서다. 질문 답변은 반드시 현재 코드와 결과 문서에 연결한다.

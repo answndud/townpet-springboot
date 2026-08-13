@@ -2,7 +2,7 @@
 
 ## 1. 문서 목적과 상태
 
-이 문서는 [`PRD.md`](./PRD.md)의 제품 요구사항을 구현하기 위한 목표 architecture, 계약, 제약, 운영과 검증 방식을 정의한다. 아직 application scaffold가 없는 설계 기준 문서이며 현재 구현과 혼동하지 않는다. 확정된 선택과 대안은 [`../ADR.md`](../ADR.md), 현재 실행 작업은 [`../PLAN.md`](../PLAN.md)를 따른다.
+이 문서는 [`PRD.md`](./PRD.md)의 제품 요구사항을 구현하기 위한 architecture, 계약, 제약, 운영과 검증 방식을 정의한다. 현재 구현과 향후 확장 목표를 구분하며, 현재 구현의 사실은 source와 release evidence를 우선한다. 확정된 선택과 대안은 [`../ADR.md`](../ADR.md), 현재 실행 작업은 [`../PLAN.md`](../PLAN.md)를 따른다.
 
 ## 2. 현재와 목표의 분리
 
@@ -24,7 +24,8 @@
 - Spring Data JPA/Hibernate write model + jOOQ read model
 - Flyway schema authority, controller/request DTO HTTP contract
 - 하나의 Spring Boot deployable과 하나의 PostgreSQL cluster
-- Hetzner CX23 showcase production, Caddy, Cloudflare R2, Grafana Alloy
+- 현재 portfolio runtime: Docker Compose, Caddy, private MinIO, 구조화 stdout log와 Actuator health
+- Hetzner·외부 object storage·collector는 실제 운영 요구와 비용을 확인한 뒤 별도 결정
 - Node.js는 frontend 개발·빌드에만 사용하고 production server에는 존재하지 않음
 
 ## 3. System Context
@@ -35,9 +36,9 @@ flowchart LR
     CF --> C["Caddy"]
     C --> S["Spring Boot modular monolith"]
     S --> PG["PostgreSQL 18 + PostGIS"]
-    S --> R2["Cloudflare R2"]
+    S --> OBJ["Private MinIO"]
     S --> MAIL["Transactional email provider"]
-    S --> OBS["Grafana Alloy"]
+    S --> OBS["Structured logs + Actuator"]
     OBS --> GC["외부 관측 backend"]
     GH["GitHub Actions·GHCR"] --> C
     PG --> B["Encrypted WAL·backup in R2"]
@@ -57,7 +58,6 @@ townpet-springboot/
 ├── settings.gradle.kts
 ├── build.gradle.kts
 ├── gradle/
-├── api/
 ├── frontend/
 │   ├── package.json
 │   ├── vite.config.ts
@@ -71,9 +71,6 @@ townpet-springboot/
 │   ├── src/main/java/com/townpet/migration/
 │   └── fixtures/
 ├── deploy/
-│   ├── terraform/
-│   ├── ansible/
-│   ├── caddy/
 │   └── compose/
 ├── docs/
 │   ├── PRD.md
@@ -121,7 +118,7 @@ com.townpet.marketplace/
 ├── application/         # use case, transaction, authorization policy
 ├── domain/              # aggregate, value object, domain service, port
 ├── infrastructure/      # JPA entity, repository adapter, jOOQ query
-└── web/                 # generated transport interface 구현과 mapper
+└── web/                 # controller, request/response DTO와 mapper
 ```
 
 - Web controller는 authentication, transport validation, use case 호출과 response mapping만 수행한다.
@@ -140,7 +137,7 @@ com.townpet.marketplace/
 - Server state는 endpoint 특성에 맞는 작은 query abstraction으로 관리하며 Redux를 기본 도입하지 않는다.
 - Vite dev server는 `/api/**`를 local Spring Boot로 proxy한다.
 - Production build asset은 Gradle processResources 전에 생성되고 Spring Boot artifact에 포함된다.
-- Spring MVC가 기존 direct URL에 page별 title·description·Open Graph를 포함한 HTML shell을 반환한다.
+- 현재 API와 health는 Spring MVC가 제공하고, Vite가 생성한 static shell은 Caddy가 제공한다. page별 SSR title·description·Open Graph는 public SEO를 제품 범위로 확정할 때 별도 slice로 도입한다.
 - Asset filename은 content hash를 사용하고 immutable cache, HTML shell은 짧은 cache 정책을 사용한다.
 - `frontend` build 결과를 source control에 commit하지 않는다.
 
@@ -149,7 +146,7 @@ com.townpet.marketplace/
 ### 8.1 Source of Truth
 
 - Spring controller와 request/response DTO가 HTTP contract의 source다. public API prefix는 `/api/v1`이다.
-- Java transport interface·DTO와 TypeScript client를 같은 contract에서 생성한다.
+- Java controller DTO와 `frontend/src/api/client.ts`가 각각 HTTP contract의 source다. 별도 OpenAPI 파일·generated client는 사용하지 않는다(ADR-0020).
 - Domain, JPA entity와 repository는 생성하지 않는다.
 - Generated source를 직접 편집하지 않는다.
 
@@ -363,7 +360,7 @@ stateDiagram-v2
 ## 13. Media
 
 - PostgreSQL `UploadAsset`가 upload 상태, owner, object key, checksum, MIME, byte·pixel, expiration을 소유한다.
-- Local은 MinIO, showcase는 Cloudflare R2를 사용한다.
+- Local과 현재 portfolio compose는 private MinIO를 사용한다. 외부 object storage는 실제 공개 배포 비용·복구 요구가 생길 때 선택한다.
 - Client는 server가 발급한 presigned upload로 object storage에 직접 전송한다.
 - Finalize command가 object metadata·magic byte·quota·owner를 확인한 뒤 READY로 전환한다.
 - Publication은 READY asset만 연결할 수 있다.
@@ -413,7 +410,7 @@ Domain 완료는 다음을 모두 요구한다.
 - JSON stdout log와 trace·span·request ID
 - Cookie, token, credential, PII와 exact location redaction
 - Low-cardinality metric label만 허용
-- Grafana Alloy가 application, PostgreSQL, node, container metric·log·trace를 외부 backend로 전송
+- 현재는 구조화 stdout log, correlation id와 Actuator health/readiness를 제공한다. Grafana Alloy와 외부 observability backend는 실제 운영 신호와 비용을 확인한 뒤 선택한다.
 - VPS에는 크기 제한된 local log만 유지하고 Prometheus·Grafana·Loki·Tempo를 모두 자체 호스팅하지 않음
 
 ### 15.2 Minimum Dashboards
@@ -444,7 +441,7 @@ Domain 완료는 다음을 모두 요구한다.
 ### 16.1 Topology
 
 - Hetzner EU CX23: 2 shared vCPU, 4GB RAM, 40GB SSD
-- Containers: Caddy, Spring Boot, PostgreSQL/PostGIS, Grafana Alloy, maintenance
+- 현재 containers: Caddy, Spring Boot, PostgreSQL/PostGIS, MinIO, maintenance. 외부 collector는 운영 확정 뒤 추가한다.
 - Build는 GitHub Actions에서 수행하고 GHCR immutable digest만 pull
 - PostgreSQL, privileged Actuator와 admin surface는 public port에 노출하지 않음
 - SSH key, non-root deploy account, host firewall와 automatic security update 사용
@@ -463,7 +460,7 @@ Domain 완료는 다음을 모두 요구한다.
 ### 16.3 Backup·Restore
 
 - RPO 5분, 장애 인지 후 RTO 60분
-- WAL 최대 5분 내 encrypted R2 archive
+- 외부 WAL archive·PITR은 현재 portfolio sandbox의 release evidence가 아니다. 운영 RPO/RTO가 실제로 요구될 때 별도 storage와 restore drill을 결정한다.
 - 일일 logical backup, 주기적 physical base backup
 - Retention: WAL 7일, daily 14일, weekly 8주, monthly 6개월
 - Weekly disposable restore + Flyway·query validation

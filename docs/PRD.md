@@ -223,6 +223,17 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 
 ## 10. 비기능 요구사항
 
+### 10.0 현재 portfolio sandbox 범위
+
+현재 release candidate는 실제 개인정보와 공개 가입을 받지 않는 portfolio sandbox다. 따라서 아래 항목은 현재 완료 기준에서 구현 누락으로 세지 않고 `deferred`로 관리한다.
+
+- 검색 유입을 위한 SSR SEO/OG/canonical/sitemap/robots
+- 공개 community launch를 위한 OPERATOR·ADMIN 분리, MFA와 위험 작업 재인증
+- 대규모 projection rebuild/reconcile, 외부 event backlog 운영과 고급 WAL/PITR/HA
+- 공개 interactive marketplace의 법률·privacy·retention 운영 정책
+
+해당 범위를 공개 서비스로 확장할 때는 별도 ADR과 release gate를 추가한다. 현재 구현의 기술 구조는 [`docs/TRD.md`](./TRD.md)와 [`ADR.md`](../ADR.md)를 따른다.
+
 ### 10.1 제품 품질
 
 - NFR-Q-01: Page·API·data·권한·responsive·accessibility·SEO 행을 가진 parity matrix가 있어야 한다.

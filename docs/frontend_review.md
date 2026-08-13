@@ -6,7 +6,7 @@
 
 - 평가는 코드 설명이 아니라 실행 결과·diff·화면·측정값으로 한다.
 - 검증하지 않은 항목은 0점 또는 `미검증`으로 기록한다.
-- mobile은 이번 점수에 포함하지 않는다. desktop 범위를 mobile 개선 완료로 표현하지 않는다.
+- 현재 release candidate는 desktop·mobile browser flow를 함께 검증한다. 이전 desktop-only 점수표와 혼동하지 않도록 mobile 결과를 별도 evidence로 기록한다.
 - P0/P1 기능·접근성·보안·데이터 손상 문제는 총점과 관계없이 통과할 수 없다.
 - 기존 baseline보다 나빠진 수치는 개선으로 인정하지 않는다. trade-off가 있으면 근거와 승인된 예외를 기록한다.
 
@@ -142,18 +142,20 @@ E2E binary가 없는 경우에는 in-app browser와 API 직접 검증을 사용�
 | G4 유지보수성 | 23/25 | 0 | 0 | 0 | comment thread 추출, auth transition regression, typecheck/test | 통과 |
 | G5 접근성·디자인 | 25/25 | 0 | 0 | 0 | DOM semantics, header keyboard, reply focus return, 1280/1440 visual diff | 통과 |
 | G6 성능 | 24/25 | 0 | 0 | 0 | 3회 HTTP baseline, p50/p75, bundle budget, preview browser vitals harness | 성능 보고서 작성은 backend handoff 후 |
-| 합계 | 96/100 | 0 | 0 | 0 | 아래 fresh gate와 Chromium 26/26 통과 | desktop release-candidate 기준 충족 |
+| 합계 | 96/100 | 0 | 0 | 0 | 아래 fresh gate와 Chromium 26/26 통과 | 2026-08-12 historical desktop record |
 
-## 2026-08-12 fresh review result
+## 2026-08-13 fresh review result
+
+문서 상단의 2026-08-12 96/100 표는 당시 desktop-only review의 historical record다. 현재 점수 판정에는 아래 최신 테스트 수와 desktop·mobile evidence를 사용한다.
 
 ### Evidence
 
 - Goal commits: `918ddb7`, `50fdbbf`, `75fd7d4`, `7fa2c4d`, `01638c3`, `599b0b1`, `db6ea04`, `a59a13c`, `c13ba95`, `7540ad5`, `0e336af`
 - `corepack pnpm install --frozen-lockfile`: pass
 - `corepack pnpm typecheck`: pass
-- `corepack pnpm test`: 8 files / 24 tests pass
+- `corepack pnpm test`: 11 files / 35 tests pass
 - `corepack pnpm build`: pass; entry JS 280.78KB raw / 86.59KB gzip, CSS 35.24KB
-- `corepack pnpm test:e2e --project=chromium`: 26/26 pass after installing the missing local Chromium binary
+- `corepack pnpm test:e2e`: desktop·mobile 포함 54/54 pass
 - `e2e/desktop-visual.spec.ts`: exact 1280×900·1440×900 home/feed/form/reply screenshots 8/8 pass
 - `e2e/domain-error-journeys.spec.ts`: marketplace·lost-found·care·gathering·moderator normal/error write journeys 9/9 pass
 - `corepack pnpm measure:browser` on Vite preview: 7 representative routes measured for FCP/LCP/INP/CLS and route settle; CLS was 0 for all routes
@@ -175,6 +177,6 @@ E2E binary가 없는 경우에는 in-app browser와 API 직접 검증을 사용�
 
 - Frontend performance records are maintained in `docs/frontend-performance/`; `docs/performance/` remains backend-only and is not used for frontend evidence.
 - P2: extend coverage to every non-core mutation combination if the product scope expands.
-- P3: mobile polish remains explicitly out of scope for this cycle.
+- P3: mobile polish는 현재 54개 browser E2E 범위에 포함되지만, 추가적인 시각 polish는 backlog다.
 
 최종 문서에는 실제 점수, 발견한 결함, 수정 commit, 재실행한 명령, 남은 P2/P3 backlog만 적는다. “검증 예정”, “동작할 것으로 예상”은 완료 근거가 아니다.
