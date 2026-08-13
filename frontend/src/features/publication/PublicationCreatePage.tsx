@@ -73,7 +73,7 @@ export default function PublicationCreatePage() {
         const digest = await crypto.subtle.digest("SHA-256", bytes);
         const checksum = Array.from(new Uint8Array(digest), (item) => item.toString(16).padStart(2, "0")).join("");
         const asset = await mediaApi.create({ checksumSha256: checksum, contentType: file.type, byteSize: file.size });
-        await mediaApi.uploadContent(asset.id, file);
+        await mediaApi.uploadPresigned(asset, file);
         await mediaApi.finalize(asset.id, checksum);
         await mediaApi.attach(asset.id, publication.id);
       }

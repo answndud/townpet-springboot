@@ -715,6 +715,14 @@ export const commonBoardApi = {
 
 export const mediaApi = {
   create(input: { checksumSha256: string; contentType: string; byteSize: number }) { return mutate<MediaUpload>("/api/v1/media/uploads", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
+  async uploadPresigned(asset: MediaUpload, file: File) {
+    const response = await fetch(asset.uploadUrl, {
+      method: "PUT",
+      headers: { "content-type": file.type },
+      body: file,
+    });
+    if (!response.ok) throw new ApiError(response.status, { detail: "Media upload failed" });
+  },
   uploadContent(id: string, file: File) { const body = new FormData(); body.append("file", file); return mutate<MediaUpload>(`/api/v1/media/uploads/${encodeURIComponent(id)}/content`, { method: "PUT", body }); },
   finalize(id: string, checksumSha256: string) { return mutate<MediaUpload>(`/api/v1/media/uploads/${encodeURIComponent(id)}/finalize`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ checksumSha256 }) }); },
   attach(id: string, publicationId: string) { return mutate<MediaUpload>(`/api/v1/media/uploads/${encodeURIComponent(id)}/attachments/publications/${encodeURIComponent(publicationId)}`, { method: "POST", headers: jsonHeaders }); },

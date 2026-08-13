@@ -69,6 +69,14 @@ townpet:
     from: ${TOWNPET_EMAIL_FROM:no-reply@townpet.local}
     public-base-url: ${TOWNPET_PUBLIC_BASE_URL:http://localhost:5173}
     token-encryption-key: ${TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
+  media:
+    minio:
+      endpoint: ${TOWNPET_MINIO_ENDPOINT:http://localhost:9000}
+      public-endpoint: ${TOWNPET_MINIO_PUBLIC_ENDPOINT:http://localhost:9000}
+      access-key: ${TOWNPET_MINIO_ACCESS_KEY:minioadmin}
+      secret-key: ${TOWNPET_MINIO_SECRET_KEY:minioadmin}
+      bucket: ${TOWNPET_MINIO_BUCKET:townpet-media}
+      presign-expiry-seconds: ${TOWNPET_MINIO_PRESIGN_EXPIRY_SECONDS:900}
   security:
     secure-cookies: ${TOWNPET_SECURE_COOKIES:false}
   demo-data:
