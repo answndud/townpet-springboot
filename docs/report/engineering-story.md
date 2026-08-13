@@ -133,3 +133,13 @@ production profile을 다시 읽으며 `UnavailableAccountTokenDelivery`와 `Una
 이 프로젝트의 핵심 서사는 “Spring 기술을 처음부터 모두 넣었다”가 아니다. Legacy parity를 유지해야 하는 상황에서 실행 경계와 module ownership을 먼저 고정하고, 인증·권한·동시성·대량 처리에서 실제 실패를 재현한 뒤 경계를 코드와 DB로 내렸다. 성능은 query/index/transaction을 먼저 측정하고, Redis·Kafka는 병목과 consistency 비용이 입증되지 않아 보류했다.
 
 각 사건은 30초 답변에서는 상황과 결과만, 2분 답변에서는 선택과 검증까지, deep-dive에서는 trade-off와 재현 명령까지 확장한다. 아직 VPS, production object storage, 외부 email provider를 검증하지 않았다는 한계를 먼저 밝히는 것이 이 프로젝트의 신뢰성을 높인다.
+
+## 14. 목록 탐색은 offset이 아니라 cursor 계약으로 통일했다
+
+기존 feed는 keyset cursor를 사용하고 있었지만, 화면마다 `더 보기`와 누적 목록을 다르게 구현해 URL로 위치를 공유하거나 새로고침 후 복원하기 어려웠다. HOT 목록은 추천 수 순위가 별도라 일반 feed cursor 계약을 그대로 재사용할 수도 없었다.
+
+일반 feed는 `(created_at, id)` 경계를 유지하고, HOT은 `(recommendation_count, created_at, id)`를 versioned URL-safe cursor로 확장했다. 두 조회 모두 `limit + 1`건으로 `hasNext`를 계산하고, 프론트는 필터 조합별 cursor chain을 메모리에 보관해 `page=N` 직접 접근도 앞 페이지 경계를 순서대로 확보한다. 페이지를 이동할 때는 누적하지 않고 현재 페이지로 교체해 번호와 목록 순위가 어긋나지 않게 했다.
+
+- 근거: [`../pagination-plan.md`](../pagination-plan.md), `PublicationFeed`, `BestFeedController`, `useCursorPagination`, `CursorPagination`, `PublicationControllerTest`
+- 검증: `./gradlew test --tests com.townpet.publication.PublicationControllerTest`, `corepack pnpm typecheck`, frontend 33 tests와 build budget
+- trade-off·한계: cursor 기반은 전체 페이지 수와 마지막 번호를 미리 알 수 없다. HOT 추천 수가 페이지 요청 사이에 바뀌면 snapshot이 아니므로, 완전한 순위 snapshot이나 서명 cursor는 실제 운영 요구가 생길 때 별도 결정한다.
