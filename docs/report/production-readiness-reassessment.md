@@ -120,6 +120,8 @@ Production profile의 `TOWNPET_EMAIL_ENABLED` 기본값도 제거했다. 이제 
 
 Media cleanup의 현재 보장 범위도 명확히 했다. 운영 endpoint는 DB에 기록된 만료 `UPLOADING` asset을 최대 500개씩 object와 metadata에서 함께 제거한다. MinIO bucket 전체 inventory와 DB를 대조하는 무주물 object reconciliation은 현재 단일 portfolio sandbox의 필수 release gate로 승격하지 않았으며, orphan 증가가 관측되면 별도 storage inventory 작업으로 추가한다.
 
+Runbook 상태도 실제 증거에 맞춰 조정했다. sanitize는 local DB dry-run과 shell syntax를 확인했지만 production apply는 아직 실행하지 않았으므로 “local 검증 완료·production 실행 전”으로 표시한다. 이는 운영 DB에 대한 destructive apply를 로컬 성공으로 과장하지 않기 위한 구분이다.
+
 ## 면접에서 설명할 trade-off
 
 처음부터 Kafka와 Redis를 넣지 않았다. PostgreSQL transaction과 Modulith event registry만으로 현재 트래픽·일관성 요구를 만족하고, 실제 saturation이나 외부 consumer backlog가 생길 때만 운영 복잡도를 늘리기로 했다. 반대로 SMTP와 object storage는 기술 확장이 아니라 현재 API가 production에서 실패하는 필수 기능이므로 배포 전에 구현하기로 재분류했다.

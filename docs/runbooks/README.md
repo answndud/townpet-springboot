@@ -6,7 +6,7 @@
 
 | 절차 | 상태 | 실행 파일/근거 |
 |---|---|---|
-| production demo sanitize | 초안 구현·검증 진행 중 | `scripts/sanitize-production-demo.sh` |
+| production demo sanitize | local dry-run·script 검증 완료, production 실행 전 | `scripts/sanitize-production-demo.sh` |
 | private moderator bootstrap | 초안 구현 | `scripts/bootstrap-private-moderator.sh` |
 | 배포·업데이트 | 초안 | [`deploy-update.md`](deploy-update.md) |
 | 재시작·장애 대응 | 초안 | [`incident-restart.md`](incident-restart.md) |
