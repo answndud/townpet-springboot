@@ -303,10 +303,14 @@ h1, h2, p { margin: 0; }
 .feed-item-title { width: fit-content; max-width: 100%; }
 .feed-item-title:hover h2 { color: #2f5da4; text-decoration: underline; text-underline-offset: 3px; }
 .feed-item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: #7187a7; font-size: 11px; }
-.feed-pagination { display: flex; align-items: center; justify-content: center; gap: 10px; border-top: 1px solid var(--surface-border); background: var(--surface-muted); padding: 10px 12px; }
-.feed-pagination-pages { display: flex; align-items: center; gap: 4px; }
-.feed-pagination-pages button { min-width: 32px; min-height: 32px; border: 0; border-radius: 5px; background: transparent; color: var(--muted-text, #7187a7); font-size: 12px; font-weight: 600; }
-.feed-pagination-pages button:hover, .feed-pagination-pages button.active { background: #eef2ff; color: var(--brand-strong); }
+.feed-pagination { display: flex; align-items: center; justify-content: center; gap: 4px; border-top: 1px solid var(--surface-border); background: transparent; padding: 8px 10px; }
+.feed-pagination > .button { min-width: 26px; min-height: 26px; border: 0; border-radius: var(--radius-sm); background: transparent; padding: 0 6px; color: var(--muted-text); font-size: 13px; font-weight: 600; line-height: 1; }
+.feed-pagination > .button:hover:not(:disabled), .feed-pagination > .button:focus-visible { background: var(--surface-muted); color: var(--text-soft); }
+.feed-pagination-pages { display: flex; align-items: center; gap: 2px; }
+.feed-pagination-pages button { min-width: 26px; min-height: 26px; border: 0; border-radius: var(--radius-sm); background: transparent; padding: 0 5px; color: var(--muted-text); font-size: 12px; font-weight: 600; line-height: 1; }
+.feed-pagination-pages button:hover:not(:disabled) { background: var(--surface-muted); color: var(--text-soft); }
+.feed-pagination-pages button.active { background: var(--brand-soft); color: var(--brand-strong); }
+.feed-pagination button:disabled { cursor: default; opacity: .38; }
 .feed-empty { margin-top: 12px; text-align: center; }
 .feed-empty h2 { color: #173963; font-size: 18px; }
 .feed-empty p { margin-top: 7px; }
