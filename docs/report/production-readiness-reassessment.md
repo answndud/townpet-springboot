@@ -112,6 +112,8 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 
 Frontend frozen install·typecheck·Vitest 33개·production build도 통과했다. bundle budget은 entry JS 290,374 bytes, gzip 89,043 bytes, CSS 49,774 bytes로 각각 320,000·100,000·50,000 byte 한도 안이다. `validate-release-candidate.sh`는 parity 104개(verified 95, excluded 9, pending 0)를 재확인했고, portfolio 및 SMTP-local Compose config와 전체 shell syntax도 통과했다.
 
+Caddy 2 컨테이너에서 실제 `deploy/Caddyfile`을 환경변수와 함께 `caddy validate`·`caddy adapt`해 media preflight matcher, CORS response headers, MinIO reverse proxy handler가 구성에 포함되는 것을 재확인했다. 이는 DNS/TLS 인증서와 실제 브라우저 PUT을 증명하는 검사는 아니다.
+
 Production profile의 `TOWNPET_EMAIL_ENABLED` 기본값도 제거했다. 이제 env가 누락되면 application binding 단계에서 시작이 실패하고, account delivery가 설정되지 않은 상태로 조용히 503을 내는 구성은 명시적으로 `false`를 넣은 경우에만 가능하다.
 
 추가로 `scripts/validate-portfolio-env.sh`를 만들어 production env-file이 placeholder·example domain·비HTTPS public URL을 포함하거나 SMTP를 비활성화한 경우 Compose 전에 실패하게 했다. 이 검사는 secret 값을 출력하지 않으며 실제 SMTP credential의 유효성이나 DNS deliverability까지 증명하지는 않는다.
