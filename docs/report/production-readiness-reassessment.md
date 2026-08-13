@@ -84,6 +84,16 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 
 임시 verified account로 presigned URL을 발급하고, network 내부 client가 MinIO에 4-byte JPEG를 직접 PUT한 뒤 backend finalize를 호출해 HTTP `200 READY`와 SHA-256 일치를 확인했다. `TOWNPET_MINIO_PUBLIC_ENDPOINT`는 backend가 접근할 수 있고 Caddy가 동일 host로 proxy해야 signature가 유지된다. fresh volume·direct upload·finalize는 검증했지만 실제 frontend browser/CORS와 외부 DNS/TLS는 아직 검증하지 않았다. 임시 containers, volumes, network와 account는 모두 제거했다. frontend Vitest 33개와 typecheck도 통과했다.
 
+## Phase gate evidence
+
+- `./gradlew check`: 성공
+- `./gradlew migrationTest`: 성공
+- `./scripts/validate-release-candidate.sh`: parity 104개 중 verified 95, excluded 9, pending 0
+- frontend: frozen install, typecheck, Vitest 33개, production build와 bundle budget 성공
+- portfolio/local SMTP compose config와 Caddy validate 성공
+
+처음 `check` 실행에서는 Testcontainers PostgreSQL startup timeout으로 media test 2개가 실패했지만, 코드 오류가 아닌 Docker resource race를 확인한 뒤 같은 phase gate를 재실행해 전체 test와 `check`를 통과시켰다. 첫 실패도 숨기지 않고 이 문서에 남긴다.
+
 ## 면접에서 설명할 trade-off
 
 처음부터 Kafka와 Redis를 넣지 않았다. PostgreSQL transaction과 Modulith event registry만으로 현재 트래픽·일관성 요구를 만족하고, 실제 saturation이나 외부 consumer backlog가 생길 때만 운영 복잡도를 늘리기로 했다. 반대로 SMTP와 object storage는 기술 확장이 아니라 현재 API가 production에서 실패하는 필수 기능이므로 배포 전에 구현하기로 재분류했다.
