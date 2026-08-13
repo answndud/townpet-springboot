@@ -82,6 +82,10 @@ SMTP 발급 endpoint에는 member별 시간당 3회 상한을 추가했다. IP �
 
 `deploy/backup-portfolio.sh`는 PostgreSQL custom dump와 MinIO bucket mirror를 같은 UTC backup id 디렉터리에 저장하고 manifest와 SHA-256 checksum을 함께 생성한다. `deploy/restore-portfolio.sh`는 checksum 검증과 명시적 destructive confirmation 이후 DB와 bucket을 함께 복원한다.
 
+이번 재감사에서 backup 디렉터리를 `umask 077`로 생성하고 빈 PostgreSQL dump를 성공으로 취급하지 않도록 보강했다. rollback runbook도 restore 중 backend/web 쓰기를 중지하고 backend health를 먼저 확인하는 순서를 명시했다.
+
+Portfolio compose는 필수 secret/domain이 없으면 config 단계에서 실패한다. 예시 값을 주입한 `portfolio.yml` 단독 config와 base+`smtp-local.yml` overlay config를 각각 통과시켜, 누락 거절과 local overlay 구성을 모두 확인했다.
+
 로컬 Docker의 별도 `townpet_restore_test` database와 임시 MinIO bucket으로 rehearsal했다. synthetic object 1개와 member row 4개가 paired backup에서 복원됐고 manifest 검증이 통과했다. 원래 local DB와 bucket은 rehearsal 뒤 복원 대상과 임시 object를 제거해 변경하지 않았다. 이 결과는 offsite backup, retention, 실제 VPS volume 복구를 증명하지 않는다.
 
 ## SMTP local integration evidence

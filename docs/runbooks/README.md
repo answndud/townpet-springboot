@@ -25,7 +25,7 @@
 - DB backup만 복원하고 object backup을 누락하지 않는다.
 - MinIO presigned URL은 backend 내부 endpoint가 아니라 `TOWNPET_MINIO_PUBLIC_ENDPOINT`로 서명한다.
 - 실행하지 않은 복구·rollback은 성공했다고 표현하지 않는다.
-- backup은 `manifest.txt`와 `manifest.sha256`가 생성된 경우에만 성공으로 기록한다.
+- backup은 `manifest.txt`와 `manifest.sha256`가 생성되고 PostgreSQL dump가 비어 있지 않은 경우에만 성공으로 기록한다. dump와 manifest 디렉터리는 `umask 077` 권한으로 보관한다.
 
 ## 작성 순서
 

@@ -6,10 +6,14 @@
 
 ```bash
 cd /Users/alex/project/townpet-springboot
-docker compose -f deploy/compose/portfolio.yml config
+# 실제 secret이 들어간 별도 env-file을 사용한다. Git의 example 파일을 그대로 쓰지 않는다.
+docker compose --env-file /secure/path/townpet.portfolio.env \
+  -f deploy/compose/portfolio.yml config
 ./gradlew clean check migrationTest
 (cd frontend && corepack pnpm install --frozen-lockfile && corepack pnpm typecheck && corepack pnpm build)
 ```
+
+필수 환경변수가 빠진 `portfolio.yml`은 의도적으로 `config` 단계에서 실패해야 한다. SMTP local 검증은 base compose와 overlay를 함께 지정한다.
 
 ## 초기 volume
 
