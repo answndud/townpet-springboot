@@ -571,6 +571,32 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.items[1].id").value(lessRecommendedId.toString()))
         .andExpect(jsonPath("$.items[1].recommendationCount").value(1))
         .andExpect(jsonPath("$.items[1].rank").value(2));
+
+    MvcResult firstPopularPage =
+        mockMvc
+            .perform(get("/api/v1/feed/popular").queryParam("limit", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items.length()").value(1))
+            .andExpect(jsonPath("$.items[0].id").value(mostRecommendedId.toString()))
+            .andExpect(jsonPath("$.page.hasNext").value(true))
+            .andExpect(jsonPath("$.page.nextCursor").isNotEmpty())
+            .andReturn();
+    String popularCursor =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(firstPopularPage.getResponse().getContentAsString())
+            .path("page")
+            .path("nextCursor")
+            .asText();
+
+    mockMvc
+        .perform(
+            get("/api/v1/feed/popular")
+                .queryParam("limit", "1")
+                .queryParam("cursor", popularCursor))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(1))
+        .andExpect(jsonPath("$.items[0].id").value(lessRecommendedId.toString()))
+        .andExpect(jsonPath("$.page.hasNext").value(false));
   }
 
   @Test

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { apiFetch, publicationApi, type Publication } from "./api/client";
+import { publicationApi, type Publication } from "./api/client";
 import { useAuth } from "./auth/AuthContext";
-import { isAbortError } from "./hooks/useAbortableRequest";
+import CursorPagination from "./components/CursorPagination";
+import { useCursorPagination } from "./hooks/useCursorPagination";
 
 type PopularItem = Pick<Publication, "id" | "title" | "body" | "createdAt"> & {
   recommendationCount?: number;
@@ -17,8 +17,6 @@ type HomeFeedItem = {
   createdAt: string;
 };
 
-type PopularResponse = { items?: PopularItem[] };
-
 const FEED_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   month: "long",
   day: "numeric",
@@ -30,7 +28,7 @@ function formatFeedDate(value: string) {
   return FEED_DATE_FORMATTER.format(new Date(value));
 }
 
-function HotFeedList({ items, loading, error }: { items: PopularItem[]; loading: boolean; error: string | null }) {
+function HotFeedList({ items, loading, error, page, hasNext, onPageChange }: { items: PopularItem[]; loading: boolean; error: string | null; page: number; hasNext: boolean; onPageChange: (page: number) => void }) {
   return (
     <section className="surface-card feed-list" aria-label="HOT 글 목록" aria-busy={loading}>
       {error ? <p className="form-error feed-error" role="alert">{error}</p> : null}
@@ -39,7 +37,7 @@ function HotFeedList({ items, loading, error }: { items: PopularItem[]; loading:
       {!loading && !error
         ? items.map((item, index) => (
             <article className="feed-item best-feed-item" key={item.id}>
-              <span className="feed-item-rank" aria-label={`${item.rank ?? index + 1}위`}>{item.rank ?? index + 1}</span>
+              <span className="feed-item-rank" aria-label={`${(page - 1) * 20 + index + 1}위`}>{(page - 1) * 20 + index + 1}</span>
               <div className="best-feed-copy">
                 <Link className="feed-item-title" to={`/posts/${item.id}`}>
                   <h2>{item.title}</h2>
@@ -52,6 +50,7 @@ function HotFeedList({ items, loading, error }: { items: PopularItem[]; loading:
             </article>
           ))
         : null}
+      {!loading && !error && items.length > 0 ? <CursorPagination page={page} hasNext={hasNext} disabled={loading} onPageChange={onPageChange} /> : null}
     </section>
   );
 }
@@ -63,88 +62,33 @@ export default function HomeFeedPage() {
   const searchFieldParam = searchParams.get("searchField");
   const searchField = searchFieldParam === "TITLE" || searchFieldParam === "BODY" ? searchFieldParam : "ALL";
   const popularView = searchParams.get("view") !== "all";
-  const [items, setItems] = useState<HomeFeedItem[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasNext, setHasNext] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [popularItems, setPopularItems] = useState<PopularItem[]>([]);
-  const [popularLoading, setPopularLoading] = useState(false);
-  const [popularError, setPopularError] = useState<string | null>(null);
-  const loadMoreController = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    if (!popularView) {
-      setPopularLoading(false);
-      setPopularError(null);
-      return;
-    }
-
-    const controller = new AbortController();
-    let active = true;
-    setPopularLoading(true);
-    setPopularError(null);
-    const search = new URLSearchParams();
-    if (query) search.set("query", query);
-    if (searchField !== "ALL") search.set("searchField", searchField);
-    const suffix = search.toString() ? `?${search}` : "";
-    apiFetch<PopularResponse>(`/api/v1/feed/popular${suffix}`, { signal: controller.signal })
-      .then((page) => { if (active) setPopularItems(page.items ?? []); })
-      .catch((requestError: unknown) => {
-        if (active && !isAbortError(requestError)) setPopularError("인기글을 불러오지 못했습니다.");
-      })
-      .finally(() => { if (active) setPopularLoading(false); });
-    return () => { active = false; controller.abort(); };
-  }, [popularView, query, searchField]);
-
-  useEffect(() => {
-    if (popularView) {
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    let active = true;
-    setLoading(true);
-    setError(null);
-    publicationApi.feed({ audience: "GLOBAL", query, searchField, scope: "ALL", signal: controller.signal })
-      .then((page) => {
-        if (!active) return;
-        setItems(page.items);
-        setNextCursor(page.page.nextCursor);
-        setHasNext(page.page.hasNext);
-      })
-      .catch((requestError: unknown) => {
-        if (active && !isAbortError(requestError)) setError("전체글을 불러오지 못했습니다.");
-      })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; controller.abort(); };
-  }, [popularView, query, searchField]);
-
-  async function loadMore() {
-    if (!nextCursor || loadingMore || popularView) return;
-    loadMoreController.current?.abort();
-    const controller = new AbortController();
-    loadMoreController.current = controller;
-    setLoadingMore(true);
-    setError(null);
-    try {
-      const page = await publicationApi.feed({ audience: "GLOBAL", cursor: nextCursor, query, searchField, scope: "ALL", signal: controller.signal });
-      setItems((current) => {
-        const existingIds = new Set(current.map((item) => item.id));
-        return [...current, ...page.items.filter((item) => !existingIds.has(item.id))];
-      });
-      setNextCursor(page.page.nextCursor);
-      setHasNext(page.page.hasNext);
-    } catch (requestError) {
-      if (!isAbortError(requestError)) setError("다음 글을 불러오지 못했습니다.");
-    } finally {
-      if (loadMoreController.current === controller) setLoadingMore(false);
-    }
-  }
-
-  useEffect(() => () => loadMoreController.current?.abort(), []);
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const queryKey = `${popularView ? "popular" : "all"}|${query}|${searchField}`;
+  const allFeed = useCursorPagination<HomeFeedItem>({
+    enabled: !popularView,
+    page,
+    pageSize: 20,
+    queryKey,
+    fetchPage: (cursor, signal) => publicationApi.feed({ audience: "GLOBAL", cursor, query, searchField, scope: "ALL", signal }) as Promise<{ items: HomeFeedItem[]; page: { nextCursor: string | null; hasNext: boolean } }>,
+  });
+  const popularFeed = useCursorPagination<PopularItem>({
+    enabled: popularView,
+    page,
+    pageSize: 20,
+    queryKey,
+    fetchPage: (cursor, signal) => publicationApi.popular({ cursor, query, searchField, signal }),
+  });
+  const items = allFeed.items;
+  const loading = allFeed.loading;
+  const error = allFeed.error;
+  const popularItems = popularFeed.items;
+  const popularLoading = popularFeed.loading;
+  const popularError = popularFeed.error;
+  const setPage = (nextPage: number) => {
+    const next = new URLSearchParams(searchParams);
+    if (nextPage <= 1) next.delete("page"); else next.set("page", String(nextPage));
+    setSearchParams(next);
+  };
 
   const canWrite = member?.role !== "MODERATOR";
   const writeHref = member?.role === "MEMBER" ? "/posts/new" : "/guest/posts/new";
@@ -191,7 +135,7 @@ export default function HomeFeedPage() {
         </form>
       </div>
 
-      {popularView ? <HotFeedList items={popularItems} loading={popularLoading} error={popularError} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : loading ? (
+      {popularView ? <HotFeedList items={popularItems} loading={popularLoading} error={popularError} page={page} hasNext={popularFeed.hasNext} onPageChange={setPage} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : loading ? (
         <section className="surface-card feed-list" aria-busy="true" aria-label="전체글 목록">
           <p className="feed-empty" role="status">전체글을 불러오는 중...</p>
         </section>
@@ -217,7 +161,7 @@ export default function HomeFeedPage() {
               </div>
             </article>
           ))}
-          {hasNext ? <div className="feed-load-more"><button className="button button-soft" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? "불러오는 중..." : "더 보기"}</button></div> : null}
+          <CursorPagination page={page} hasNext={allFeed.hasNext} disabled={allFeed.loading} onPageChange={setPage} />
         </section>
       )}
     </main>

@@ -48,7 +48,7 @@ export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKe
     }
 
     let active = true;
-    setResult((current) => ({ ...current, loading: true, error: null }));
+    setResult({ items: [], loading: true, error: null, hasNext: false });
     void (async () => {
       try {
         let startPage = 1;
