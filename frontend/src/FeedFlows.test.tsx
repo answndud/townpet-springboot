@@ -65,9 +65,9 @@ describe("Publication feed journeys", () => {
 
     expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "첫 번째 전체 글" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "더 보기" }));
+    fireEvent.click(screen.getByRole("button", { name: "다음" }));
     expect(await screen.findByRole("heading", { name: "두 번째 전체 글" })).toBeInTheDocument();
-    expect(screen.getAllByRole("article")).toHaveLength(2);
+    expect(screen.getAllByRole("article")).toHaveLength(1);
     expect(fetchMock).toHaveBeenLastCalledWith(
       "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&cursor=next-page",
       expect.objectContaining({ credentials: "include" }),

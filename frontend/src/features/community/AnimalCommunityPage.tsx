@@ -1,8 +1,10 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, NavLink, useParams, useSearchParams } from "react-router-dom";
-import { ApiError, commonBoardApi, communityApi, type FeedItem } from "../../api/client";
+import { commonBoardApi, communityApi, type FeedItem } from "../../api/client";
 import { ANIMAL_BOARD_GROUPS } from "../member/AnimalBoardCatalog";
 import { useAuth } from "../../auth/AuthContext";
+import CursorPagination from "../../components/CursorPagination";
+import { useCursorPagination } from "../../hooks/useCursorPagination";
 
 export const ANIMAL_BOARD_TABS = [
   ["all", "전체"],
@@ -115,67 +117,37 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
   const query = searchParams.get("q") ?? "";
   const scope = member && searchParams.get("scope") === "LOCAL" ? "LOCAL" : "ALL";
   const [searchDraft, setSearchDraft] = useState(query);
-  const [items, setItems] = useState<FeedItem[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasNext, setHasNext] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [retryVersion, setRetryVersion] = useState(0);
-  const controllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setSearchDraft(query);
   }, [query]);
 
-  useEffect(() => {
-    if (!boardCode || (mode === "animal" && !animalCode)) return;
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
-    setLoading(true);
-    setError(null);
-    const pageRequest =
-      mode === "common"
-        ? commonBoardApi.feed(boardCode, { query, scope, signal: controller.signal })
-        : communityApi.feed((animalCode ?? "ALL").toLowerCase(), boardCode, { query, scope, signal: controller.signal });
-    pageRequest
-      .then((page) => {
-        setItems(page.items);
-        setNextCursor(page.page.nextCursor);
-        setHasNext(page.page.hasNext);
-      })
-      .catch((requestError: unknown) => {
-        if (requestError instanceof DOMException && requestError.name === "AbortError") return;
-        setError(requestError instanceof ApiError && requestError.status === 404 ? "게시판을 찾을 수 없습니다." : "게시글을 불러오지 못했습니다.");
-      })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
-  }, [animalCode, boardCode, mode, query, retryVersion, scope]);
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
+  const queryKey = `${mode}|${animalCode}|${boardCode}|${query}|${scope}|${retryVersion}`;
+  const feed = useCursorPagination<FeedItem>({
+    enabled: Boolean(boardCode && (mode === "common" || animalCode)),
+    page,
+    pageSize: 20,
+    queryKey,
+    fetchPage: (cursor, signal) => mode === "common"
+      ? commonBoardApi.feed(boardCode ?? "all", { query, scope, cursor, signal })
+      : communityApi.feed((animalCode ?? "ALL").toLowerCase(), boardCode ?? "all", { query, scope, cursor, signal }),
+  });
+  const items = feed.items;
+  const loading = feed.loading;
+  const error = feed.error;
+  const setPage = (nextPage: number) => {
+    const next = new URLSearchParams(searchParams);
+    if (nextPage <= 1) next.delete("page"); else next.set("page", String(nextPage));
+    setSearchParams(next);
+  };
 
   const resolvedAnimalCode = animalCode ?? "ALL";
   const animalLabel = resolvedAnimalCode === "ALL" ? "전체 동물 게시판" : `${ANIMAL_LABELS.get(resolvedAnimalCode) ?? resolvedAnimalCode} 게시판`;
   const pageLabel = mode === "common" ? "공통게시판" : animalLabel;
   const boardLabel = boardTabs.find(([code]) => code === boardCode)?.[1] ?? "게시판";
   const writeHref = writePath(mode, animalCode ?? "ALL", boardCode ?? "all");
-
-  async function loadMore() {
-    if (!boardCode || !nextCursor || loadingMore || (mode === "animal" && !animalCode)) return;
-    setLoadingMore(true);
-    try {
-      const page =
-        mode === "common"
-          ? await commonBoardApi.feed(boardCode, { query, scope, cursor: nextCursor })
-          : await communityApi.feed((animalCode ?? "ALL").toLowerCase(), boardCode, { query, scope, cursor: nextCursor });
-      setItems((current) => [...current, ...page.items]);
-      setNextCursor(page.page.nextCursor);
-      setHasNext(page.page.hasNext);
-    } catch {
-      setError("다음 게시글을 불러오지 못했습니다.");
-    } finally {
-      setLoadingMore(false);
-    }
-  }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -225,7 +197,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
       {!loading && !error && items.length ? (
         <section className="surface-card feed-list" aria-label={`${pageLabel} ${boardLabel} 게시글 목록`}>
           {items.map((item) => <FeedCard key={`${item.kind}:${item.id}`} item={item} />)}
-          {hasNext ? <div className="feed-load-more"><button className="button button-soft" type="button" onClick={() => void loadMore()} disabled={loadingMore}>{loadingMore ? "불러오는 중..." : "더 보기"}</button></div> : null}
+          <CursorPagination page={page} hasNext={feed.hasNext} disabled={feed.loading} onPageChange={setPage} />
         </section>
       ) : null}
     </main>
