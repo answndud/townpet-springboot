@@ -1,6 +1,7 @@
 package com.townpet.operations;
 
 import com.townpet.common.UuidV7;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -26,8 +27,8 @@ class AcquisitionEventController {
 
   @PostMapping("/api/acquisition/events")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  void record(@Valid @RequestBody EventRequest request) {
-    rateLimiter.requireCapacity();
+  void record(@Valid @RequestBody EventRequest request, HttpServletRequest httpRequest) {
+    rateLimiter.requireCapacity(httpRequest);
     try {
       events.save(
           new AcquisitionEventEntity(

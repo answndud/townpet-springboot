@@ -17,6 +17,7 @@
 8. feed cursor pagination의 계약·페이지 복원·한계는 [`../pagination-plan.md`](../pagination-plan.md)를 참고한다.
 
 9. 저장소 내부 보안 경계와 남은 외부 전제는 [`security-review.md`](security-review.md)를 참고한다.
+10. 보안 개념을 처음부터 복기할 때는 [`security-guide.md`](security-guide.md)를 읽는다.
 
 별도 interview question bank는 P2 핵심 도메인 구현 후 만든다. 지금 만들면 아직 구현하지 않은 기능을 경험처럼 암기하거나 같은 설명을 복제할 가능성이 크다.
 

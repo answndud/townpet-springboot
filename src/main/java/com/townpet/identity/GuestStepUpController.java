@@ -1,6 +1,9 @@
 package com.townpet.identity;
 
+import com.townpet.common.ClientAddress;
 import com.townpet.common.MemberOrAnonymousOnly;
+import com.townpet.common.RequestRateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -26,12 +29,15 @@ public class GuestStepUpController {
   static final String STEP_UP_COOKIE = "TOWNPET_STEP_UP";
   private final GuestStepUpService steps;
   private final boolean secureCookies;
+  private final RequestRateLimiter rateLimiter;
 
   GuestStepUpController(
       GuestStepUpService steps,
-      @Value("${townpet.security.secure-cookies:false}") boolean secureCookies) {
+      @Value("${townpet.security.secure-cookies:false}") boolean secureCookies,
+      RequestRateLimiter rateLimiter) {
     this.steps = steps;
     this.secureCookies = secureCookies;
+    this.rateLimiter = rateLimiter;
   }
 
   @PostMapping("/authors")
@@ -39,6 +45,7 @@ public class GuestStepUpController {
   @ResponseStatus(HttpStatus.CREATED)
   GuestResponse createAuthor(
       @Valid @RequestBody CreateGuestRequest request, HttpServletResponse response) {
+    rateLimiter.requireCapacity("guest-create", "anonymous", 30, Duration.ofMinutes(1));
     GuestAuthorEntity guest = steps.createGuest(request.password());
     response.addHeader(
         "Set-Cookie",
@@ -58,7 +65,10 @@ public class GuestStepUpController {
   StepUpResponse issue(
       @Valid @RequestBody StepUpRequest request,
       @Nullable @CookieValue(name = GUEST_COOKIE, required = false) String cookieGuestId,
-      HttpServletResponse response) {
+      HttpServletResponse response,
+      HttpServletRequest httpRequest) {
+    rateLimiter.requireCapacity(
+        "guest-step-up", ClientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
     UUID guestId = request.guestId() == null ? parseGuestId(cookieGuestId) : request.guestId();
     GuestStepUpService.Challenge challenge =
         steps.issue(guestId, request.scope(), request.password());

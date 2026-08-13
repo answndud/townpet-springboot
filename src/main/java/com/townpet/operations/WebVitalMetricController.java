@@ -1,6 +1,7 @@
 package com.townpet.operations;
 
 import com.townpet.common.UuidV7;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.util.*;
@@ -20,8 +21,8 @@ class WebVitalMetricController {
 
   @PostMapping({"/api/v1/operations/web-vitals", "/api/metrics/web-vitals"})
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  void record(@Valid @RequestBody RecordRequest request) {
-    rateLimiter.requireCapacity();
+  void record(@Valid @RequestBody RecordRequest request, HttpServletRequest httpRequest) {
+    rateLimiter.requireCapacity(httpRequest);
     metrics.save(
         new WebVitalMetricEntity(
             UuidV7.randomUuid(), request.metricName(), request.metricValue(), request.route()));

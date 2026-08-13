@@ -51,6 +51,26 @@
 
 검증: `docker build --file deploy/Dockerfile.backend ...` 성공, `docker run --rm --entrypoint id` 결과 `uid=10001(townpet) gid=10001(townpet)` 확인.
 
+### 4. 로그인·guest abuse 방어
+
+상황: telemetry뿐 아니라 로그인과 guest step-up도 인증 전 endpoint다. 공격자가 비밀번호 후보를 반복하거나 guest author를 대량 생성하면 정상 사용자가 영향을 받는다.
+
+선택: `RequestRateLimiter`를 공통 bounded fixed-window 컴포넌트로 만들고 remote address와 bucket을 조합해 제한한다. 현재 단일 인스턴스 기준 로그인·guest step-up은 분당 30회, guest author 생성은 분당 30회다. map은 최대 10,000 key로 제한해 공격자가 서로 다른 주소를 보내 메모리를 무한히 늘리지 못하게 했다.
+
+근거: `src/main/java/com/townpet/common/RequestRateLimiter.java`, `SessionController`, `GuestStepUpController`, `RequestRateLimiterTest`.
+
+검증: bucket과 IP가 서로 독립적으로 동작하고 동일 bucket·IP가 한도를 넘으면 `429`가 되는 단위 테스트와 전체 backend gate.
+
+한계: Caddy가 `X-Forwarded-For`를 덮어쓰는 현재 단일 proxy 구성을 전제로 한다. 다중 proxy/다중 backend instance에서는 trusted proxy 목록과 공유 저장소 기반 limiter를 별도로 결정해야 한다.
+
+### 5. Browser security headers와 공급망 gate
+
+`deploy/Caddyfile`에 HSTS, CSP, frame-ancestors, nosniff, Referrer-Policy, Permissions-Policy와 media CORS 정책을 명시했다. `scripts/security-static-check.sh`는 production cookie, non-root image, Caddy header, MinIO least-privilege policy와 auth limiter의 존재를 검사한다.
+
+`.github/workflows/security.yml`에는 Trivy filesystem·secret scan, PR dependency review, frontend SBOM 생성, backend/frontend container image scan을 추가했다. Trivy local source scan은 현재 frontend lockfile에서 HIGH/CRITICAL unfixed vulnerability 없이 종료됐다. 이는 dependency가 영원히 안전하다는 증명이 아니라, scan 당시 database와 lockfile 기준의 결과다.
+
+로컬 Caddy 2.9 parser validation, static checks, shell syntax, backend 전체 gate, frontend 35개 unit/build, browser 54개 desktop/mobile E2E가 통과했다.
+
 ## 이미 통과한 경계
 
 - Spring Session JDBC와 CSRF token repository
