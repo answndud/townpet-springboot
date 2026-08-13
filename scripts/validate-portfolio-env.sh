@@ -34,6 +34,11 @@ case "$TOWNPET_PUBLIC_BASE_URL" in https://*) ;; *) echo "TOWNPET_PUBLIC_BASE_UR
 case "$TOWNPET_MINIO_PUBLIC_ENDPOINT" in https://*) ;; *) echo "TOWNPET_MINIO_PUBLIC_ENDPOINT must use https" >&2; exit 1 ;; esac
 case "$TOWNPET_DOMAIN" in *://*|*/*) echo "TOWNPET_DOMAIN must be a host name" >&2; exit 1 ;; esac
 case "$TOWNPET_MEDIA_DOMAIN" in *://*|*/*) echo "TOWNPET_MEDIA_DOMAIN must be a host name" >&2; exit 1 ;; esac
+TOWNPET_MINIO_BUCKET=${TOWNPET_MINIO_BUCKET:-townpet-media}
+[ "$TOWNPET_MINIO_BUCKET" = "townpet-media" ] || {
+  echo "TOWNPET_MINIO_BUCKET must remain townpet-media for the least-privilege policy" >&2
+  exit 1
+}
 
 # Fail before Compose if credentials or cryptographic material are obviously
 # unsafe. This checks shape only; it never prints the secret values.

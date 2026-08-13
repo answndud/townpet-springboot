@@ -94,6 +94,8 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 
 ## Fresh media volume evidence
 
+배포 전 fresh-volume rehearsal에서 `minio/mc`를 MinIO server와 같은 날짜 태그로 고정한 기존 Compose가 실제 registry에 존재하지 않아 `manifest unknown`으로 중단됐다. 이후 client release를 독립적으로 확인하고 `RELEASE.2025-08-13T08-35-41Z`로 pin했으며, 해당 이미지에 `sed`가 포함되지 않는 것도 확인해 init command가 외부 shell 도구에 의존하지 않도록 고쳤다. `minio-init`은 `/bin/sh -c` 명시적 command list로 policy·application user·attachment를 생성한다. 새 project/volume에서 PostgreSQL·MinIO·Mailpit·backend 기동, `townpet-media-app` policy 생성·부착, Mailpit API 응답까지 다시 통과시킨 뒤 임시 volume을 제거했다.
+
 기존 local volume과 분리한 PostgreSQL·MinIO·backend를 새 network/volume으로 시작하고 Flyway 61개 migration을 적용했다. bootstrap administrator가 `postgis`·`citext`를 provision하지 않은 첫 시도는 V001에서 중단됐고, portfolio init script의 extension 전제와 동일하게 provision한 뒤 재시작했다. 이 실패는 fresh-volume runbook에 반영할 운영 전제다.
 
 임시 verified account로 presigned URL을 발급하고, network 내부 client가 MinIO에 4-byte JPEG를 직접 PUT한 뒤 backend finalize를 호출해 HTTP `200 READY`와 SHA-256 일치를 확인했다. `TOWNPET_MINIO_PUBLIC_ENDPOINT`는 backend가 접근할 수 있고 Caddy가 동일 host로 proxy해야 signature가 유지된다. fresh volume·direct upload·finalize는 검증했지만 실제 frontend browser/CORS와 외부 DNS/TLS는 아직 검증하지 않았다. 임시 containers, volumes, network와 account는 모두 제거했다. frontend Vitest 35개와 typecheck도 통과했다.
