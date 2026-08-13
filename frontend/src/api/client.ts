@@ -631,6 +631,7 @@ export const publicationApi = {
     limit = 20,
     signal,
     query,
+    searchField = "ALL",
     scope = "ALL",
     from,
     to,
@@ -642,6 +643,7 @@ export const publicationApi = {
     limit?: number;
     signal?: AbortSignal;
     query?: string;
+    searchField?: "ALL" | "TITLE" | "BODY";
     scope?: "ALL" | "GLOBAL" | "LOCAL";
     from?: string;
     to?: string;
@@ -651,6 +653,7 @@ export const publicationApi = {
     const search = new URLSearchParams({ audience, limit: String(limit), scope });
     if (cursor) search.set("cursor", cursor);
     if (query) search.set("query", query);
+    if (searchField !== "ALL") search.set("searchField", searchField);
     if (from) search.set("from", from);
     if (to) search.set("to", to);
     if (animalInterestCodes) search.set("animals", animalInterestCodes.join(","));
@@ -716,6 +719,12 @@ export const commonBoardApi = {
 export const mediaApi = {
   create(input: { checksumSha256: string; contentType: string; byteSize: number }) { return mutate<MediaUpload>("/api/v1/media/uploads", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); },
   async uploadPresigned(asset: MediaUpload, file: File) {
+    // Local/test storage intentionally keeps the existing server-side path;
+    // production MinIO returns an absolute presigned URL.
+    if (asset.uploadUrl.startsWith("/api/")) {
+      await this.uploadContent(asset.id, file);
+      return;
+    }
     const response = await fetch(asset.uploadUrl, {
       method: "PUT",
       headers: { "content-type": file.type },
