@@ -42,6 +42,14 @@
 - ProblemDetail은 status와 기계 판독 code, traceId, field error를 한 오류 계약으로 묶는다.
 - 근거: `MemberDirectory`, `BlockDirectory`, `PublicationService`, `PublicationFeed`, `PublicationAccess`, `CommentService`, `ReactionService`, `BookmarkService`, `RelationshipService`, `BlockedEngagementPolicyTest`, V007~V015, 관련 controller/integration test, `ModularityTest`, `LayerRulesTest`
 
+### 도메인 상태와 원장 분리
+
+- Publication은 `ACTIVE`, `HIDDEN`, `DELETED` lifecycle과 `GLOBAL`, `LOCAL` visibility를 소유한다. 피드·상세·engagement는 같은 active 조건을 사용해 삭제된 콘텐츠가 다른 경로에 남지 않게 한다.
+- Comment는 삭제 상태를 보존하는 원장이고, Reaction·Bookmark는 unique key와 명시적인 `active` 요청으로 현재 상태를 표현한다. 따라서 댓글 삭제와 좋아요/북마크 해제를 같은 방식으로 처리하지 않는다.
+- Lost & Found의 공개 근사 위치와 보호된 정확 위치는 서로 다른 read policy를 통과한다. 정확 위치·연락 증거는 public projection, log, 오류 응답에 포함하지 않는다.
+- Care의 Request, Application, Assignment, Feedback은 서로 다른 actor와 상태 전이를 가지므로 한 테이블의 상태 값으로 합치지 않는다. Volunteer capacity와 Marketplace lifecycle도 각 module의 service와 DB 불변식이 소유한다.
+- 이 구조의 목적은 기능 수를 늘리는 것이 아니라, 각 상태 변경의 actor·source of truth·동시성 경계를 한 곳에서 설명할 수 있게 하는 것이다.
+
 ## React·Vite와 parity
 
 - Vite는 정적 frontend build와 local `/api` proxy만 담당하고 production Node server 역할을 갖지 않는다.
@@ -65,11 +73,20 @@
 - demo identity는 실제 사용자 데이터가 아닌 합성 fixture이며 password 평문은 저장하지 않는다.
 - 근거: `SecurityConfig`, `SessionController`, `AccountTokenDelivery`, V002~V006, `IdentityMemberControllerTest`, `AccountTokenDeliveryUnavailableTest`, `auth-parity.spec.ts`
 
+### 운영 오류·대량 변경·관측 경계
+
+- 인증되지 않은 요청과 권한 부족 요청은 Spring MVC controller에 도달하기 전에 종료될 수 있으므로 Security entry point와 access denied handler도 ProblemDetail 계약을 직접 만든다.
+- 작성자 공개 범위 일괄 변경은 변경 대상 조건을 DB에 내려 `ACTIVE ↔ HIDDEN` 행만 bulk update한다. JPA entity callback이 필요한 규칙에는 이 경로를 사용하지 않는다.
+- request trace는 MDC trace ID와 method·path·status·duration을 서버 로그에 남기되 query string, credential, session, 정확 위치와 body는 기록하지 않는다. `server.shutdown=graceful`과 종료 timeout은 진행 중 요청을 정리할 시간을 제한한다.
+- 이 경계는 “테스트가 통과했다”는 사실보다 장애 시 어떤 요청을 어떤 로그와 연결할 수 있고, 대량 변경이 application heap을 얼마나 사용하지 않도록 했는지를 설명하기 위한 것이다.
+
 ## 현재 학습·증거의 빈틈
 
 - 실제 email provider adapter, transaction 이후 durable delivery와 retry·bounce 처리
 - publication 복구와 media lifecycle
 - event retry/idempotency, concurrency mutation, generated jOOQ schema와 feed projection
 - 큰 corpus의 representative latency·query count, backup/restore와 배포 관측 evidence
+- VPS reverse proxy·TLS·restart·resource limit·offsite backup evidence
+- production object storage 또는 공개 upload 비활성화 정책의 최종 결정
 
 이 항목들은 구현·실험 근거가 생길 때 해당 절에 추가한다. 미리 일반론을 채우지 않는다.

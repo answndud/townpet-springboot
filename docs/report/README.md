@@ -9,6 +9,8 @@
 3. 성능 측정 계획과 결과는 [`../performance/README.md`](../performance/README.md)를 참고한다.
 4. 구현 범위와 전체 architecture는 canonical 문서와 [`../architecture/module-map.md`](../architecture/module-map.md), [`../parity/matrix.md`](../parity/matrix.md)를 참고한다.
 
+5. 배포 전 위험과 아직 결정하지 않은 운영 항목은 [`release-readiness.md`](release-readiness.md)에서 확인한다.
+
 별도 interview question bank는 P2 핵심 도메인 구현 후 만든다. 지금 만들면 아직 구현하지 않은 기능을 경험처럼 암기하거나 같은 설명을 복제할 가능성이 크다.
 
 ## 문서화 기준
@@ -42,5 +44,21 @@
 | Session·CSRF·onboarding·RBAC·password/email lifecycle | Identity code, V004~V005, JDBC session security tests | evidenced |
 | Credentials 전체 auth parity | PostgreSQL·Spring·Vite Playwright와 JDBC row 대사 | evidenced |
 | 게시·분실·거래·지역정보·모임·신고 핵심 도메인 | 관련 controller, migration, React flows, migrationTest/Vitest | evidenced |
+| 동시성·DB 불변식 | upsert, row lock, partial unique index, `ReleaseCandidateQueryPlanTest` | evidenced |
+| 대량 moderation·오류 계약·trace | bulk update, security problem handler, `RequestTraceFilter` | evidenced |
+| 성능 개선과 확장 기술 판단 | `docs/performance/results/`, k6 raw output | evidenced |
+| 배포 운영 | `release-readiness.md`, Compose·backup scripts | partial; VPS 미검증 |
 
 `evidenced`는 코드와 재현 가능한 test/migration이 있을 때만 사용한다. 면접 답변을 실제로 연습한 뒤에만 별도 `rehearsed` 상태를 도입한다.
+
+## 사건 기록 형식
+
+새로운 사건을 추가할 때는 다음 순서를 지킨다.
+
+1. 상황: 실제 실패·제약·관찰 결과
+2. 선택: 검토한 대안과 선택 이유
+3. 구현 근거: 코드·migration·설정 위치
+4. 검증: 재현 명령·테스트·측정 결과
+5. trade-off·한계: 얻은 것과 아직 검증하지 않은 것
+
+단순 CRUD, 파일 목록, 통과한 테스트 목록, 구현하지 않은 미래 설계는 report에 추가하지 않는다. 성능 수치와 원본 산출물은 `docs/performance/`가 소유하고 report에서는 링크만 둔다.

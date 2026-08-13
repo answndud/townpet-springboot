@@ -98,5 +98,29 @@ Spring Method Security를 활성화하고 `/api/admin/**`, 신고 compatibility 
 
 현재 public feed p95와 mixed/soak 결과에서 Redis cache 또는 Kafka broker가 해결할 병목은 입증되지 않았다. 따라서 두 인프라는 추가하지 않고 deferred로 결정했으며, 실제 DB CPU·queue backlog·eventual-consistency 요구가 생길 때 동일 fixture의 candidate-enabled 비교를 시작한다.
 
-- 근거: [`docs/performance/results/2026-08-12-public-feed-index.md`](../performance/results/2026-08-12-public-feed-index.md), [`docs/performance/results/2026-08-12-s0-s2-baseline.md`](../performance/results/2026-08-12-s0-s2-baseline.md), [`docs/performance/results/2026-08-12-s3-s8-workloads.md`](../performance/results/2026-08-12-s3-s8-workloads.md)
+- 근거: [`docs/performance/results/2026-08-12-public-feed-index.md`](../performance/results/2026-08-12-public-feed-index.md), [`docs/performance/results/2026-08-12-s0-s2-baseline.md`](../performance/results/2026-08-12-s0-s2-baseline.md), [`docs/performance/results/2026-08-12-s3-s8-workloads.md`](../performance/results/2026-08-12-s3-s8-workloads.md), [`docs/performance/results/2026-08-13-phase2-capacity-diagnostics.md`](../performance/results/2026-08-13-phase2-capacity-diagnostics.md), [`docs/performance/results/2026-08-13-phase3-capacity-query-shape.md`](../performance/results/2026-08-13-phase3-capacity-query-shape.md), [`docs/performance/results/2026-08-13-phase4-feed-redis-evaluation.md`](../performance/results/2026-08-13-phase4-feed-redis-evaluation.md)
 - trade-off: local Docker bridge와 JVM RSS는 운영 네트워크·메모리의 대체 증거가 아니므로 배포 전 VPS에서 spike/soak을 재실행한다.
+
+## 10. 기능을 CRUD가 아니라 상태와 원장 중심으로 확장했다
+
+도메인 기능을 추가할 때 모든 기능을 공통 `Content` 모델이나 기술별 service로 합치지 않았다. Publication은 lifecycle과 visibility를 소유하고, Comment·Reaction·Bookmark는 서로 다른 원장과 멱등성 규칙을 가진다. Lost & Found는 공개 근사 위치와 보호된 정확 위치를 분리하고, Care는 Request → Application → Assignment → Feedback의 상태 전이를 분리했다. Marketplace와 Volunteer도 결제나 단순 게시글로 축소하지 않고 상태·capacity·ownership 규칙을 각 module이 소유하게 했다.
+
+이 선택으로 화면마다 임의의 상태 문자열과 권한 조건을 복제하지 않고, 각 변경이 어느 aggregate와 DB constraint를 통과해야 하는지 설명할 수 있게 됐다. 반대로 아직 결제, 실제 이메일 전송, production object storage는 현재 범위 밖이거나 deferred이므로 구현된 기능처럼 문서화하지 않았다.
+
+- 근거: `src/main/java/com/townpet/{publication,engagement,lostfound,care,marketplace,welfare}/`, V007~V049, `docs/PRD.md`, `docs/TRD.md`
+- trade-off: module과 상태 모델이 단순 CRUD보다 복잡하지만, 권한·동시성·복구 규칙을 한 곳에 두고 테스트할 수 있다.
+
+## 11. 운영 가능한 오류와 대량 처리 경계를 별도 감사했다
+
+정상 흐름이 통과한 뒤에도 운영 실패를 별도로 점검했다. Spring Security filter에서 끝나는 401·403이 MVC ProblemDetail과 다른 형식으로 반환되던 문제는 entry point와 access denied handler를 추가해 trace ID와 machine-readable code를 통일했다. 작성자 콘텐츠 공개 범위 일괄 변경은 entity 전체 로딩 대신 조건부 PostgreSQL bulk update로 바꾸고, 실제로 변경된 row만 version과 `updatedAt`을 갱신했다. 요청 로그에는 query string과 민감 body를 넣지 않으면서 MDC trace ID·method·path·status·duration을 남겼고, graceful shutdown timeout도 설정했다.
+
+이 사건들은 기능 하나를 추가한 기록이 아니라, 정상 요청만 확인하면 놓치는 보안·메모리·장애 진단 문제를 production 경계에서 다시 본 사례다. bulk update는 JPA lifecycle callback이 필요한 규칙에는 사용하지 않는다는 제한도 함께 남겼다.
+
+- 근거: `StableSecurityProblemHandlers`, `PublicationRepository`, `RequestTraceFilter`, `application.yml`, `docs/performance/results/2026-08-12-s3-s8-workloads.md`
+- 검증: backend security/integration tests, bulk update 관련 테스트, `./scripts/frontend-backend-smoke.sh`, 성능 결과 문서
+
+## 12. 면접 답변은 사건·근거·한계로 압축한다
+
+이 프로젝트의 핵심 서사는 “Spring 기술을 처음부터 모두 넣었다”가 아니다. Legacy parity를 유지해야 하는 상황에서 실행 경계와 module ownership을 먼저 고정하고, 인증·권한·동시성·대량 처리에서 실제 실패를 재현한 뒤 경계를 코드와 DB로 내렸다. 성능은 query/index/transaction을 먼저 측정하고, Redis·Kafka는 병목과 consistency 비용이 입증되지 않아 보류했다.
+
+각 사건은 30초 답변에서는 상황과 결과만, 2분 답변에서는 선택과 검증까지, deep-dive에서는 trade-off와 재현 명령까지 확장한다. 아직 VPS, production object storage, 외부 email provider를 검증하지 않았다는 한계를 먼저 밝히는 것이 이 프로젝트의 신뢰성을 높인다.
