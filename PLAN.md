@@ -6,7 +6,7 @@
 
 ## Active
 
-No active work. P1~P3의 저장소 내부 작업과 최종 검증을 완료했다. 단, 현재 다른 작업에서 수정 중인 uncommitted frontend 변경이 있으므로 그 변경을 포함한 gate 재실행 전에는 release commit으로 취급하지 않는다.
+No active work. P1~P3의 저장소 내부 작업과 최종 검증을 완료했고, frontend release polish까지 commit으로 고정했다. 실제 VPS·외부 provider 검증만 배포 단계의 backlog다.
 
 ## Backlog
 
