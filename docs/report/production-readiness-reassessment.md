@@ -122,6 +122,8 @@ Media cleanup의 현재 보장 범위도 명확히 했다. 운영 endpoint는 DB
 
 Runbook 상태도 실제 증거에 맞춰 조정했다. sanitize는 local DB dry-run과 shell syntax를 확인했지만 production apply는 아직 실행하지 않았으므로 “local 검증 완료·production 실행 전”으로 표시한다. 이는 운영 DB에 대한 destructive apply를 로컬 성공으로 과장하지 않기 위한 구분이다.
 
+추가 재현에서 실제 `townpet-postgres`와 격리된 PostgreSQL 18 client container를 연결해 sanitize dry-run을 실행했다. demo member 4명과 연결된 각 콘텐츠 삭제 문장이 끝까지 실행된 뒤 `ROLLBACK`되었고, 마지막 verification block도 통과했다. 이 과정에서 heredoc 내부의 `#` 주석이 PostgreSQL 문법이 아니라는 결함을 발견해 `--` 주석으로 수정했다. local DB는 rollback으로 보존했다.
+
 ## 면접에서 설명할 trade-off
 
 처음부터 Kafka와 Redis를 넣지 않았다. PostgreSQL transaction과 Modulith event registry만으로 현재 트래픽·일관성 요구를 만족하고, 실제 saturation이나 외부 consumer backlog가 생길 때만 운영 복잡도를 늘리기로 했다. 반대로 SMTP와 object storage는 기술 확장이 아니라 현재 API가 production에서 실패하는 필수 기능이므로 배포 전에 구현하기로 재분류했다.
