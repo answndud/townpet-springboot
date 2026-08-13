@@ -196,6 +196,31 @@ export type FeedPage = {
   };
 };
 
+type FeedPageResponse = {
+  items?: FeedItem[];
+  nextCursor?: string | null;
+  hasNext?: boolean;
+  totalPages?: number;
+  page?: {
+    nextCursor?: string | null;
+    hasNext?: boolean;
+    totalPages?: number;
+  };
+};
+
+export function normalizeFeedPage(response: FeedPageResponse | null | undefined): FeedPage {
+  const page = response?.page ?? {};
+  const hasNext = (page.hasNext ?? response?.hasNext) === true;
+  return {
+    items: Array.isArray(response?.items) ? response.items : [],
+    page: {
+      nextCursor: page.nextCursor ?? response?.nextCursor ?? null,
+      hasNext,
+      totalPages: page.totalPages ?? response?.totalPages ?? (hasNext ? 2 : 1),
+    },
+  };
+}
+
 export type PopularFeedItem = {
   id: string;
   title: string;
@@ -209,6 +234,13 @@ export type PopularFeedPage = {
   items: PopularFeedItem[];
   page: { nextCursor: string | null; hasNext: boolean; totalPages?: number };
 };
+
+type PopularFeedPageResponse = FeedPageResponse & { items?: PopularFeedItem[] };
+
+function normalizePopularFeedPage(response: PopularFeedPageResponse | null | undefined): PopularFeedPage {
+  const normalized = normalizeFeedPage(response);
+  return { items: normalized.items as unknown as PopularFeedItem[], page: normalized.page };
+}
 
 export type CommunityFeedPage = FeedPage & {
   animalCode: string;
@@ -565,10 +597,10 @@ export const publicationApi = {
     return apiFetch<PublicationStats>(`/api/posts/${encodeURIComponent(publicationId)}/stats`, { signal });
   },
   comments(publicationId: string, signal?: AbortSignal) {
-    return apiFetch<{ items: Comment[] }>(
+    return apiFetch<{ items?: Comment[] }>(
       `/api/v1/publications/${encodeURIComponent(publicationId)}/comments`,
       { signal },
-    );
+    ).then((response) => ({ items: Array.isArray(response?.items) ? response.items : [] }));
   },
   createComment(publicationId: string, input: CreateCommentInput) {
     return mutate<Comment>(
@@ -673,7 +705,7 @@ export const publicationApi = {
     if (to) search.set("to", to);
     if (animalInterestCodes) search.set("animals", animalInterestCodes.join(","));
     if (type) search.set("type", type);
-    return apiFetch<FeedPage>(`/api/v1/feed?${search}`, { signal });
+    return apiFetch<FeedPageResponse>(`/api/v1/feed?${search}`, { signal }).then(normalizeFeedPage);
   },
   popular({ limit = 20, cursor, signal, query, searchField = "ALL" }: {
     limit?: number;
@@ -686,7 +718,7 @@ export const publicationApi = {
     if (cursor) search.set("cursor", cursor);
     if (query) search.set("query", query);
     if (searchField !== "ALL") search.set("searchField", searchField);
-    return apiFetch<PopularFeedPage>(`/api/v1/feed/popular?${search}`, { signal });
+    return apiFetch<PopularFeedPageResponse>(`/api/v1/feed/popular?${search}`, { signal }).then(normalizePopularFeedPage);
   },
 };
 
@@ -711,10 +743,14 @@ export const communityApi = {
     });
     if (options.cursor) search.set("cursor", options.cursor);
     if (options.query) search.set("query", options.query);
-    return apiFetch<CommunityFeedPage>(
+    return apiFetch<CommunityFeedPage & FeedPageResponse>(
       `/api/v1/communities/${encodeURIComponent(animalCode)}/feed?${search}`,
       { signal: options.signal },
-    );
+    ).then((response) => ({
+      ...normalizeFeedPage(response),
+      animalCode: response?.animalCode ?? animalCode,
+      board: response?.board ?? board,
+    }));
   },
 };
 
@@ -737,10 +773,10 @@ export const commonBoardApi = {
     });
     if (options.cursor) search.set("cursor", options.cursor);
     if (options.query) search.set("query", options.query);
-    return apiFetch<FeedPage>(
+    return apiFetch<FeedPageResponse>(
       `/api/v1/boards/${encodeURIComponent(board)}/feed?${search}`,
       { signal: options.signal },
-    );
+    ).then(normalizeFeedPage);
   },
 };
 

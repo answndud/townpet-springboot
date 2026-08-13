@@ -15,7 +15,7 @@ export default function NotificationPage() {
     [unreadOnly],
   );
   const items = (loaded?.items ?? []).map((item) => readUpdates[item.id] ?? item);
-  const unreadCount = Math.max(0, (loaded?.unreadCount ?? 0) - Object.keys(readUpdates).filter((id) => loaded?.items.some((item) => item.id === id && !item.readAt)).length);
+  const unreadCount = Math.max(0, (loaded?.unreadCount ?? 0) - Object.keys(readUpdates).filter((id) => (loaded?.items ?? []).some((item) => item.id === id && !item.readAt)).length);
   const error = requestError instanceof ApiError && requestError.status === 401
     ? "로그인이 필요합니다."
     : requestError
