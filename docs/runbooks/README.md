@@ -7,6 +7,7 @@
 | 절차 | 상태 | 실행 파일/근거 |
 |---|---|---|
 | production demo sanitize | 초안 구현·검증 진행 중 | `scripts/sanitize-production-demo.sh` |
+| private moderator bootstrap | 초안 구현 | `scripts/bootstrap-private-moderator.sh` |
 | 배포·업데이트 | 미작성 | `deploy/compose/portfolio.yml` 기준으로 P4에서 작성 |
 | 재시작·장애 대응 | 미작성 | health/readiness와 함께 작성 |
 | PostgreSQL backup/restore | 부분 구현 | `deploy/backup-postgres.sh`, `deploy/restore-postgres.sh` |
