@@ -14,7 +14,9 @@ spring:
 
 townpet:
   email:
-    enabled: ${TOWNPET_EMAIL_ENABLED:false}
+    # Production must make the email decision explicitly. Missing this value
+    # fails startup instead of leaving account recovery as a silent 503.
+    enabled: ${TOWNPET_EMAIL_ENABLED}
     from: ${TOWNPET_EMAIL_FROM}
     public-base-url: ${TOWNPET_PUBLIC_BASE_URL}
     token-encryption-key: ${TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY}
