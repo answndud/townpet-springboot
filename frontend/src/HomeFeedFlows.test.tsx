@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 describe("Home feed journeys", () => {
-  it("switches the first page between all posts and recommendation-ranked posts", async () => {
+  it("opens on HOT and switches to the existing all-posts view", async () => {
     const fetchMock = vi.fn<typeof fetch>((input) => {
       const path = String(input);
       if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response({ title: "Unauthorized" }, 401));
@@ -48,14 +48,20 @@ describe("Home feed journeys", () => {
 
     render(<MemoryRouter initialEntries={["/"]}><App /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "최신 전체글" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "인기글" }));
-    expect(await screen.findByRole("heading", { name: "인기글" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "추천받은 산책 이야기" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "최신 전체글" })).not.toBeInTheDocument();
-    expect(screen.getByText("추천 7")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "추천받은 산책 이야기" })).toBeInTheDocument();
+    expect(await screen.findByText("추천 7")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "전체글" }));
     expect(await screen.findByRole("heading", { name: "최신 전체글" })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox", { name: "검색 위치" }), { target: { value: "TITLE" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "검색어" }), { target: { value: "산책" } });
+    fireEvent.click(screen.getByRole("button", { name: "검색" }));
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&query=%EC%82%B0%EC%B1%85&searchField=TITLE",
+      expect.objectContaining({ credentials: "include" }),
+    );
+    expect(await screen.findByRole("heading", { name: "최신 전체글" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "HOT" }));
+    expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
   });
 });

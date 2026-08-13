@@ -29,14 +29,14 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/"]}><App /><LocationProbe /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "이번 주말 산책 코스 추천받아요" })).toHaveAttribute(
+    expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "이번 주말 산책 코스 추천받아요" })).toHaveAttribute(
       "href",
       "/posts/00000000-0000-4000-8000-000000000301",
     );
     expect(screen.getByTestId("location")).toHaveTextContent("/");
-    expect(screen.getByRole("button", { name: "전체글" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "인기글" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "전체글" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "HOT" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("opens the member feed instead of a separate home page for members", async () => {
@@ -50,10 +50,10 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/"]}><App /><LocationProbe /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
     expect(screen.getByTestId("location")).toHaveTextContent("/");
     expect(screen.getByRole("button", { name: "전체글" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "인기글" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "HOT" })).toBeInTheDocument();
   });
 
   it("updates the document title for direct routes", () => {
@@ -116,7 +116,7 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/admin"]}><App /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "운영 콘솔" })).not.toBeInTheDocument();
   });
 

@@ -43,12 +43,14 @@ class FeedController {
       @RequestParam(defaultValue = "VIEWER") FeedAudience audience,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
+      @RequestParam(defaultValue = "ALL") @Size(max = 10) String searchField,
       @RequestParam(defaultValue = "ALL") FeedScope scope,
       @RequestParam(required = false) @Size(max = 512) @Nullable String animals,
       @RequestParam(required = false) @Size(max = 40) @Nullable String type,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
-    return listFeed(principal, audience, cursor, limit, null, scope, animals, type, from, to);
+    return listFeed(
+        principal, audience, cursor, limit, null, searchField, scope, animals, type, from, to);
   }
 
   @GetMapping(params = "query")
@@ -58,12 +60,14 @@ class FeedController {
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam @Size(max = 80) String query,
+      @RequestParam(defaultValue = "ALL") @Size(max = 10) String searchField,
       @RequestParam(defaultValue = "ALL") FeedScope scope,
       @RequestParam(required = false) @Size(max = 512) @Nullable String animals,
       @RequestParam(required = false) @Size(max = 40) @Nullable String type,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
-    return listFeed(principal, audience, cursor, limit, query, scope, animals, type, from, to);
+    return listFeed(
+        principal, audience, cursor, limit, query, searchField, scope, animals, type, from, to);
   }
 
   private FeedResponse listFeed(
@@ -72,6 +76,7 @@ class FeedController {
       @Nullable String cursor,
       int limit,
       @Nullable String query,
+      String searchField,
       FeedScope scope,
       @Nullable String animals,
       @Nullable String type,
@@ -88,6 +93,7 @@ class FeedController {
               cursor,
               limit,
               query,
+              searchField,
               scope.name(),
               from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
               to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),

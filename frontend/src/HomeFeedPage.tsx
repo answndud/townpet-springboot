@@ -26,21 +26,16 @@ const FEED_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   minute: "2-digit",
 });
 
-function excerpt(body: string) {
-  const normalized = body.replace(/\s+/g, " ").trim();
-  return normalized.length > 120 ? `${normalized.slice(0, 120)}…` : normalized;
-}
-
 function formatFeedDate(value: string) {
   return FEED_DATE_FORMATTER.format(new Date(value));
 }
 
-function PopularFeedList({ items, loading, error }: { items: PopularItem[]; loading: boolean; error: string | null }) {
+function HotFeedList({ items, loading, error }: { items: PopularItem[]; loading: boolean; error: string | null }) {
   return (
-    <section className="surface-card feed-list" aria-label="인기글 목록" aria-busy={loading}>
+    <section className="surface-card feed-list" aria-label="HOT 글 목록" aria-busy={loading}>
       {error ? <p className="form-error feed-error" role="alert">{error}</p> : null}
-      {loading ? <p className="feed-empty" role="status">인기글을 불러오는 중...</p> : null}
-      {!loading && !error && items.length === 0 ? <p className="feed-empty">아직 추천을 받은 인기글이 없습니다.</p> : null}
+      {loading ? <p className="feed-empty" role="status">HOT 글을 불러오는 중...</p> : null}
+      {!loading && !error && items.length === 0 ? <p className="feed-empty">아직 추천을 받은 HOT 글이 없습니다.</p> : null}
       {!loading && !error
         ? items.map((item, index) => (
             <article className="feed-item best-feed-item" key={item.id}>
@@ -49,7 +44,6 @@ function PopularFeedList({ items, loading, error }: { items: PopularItem[]; load
                 <Link className="feed-item-title" to={`/posts/${item.id}`}>
                   <h2>{item.title}</h2>
                 </Link>
-                <p className="feed-item-excerpt">{excerpt(item.body)}</p>
                 <div className="feed-item-meta">
                   {item.recommendationCount !== undefined ? <small>추천 {item.recommendationCount}</small> : null}
                   <time dateTime={item.createdAt}>{formatFeedDate(item.createdAt)}</time>
@@ -66,7 +60,9 @@ export default function HomeFeedPage() {
   const { member } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
-  const popularView = searchParams.get("view") === "popular";
+  const searchFieldParam = searchParams.get("searchField");
+  const searchField = searchFieldParam === "TITLE" || searchFieldParam === "BODY" ? searchFieldParam : "ALL";
+  const popularView = searchParams.get("view") !== "all";
   const [items, setItems] = useState<HomeFeedItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [hasNext, setHasNext] = useState(false);
@@ -89,14 +85,18 @@ export default function HomeFeedPage() {
     let active = true;
     setPopularLoading(true);
     setPopularError(null);
-    apiFetch<PopularResponse>("/api/v1/feed/popular", { signal: controller.signal })
+    const search = new URLSearchParams();
+    if (query) search.set("query", query);
+    if (searchField !== "ALL") search.set("searchField", searchField);
+    const suffix = search.toString() ? `?${search}` : "";
+    apiFetch<PopularResponse>(`/api/v1/feed/popular${suffix}`, { signal: controller.signal })
       .then((page) => { if (active) setPopularItems(page.items ?? []); })
       .catch((requestError: unknown) => {
         if (active && !isAbortError(requestError)) setPopularError("인기글을 불러오지 못했습니다.");
       })
       .finally(() => { if (active) setPopularLoading(false); });
     return () => { active = false; controller.abort(); };
-  }, [popularView]);
+  }, [popularView, query, searchField]);
 
   useEffect(() => {
     if (popularView) {
@@ -108,7 +108,7 @@ export default function HomeFeedPage() {
     let active = true;
     setLoading(true);
     setError(null);
-    publicationApi.feed({ audience: "GLOBAL", query, scope: "ALL", signal: controller.signal })
+    publicationApi.feed({ audience: "GLOBAL", query, searchField, scope: "ALL", signal: controller.signal })
       .then((page) => {
         if (!active) return;
         setItems(page.items);
@@ -120,7 +120,7 @@ export default function HomeFeedPage() {
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; controller.abort(); };
-  }, [popularView, query]);
+  }, [popularView, query, searchField]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore || popularView) return;
@@ -130,7 +130,7 @@ export default function HomeFeedPage() {
     setLoadingMore(true);
     setError(null);
     try {
-      const page = await publicationApi.feed({ audience: "GLOBAL", cursor: nextCursor, query, scope: "ALL", signal: controller.signal });
+      const page = await publicationApi.feed({ audience: "GLOBAL", cursor: nextCursor, query, searchField, scope: "ALL", signal: controller.signal });
       setItems((current) => {
         const existingIds = new Set(current.map((item) => item.id));
         return [...current, ...page.items.filter((item) => !existingIds.has(item.id))];
@@ -146,10 +146,6 @@ export default function HomeFeedPage() {
 
   useEffect(() => () => loadMoreController.current?.abort(), []);
 
-  if (loading) {
-    return <main className="page feed-page"><section className="surface-card" role="status">피드를 불러오는 중...</section></main>;
-  }
-
   const canWrite = member?.role !== "MODERATOR";
   const writeHref = member?.role === "MEMBER" ? "/posts/new" : "/guest/posts/new";
 
@@ -157,37 +153,49 @@ export default function HomeFeedPage() {
     <main className="page feed-page">
       <header className="feed-hero">
         <div>
-          <p className="eyebrow">TOWNPET COMMUNITY</p>
-          <h1>{popularView ? "인기글" : "전체글"}</h1>
-          <p>{popularView ? "추천 수가 높은 공개 게시글을 모았습니다. 추천 수가 같으면 최신 글이 먼저 보입니다." : "TownPet의 모든 게시글을 최신순으로 확인하세요."}</p>
+          <h1>{popularView ? "HOT 글" : "전체글"}</h1>
         </div>
         {canWrite ? <Link className="button button-primary" to={writeHref}>글쓰기</Link> : null}
       </header>
 
-      {!popularView ? (
+      <div className="feed-toolbar">
+        <div className="feed-view-tabs" role="group" aria-label="글 보기 전환">
+        <span className="feed-toolbar-label">피드</span>
+        <button className={!popularView ? "active" : ""} aria-pressed={!popularView} type="button" onClick={() => setSearchParams({ view: "all", ...(query ? { q: query } : {}), ...(searchField !== "ALL" ? { searchField } : {}) })}>전체글</button>
+        <button className={popularView ? "active" : ""} aria-pressed={popularView} type="button" onClick={() => setSearchParams({ view: "popular", ...(query ? { q: query } : {}), ...(searchField !== "ALL" ? { searchField } : {}) })}>HOT</button>
+      </div>
+
         <form
-          className="search-panel"
+          aria-label="피드 게시글 검색"
+          className="search-panel feed-search-inline"
           onSubmit={(event) => {
             event.preventDefault();
-            const value = String(new FormData(event.currentTarget).get("q") ?? "").trim();
-            setSearchParams(value ? { q: value } : {});
+            const form = new FormData(event.currentTarget);
+            const value = String(form.get("q") ?? "").trim();
+            const field = String(form.get("searchField") ?? "ALL");
+            setSearchParams({ view: popularView ? "popular" : "all", ...(value ? { q: value } : {}), ...(field !== "ALL" ? { searchField: field } : {}) });
           }}
         >
           <label>
-            <span>게시글 검색</span>
-            <input name="q" defaultValue={query} placeholder="제목·내용을 검색해 주세요" />
+            <select aria-label="검색 위치" name="searchField" defaultValue={searchField}>
+              <option value="ALL">제목+내용</option>
+              <option value="TITLE">제목</option>
+              <option value="BODY">내용</option>
+            </select>
+          </label>
+          <label>
+            <input aria-label="검색어" name="q" defaultValue={query} placeholder="검색어 입력" />
           </label>
           <button className="button button-soft" type="submit">검색</button>
-          {query ? <button className="button button-soft" type="button" onClick={() => setSearchParams({})}>초기화</button> : null}
+          {query ? <button className="button button-soft" type="button" onClick={() => setSearchParams({ view: popularView ? "popular" : "all" })}>초기화</button> : null}
         </form>
-      ) : null}
-
-      <div className="feed-view-tabs" role="group" aria-label="글 보기 전환">
-        <button className={!popularView ? "active" : ""} type="button" aria-pressed={!popularView} onClick={() => setSearchParams(query ? { q: query } : {})}>전체글</button>
-        <button className={popularView ? "active" : ""} type="button" aria-pressed={popularView} onClick={() => setSearchParams({ view: "popular" })}>인기글</button>
       </div>
 
-      {popularView ? <PopularFeedList items={popularItems} loading={popularLoading} error={popularError} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : items.length === 0 ? (
+      {popularView ? <HotFeedList items={popularItems} loading={popularLoading} error={popularError} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : loading ? (
+        <section className="surface-card feed-list" aria-busy="true" aria-label="전체글 목록">
+          <p className="feed-empty" role="status">전체글을 불러오는 중...</p>
+        </section>
+      ) : items.length === 0 ? (
         <section className="surface-card feed-empty">
           <h2>{query ? "검색 결과가 없습니다" : "아직 표시할 글이 없습니다"}</h2>
           <p>{query ? "다른 검색어로 다시 시도해 보세요." : "첫 번째 반려생활 이야기를 나눠 보세요."}</p>
@@ -202,7 +210,6 @@ export default function HomeFeedPage() {
                 <span className="publication-chip">{item.scope === "LOCAL" ? "내 동네" : "전체"}</span>
               </div>
               <Link className="feed-item-title" to={`/posts/${item.id}`}><h2>{item.title}</h2></Link>
-              <p className="feed-item-excerpt">{excerpt(item.body)}</p>
               <div className="feed-item-meta">
                 <span>TownPet 회원</span>
                 <span aria-hidden="true">·</span>

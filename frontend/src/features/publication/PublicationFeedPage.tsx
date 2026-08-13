@@ -35,11 +35,6 @@ const FEED_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   minute: "2-digit",
 });
 
-function excerpt(body: string) {
-  const normalized = body.replace(/\s+/g, " ").trim();
-  return normalized.length > 120 ? `${normalized.slice(0, 120)}…` : normalized;
-}
-
 function formatFeedDate(value: string) {
   return FEED_DATE_FORMATTER.format(new Date(value));
 }
@@ -91,7 +86,6 @@ function PopularFeedList({ items, loading, error }: { items: PopularFeedItem[]; 
                 <Link className="feed-item-title" to={`/posts/${item.id}`}>
                   <h2>{item.title}</h2>
                 </Link>
-                <p className="feed-item-excerpt">{excerpt(item.body)}</p>
                 <div className="feed-item-meta">
                   {item.recommendationCount !== undefined ? <small>추천 {item.recommendationCount}</small> : null}
                   <time dateTime={item.createdAt}>{formatFeedDate(item.createdAt)}</time>
@@ -258,9 +252,8 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
     <main className="page feed-page">
       <header className="feed-hero">
         <div>
-          <p className="eyebrow">{homeView ? "TOWNPET COMMUNITY" : memberView ? "MY TOWNPET FEED" : "TOWNPET COMMUNITY"}</p>
           <h1>{pageTitle}</h1>
-          <p>{pageDescription}</p>
+          {!homeView ? <p>{pageDescription}</p> : null}
         </div>
         {canWrite ? <Link className="button button-primary" to={writeHref}>글쓰기</Link> : null}
       </header>
@@ -351,7 +344,6 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
                 <Link className="feed-item-title" to={itemHref}>
                   <h2>{item.title}</h2>
                 </Link>
-                <p className="feed-item-excerpt">{excerpt(item.body)}</p>
                 <div className="feed-item-meta">
                   <span>{item.authorId ? "TownPet 회원" : "TownPet 운영팀"}</span>
                   <span aria-hidden="true">·</span>
