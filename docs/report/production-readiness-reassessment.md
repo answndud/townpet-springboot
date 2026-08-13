@@ -126,6 +126,8 @@ Runbook 상태도 실제 증거에 맞춰 조정했다. sanitize는 local DB dry
 
 private moderator bootstrap도 별도 synthetic email로 실행해 `member_account`·`identity_credential` insert와 transaction commit을 확인한 뒤 두 row를 즉시 제거했다. 평문 비밀번호는 사용하지 않았고, production moderator credential이 local DB에 남지 않도록 정리했다.
 
+현재 local PostgreSQL의 `information_schema` foreign-key catalog도 조회해 `member_account`를 참조하는 40개 FK의 삭제 정책과 sanitize 문장을 대조했다. `RESTRICT/NO ACTION` 관계는 member-owned 행을 먼저 삭제하고, `CASCADE`·`SET NULL` 관계는 DB 동작에 맡기도록 구분되어 있어 member delete에서 FK 오류가 나지 않는 순서임을 확인했다. local volume은 일부 최신 migration fixture가 없는 개발 DB이므로, 최종 schema 적용 여부는 migrationTest와 fresh-volume rehearsal에서 별도로 확인한다.
+
 ## 면접에서 설명할 trade-off
 
 처음부터 Kafka와 Redis를 넣지 않았다. PostgreSQL transaction과 Modulith event registry만으로 현재 트래픽·일관성 요구를 만족하고, 실제 saturation이나 외부 consumer backlog가 생길 때만 운영 복잡도를 늘리기로 했다. 반대로 SMTP와 object storage는 기술 확장이 아니라 현재 API가 production에서 실패하는 필수 기능이므로 배포 전에 구현하기로 재분류했다.
