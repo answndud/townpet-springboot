@@ -10,5 +10,7 @@ public interface EmailVerificationTokenRepository
   Optional<EmailVerificationTokenEntity> findByTokenHashAndExpiresAtAfter(
       String tokenHash, Instant now);
 
+  long countByMemberIdAndCreatedAtAfter(UUID memberId, Instant createdAt);
+
   void deleteAllByMemberId(UUID memberId);
 }

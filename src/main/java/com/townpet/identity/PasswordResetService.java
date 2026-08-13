@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class PasswordResetService {
+  private static final int MAX_REQUESTS_PER_HOUR = 3;
   private static final Pattern STRONG_PASSWORD =
       Pattern.compile(
           "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])(?!.*(.)\\1{3,}).{10,72}$");
@@ -68,6 +69,10 @@ public class PasswordResetService {
     Instant now = Instant.now();
     UUID memberId = credential.getMemberId();
     tokens.deleteConsumedOrExpired(memberId, now);
+    if (tokens.countByMemberIdAndCreatedAtAfter(memberId, now.minus(1, ChronoUnit.HOURS))
+        >= MAX_REQUESTS_PER_HOUR) {
+      return;
+    }
     String rawToken = SecureToken.create();
     tokens.save(
         new PasswordResetTokenEntity(
