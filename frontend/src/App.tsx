@@ -220,6 +220,20 @@ function Header() {
   );
 }
 
+function Footer() {
+  return (
+    <footer className="site-footer">
+      <div className="header-inner">
+        <span>© TownPet</span>
+        <nav aria-label="서비스 안내">
+          <Link to="/terms">이용약관</Link>
+          <Link to="/privacy">개인정보처리방침</Link>
+        </nav>
+      </div>
+    </footer>
+  );
+}
+
 function AnimalBoardRouteAlias() {
   const { boardCode = "" } = useParams();
   return COMMON_BOARD_CODES.has(boardCode) ? (
@@ -433,6 +447,7 @@ function AppShell() {
           </Routes>
         </Suspense>
       </div>
+      <Footer />
     </div>
   );
 }
