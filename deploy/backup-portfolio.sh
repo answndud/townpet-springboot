@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 set -eu
+umask 077
 
 : "${POSTGRES_CONTAINER:?set POSTGRES_CONTAINER}"
 : "${MINIO_CONTAINER:?set MINIO_CONTAINER}"
@@ -18,6 +19,7 @@ mkdir -p "$backup_root/media"
 
 docker exec "$POSTGRES_CONTAINER" pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB" \
   > "$backup_root/postgres.dump"
+[ -s "$backup_root/postgres.dump" ] || { echo "postgres dump is empty" >&2; exit 1; }
 
 docker exec "$MINIO_CONTAINER" mc alias set townpet-backup http://127.0.0.1:9000 \
   "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" >/dev/null
