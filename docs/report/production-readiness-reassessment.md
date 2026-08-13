@@ -108,7 +108,9 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 
 처음 `check` 실행에서는 Testcontainers PostgreSQL startup timeout으로 media test 2개가 실패했지만, 코드 오류가 아닌 Docker resource race를 확인한 뒤 같은 phase gate를 재실행해 전체 test와 `check`를 통과시켰다. 첫 실패도 숨기지 않고 이 문서에 남긴다.
 
-이번 운영 경계 재감사 뒤에도 `./gradlew check migrationTest`가 6분 3초에 다시 통과했고, `scripts/*.sh`·`deploy/*.sh` 전체 shell syntax와 `git diff --check`도 통과했다. 변경 범위에 맞춘 identity 테스트(`IdentityMemberControllerTest`, `AccountTokenDeliveryUnavailableTest`)도 별도로 통과했다.
+이번 운영 경계 재감사 뒤 최종 gate에서 `./gradlew check migrationTest`가 5분 44초에 다시 통과했고, `scripts/*.sh`·`deploy/*.sh` 전체 shell syntax와 `git diff --check`도 통과했다. 변경 범위에 맞춘 identity 테스트(`IdentityMemberControllerTest`, `AccountTokenDeliveryUnavailableTest`)도 별도로 통과했다.
+
+Frontend frozen install·typecheck·Vitest 33개·production build도 통과했다. bundle budget은 entry JS 290,374 bytes, gzip 89,043 bytes, CSS 49,774 bytes로 각각 320,000·100,000·50,000 byte 한도 안이다. `validate-release-candidate.sh`는 parity 104개(verified 95, excluded 9, pending 0)를 재확인했고, portfolio 및 SMTP-local Compose config와 전체 shell syntax도 통과했다.
 
 추가로 password reset 발급을 네 번 요청해도 네 요청 모두 `202 Accepted`이고 token row는 세 개만 생성되는 상한 테스트가 통과했다. 외부 SMTP·media domain·VPS 보존 정책은 [`docs/runbooks/external-production-checklist.md`](../runbooks/external-production-checklist.md)에 실제 배포 담당자가 채우는 미완료 전제로 분리했다.
 
