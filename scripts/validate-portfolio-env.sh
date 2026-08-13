@@ -35,4 +35,30 @@ case "$TOWNPET_MINIO_PUBLIC_ENDPOINT" in https://*) ;; *) echo "TOWNPET_MINIO_PU
 case "$TOWNPET_DOMAIN" in *://*|*/*) echo "TOWNPET_DOMAIN must be a host name" >&2; exit 1 ;; esac
 case "$TOWNPET_MEDIA_DOMAIN" in *://*|*/*) echo "TOWNPET_MEDIA_DOMAIN must be a host name" >&2; exit 1 ;; esac
 
+# Fail before Compose if credentials or cryptographic material are obviously
+# unsafe. This checks shape only; it never prints the secret values.
+[ "${#POSTGRES_PASSWORD}" -ge 16 ] || { echo "POSTGRES_PASSWORD must be at least 16 characters" >&2; exit 1; }
+[ "${#APP_DB_PASSWORD}" -ge 16 ] || { echo "APP_DB_PASSWORD must be at least 16 characters" >&2; exit 1; }
+[ "${#SPRING_MAIL_PASSWORD}" -ge 12 ] || { echo "SPRING_MAIL_PASSWORD must be at least 12 characters" >&2; exit 1; }
+[ "${#TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY}" -ge 32 ] || { echo "TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY is too short" >&2; exit 1; }
+[ "$TOWNPET_MINIO_ROOT_ACCESS_KEY" != "$TOWNPET_MINIO_ACCESS_KEY" ] || { echo "MinIO root and application access keys must differ" >&2; exit 1; }
+[ "$TOWNPET_MINIO_ROOT_SECRET_KEY" != "$TOWNPET_MINIO_SECRET_KEY" ] || { echo "MinIO root and application secret keys must differ" >&2; exit 1; }
+[ "$SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE" = "true" ] || {
+  echo "SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE must be true" >&2
+  exit 1
+}
+
+public_host=${TOWNPET_PUBLIC_BASE_URL#https://}
+public_host=${public_host%%/*}
+media_host=${TOWNPET_MINIO_PUBLIC_ENDPOINT#https://}
+media_host=${media_host%%/*}
+[ "$public_host" = "$TOWNPET_DOMAIN" ] || {
+  echo "TOWNPET_PUBLIC_BASE_URL host must equal TOWNPET_DOMAIN" >&2
+  exit 1
+}
+[ "$media_host" = "$TOWNPET_MEDIA_DOMAIN" ] || {
+  echo "TOWNPET_MINIO_PUBLIC_ENDPOINT host must equal TOWNPET_MEDIA_DOMAIN" >&2
+  exit 1
+}
+
 echo "portfolio production env policy valid: $env_file"
