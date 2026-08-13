@@ -5,6 +5,11 @@ export type CursorPage<T> = {
   page: { nextCursor: string | null; hasNext: boolean; totalPages?: number };
 };
 
+type CursorPageResponse<T> = {
+  items?: T[];
+  page?: { nextCursor?: string | null; hasNext?: boolean; totalPages?: number };
+};
+
 type CursorCache<T> = {
   pages: Map<number, CursorPage<T>>;
   cursors: Map<number, string | null>;
@@ -15,8 +20,21 @@ type CursorPaginationOptions<T> = {
   page: number;
   pageSize: number;
   queryKey: string;
-  fetchPage: (cursor: string | undefined, signal: AbortSignal) => Promise<CursorPage<T>>;
+  fetchPage: (cursor: string | undefined, signal: AbortSignal) => Promise<CursorPageResponse<T>>;
 };
+
+function normalizePage<T>(response: CursorPageResponse<T>, requestedPage: number): CursorPage<T> {
+  const page = response.page ?? {};
+  const hasNext = page.hasNext === true;
+  return {
+    items: Array.isArray(response.items) ? response.items : [],
+    page: {
+      nextCursor: page.nextCursor ?? null,
+      hasNext,
+      totalPages: page.totalPages ?? (hasNext ? requestedPage + 1 : requestedPage),
+    },
+  };
+}
 
 export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKey, fetchPage }: CursorPaginationOptions<T>) {
   const caches = useRef(new Map<string, CursorCache<T>>());
@@ -64,7 +82,8 @@ export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKe
             cursor = cache.cursors.get(requestedPage + 1) ?? null;
             continue;
           }
-          currentPage = await fetchPageRef.current(cursor ?? undefined, controller.signal);
+          const response = await fetchPageRef.current(cursor ?? undefined, controller.signal);
+          currentPage = normalizePage(response, requestedPage);
           cache.pages.set(requestedPage, currentPage);
           cache.cursors.set(requestedPage + 1, currentPage.page.nextCursor);
           cursor = currentPage.page.nextCursor;
