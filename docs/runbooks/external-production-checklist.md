@@ -33,7 +33,7 @@
 
 ## 4. VPS workload and resource
 
-- [ ] production-like VPS에서 public/member/mixed workload를 `docs/performance/` 시나리오와 같은 데이터 규모로 실행한다.
+- [ ] production-like VPS에서 [`docs/performance/scenarios.md`](../performance/scenarios.md)의 S1/S2/S7/S8 public/member/mixed workload를 같은 데이터 규모로 실행한다. 재현 명령은 [`docs/performance/methodology.md`](../performance/methodology.md)의 `scripts/performance/run.sh`를 사용한다.
 - [ ] p95/p99 latency, error rate, throughput, PostgreSQL connections, CPU·memory·disk를 함께 기록한다.
 - [ ] 현재 local 결과를 VPS SLA로 대체하지 않고, budget 초과 시 query/index·connection pool을 먼저 조정한다.
 - [ ] Redis·Kafka 도입은 이 측정에서 반복 가능한 병목이나 event backlog가 확인될 때만 별도 ADR로 승격한다.
