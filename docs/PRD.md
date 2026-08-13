@@ -47,10 +47,11 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 - 배포, backup·restore, event 재처리, projection rebuild와 제한된 데이터 repair를 수행한다.
 - 콘텐츠 판정과 회원 역할 승격 권한을 갖지 않는다.
 
-### 4.6 Showcase 방문자
+### 4.6 Portfolio 방문자
 
-- 공개된 고정 demo 계정으로 실제 인증·작성·상태 전이를 체험한다.
-- 공개 환경이 실제 커뮤니티가 아니며 입력 데이터가 주기적으로 초기화됨을 안내받는다.
+- 공개 환경에서는 계정 없이 허용된 공개 화면을 탐색한다.
+- 공개 demo 계정·개인정보·사용자 생성 콘텐츠는 노출하지 않는다.
+- 전체 인증·작성·상태 전이는 local·CI synthetic fixture로 검증한다.
 
 ## 5. 목표
 
@@ -212,13 +213,13 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 
 ## 9. Showcase 요구사항
 
-- DEMO-01: 공개 가입은 showcase에서 비활성화하고 Credentials demo 계정만 제공한다.
-- DEMO-02: 최소 3개 MEMBER demo 계정과 제한된 MODERATOR demo 계정을 제공한다.
-- DEMO-03: Demo account의 password, email, role과 account lifecycle 변경을 금지한다.
-- DEMO-04: Demo actor가 만든 콘텐츠와 media는 매일 scoped reset으로 versioned seed 상태에 복구한다.
+- DEMO-01: 공개 가입과 공개 demo 계정 로그인을 제공하지 않는다.
+- DEMO-02: production database에 migration demo identity·content가 남아 있지 않아야 한다.
+- DEMO-03: local·CI에서는 최소 3개 MEMBER와 제한된 MODERATOR synthetic fixture로 인증·작성·권한 흐름을 검증한다.
+- DEMO-04: production bootstrap은 web 노출 전에 scoped sanitize와 private operator bootstrap을 실행한다.
 - DEMO-05: ADMIN, OPERATOR와 emergency credential은 공개하지 않는다.
-- DEMO-06: 실제 개인정보·주소·계좌를 입력하지 말 것과 reset 시간을 작성 지점에 표시한다.
-- DEMO-07: 공개 환경에서 꺼진 signup과 staff flow는 local·CI 자동화로 검증하고 민감정보를 제거한 결과를 portfolio에 제공한다.
+- DEMO-06: 공개 화면은 빈 상태를 정상적으로 표시하고 실제 개인정보 입력을 유도하지 않는다.
+- DEMO-07: 공개 기능을 다시 interactive로 전환할 때 별도 공개가입·moderation·data retention decision을 만든다.
 
 ## 10. 비기능 요구사항
 

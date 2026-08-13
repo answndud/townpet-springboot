@@ -209,7 +209,7 @@ POST   /api/v1/operations/projections/{projection}:rebuild
 - 이메일 인증과 비밀번호 재설정 token은 raw 값을 한 번만 전달하고 hash·만료·사용 상태만 저장한다.
 - 요청 응답으로 계정 존재 여부나 이메일 인증 상태를 노출하지 않는다.
 - Password reset 성공 시 해당 회원의 기존 session을 폐기한다.
-- Showcase profile에서는 public signup을 끄고 고정 Credentials demo 계정만 제공한다.
+- Production portfolio profile에서는 public signup과 공개 demo 계정 로그인을 끈다. 전체 인증·작성 흐름은 local·CI synthetic fixture에서 검증하고, production bootstrap은 migration demo row를 web 노출 전에 제거한다.
 - Kakao·Naver 인증과 social account link·unlink는 구현하지 않는다. 필요가 확인되면 provider 계약, 계정 충돌 정책과 보안 검증을 별도 ADR로 설계한다.
 
 ### 9.3 Guest
@@ -475,14 +475,14 @@ Domain 완료는 다음을 모두 요구한다.
 ## 17. Showcase Production
 
 - Public signup disabled; Kakao·Naver auth is outside the current product scope
-- 고정 MEMBER demo 계정 3개 이상과 제한된 MODERATOR 계정
+- local·CI에서 MEMBER 3개 이상과 제한된 MODERATOR synthetic fixture
 - 일반 credentials API·Spring Session을 그대로 사용
 - Demo identity·password·role 변경 금지
 - ADMIN·OPERATOR 공개 금지
-- Versioned seed manifest와 daily scoped reset
-- Reset은 demo actor 소유 범위만 확인하고 idempotent하게 실행
+- local/demo 환경의 versioned seed manifest와 scoped reset
+- production sanitize는 known demo identity/content 범위만 확인하고 idempotent하게 실행
 - User-generated media·projection orphan까지 reconcile
-- UI에 portfolio demo, 실제 개인정보 입력 금지와 reset 시간 표시
+- production UI에는 공개 demo credential이나 reset 안내를 노출하지 않고 빈 상태를 정상 표시
 - Actual community launch는 별도 privacy·legal·operations readiness 없이는 금지
 
 ## 18. Quality Architecture

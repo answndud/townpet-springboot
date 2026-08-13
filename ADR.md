@@ -223,37 +223,38 @@ Guest cookie·step-up 자격은 제한된 작업 권한일 뿐 IP/User-Agent만�
 - `frontend/src/api/client.ts`
 - `ADR.md`의 기존 ADR-0020 결정
 
-## ADR-0013 - 내구성 module event는 실제 후속 처리 시 도입한다
+## ADR-0013 - 외부 account delivery는 PostgreSQL 기반 내구성 전달로 처리한다
 
-- 상태: deferred
+- 상태: accepted
 - 날짜: 2026-08-11
-- 근거 유형: inferred
+- 근거 유형: explicit
 
 ### Decision
 
-현재 동기 transaction으로 충분한 기능에는 event consumer를 만들지 않는다. 여러 module에 걸친 비동기 후속 처리, 재시도 또는 projection이 실제로 필요해질 때 Spring Modulith Event Publication Registry와 idempotent listener를 도입한다.
+이메일 인증·비밀번호 재설정처럼 외부 SMTP에 전달해야 하는 account token은 transaction commit 이후 Spring Modulith Event Publication Registry와 PostgreSQL outbox 상태를 사용한다. consumer는 idempotent하게 재시도하며 raw token·credential을 event나 log에 넣지 않는다. 이 결정은 Kafka를 도입한다는 뜻이 아니며, 단순한 내부 동기 흐름에는 event consumer를 만들지 않는다.
 
 ### Trigger
 
-- 비동기 projection·notification·외부 delivery가 사용자 응답과 분리되어야 할 때
+- SMTP 외부 전달 실패를 재시도·관찰해야 할 때
+- PostgreSQL registry로 처리할 수 없는 외부 consumer·처리량이 생길 때는 별도 ADR을 만든다.
 
 ### Evidence
 
 - `src/main/resources/db/migration/V001__platform_baseline.sql`에는 registry table만 있고 listener 구현은 없다.
 
-## ADR-0014 - Media object storage는 production 전환 시 결정한다
+## ADR-0014 - Production media는 private MinIO와 presigned URL을 사용한다
 
-- 상태: deferred
+- 상태: accepted
 - 날짜: 2026-08-11
-- 근거 유형: inferred
+- 근거 유형: explicit
 
 ### Decision
 
-현재 test/e2e는 in-memory storage를 사용하고, 실제 public upload를 켜지 않는다. production media를 열 때 PostgreSQL metadata + S3-compatible storage(R2/MinIO) + presigned upload를 하나의 implementation goal로 도입한다.
+PostgreSQL은 upload metadata와 lifecycle의 source of truth로 유지하고, production object는 private S3-compatible MinIO에 둔다. Browser는 짧은 만료의 presigned PUT으로 직접 업로드하고 server finalize·checksum·magic byte 검증을 통과한 뒤에만 publication에 연결한다. private media는 권한이 확인된 요청에만 짧은 signed GET을 발급한다. local/test/e2e는 기존 filesystem/in-memory adapter를 계속 사용할 수 있다.
 
 ### Trigger
 
-- 공개 sandbox에서 실제 image upload를 허용할 때
+- public 또는 member image upload를 production에서 허용할 때
 
 ### Evidence
 
@@ -379,38 +380,38 @@ Hetzner CX23 topology를 목표 후보로 유지하되, 실제 계정·도메인
 - `deploy/compose/portfolio.yml`
 - `docs/report/release-readiness.md`: 실제 VPS 미실행 상태
 
-## ADR-0022 - PostgreSQL 복구 목표는 실제 운영을 시작할 때 확정한다
+## ADR-0022 - 배포 전 기본 백업·복구를 제공하고 고급 RPO는 운영 후 확정한다
 
-- 상태: deferred
+- 상태: accepted
 - 날짜: 2026-08-11
 - 근거 유형: inferred
 
 ### Decision
 
-현재는 guarded `pg_dump`/`pg_restore`와 local rehearsal만 제공한다. 실제 운영을 열 때 offsite encryption, WAL/PITR, retention, RPO/RTO와 정기 restore drill을 측정 기반으로 확정한다.
+배포 전 PostgreSQL logical backup과 MinIO object backup을 같은 backup id로 묶고, 암호화된 외부 복사·checksum·fresh volume restore rehearsal을 제공한다. WAL/PITR, 다중 replica와 엄격한 RPO/RTO는 실제 데이터 규모와 운영 지표를 얻은 뒤 별도 decision으로 확정한다.
 
 ### Trigger
 
-- 실제 VPS에 persistent data를 공개하기로 할 때
+- public persistent data를 최초로 노출하기 전에는 기본 backup·restore를 완료해야 한다.
 
 ### Evidence
 
 - `deploy/backup-postgres.sh`
 - `deploy/restore-postgres.sh`
 
-## ADR-0023 - 외부 관측 체계는 production 운영 시 도입한다
+## ADR-0023 - 배포 전 최소 관측성을 제공하고 외부 backend는 운영 후 선택한다
 
-- 상태: deferred
+- 상태: accepted
 - 날짜: 2026-08-11
 - 근거 유형: inferred
 
 ### Decision
 
-현재 Actuator health와 web vital endpoint만 유지한다. 실제 VPS 운영을 시작할 때 JVM·HTTP·DB·host·backup 지표를 측정하고 경량 collector와 외부 backend를 선택한다.
+Actuator health/readiness, correlation id가 있는 구조화 log, JVM·HTTP·DB pool·disk·MinIO·backup·SMTP 실패 확인을 배포 전에 제공한다. Prometheus/Grafana/Sentry 같은 외부 backend와 장기 보존·분산 tracing은 실제 운영 비용과 신호가 확인된 뒤 선택한다.
 
 ### Trigger
 
-- public VPS에서 장애 감지·성능 추적이 필요해질 때
+- 외부 모니터링 backend가 필요해지는 규모의 운영 신호가 생길 때
 
 ### Evidence
 
@@ -497,7 +498,7 @@ aggregate write는 Spring Data JPA를 우선하고 feed·집계·PostgreSQL 특�
 - `src/main/java/com/townpet/identity/MemberModerationController.java`
 - 관련 controller test
 
-## ADR-0029 - 공개 환경은 기능 완전형 Portfolio Sandbox로 운영한다
+## ADR-0029 - 공개 환경은 demo 계정 없는 Portfolio Sandbox로 운영한다
 
 - 상태: accepted
 - 날짜: 2026-08-10
@@ -505,30 +506,30 @@ aggregate write는 Spring Data JPA를 우선하고 feed·집계·PostgreSQL 특�
 
 ### Decision
 
-실제 개인정보 가입·실제 돌봄·실제 결제를 받지 않고 합성 데이터와 제한된 demo actor로 기능을 보여준다. Kakao/Naver는 현재 제공하지 않는다.
+실제 개인정보 가입·실제 돌봄·실제 결제를 받지 않는다. 공개 환경에는 demo 계정과 demo 콘텐츠를 노출하지 않고, 필요하면 익명 read-only 또는 curated synthetic content만 별도 정책으로 제공한다. local·CI에서는 기존 synthetic fixture로 전체 흐름을 검증한다. Kakao/Naver는 현재 제공하지 않는다.
 
 ### Consequences
 
-- 공개 배포 전 seed gating과 개인정보 노출 점검이 필요하다.
+- 공개 배포 전 migration seed 제거, private operator bootstrap과 빈 상태 UI 점검이 필요하다.
 
 ### Evidence
 
 - `ADR.md`의 ADR-0040
 - `deploy/portfolio.env.example`
 
-## ADR-0030 - Demo seed reset은 showcase 운영을 시작할 때 추가한다
+## ADR-0030 - Demo fixture는 local·CI 전용이고 production은 초기 sanitize한다
 
-- 상태: deferred
+- 상태: accepted
 - 날짜: 2026-08-11
 - 근거 유형: inferred
 
 ### Decision
 
-현재 demo identity migration은 개발 검증용으로 유지한다. 공개 showcase를 열 때만 seed enablement, 고정 계정, reset 주기와 초기화 절차를 별도 구현한다.
+기존 Flyway demo migration은 local·CI 검증 때문에 유지한다. production bootstrap은 web 노출 전에 알려진 demo identity와 그 소유 콘텐츠를 dry-run·scoped confirmation으로 제거하고, 공개 demo reset cron은 사용하지 않는다. local/demo reset script는 개발 환경에만 제공한다.
 
 ### Trigger
 
-- 실제 public showcase URL을 운영하기로 할 때
+- production persistent database를 최초로 web에 노출하기 전
 
 ### Evidence
 
@@ -702,4 +703,4 @@ resolved/closed 전환은 outcome과 close reason을 함께 기록하고 상태 
 1. 현재 accepted 결정과 실제 코드가 어긋나는 항목을 먼저 수정한다.
 2. Care·구조화 게시물·검색·media 중 하나를 선택해 큰 vertical slice로 진행한다.
 3. deferred 항목은 trigger가 생기기 전까지 PLAN의 완료 조건에 넣지 않는다.
-4. 실제 VPS 공개를 시작할 때만 ADR-0021~0024와 ADR-0030을 다시 accepted로 승격한다.
+4. 실제 VPS 공개 전에는 ADR-0021의 topology·DNS 결정만 남기고, ADR-0022·0023·0030의 최소 운영 구현을 완료한다.
