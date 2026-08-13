@@ -19,7 +19,7 @@ G1~G8을 로컬·CI에서 재현할 수 있는 현재 릴리스 상태만 기록
 - production backend/frontend image build와 임시 portfolio stack 기동 후 backend·PostgreSQL health, Caddy `/api/health` JSON 응답과 SPA history fallback을 확인했다. 테스트 stack은 검증 후 제거했다.
 - `deploy/backup-portfolio.sh`: PostgreSQL·MinIO paired custom-format backup과 manifest checksum 제공
 - `deploy/restore-portfolio.sh`: 명시적 `ALLOW_DESTRUCTIVE_RESTORE=YES` 없이는 실행되지 않는 paired 복구 명령 제공
-- 임시 Compose PostgreSQL에서 `backup-postgres.sh`로 dump를 만들고 `restore-postgres.sh`로 복구한 뒤 `SELECT 1` 확인까지 통과했다. 테스트 컨테이너와 volume은 제거했다.
+- 임시 local Compose에서 `backup-portfolio.sh`로 PostgreSQL·MinIO paired backup을 만들고 `restore-portfolio.sh`로 별도 DB와 bucket에 복구한 뒤 row count·object checksum 확인까지 통과했다. 테스트 대상과 임시 object는 검증 뒤 제거했다.
 - `docs/parity/matrix.yaml`: `pending` 0개. 현재 구현 근거가 있는 `verified` 95개와 ADR에 근거한 `excluded` 9개를 구분한다.
 
 ## 배포 전 작업 상태
