@@ -120,6 +120,8 @@ Production profile의 `TOWNPET_EMAIL_ENABLED` 기본값도 제거했다. 이제 
 
 추가로 password reset 발급을 네 번 요청해도 네 요청 모두 `202 Accepted`이고 token row는 세 개만 생성되는 상한 테스트가 통과했다. 외부 SMTP·media domain·VPS 보존 정책은 [`docs/runbooks/external-production-checklist.md`](../runbooks/external-production-checklist.md)에 실제 배포 담당자가 채우는 미완료 전제로 분리했다.
 
+VPS public workload 성능도 외부 확인 목록에 명시했다. local k6 결과는 baseline일 뿐 운영 SLA가 아니므로, 실제 VPS에서 동일 workload의 p95/p99·error rate·throughput과 CPU/memory/disk/DB connection metric을 함께 기록한 뒤 공개 여부를 판단한다.
+
 Media cleanup의 현재 보장 범위도 명확히 했다. 운영 endpoint는 DB에 기록된 만료 `UPLOADING` asset을 최대 500개씩 object와 metadata에서 함께 제거한다. MinIO bucket 전체 inventory와 DB를 대조하는 무주물 object reconciliation은 현재 단일 portfolio sandbox의 필수 release gate로 승격하지 않았으며, orphan 증가가 관측되면 별도 storage inventory 작업으로 추가한다.
 
 Runbook 상태도 실제 증거에 맞춰 조정했다. sanitize는 local DB dry-run과 shell syntax를 확인했지만 production apply는 아직 실행하지 않았으므로 “local 검증 완료·production 실행 전”으로 표시한다. 이는 운영 DB에 대한 destructive apply를 로컬 성공으로 과장하지 않기 위한 구분이다.

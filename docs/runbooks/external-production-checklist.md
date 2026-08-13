@@ -31,6 +31,13 @@
 - [ ] RPO/RTO 측정값과 마지막 성공 backup id를 운영 기록에 남긴다.
 - [ ] 실패한 backup은 성공으로 표시되지 않고 알림 대상이 된다.
 
+## 4. VPS workload and resource
+
+- [ ] production-like VPS에서 public/member/mixed workload를 `docs/performance/` 시나리오와 같은 데이터 규모로 실행한다.
+- [ ] p95/p99 latency, error rate, throughput, PostgreSQL connections, CPU·memory·disk를 함께 기록한다.
+- [ ] 현재 local 결과를 VPS SLA로 대체하지 않고, budget 초과 시 query/index·connection pool을 먼저 조정한다.
+- [ ] Redis·Kafka 도입은 이 측정에서 반복 가능한 병목이나 event backlog가 확인될 때만 별도 ADR로 승격한다.
+
 ## 판정
 
 체크되지 않은 항목이 있으면 production 공개를 완료로 표시하지 않는다. 로컬 rehearsal 통과는 이 외부 확인을 대체하지 않는다.
