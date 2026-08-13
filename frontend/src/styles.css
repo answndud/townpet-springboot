@@ -609,17 +609,17 @@ h1, h2, p { margin: 0; }
 .search-panel .button { min-height: 40px; padding-inline: 15px; font-size: 12px; white-space: nowrap; }
 
 .feed-list { border-color: var(--surface-border); }
-.feed-item { display: flex; align-items: center; gap: 10px; border-bottom-color: var(--surface-border); padding: 7px 16px; }
+.feed-item { display: flex; align-items: center; gap: 10px; border-bottom-color: var(--surface-border); padding: 5px 16px; }
 .feed-item:hover { background: #f8f9ff; }
 .feed-item-chips { flex: 0 0 auto; flex-wrap: nowrap; }
 .feed-item-title { width: auto; min-width: 0; flex: 1 1 auto; }
-.feed-item-rank { color: var(--brand); font-size: 16px; font-variant-numeric: tabular-nums; font-weight: 800; line-height: 1.4; text-align: center; }
+.feed-item-rank { color: var(--brand); font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 600; line-height: 1.3; text-align: center; }
 .best-feed-item { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; align-items: center; }
 .best-feed-copy { display: flex; min-width: 0; flex: 1; align-items: center; gap: 10px; }
 .best-feed-copy .feed-item-title { flex: 1 1 auto; }
 .best-feed-copy .feed-item-meta { margin-left: auto; }
-.feed-item-chips .publication-chip { min-height: 22px; padding-inline: 7px; font-size: 10px; font-weight: 600; }
-.feed-item-title h2 { margin-top: 0; overflow: hidden; color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.feed-item-chips .publication-chip { min-height: 20px; padding-inline: 7px; font-size: 10px; font-weight: 500; }
+.feed-item-title h2 { margin-top: 0; overflow: hidden; color: var(--text); font-size: 15px; font-weight: 500; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
 .feed-item-title:hover h2 { color: var(--brand-strong); }
 .feed-item-meta { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 10px; color: var(--muted-text); white-space: nowrap; }
 .feed-item > small { flex: 0 0 auto; margin-left: auto; color: var(--muted-text); white-space: nowrap; }
