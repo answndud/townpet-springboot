@@ -13,7 +13,7 @@
 - S3~S8: write·contention·moderator·media·mixed·spike·30분 soak 결과 기록 완료
 - 2차: capacity 경합에서 로그인 비용과 실제 application latency를 분리해 재측정 완료
 - 3차: capacity lock query projection 후보를 전후 20회 재검증하고 개선을 기각, 기존 구현 유지
-- Redis·Kafka: 현재 병목 근거가 없어 deferred
+- 4차: 최신 public feed 기준선 3회 재검증 후 Redis·Kafka 도입 조건을 재평가, production path 추가는 deferred
 
 현재 확인된 query-plan·동시성 테스트와 실제 HTTP 부하 테스트를 혼동하지 않는다. 기존 근거는 [ReleaseCandidateQueryPlanTest.java](../../src/test/java/com/townpet/performance/ReleaseCandidateQueryPlanTest.java), 설계 설명은 [technical-notes.md](../report/technical-notes.md)에 있다.
 
@@ -29,6 +29,7 @@
 S0~S2 반복 기준선은 [2026-08-12-s0-s2-baseline.md](results/2026-08-12-s0-s2-baseline.md), S3~S8 대표 workload는 [2026-08-12-s3-s8-workloads.md](results/2026-08-12-s3-s8-workloads.md), 첫 번째 재현 가능한 before/after 결과는 [2026-08-12-public-feed-index.md](results/2026-08-12-public-feed-index.md)에서 확인한다.
 2차 capacity 진단은 [2026-08-13-phase2-capacity-diagnostics.md](results/2026-08-13-phase2-capacity-diagnostics.md)에서 확인한다.
 3차 capacity query shape 비교는 [2026-08-13-phase3-capacity-query-shape.md](results/2026-08-13-phase3-capacity-query-shape.md)에서 확인한다.
+4차 public feed Redis 평가는 [2026-08-13-phase4-feed-redis-evaluation.md](results/2026-08-13-phase4-feed-redis-evaluation.md)에서 확인한다.
 
 ## 문서 규칙
 
