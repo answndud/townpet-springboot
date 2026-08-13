@@ -1,6 +1,7 @@
 package com.townpet.media;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -121,6 +122,15 @@ class MediaControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("ATTACHED"))
         .andExpect(jsonPath("$.publicationId").value(publicationId));
+    mockMvc
+        .perform(get("/api/v1/media/uploads/{assetId}/url", assetId).cookie(author))
+        .andExpect(status().isOk())
+        .andExpect(
+            jsonPath("$.url")
+                .value(org.hamcrest.Matchers.startsWith("http://local-object-storage.test/")));
+    mockMvc
+        .perform(get("/api/v1/media/uploads/{assetId}/url", assetId).cookie(other))
+        .andExpect(status().isNotFound());
     org.assertj.core.api.Assertions.assertThat(
             jdbc.queryForObject(
                 "SELECT COUNT(*) FROM upload_asset WHERE status = 'ATTACHED'", Integer.class))
