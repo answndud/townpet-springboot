@@ -15,9 +15,9 @@
    - SMTP provider의 TLS/SPF/DKIM·deliverability, MinIO public domain의 DNS/TLS/CORS, VPS offsite backup retention은 실제 운영 계정과 호스트에서 확인한다.
    - 로컬에서 증명할 수 없는 항목은 구현 완료로 포장하지 않고 [`docs/runbooks/external-production-checklist.md`](docs/runbooks/external-production-checklist.md)에 operator checklist로 남긴다.
 
-3. **최종 release gate를 한 번 실행한다.**
+3. **최종 release gate를 한 번 실행한다.** (로컬 gate 완료)
    - 1·2번 변경 이후 backend/frontend 전체 gate, parity gate, compose/Caddy/script 검증과 핵심 권한·email·media 흐름을 재실행한다.
-   - 결과와 재현 명령, 남은 외부 전제를 `docs/report/production-readiness-reassessment.md`에 갱신한다.
+   - 결과와 재현 명령, 남은 외부 전제를 `docs/report/production-readiness-reassessment.md`에 갱신한다. 실제 공개 판정은 외부 운영 체크리스트가 채워진 뒤 별도로 한다.
 
 ## Deferred (trigger가 생길 때만)
 
