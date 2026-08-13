@@ -6,7 +6,7 @@
 
 ## Active
 
-No active work. 저장소 내부 문서 정합성·품질 하드닝·보안 리뷰와 회귀 검증을 완료했다. 외부 인프라 작업은 이 저장소의 완료 기준에 포함하지 않는다.
+No active work. 저장소 내부 보안 하드닝·검증 자동화·초보자용 보안 문서화를 완료했다. 외부 인프라 작업은 이 저장소의 완료 기준에 포함하지 않는다.
 
 ## Backlog (trigger가 생길 때만)
 
@@ -17,6 +17,7 @@ No active work. 저장소 내부 문서 정합성·품질 하드닝·보안 리�
 - Kubernetes/microservice, 고급 WAL/PITR/HA, social login, 실제 public signup
 - Marketplace 안전 규칙: public listing과 실제 사용자 입력을 열 때
 - Hetzner 실제 DNS/TLS 배포·SMTP deliverability·MinIO public CORS·offsite backup: 실제 공개 배포를 시작할 때
+- 실제 다중 인스턴스 rate limit: VPS edge 또는 공유 limiter가 필요한 시점에
 - SEO/OG·SSR public metadata: 실제 검색 유입을 제품 범위로 확정할 때
 - OPERATOR·ADMIN/MFA와 고급 projection/recovery: 공개 운영 범위와 규모가 확정될 때
 

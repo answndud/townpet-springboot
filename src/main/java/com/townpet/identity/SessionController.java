@@ -1,11 +1,14 @@
 package com.townpet.identity;
 
+import com.townpet.common.ClientAddress;
+import com.townpet.common.RequestRateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,16 +39,19 @@ public class SessionController {
   private final AuthenticationManager authenticationManager;
   private final CredentialRepository credentials;
   private final boolean secureCookies;
+  private final RequestRateLimiter rateLimiter;
   private final SecurityContextRepository securityContexts =
       new HttpSessionSecurityContextRepository();
 
   public SessionController(
       AuthenticationManager authenticationManager,
       CredentialRepository credentials,
-      @Value("${townpet.security.secure-cookies:false}") boolean secureCookies) {
+      @Value("${townpet.security.secure-cookies:false}") boolean secureCookies,
+      RequestRateLimiter rateLimiter) {
     this.authenticationManager = authenticationManager;
     this.credentials = credentials;
     this.secureCookies = secureCookies;
+    this.rateLimiter = rateLimiter;
   }
 
   @GetMapping("/csrf")
@@ -67,6 +73,8 @@ public class SessionController {
       @Valid @RequestBody CreateSessionRequest request,
       HttpServletRequest httpRequest,
       HttpServletResponse httpResponse) {
+    rateLimiter.requireCapacity(
+        "login", ClientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
     String email = request.email().trim();
     Authentication authentication;
     try {
