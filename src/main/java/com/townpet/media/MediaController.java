@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -47,6 +48,19 @@ class MediaController {
     } catch (MediaInputNotAllowedException exception) {
       throw new ResponseStatusException(
           HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media metadata");
+    }
+  }
+
+  @GetMapping("/{assetId}/url")
+  @MemberOnly
+  ReadUrlResponse readUrl(
+      @AuthenticationPrincipal UserDetails principal, @PathVariable UUID assetId) {
+    try {
+      return new ReadUrlResponse(media.readUrl(memberId(principal), assetId));
+    } catch (MediaAssetNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (MediaAssetStateException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Media is not readable");
     }
   }
 
@@ -160,4 +174,6 @@ class MediaController {
       @Nullable UUID publicationId,
       Instant expiresAt,
       long version) {}
+
+  record ReadUrlResponse(String url) {}
 }
