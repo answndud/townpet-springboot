@@ -13,6 +13,11 @@ spring:
       initialize-schema: never
 
 townpet:
+  email:
+    enabled: ${TOWNPET_EMAIL_ENABLED:false}
+    from: ${TOWNPET_EMAIL_FROM}
+    public-base-url: ${TOWNPET_PUBLIC_BASE_URL}
+    token-encryption-key: ${TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY}
   security:
     secure-cookies: true
   demo-data:
