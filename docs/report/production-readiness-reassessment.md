@@ -10,12 +10,12 @@
 
 | 영역 | 확인된 상태 | 위험 |
 |---|---|---|
-| 계정 이메일 | production은 `UnavailableAccountTokenDelivery`를 사용 | 인증·비밀번호 복구가 production에서 실패할 수 있음 |
-| 미디어 | production은 이제 private MinIO adapter를 사용하도록 연결했지만 Caddy media domain·backup은 후속 작업 | 공개 업로드가 production에서 실패하던 경로를 제거했으나 운영 검증이 남음 |
+| 계정 이메일 | production은 SMTP delivery를 사용하도록 연결했고 설정 누락 시 fail-fast | 실제 provider credential·deliverability 검증이 남음 |
+| 미디어 | production은 private MinIO adapter·Caddy media domain·paired backup 경로를 갖춤 | 실제 DNS/TLS와 fresh-volume browser 검증이 남음 |
 | demo identity | `V003`이 migration 중 4개 계정을 생성 | flag가 login만 막아도 row·소유 콘텐츠가 남을 수 있음 |
 | demo content | gathering·notification 등 migration insert 존재 | web 노출 전 정리하지 않으면 공개 데이터로 보일 수 있음 |
 | backup | PostgreSQL·MinIO paired backup/restore script와 manifest checksum 추가, fresh-volume rehearsal은 진행 중 | 실제 VPS offsite retention은 아직 미확정 |
-| observability | health와 일부 metric은 있으나 SMTP·backup·MinIO 운영 신호 부족 | 장애를 사용자의 5xx로 처음 발견할 수 있음 |
+| observability | health, trace log, SMTP delivery failure log, backup manifest 확인 절차 추가 | 외부 collector와 장기 retention은 미도입 |
 
 ## 재분류
 
