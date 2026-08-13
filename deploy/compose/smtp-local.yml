@@ -1,0 +1,19 @@
+services:
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: townpet-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: smtp-local
+      TOWNPET_EMAIL_ENABLED: "true"
+      TOWNPET_EMAIL_FROM: no-reply@townpet.local
+      TOWNPET_PUBLIC_BASE_URL: http://localhost:5173
+      TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"

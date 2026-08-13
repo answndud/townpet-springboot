@@ -1,5 +1,7 @@
 package com.townpet.identity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
@@ -7,6 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Profile("!local & !test & !e2e & !delivery-unavailable")
 public class AccountTokenDeliveryListener {
+  private static final Logger log = LoggerFactory.getLogger(AccountTokenDeliveryListener.class);
   private final AccountTokenDelivery delivery;
   private final AccountTokenCipher cipher;
 
@@ -25,6 +28,7 @@ public class AccountTokenDeliveryListener {
         return;
       } catch (RuntimeException exception) {
         lastFailure = exception;
+        log.warn("account_token_delivery_failed purpose={} attempt={}", request.purpose(), attempt);
         if (attempt < 3) {
           try {
             Thread.sleep(50L * attempt);
@@ -35,6 +39,7 @@ public class AccountTokenDeliveryListener {
         }
       }
     }
+    log.error("account_token_delivery_exhausted purpose={}", request.purpose(), lastFailure);
     throw lastFailure;
   }
 }
