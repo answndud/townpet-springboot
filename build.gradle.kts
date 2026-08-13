@@ -142,4 +142,23 @@ tasks.named<JacocoReport>("jacocoTestReport") {
         xml.required.set(true)
         html.required.set(true)
     }
+    finalizedBy(tasks.named("jacocoTestCoverageVerification"))
+}
+
+tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+    dependsOn(tasks.named("test"))
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.60".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                value = "COVEREDRATIO"
+                minimum = "0.40".toBigDecimal()
+            }
+        }
+    }
 }

@@ -6,20 +6,9 @@
 
 ## Active
 
-1. **운영 경계 감사 결과를 반영한다.** ✅
-   - demo sanitize가 익명 telemetry를 삭제하지 않도록 범위를 제한하고, private moderator bootstrap이 중복 email을 안전하게 거절하도록 유지한다.
-   - account token 발급은 계정별 시간당 상한을 적용한다. 응답은 계속 generic `202`로 유지해 email enumeration을 막는다.
-   - 완료 조건: 스크립트 syntax·컴파일·identity 회귀 테스트가 통과하고 report에 실제 변경 근거가 남는다. (완료)
+No active work. 저장소 내부 문서 정합성·품질 하드닝·보안 리뷰와 회귀 검증을 완료했다. 외부 인프라 작업은 이 저장소의 완료 기준에 포함하지 않는다.
 
-2. **외부 운영 전제의 마지막 확인 목록을 닫는다.**
-   - SMTP provider의 TLS/SPF/DKIM·deliverability, MinIO public domain의 DNS/TLS/CORS, VPS offsite backup retention은 실제 운영 계정과 호스트에서 확인한다.
-   - 로컬에서 증명할 수 없는 항목은 구현 완료로 포장하지 않고 [`docs/runbooks/external-production-checklist.md`](docs/runbooks/external-production-checklist.md)에 operator checklist로 남긴다.
-
-3. **최종 release gate를 한 번 실행한다.** (로컬 gate 완료)
-   - 최신 backend/frontend 변경을 고정한 뒤 backend/frontend unit·build, parity, compose/script, browser E2E를 재실행한다. (완료)
-   - 결과와 재현 명령, 남은 외부 전제를 `docs/report/production-readiness-reassessment.md`에 갱신한다. 실제 공개 판정은 외부 운영 체크리스트가 채워진 뒤 별도로 한다.
-
-## Deferred (trigger가 생길 때만)
+## Backlog (trigger가 생길 때만)
 
 - Redis: DB/cache/session 병목이 반복 재현될 때
 - Kafka: PostgreSQL event publication으로 감당할 수 없는 외부 consumer·처리량이 생길 때
@@ -27,7 +16,9 @@
 - 개인화 ranking projection: 실제 ranking 요구와 refresh 비용이 생길 때
 - Kubernetes/microservice, 고급 WAL/PITR/HA, social login, 실제 public signup
 - Marketplace 안전 규칙: public listing과 실제 사용자 입력을 열 때
-- Hetzner 실제 DNS/TLS 배포: 로컬 release rehearsal이 끝난 뒤
+- Hetzner 실제 DNS/TLS 배포·SMTP deliverability·MinIO public CORS·offsite backup: 실제 공개 배포를 시작할 때
+- SEO/OG·SSR public metadata: 실제 검색 유입을 제품 범위로 확정할 때
+- OPERATOR·ADMIN/MFA와 고급 projection/recovery: 공개 운영 범위와 규모가 확정될 때
 
 ## Working rules
 

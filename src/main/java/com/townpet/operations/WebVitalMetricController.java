@@ -11,14 +11,17 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 class WebVitalMetricController {
   private final WebVitalMetricRepository metrics;
+  private final PublicIngressRateLimiter rateLimiter;
 
-  WebVitalMetricController(WebVitalMetricRepository metrics) {
+  WebVitalMetricController(WebVitalMetricRepository metrics, PublicIngressRateLimiter rateLimiter) {
     this.metrics = metrics;
+    this.rateLimiter = rateLimiter;
   }
 
   @PostMapping({"/api/v1/operations/web-vitals", "/api/metrics/web-vitals"})
   @ResponseStatus(HttpStatus.NO_CONTENT)
   void record(@Valid @RequestBody RecordRequest request) {
+    rateLimiter.requireCapacity();
     metrics.save(
         new WebVitalMetricEntity(
             UuidV7.randomUuid(), request.metricName(), request.metricValue(), request.route()));

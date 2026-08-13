@@ -7,7 +7,12 @@ FROM eclipse-temurin:25-jre
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends wget \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=build /workspace/build/libs/*.jar /app/townpet.jar
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 townpet \
+    && useradd --system --uid 10001 --gid 10001 --home-dir /app --no-create-home townpet \
+    && mkdir -p /app/.townpet \
+    && chown -R townpet:townpet /app
+COPY --from=build --chown=townpet:townpet /workspace/build/libs/*.jar /app/townpet.jar
+USER 10001:10001
 EXPOSE 8080
 ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-jar", "/app/townpet.jar"]

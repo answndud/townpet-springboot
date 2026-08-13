@@ -293,14 +293,13 @@ function RootRoute() {
   return <HomeFeedPage />;
 }
 
-function PlaceholderPage() {
-  const location = useLocation();
+function NotFoundPage() {
   return (
     <main className="page placeholder-page">
       <section className="surface-card">
-        <span className="eyebrow">SPRING BOOT MIGRATION</span>
-        <h1>{location.pathname === "/login" ? "TownPet 로그인" : "TownPet 게시판"}</h1>
-        <p>이 화면은 React·Vite shell에서 다음 vertical slice로 연결될 예정입니다.</p>
+        <span className="eyebrow">TOWNPET</span>
+        <h1>페이지를 찾을 수 없습니다</h1>
+        <p>요청한 주소가 없거나 더 이상 공개되지 않습니다.</p>
         <Link className="button button-primary" to="/">
           홈으로 돌아가기
         </Link>
@@ -430,7 +429,7 @@ function AppShell() {
         <Route path="/lost-found/sightings/:sightingId/exact" element={<MemberRoute><LostFoundExactLocationPage /></MemberRoute>} />
         <Route path="/lost-found/:alertId" element={<LostFoundDetailPage />} />
         <Route path="/posts/:publicationId/sightings" element={<MemberRoute><PostSightingsPage /></MemberRoute>} />
-        <Route path="*" element={<PlaceholderPage />} />
+        <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
       </div>
