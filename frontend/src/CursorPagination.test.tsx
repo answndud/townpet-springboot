@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import CursorPagination from "./components/CursorPagination";
+import { normalizeFeedPage } from "./api/client";
 
 describe("CursorPagination", () => {
   it("shows five nearby page numbers and first/last controls", () => {
@@ -12,5 +13,16 @@ describe("CursorPagination", () => {
     fireEvent.click(screen.getByRole("button", { name: "마지막 페이지" }));
     expect(onPageChange).toHaveBeenNthCalledWith(1, 1);
     expect(onPageChange).toHaveBeenNthCalledWith(2, 12);
+  });
+
+  it("normalizes missing feed metadata without throwing", () => {
+    expect(normalizeFeedPage(undefined)).toEqual({
+      items: [],
+      page: { nextCursor: null, hasNext: false, totalPages: 1 },
+    });
+    expect(normalizeFeedPage({ items: [], nextCursor: "legacy-cursor", hasNext: true })).toEqual({
+      items: [],
+      page: { nextCursor: "legacy-cursor", hasNext: true, totalPages: 2 },
+    });
   });
 });
