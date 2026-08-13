@@ -64,6 +64,11 @@ management:
           include: db
 
 townpet:
+  email:
+    enabled: ${TOWNPET_EMAIL_ENABLED:false}
+    from: ${TOWNPET_EMAIL_FROM:no-reply@townpet.local}
+    public-base-url: ${TOWNPET_PUBLIC_BASE_URL:http://localhost:5173}
+    token-encryption-key: ${TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
   security:
     secure-cookies: ${TOWNPET_SECURE_COOKIES:false}
   demo-data:
