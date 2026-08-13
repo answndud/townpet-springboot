@@ -77,6 +77,12 @@ public class PublicationFeed {
   @Transactional(readOnly = true)
   public List<PopularItem> popularRanked(
       int limit, @Nullable String searchQuery, String searchField) {
+    return popularPage(limit, null, searchQuery, searchField).items();
+  }
+
+  @Transactional(readOnly = true)
+  public PopularPage popularPage(
+      int limit, @Nullable String encodedCursor, @Nullable String searchQuery, String searchField) {
     if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid popular limit");
     if (searchQuery != null && searchQuery.length() > 80) {
       throw new IllegalArgumentException("Invalid feed query");
@@ -102,30 +108,58 @@ public class PublicationFeed {
         field(name("recommendation_count", "publication_id"), UUID.class);
     Field<Long> RECOMMENDATION_TOTAL =
         field(name("recommendation_count", "recommendation_count"), Long.class);
-    return query
-        .select(
-            ID,
-            AUTHOR_ID,
-            TYPE,
-            SCOPE,
-            NEIGHBORHOOD_ID,
-            ANIMAL_INTEREST_CODE,
-            TITLE,
-            BODY,
-            LIFECYCLE,
-            CREATED_AT,
-            UPDATED_AT,
-            VERSION,
-            RECOMMENDATION_TOTAL)
-        .from(PUBLICATION)
-        .join(RECOMMENDATIONS)
-        .on(RECOMMENDATION_PUBLICATION_ID.eq(ID))
-        .where(popularCondition(searchQuery, searchField))
-        .orderBy(RECOMMENDATION_TOTAL.desc(), CREATED_AT.desc(), ID.desc())
-        .limit(limit)
-        .fetch(
-            record ->
-                new PopularItem(toItem(record), valueOrZero(record.get(RECOMMENDATION_TOTAL))));
+    PopularCursor cursor = encodedCursor == null ? null : PopularCursor.decode(encodedCursor);
+    Condition condition = popularCondition(searchQuery, searchField);
+    if (cursor != null) {
+      OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
+      condition =
+          condition.and(
+              RECOMMENDATION_TOTAL
+                  .lt(cursor.recommendationCount())
+                  .or(
+                      RECOMMENDATION_TOTAL
+                          .eq(cursor.recommendationCount())
+                          .and(
+                              CREATED_AT
+                                  .lt(cursorTime)
+                                  .or(CREATED_AT.eq(cursorTime).and(ID.lt(cursor.id()))))));
+    }
+    List<PopularItem> fetched =
+        query
+            .select(
+                ID,
+                AUTHOR_ID,
+                TYPE,
+                SCOPE,
+                NEIGHBORHOOD_ID,
+                ANIMAL_INTEREST_CODE,
+                TITLE,
+                BODY,
+                LIFECYCLE,
+                CREATED_AT,
+                UPDATED_AT,
+                VERSION,
+                RECOMMENDATION_TOTAL)
+            .from(PUBLICATION)
+            .join(RECOMMENDATIONS)
+            .on(RECOMMENDATION_PUBLICATION_ID.eq(ID))
+            .where(condition)
+            .orderBy(RECOMMENDATION_TOTAL.desc(), CREATED_AT.desc(), ID.desc())
+            .limit(limit + 1)
+            .fetch(
+                record ->
+                    new PopularItem(toItem(record), valueOrZero(record.get(RECOMMENDATION_TOTAL))));
+    boolean hasNext = fetched.size() > limit;
+    List<PopularItem> items =
+        hasNext ? List.copyOf(fetched.subList(0, limit)) : List.copyOf(fetched);
+    String nextCursor =
+        hasNext
+            ? PopularCursor.encode(
+                items.getLast().recommendationCount(),
+                items.getLast().publication().createdAt(),
+                items.getLast().publication().id())
+            : null;
+    return new PopularPage(items, nextCursor, hasNext);
   }
 
   private static Condition popularCondition(@Nullable String searchQuery, String searchField) {
@@ -172,6 +206,9 @@ public class PublicationFeed {
   }
 
   public record PopularItem(Item publication, long recommendationCount) {}
+
+  public record PopularPage(
+      List<PopularItem> items, @Nullable String nextCursor, boolean hasNext) {}
 
   @Transactional(readOnly = true)
   public Page list(
@@ -358,6 +395,29 @@ public class PublicationFeed {
             UUID.fromString(value.substring(separator + 1)));
       } catch (IllegalArgumentException exception) {
         throw new IllegalArgumentException("Invalid feed cursor", exception);
+      }
+    }
+  }
+
+  private record PopularCursor(long recommendationCount, Instant createdAt, UUID id) {
+    static String encode(long recommendationCount, Instant createdAt, UUID id) {
+      String value = "v1|" + recommendationCount + "|" + createdAt + "|" + id;
+      return Base64.getUrlEncoder()
+          .withoutPadding()
+          .encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static PopularCursor decode(String encoded) {
+      try {
+        String value = new String(Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8);
+        String[] parts = value.split("\\|", -1);
+        if (parts.length != 4 || !parts[0].equals("v1")) {
+          throw new IllegalArgumentException("Invalid popular cursor");
+        }
+        return new PopularCursor(
+            Long.parseLong(parts[1]), Instant.parse(parts[2]), UUID.fromString(parts[3]));
+      } catch (IllegalArgumentException exception) {
+        throw new IllegalArgumentException("Invalid popular cursor", exception);
       }
     }
   }

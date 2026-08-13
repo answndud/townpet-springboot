@@ -195,6 +195,20 @@ export type FeedPage = {
   };
 };
 
+export type PopularFeedItem = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  recommendationCount: number;
+  rank: number;
+};
+
+export type PopularFeedPage = {
+  items: PopularFeedItem[];
+  page: { nextCursor: string | null; hasNext: boolean };
+};
+
 export type CommunityFeedPage = FeedPage & {
   animalCode: string;
   board: string;
@@ -659,6 +673,19 @@ export const publicationApi = {
     if (animalInterestCodes) search.set("animals", animalInterestCodes.join(","));
     if (type) search.set("type", type);
     return apiFetch<FeedPage>(`/api/v1/feed?${search}`, { signal });
+  },
+  popular({ limit = 20, cursor, signal, query, searchField = "ALL" }: {
+    limit?: number;
+    cursor?: string;
+    signal?: AbortSignal;
+    query?: string;
+    searchField?: "ALL" | "TITLE" | "BODY";
+  } = {}) {
+    const search = new URLSearchParams({ limit: String(limit) });
+    if (cursor) search.set("cursor", cursor);
+    if (query) search.set("query", query);
+    if (searchField !== "ALL") search.set("searchField", searchField);
+    return apiFetch<PopularFeedPage>(`/api/v1/feed/popular?${search}`, { signal });
   },
 };
 
