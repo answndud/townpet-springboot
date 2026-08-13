@@ -1,0 +1,16 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import CursorPagination from "./components/CursorPagination";
+
+describe("CursorPagination", () => {
+  it("shows five nearby page numbers and first/last controls", () => {
+    const onPageChange = vi.fn();
+    render(<CursorPagination page={6} totalPages={12} hasNext onPageChange={onPageChange} />);
+
+    expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual(["<<", "<", "4", "5", "6", "7", "8", ">", ">>"]);
+    fireEvent.click(screen.getByRole("button", { name: "첫 페이지" }));
+    fireEvent.click(screen.getByRole("button", { name: "마지막 페이지" }));
+    expect(onPageChange).toHaveBeenNthCalledWith(1, 1);
+    expect(onPageChange).toHaveBeenNthCalledWith(2, 12);
+  });
+});

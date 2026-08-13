@@ -30,7 +30,7 @@ class BestFeedController {
         java.util.stream.IntStream.range(0, page.items().size())
             .mapToObj(index -> response(page.items().get(index), index + 1))
             .toList(),
-        new PageInfo(page.nextCursor(), page.hasNext()));
+        new PageInfo(page.nextCursor(), page.hasNext(), page.totalPages()));
   }
 
   private static Response response(PublicationFeed.PopularItem ranked, int rank) {
@@ -41,7 +41,7 @@ class BestFeedController {
 
   record FeedResponse(List<Response> items, PageInfo page) {}
 
-  record PageInfo(@Nullable String nextCursor, boolean hasNext) {}
+  record PageInfo(@Nullable String nextCursor, boolean hasNext, int totalPages) {}
 
   record Response(
       UUID id, String title, String body, Instant createdAt, long recommendationCount, int rank) {}

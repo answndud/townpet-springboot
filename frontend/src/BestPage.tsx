@@ -31,7 +31,7 @@ export default function BestPage() {
             <div className="best-feed-copy"><Link className="feed-item-title" to={`/posts/${item.id}`}><h2>{item.title}</h2></Link><div className="feed-item-meta"><small>추천 {item.recommendationCount}</small><small>{formatDateTime(item.createdAt)}</small></div></div>
           </article>
         )) : null}
-        {!feed.loading && !feed.error && feed.items.length ? <CursorPagination page={page} hasNext={feed.hasNext} disabled={feed.loading} onPageChange={setPage} /> : null}
+        {!feed.loading && !feed.error && feed.items.length ? <CursorPagination page={page} hasNext={feed.hasNext} totalPages={feed.totalPages} disabled={feed.loading} onPageChange={setPage} /> : null}
       </section>
     </main>
   );

@@ -35,7 +35,8 @@
   "items": [],
   "page": {
     "nextCursor": "...",
-    "hasNext": true
+    "hasNext": true,
+    "totalPages": 18
   }
 }
 ```
@@ -44,7 +45,7 @@
 
 ### HOT 피드
 
-기존 `/api/v1/feed/popular`도 같은 `page` 메타데이터를 반환하도록 확장했다.
+기존 `/api/v1/feed/popular`도 같은 `page` 메타데이터를 반환하도록 확장했다. `totalPages`는 현재 필터와 공개/권한 조건에 맞는 전체 개수를 `limit`으로 나눈 값이다.
 
 ```text
 GET /api/v1/feed/popular?limit=20&cursor=...&query=...&searchField=TITLE
@@ -67,9 +68,10 @@ HOT cursor에는 `v1|추천수|작성시각|게시글ID`가 URL-safe Base64로 �
 - 3페이지를 직접 열면 필요한 앞 페이지를 순서대로 요청해 cursor chain 확보
 - 같은 검색 조건에서 이전 페이지로 돌아가면 캐시 재사용
 - 검색·게시판·범위가 바뀌면 다른 cache key로 분리
+- 응답의 `totalPages`로 최대 5개 번호와 첫/마지막 이동을 계산
 - 요청 중 route/filter가 바뀌면 AbortController로 이전 요청 취소
 
-`CursorPagination`은 이전·현재·다음 번호와 이전/다음 버튼을 제공한다. 서버가 전체 페이지 수를 계산하지 않는 cursor 모델이므로 마지막 페이지 번호를 미리 표시하지 않고, 현재 응답의 `hasNext`로 다음 번호 노출 여부를 결정한다.
+`CursorPagination`은 `<< < 1 2 3 4 5 > >>` 형태를 제공한다. 현재 페이지를 가운데에 두는 최대 5개 번호 슬라이딩 윈도우를 사용하며, `totalPages`로 마지막 페이지를 계산한다. `<<`와 `>>`는 각각 첫 페이지와 마지막 페이지로 이동하고, 첫/마지막 페이지에서는 해당 방향 버튼을 비활성화한다. cursor는 여전히 페이지 사이의 실제 데이터 이동에 사용되므로 `>>`를 누르면 필요한 cursor chain을 순서대로 확보한다.
 
 ## 누락·중복 방지 규칙
 
