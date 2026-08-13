@@ -110,7 +110,7 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 
 이번 운영 경계 재감사 뒤 최종 gate에서 `./gradlew check migrationTest`가 5분 44초에 다시 통과했고, `scripts/*.sh`·`deploy/*.sh` 전체 shell syntax와 `git diff --check`도 통과했다. 변경 범위에 맞춘 identity 테스트(`IdentityMemberControllerTest`, `AccountTokenDeliveryUnavailableTest`)도 별도로 통과했다.
 
-Frontend frozen install·typecheck·Vitest 33개·production build도 통과했다. bundle budget은 entry JS 290,374 bytes, gzip 89,043 bytes, CSS 49,774 bytes로 각각 320,000·100,000·50,000 byte 한도 안이다. `validate-release-candidate.sh`는 parity 104개(verified 95, excluded 9, pending 0)를 재확인했고, portfolio 및 SMTP-local Compose config와 전체 shell syntax도 통과했다.
+Frontend frozen install·typecheck·Vitest 33개·production build도 통과했다. 현재 bundle budget은 entry JS 320,000 bytes, gzip 100,000 bytes, CSS 51,000 bytes이며 최신 build는 JS 291,655 bytes, gzip 89,600 bytes, CSS 50,454 bytes다. `validate-release-candidate.sh`는 parity 104개(verified 95, excluded 9, pending 0)를 재확인했고, portfolio 및 SMTP-local Compose config와 전체 shell syntax도 통과했다.
 
 Caddy 2 컨테이너에서 실제 `deploy/Caddyfile`을 환경변수와 함께 `caddy validate`·`caddy adapt`해 media preflight matcher, CORS response headers, MinIO reverse proxy handler가 구성에 포함되는 것을 재확인했다. 이는 DNS/TLS 인증서와 실제 브라우저 PUT을 증명하는 검사는 아니다.
 

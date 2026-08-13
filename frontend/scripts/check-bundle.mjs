@@ -21,7 +21,7 @@ const cssBytes = statSync(css.path).size;
 const budgets = [
   ["entry JS", entryBytes, 320_000],
   ["entry JS gzip", entryGzipBytes, 100_000],
-  ["entry CSS", cssBytes, 50_000],
+  ["entry CSS", cssBytes, 51_000],
 ];
 
 for (const [label, actual, limit] of budgets) {

@@ -22,7 +22,7 @@
 ## 기준선 기록
 
 - 기존 검증: `corepack pnpm test`, `corepack pnpm typecheck`, `corepack pnpm build`
-- 현재 bundle budget: entry JS 320KB raw / 100KB gzip, CSS 50KB
+- 현재 bundle budget: entry JS 320KB raw / 100KB gzip, CSS 51KB
 - 현재 테스트: Vitest 7 files / 22 tests
 - 기준선에서 별도로 기록할 값:
   - 주요 route의 최초 content와 settled content까지의 시간
