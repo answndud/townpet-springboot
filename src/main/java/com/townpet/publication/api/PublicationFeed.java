@@ -65,8 +65,12 @@ public class PublicationFeed {
 
   @Transactional(readOnly = true)
   public Page popular(int limit) {
+    PopularPage page = popularPage(limit, null, null, "ALL");
     return new Page(
-        popularRanked(limit).stream().map(PopularItem::publication).toList(), null, false);
+        page.items().stream().map(PopularItem::publication).toList(),
+        page.nextCursor(),
+        page.hasNext(),
+        page.totalPages());
   }
 
   @Transactional(readOnly = true)
@@ -110,6 +114,15 @@ public class PublicationFeed {
         field(name("recommendation_count", "recommendation_count"), Long.class);
     PopularCursor cursor = encodedCursor == null ? null : PopularCursor.decode(encodedCursor);
     Condition condition = popularCondition(searchQuery, searchField);
+    long totalCount =
+        query
+            .selectCount()
+            .from(PUBLICATION)
+            .join(RECOMMENDATIONS)
+            .on(RECOMMENDATION_PUBLICATION_ID.eq(ID))
+            .where(condition)
+            .fetchOne(0, Long.class);
+    int totalPages = Math.toIntExact((totalCount + limit - 1) / limit);
     if (cursor != null) {
       OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
       condition =
@@ -159,7 +172,7 @@ public class PublicationFeed {
                 items.getLast().publication().createdAt(),
                 items.getLast().publication().id())
             : null;
-    return new PopularPage(items, nextCursor, hasNext);
+    return new PopularPage(items, nextCursor, hasNext, totalPages);
   }
 
   private static Condition popularCondition(@Nullable String searchQuery, String searchField) {
@@ -208,7 +221,10 @@ public class PublicationFeed {
   public record PopularItem(Item publication, long recommendationCount) {}
 
   public record PopularPage(
-      List<PopularItem> items, @Nullable String nextCursor, boolean hasNext) {}
+      List<PopularItem> items,
+      @Nullable String nextCursor,
+      boolean hasNext,
+      int totalPages) {}
 
   @Transactional(readOnly = true)
   public Page list(
@@ -310,6 +326,8 @@ public class PublicationFeed {
       Set<UUID> blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
       if (!blockedAuthorIds.isEmpty()) condition = condition.and(AUTHOR_ID.notIn(blockedAuthorIds));
     }
+    long totalCount = query.selectCount().from(PUBLICATION).where(condition).fetchOne(0, Long.class);
+    int totalPages = Math.toIntExact((totalCount + limit - 1) / limit);
     if (cursor != null) {
       OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
       condition =
@@ -356,10 +374,10 @@ public class PublicationFeed {
     List<Item> items = hasNext ? List.copyOf(fetched.subList(0, limit)) : List.copyOf(fetched);
     String nextCursor =
         hasNext ? Cursor.encode(items.getLast().createdAt(), items.getLast().id()) : null;
-    return new Page(items, nextCursor, hasNext);
+    return new Page(items, nextCursor, hasNext, totalPages);
   }
 
-  public record Page(List<Item> items, @Nullable String nextCursor, boolean hasNext) {}
+  public record Page(List<Item> items, @Nullable String nextCursor, boolean hasNext, int totalPages) {}
 
   public record Item(
       UUID id,

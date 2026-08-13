@@ -33,7 +33,7 @@ class LegacyDiscoveryCompatibilityController {
         feed.list(memberId, memberId != null, null, 20);
     return new FeedController.FeedResponse(
         page.items().stream().map(LegacyDiscoveryCompatibilityController::response).toList(),
-        new FeedController.PageInfo(page.nextCursor(), page.hasNext()));
+        new FeedController.PageInfo(page.nextCursor(), page.hasNext(), page.totalPages()));
   }
 
   @GetMapping("/api/profile/audience-segments")

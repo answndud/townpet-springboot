@@ -65,7 +65,7 @@ describe("Publication feed journeys", () => {
 
     expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "첫 번째 전체 글" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "다음" }));
+    fireEvent.click(screen.getByRole("button", { name: "다음 페이지" }));
     expect(await screen.findByRole("heading", { name: "두 번째 전체 글" })).toBeInTheDocument();
     expect(screen.getAllByRole("article")).toHaveLength(1);
     expect(fetchMock).toHaveBeenLastCalledWith(

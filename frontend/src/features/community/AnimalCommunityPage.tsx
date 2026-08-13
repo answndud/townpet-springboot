@@ -197,7 +197,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
       {!loading && !error && items.length ? (
         <section className="surface-card feed-list" aria-label={`${pageLabel} ${boardLabel} 게시글 목록`}>
           {items.map((item) => <FeedCard key={`${item.kind}:${item.id}`} item={item} />)}
-          <CursorPagination page={page} hasNext={feed.hasNext} disabled={feed.loading} onPageChange={setPage} />
+          <CursorPagination page={page} hasNext={feed.hasNext} totalPages={feed.totalPages} disabled={feed.loading} onPageChange={setPage} />
         </section>
       ) : null}
     </main>

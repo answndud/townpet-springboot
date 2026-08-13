@@ -192,6 +192,7 @@ export type FeedPage = {
   page: {
     nextCursor: string | null;
     hasNext: boolean;
+    totalPages?: number;
   };
 };
 
@@ -206,7 +207,7 @@ export type PopularFeedItem = {
 
 export type PopularFeedPage = {
   items: PopularFeedItem[];
-  page: { nextCursor: string | null; hasNext: boolean };
+  page: { nextCursor: string | null; hasNext: boolean; totalPages?: number };
 };
 
 export type CommunityFeedPage = FeedPage & {
