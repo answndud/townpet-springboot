@@ -71,6 +71,26 @@ final class MinioObjectStorage implements ObjectStoragePort {
   }
 
   @Override
+  public String createReadUrl(String objectKey, Instant expiresAt) {
+    try {
+      return presignClient.getPresignedObjectUrl(
+          GetPresignedObjectUrlArgs.builder()
+              .method(Method.GET)
+              .bucket(bucket)
+              .object(objectKey)
+              .expiry(
+                  Math.min(
+                      expirySeconds,
+                      Math.max(
+                          1, (int) (expiresAt.getEpochSecond() - Instant.now().getEpochSecond()))),
+                  TimeUnit.SECONDS)
+              .build());
+    } catch (Exception exception) {
+      throw new IllegalStateException("Could not create MinIO read URL", exception);
+    }
+  }
+
+  @Override
   public Optional<StoredObject> inspect(String objectKey) {
     try {
       var stat =

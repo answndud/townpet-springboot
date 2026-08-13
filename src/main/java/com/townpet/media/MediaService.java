@@ -57,6 +57,15 @@ class MediaService implements MediaOperations {
         asset.getObjectKey(), asset.getContentType(), asset.getByteSize(), asset.getExpiresAt());
   }
 
+  @Transactional(readOnly = true)
+  String readUrl(UUID ownerMemberId, UUID assetId) {
+    UploadAssetEntity asset = ownedAsset(ownerMemberId, assetId);
+    if (asset.getStatus() != MediaAssetStatus.ATTACHED) {
+      throw new MediaAssetStateException();
+    }
+    return storage.createReadUrl(asset.getObjectKey(), Instant.now().plus(5, ChronoUnit.MINUTES));
+  }
+
   @Transactional
   UploadAssetEntity uploadContent(
       UUID ownerMemberId, UUID assetId, String contentType, byte[] content) {
