@@ -118,6 +118,8 @@ Production profile의 `TOWNPET_EMAIL_ENABLED` 기본값도 제거했다. 이제 
 
 추가로 password reset 발급을 네 번 요청해도 네 요청 모두 `202 Accepted`이고 token row는 세 개만 생성되는 상한 테스트가 통과했다. 외부 SMTP·media domain·VPS 보존 정책은 [`docs/runbooks/external-production-checklist.md`](../runbooks/external-production-checklist.md)에 실제 배포 담당자가 채우는 미완료 전제로 분리했다.
 
+Media cleanup의 현재 보장 범위도 명확히 했다. 운영 endpoint는 DB에 기록된 만료 `UPLOADING` asset을 최대 500개씩 object와 metadata에서 함께 제거한다. MinIO bucket 전체 inventory와 DB를 대조하는 무주물 object reconciliation은 현재 단일 portfolio sandbox의 필수 release gate로 승격하지 않았으며, orphan 증가가 관측되면 별도 storage inventory 작업으로 추가한다.
+
 ## 면접에서 설명할 trade-off
 
 처음부터 Kafka와 Redis를 넣지 않았다. PostgreSQL transaction과 Modulith event registry만으로 현재 트래픽·일관성 요구를 만족하고, 실제 saturation이나 외부 consumer backlog가 생길 때만 운영 복잡도를 늘리기로 했다. 반대로 SMTP와 object storage는 기술 확장이 아니라 현재 API가 production에서 실패하는 필수 기능이므로 배포 전에 구현하기로 재분류했다.

@@ -20,6 +20,7 @@
 - [ ] 로그인한 owner의 presigned PUT이 브라우저에서 성공하고, 다른 member·guest가 signed read URL을 만들 수 없다.
 - [ ] 만료된 URL은 실패하고, private object가 bucket listing 또는 추측 가능한 public URL로 노출되지 않는다.
 - [ ] 업로드·finalize·삭제 후 object와 `upload_asset` metadata가 함께 정리되는지 확인한다.
+- [ ] 만료된 `UPLOADING` asset cleanup을 dry-run으로 확인한 뒤 필요 시 500개 단위로 실행한다. bucket 전체 orphan inventory 대조는 현재 별도 운영 작업이다.
 
 ## 3. VPS paired backup
 
