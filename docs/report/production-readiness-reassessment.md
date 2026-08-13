@@ -65,13 +65,17 @@
 - 검증: `./gradlew compileJava spotlessApply`, identity account tests, `frontend` typecheck, portfolio compose config
 - Media authorization: owner만 attached asset signed read URL을 받고 다른 member는 404가 되는 `MediaControllerTest` 추가
 
-아직 완료로 주장하지 않는 항목: MinIO CORS·public media domain의 실제 DNS/TLS, browser upload against a fresh portfolio volume, SMTP provider delivery, 실제 VPS offsite retention.
+아직 완료로 주장하지 않는 항목: MinIO CORS·public media domain의 실제 DNS/TLS, browser upload against a fresh portfolio volume, 실제 SMTP provider deliverability, 실제 VPS offsite retention.
 
 ## 운영 backup slice evidence
 
 `deploy/backup-portfolio.sh`는 PostgreSQL custom dump와 MinIO bucket mirror를 같은 UTC backup id 디렉터리에 저장하고 manifest와 SHA-256 checksum을 함께 생성한다. `deploy/restore-portfolio.sh`는 checksum 검증과 명시적 destructive confirmation 이후 DB와 bucket을 함께 복원한다.
 
 로컬 Docker의 별도 `townpet_restore_test` database와 임시 MinIO bucket으로 rehearsal했다. synthetic object 1개와 member row 4개가 paired backup에서 복원됐고 manifest 검증이 통과했다. 원래 local DB와 bucket은 rehearsal 뒤 복원 대상과 임시 object를 제거해 변경하지 않았다. 이 결과는 offsite backup, retention, 실제 VPS volume 복구를 증명하지 않는다.
+
+## SMTP local integration evidence
+
+Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 새 image로 실행했다. 임시 synthetic account에 password reset을 요청해 HTTP `202`와 Mailpit inbox의 `TownPet 비밀번호 재설정` 메일, `TOWNPET_PUBLIC_BASE_URL` 링크를 확인했다. 임시 account·token·container는 검증 뒤 제거했다. 이는 SMTP provider의 TLS·SPF·DKIM·deliverability를 증명하지 않으며, 실제 provider secret을 저장하지 않는다.
 
 ## 면접에서 설명할 trade-off
 
