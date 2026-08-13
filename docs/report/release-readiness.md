@@ -68,7 +68,7 @@ production env·media/demo/email 정책 확인
 - `scripts/validate-release-candidate.sh`: parity 104개 중 `verified=95`, `excluded=9`, `pending=0`; performance script syntax도 통과했다.
 - `./gradlew clean check migrationTest --no-daemon`: backend 전체 성공(5분 42초).
 - frontend typecheck, Vitest 11개 파일·37개 테스트, production build와 bundle budget은 통과했다.
-- Playwright는 기능·도메인 시나리오 46개가 통과했지만, 현재 working tree에 남아 있는 feed breadcrumb/pagination UI 변경으로 기존 home/public-feed visual snapshot 8개가 달라져 `54개 중 46개`로 종료했다. 이 변경 파일과 snapshot은 다른 작업 범위이므로 이 gate에서 임의로 커밋하거나 업데이트하지 않았다.
+- Playwright는 feed breadcrumb/pagination UI 변경에 맞춰 visual snapshot을 갱신한 뒤 desktop/mobile **54개 전체 통과**했다. 변경된 feed 소스·pagination 회귀 테스트·snapshot은 `69c18b3`에 함께 고정했다.
 - `scripts/security-static-check.sh`, 전체 shell syntax, Caddy 2.9 config validation은 통과했다. Trivy filesystem 재실행은 vulnerability DB 다운로드 중 Docker 내부 공간 부족으로 중단됐고, CI의 Trivy/dependency-review/image scan 결과가 공개 전 최종 증거가 되어야 한다.
 
-따라서 이 시점의 저장소 내부 release candidate는 backend·보안·frontend 기능 gate는 통과했지만, 현재 uncommitted frontend visual 변경을 반영한 snapshot 재검증과 CI 보안 scan 결과가 남아 있다. 이를 완료로 표시하지 않고 다음 작업에서 해당 변경의 소유 작업이 snapshot을 갱신한 뒤 전체 E2E를 다시 실행하도록 한다.
+따라서 이 시점의 저장소 내부 release candidate는 backend·frontend·parity·기능 E2E gate를 통과했다. 남은 저장소 외부 또는 CI 의존 항목은 GitHub Actions의 보안 scan 결과와 실제 VPS/SMTP/media/backup 환경 검증이며, 이를 local 성공으로 대체하지 않는다.
