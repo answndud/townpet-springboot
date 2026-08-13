@@ -17,5 +17,13 @@
 }
 
 {$TOWNPET_MEDIA_DOMAIN} {
+  @media_preflight method OPTIONS
+  header {
+    Access-Control-Allow-Origin "https://{$TOWNPET_DOMAIN}"
+    Access-Control-Allow-Methods "GET, PUT, OPTIONS"
+    Access-Control-Allow-Headers "Content-Type"
+    Access-Control-Max-Age "600"
+  }
+  respond @media_preflight 204
   reverse_proxy minio:9000
 }

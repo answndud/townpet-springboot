@@ -9,7 +9,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("production")
+@Profile("production | smtp-local")
 @ConditionalOnProperty(name = "townpet.email.enabled", havingValue = "true")
 final class SmtpAccountTokenDelivery implements AccountTokenDelivery {
   private final JavaMailSender mailSender;
