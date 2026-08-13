@@ -48,8 +48,8 @@ DELETE FROM lost_found_sighting_report WHERE reporter_member_id IN (SELECT id FR
 DELETE FROM lost_found_alert WHERE reporter_member_id IN (SELECT id FROM demo_members);
 DELETE FROM publication_metric WHERE publication_id IN (SELECT id FROM publication WHERE author_member_id IN (SELECT id FROM demo_members));
 DELETE FROM publication WHERE author_member_id IN (SELECT id FROM demo_members);
-DELETE FROM search_event;
-DELETE FROM acquisition_event;
+-- Anonymous search/acquisition telemetry is not demo-owned. Keep it during a
+-- local demo reset so the reset cannot erase unrelated analytics evidence.
 DELETE FROM web_vital_metric WHERE route LIKE '/demo/%';
 DELETE FROM spring_session WHERE principal_name IN (SELECT id::text FROM demo_members);
 COMMIT;
