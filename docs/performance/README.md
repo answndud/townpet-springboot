@@ -30,6 +30,7 @@ S0~S2 반복 기준선은 [2026-08-12-s0-s2-baseline.md](results/2026-08-12-s0-s
 2차 capacity 진단은 [2026-08-13-phase2-capacity-diagnostics.md](results/2026-08-13-phase2-capacity-diagnostics.md)에서 확인한다.
 3차 capacity query shape 비교는 [2026-08-13-phase3-capacity-query-shape.md](results/2026-08-13-phase3-capacity-query-shape.md)에서 확인한다.
 4차 public feed Redis 평가는 [2026-08-13-phase4-feed-redis-evaluation.md](results/2026-08-13-phase4-feed-redis-evaluation.md)에서 확인한다.
+배포 전 마지막 코드 기준 smoke는 [2026-08-13-final-feed-smoke.md](results/2026-08-13-final-feed-smoke.md)에서 확인한다.
 
 ## 문서 규칙
 
