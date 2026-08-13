@@ -63,6 +63,7 @@
 - Media: `MinioObjectStorage`, private bucket initialization, presigned upload URL, direct frontend PUT path
 - Compose: portfolio profile에 PostgreSQL·MinIO·backend·web health dependency 추가
 - 검증: `./gradlew compileJava spotlessApply`, identity account tests, `frontend` typecheck, portfolio compose config
+- Media authorization: owner만 attached asset signed read URL을 받고 다른 member는 404가 되는 `MediaControllerTest` 추가
 
 아직 완료로 주장하지 않는 항목: MinIO CORS·public media domain의 실제 DNS/TLS, browser upload against a fresh portfolio volume, SMTP provider delivery, 실제 VPS offsite retention.
 
