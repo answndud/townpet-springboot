@@ -48,10 +48,6 @@ function normalizeAnimalCode(raw: string) {
   return code === "ALL" || ANIMAL_LABELS.has(code) ? code : null;
 }
 
-function excerpt(value: string) {
-  return value.length > 180 ? `${value.slice(0, 180)}…` : value;
-}
-
 function date(value: string) {
   return new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
@@ -92,7 +88,6 @@ function FeedCard({ item }: { item: FeedItem }) {
         {item.scope === "LOCAL" ? <span className="publication-chip">내 동네</span> : <span className="publication-chip">전체</span>}
       </div>
       <Link className="feed-item-title" to={href}><h2>{item.title}</h2></Link>
-      <p className="feed-item-excerpt">{excerpt(item.body)}</p>
       <div className="feed-item-meta">
         <span>{authorLabel}</span>
         <span aria-hidden="true">·</span>

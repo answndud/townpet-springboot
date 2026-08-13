@@ -96,6 +96,32 @@ class CommunityFeed {
       @Nullable Instant to,
       @Nullable Set<String> animalInterestCodes,
       @Nullable Set<String> itemTypes) {
+    return list(
+        viewerMemberId,
+        includeViewerNeighborhood,
+        encodedCursor,
+        limit,
+        searchQuery,
+        "ALL",
+        scopeFilter,
+        from,
+        to,
+        animalInterestCodes,
+        itemTypes);
+  }
+
+  Page list(
+      @Nullable UUID viewerMemberId,
+      boolean includeViewerNeighborhood,
+      @Nullable String encodedCursor,
+      int limit,
+      @Nullable String searchQuery,
+      String searchField,
+      @Nullable String scopeFilter,
+      @Nullable Instant from,
+      @Nullable Instant to,
+      @Nullable Set<String> animalInterestCodes,
+      @Nullable Set<String> itemTypes) {
     if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid feed limit");
     if (from != null && to != null && !to.isAfter(from)) {
       throw new IllegalArgumentException("Invalid feed date range");
@@ -103,6 +129,7 @@ class CommunityFeed {
     if (searchQuery != null && searchQuery.length() > 80) {
       throw new IllegalArgumentException("Invalid feed query");
     }
+    validateSearchField(searchField);
 
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
     UUID viewerNeighborhoodId =
@@ -118,7 +145,7 @@ class CommunityFeed {
     if (to != null) condition = condition.and(CREATED_AT.lt(to.atOffset(ZoneOffset.UTC)));
     if (searchQuery != null && !searchQuery.isBlank()) {
       String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
-      condition = condition.and(TITLE.likeIgnoreCase(term).or(SUMMARY.likeIgnoreCase(term)));
+      condition = condition.and(searchCondition(TITLE, SUMMARY, term, searchField));
     }
     if (itemTypes != null) {
       condition =
@@ -187,6 +214,21 @@ class CommunityFeed {
                 items.getLast().createdAt(), items.getLast().itemKind(), items.getLast().sourceId())
             : null;
     return new Page(items, nextCursor, hasNext);
+  }
+
+  private static void validateSearchField(String searchField) {
+    if (!searchField.equalsIgnoreCase("ALL")
+        && !searchField.equalsIgnoreCase("TITLE")
+        && !searchField.equalsIgnoreCase("BODY")) {
+      throw new IllegalArgumentException("Invalid feed search field");
+    }
+  }
+
+  private static Condition searchCondition(
+      Field<String> title, Field<String> body, String term, String searchField) {
+    if (searchField.equalsIgnoreCase("TITLE")) return title.likeIgnoreCase(term);
+    if (searchField.equalsIgnoreCase("BODY")) return body.likeIgnoreCase(term);
+    return title.likeIgnoreCase(term).or(body.likeIgnoreCase(term));
   }
 
   @Transactional(readOnly = true)
