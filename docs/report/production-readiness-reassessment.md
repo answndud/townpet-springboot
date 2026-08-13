@@ -112,6 +112,8 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 
 Frontend frozen install·typecheck·Vitest 33개·production build도 통과했다. bundle budget은 entry JS 290,374 bytes, gzip 89,043 bytes, CSS 49,774 bytes로 각각 320,000·100,000·50,000 byte 한도 안이다. `validate-release-candidate.sh`는 parity 104개(verified 95, excluded 9, pending 0)를 재확인했고, portfolio 및 SMTP-local Compose config와 전체 shell syntax도 통과했다.
 
+Production profile의 `TOWNPET_EMAIL_ENABLED` 기본값도 제거했다. 이제 env가 누락되면 application binding 단계에서 시작이 실패하고, account delivery가 설정되지 않은 상태로 조용히 503을 내는 구성은 명시적으로 `false`를 넣은 경우에만 가능하다.
+
 추가로 password reset 발급을 네 번 요청해도 네 요청 모두 `202 Accepted`이고 token row는 세 개만 생성되는 상한 테스트가 통과했다. 외부 SMTP·media domain·VPS 보존 정책은 [`docs/runbooks/external-production-checklist.md`](../runbooks/external-production-checklist.md)에 실제 배포 담당자가 채우는 미완료 전제로 분리했다.
 
 ## 면접에서 설명할 trade-off

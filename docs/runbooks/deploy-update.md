@@ -41,4 +41,5 @@ docker compose --env-file /secure/path/townpet.portfolio.env \
 - MinIO private bucket 접근 가능
 - 공개 demo 계정·콘텐츠 없음
 - SMTP 설정 누락 시 시작 또는 account delivery가 조용히 성공하지 않음
+- `TOWNPET_EMAIL_ENABLED`가 production env-file에서 명시돼 있으며, 공개 recovery를 사용할 때는 `true`다.
 - web과 media domain이 예상 host로만 응답
