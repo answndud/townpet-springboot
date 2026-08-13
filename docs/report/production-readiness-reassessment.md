@@ -124,6 +124,8 @@ Runbook 상태도 실제 증거에 맞춰 조정했다. sanitize는 local DB dry
 
 추가 재현에서 실제 `townpet-postgres`와 격리된 PostgreSQL 18 client container를 연결해 sanitize dry-run을 실행했다. demo member 4명과 연결된 각 콘텐츠 삭제 문장이 끝까지 실행된 뒤 `ROLLBACK`되었고, 마지막 verification block도 통과했다. 이 과정에서 heredoc 내부의 `#` 주석이 PostgreSQL 문법이 아니라는 결함을 발견해 `--` 주석으로 수정했다. local DB는 rollback으로 보존했다.
 
+private moderator bootstrap도 별도 synthetic email로 실행해 `member_account`·`identity_credential` insert와 transaction commit을 확인한 뒤 두 row를 즉시 제거했다. 평문 비밀번호는 사용하지 않았고, production moderator credential이 local DB에 남지 않도록 정리했다.
+
 ## 면접에서 설명할 trade-off
 
 처음부터 Kafka와 Redis를 넣지 않았다. PostgreSQL transaction과 Modulith event registry만으로 현재 트래픽·일관성 요구를 만족하고, 실제 saturation이나 외부 consumer backlog가 생길 때만 운영 복잡도를 늘리기로 했다. 반대로 SMTP와 object storage는 기술 확장이 아니라 현재 API가 production에서 실패하는 필수 기능이므로 배포 전에 구현하기로 재분류했다.
