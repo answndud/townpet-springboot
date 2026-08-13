@@ -400,8 +400,6 @@ Hetzner CX23 topology를 목표 후보로 유지하되, 실제 계정·도메인
 
 ### Evidence
 
-- `deploy/backup-postgres.sh`
-- `deploy/restore-postgres.sh`
 - `deploy/backup-portfolio.sh`
 - `deploy/restore-portfolio.sh`
 
