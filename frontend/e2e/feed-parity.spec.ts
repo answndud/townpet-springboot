@@ -68,7 +68,10 @@ async function assertFeedItem(
 ) {
   await page.goto(`/feed/guest?type=${type}&q=${encodeURIComponent(title)}`);
   await expect(page.getByRole("heading", { name: "전체글" })).toBeVisible();
-  await expect(page.locator(`a[href^="${hrefPrefix}"]`).filter({ hasText: title })).toBeVisible();
+  const item = page.getByRole("link", { name: title, exact: true });
+  await item.scrollIntoViewIfNeeded();
+  await expect(item).toBeVisible();
+  await expect(item).toHaveAttribute("href", new RegExp(`^${hrefPrefix.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}`));
 }
 
 async function createPublication(

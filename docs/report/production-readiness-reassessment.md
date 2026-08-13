@@ -110,9 +110,9 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 
 이번 운영 경계 재감사 뒤 최종 gate에서 `./gradlew check migrationTest`가 5분 44초에 다시 통과했고, `scripts/*.sh`·`deploy/*.sh` 전체 shell syntax와 `git diff --check`도 통과했다. 변경 범위에 맞춘 identity 테스트(`IdentityMemberControllerTest`, `AccountTokenDeliveryUnavailableTest`)도 별도로 통과했다.
 
-Frontend frozen install·typecheck·Vitest 35개·production build도 통과했다. 현재 bundle budget은 entry JS 320,000 bytes, gzip 100,000 bytes, CSS 51,000 bytes이며 최신 build는 JS 292,393 bytes, gzip 89,718 bytes, CSS 50,487 bytes다. `validate-release-candidate.sh`는 parity 104개(verified 95, excluded 9, pending 0)를 재확인했고, portfolio 및 SMTP-local Compose config와 전체 shell syntax도 통과했다.
+Frontend frozen install·typecheck·Vitest 35개·production build도 통과했다. 현재 bundle budget은 entry JS 320,000 bytes, gzip 100,000 bytes, CSS 51,000 bytes이며 최신 build는 JS 292,393 bytes, gzip 89,729 bytes, CSS 50,650 bytes다. `validate-release-candidate.sh`는 parity 104개(verified 95, excluded 9, pending 0)를 재확인했고, portfolio 및 SMTP-local Compose config와 전체 shell syntax도 통과했다.
 
-최신 `corepack pnpm test:e2e`는 54개 중 31개 통과, 23개 실패했다. 실패 원인은 backend 계약 실패가 아니라 현재 React 화면과 오래된 브라우저 기준선의 불일치다. 루트/HOT·feed 제목 assertion이 현재 `HOT 글`·`전체글` 화면과 다르고, marketplace/reply visual snapshot은 CSS 변경 후 baseline이 갱신되지 않았으며, mobile snapshot 일부는 파일이 없다. 또한 pagination 응답 mock 일부가 최신 page 계약을 반영하지 않아 `nextCursor` 접근 오류가 발생했다. 따라서 browser parity gate는 미완료로 유지하며, 제목·mock·visual snapshot을 현재 제품 계약과 대조해 정리한 뒤 재실행해야 한다.
+첫 `corepack pnpm test:e2e`는 54개 중 31개 통과, 23개 실패했다. 실패 원인은 backend 계약 실패가 아니라 현재 React 화면과 오래된 브라우저 기준선의 불일치였다. 루트/HOT·feed 제목 assertion, pagination 응답 mock, visual snapshot이 현재 계약을 반영하지 못했고, 모바일 feed에서는 chip 영역이 flex 너비를 모두 차지해 제목 링크가 실제로 `0px`가 되는 CSS 결함도 발견했다. 제목·mock·snapshot을 정리하고 모바일 feed를 grid/wrap layout으로 수정한 뒤 최신 `corepack pnpm test:e2e`는 54개 전부 통과했다. 이 과정은 단순 baseline 갱신이 아니라 모바일에서만 드러난 실제 렌더링 결함을 수정한 회귀 사례다.
 
 Caddy 2 컨테이너에서 실제 `deploy/Caddyfile`을 환경변수와 함께 `caddy validate`·`caddy adapt`해 media preflight matcher, CORS response headers, MinIO reverse proxy handler가 구성에 포함되는 것을 재확인했다. 이는 DNS/TLS 인증서와 실제 브라우저 PUT을 증명하는 검사는 아니다.
 

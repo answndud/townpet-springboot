@@ -89,7 +89,7 @@ HOT cursor에는 `v1|추천수|작성시각|게시글ID`가 URL-safe Base64로 �
 3. 프론트 공통 cursor pagination hook과 번호형 UI 추가
 4. 전체글·HOT·`/best`·`/feed`·게시판 목록의 `더 보기` 제거 및 페이지 이동 연결
 5. 검색/필터 변경 시 page 초기화와 URL 보존 확인
-6. typecheck, frontend test, build budget, backend compile/test 실행
+6. typecheck, frontend test, build budget, backend compile/test와 Chromium desktop/mobile E2E 실행
 
 ## 검증 기준
 
@@ -104,6 +104,7 @@ HOT cursor에는 `v1|추천수|작성시각|게시글ID`가 URL-safe Base64로 �
 - `corepack pnpm build`
 - `./gradlew compileJava`
 - `./gradlew test --tests com.townpet.publication.PublicationControllerTest`
+- `corepack pnpm test:e2e` (54개 통과)
 
 ## 한계와 다음 개선 후보
 
@@ -111,3 +112,4 @@ HOT cursor에는 `v1|추천수|작성시각|게시글ID`가 URL-safe Base64로 �
 - HOT 추천 수가 실시간으로 변하면 서로 다른 시점의 페이지 요청 사이에서 순위가 움직일 수 있다.
 - 서버가 페이지별 cursor를 서명하지 않으므로 외부에서 변형된 cursor는 형식 검증 후 DB 조건에 사용된다. 공개 운영 단계에서는 HMAC 서명 또는 서버 저장형 cursor를 검토한다.
 - 페이지 cache는 브라우저 메모리 수명 동안만 유지된다. 새로고침 후 `page=3`은 cursor chain을 다시 조회한다.
+- 모바일 검증에서 chip 영역이 제목 링크 너비를 0으로 만드는 flex 배치를 발견해, 좁은 화면에서는 feed item을 grid로 전환하고 chip을 줄바꿈하도록 보정했다.

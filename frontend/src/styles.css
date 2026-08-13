@@ -623,6 +623,12 @@ h1, h2, p { margin: 0; }
 .feed-item-title:hover h2 { color: var(--brand-strong); }
 .feed-item-meta { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 10px; color: var(--muted-text); white-space: nowrap; }
 .feed-item > small { flex: 0 0 auto; margin-left: auto; color: var(--muted-text); white-space: nowrap; }
+@media (max-width: 640px) {
+  .feed-item { display: grid; align-items: start; }
+  .feed-item-chips { flex-wrap: wrap; }
+  .feed-item-title { width: fit-content; }
+  .feed-item-meta { flex: initial; }
+}
 
 .marketplace-filters, .localcare-tabs, .lostfound-filters { gap: 5px; }
 .market-filter { min-height: 32px; border-color: var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text-soft); }

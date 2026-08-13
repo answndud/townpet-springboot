@@ -143,3 +143,13 @@ production profile을 다시 읽으며 `UnavailableAccountTokenDelivery`와 `Una
 - 근거: [`../pagination-plan.md`](../pagination-plan.md), `PublicationFeed`, `BestFeedController`, `useCursorPagination`, `CursorPagination`, `PublicationControllerTest`
 - 검증: `./gradlew test --tests com.townpet.publication.PublicationControllerTest`, `corepack pnpm typecheck`, frontend 34 tests와 build budget
 - trade-off·한계: cursor 기반은 전체 페이지 수와 마지막 번호를 미리 알 수 없다. HOT 추천 수가 페이지 요청 사이에 바뀌면 snapshot이 아니므로, 완전한 순위 snapshot이나 서명 cursor는 실제 운영 요구가 생길 때 별도 결정한다.
+
+## 15. 브라우저 gate에서 모바일 feed의 실제 렌더링 결함을 찾았다
+
+cursor pagination을 연결한 뒤 unit/integration 테스트와 desktop 화면은 통과했지만, 전체 Chromium desktop/mobile E2E에서 mobile synthetic feed 항목만 보이지 않는 실패가 남았다. DOM에는 제목이 있었지만 링크의 bounding box 너비가 `0px`였다. 좁은 화면에서 chip 영역을 고정한 flex layout이 남은 제목 영역을 모두 소비한 것이 원인이었다.
+
+모바일 breakpoint에서 feed item을 grid로 전환하고 chip을 줄바꿈하도록 수정했다. 기존 화면 assertion과 pagination mock도 현재 `HOT 글`·`전체글`·`page.totalPages` 계약에 맞추고, desktop/mobile visual baseline을 재생성했다. 그 뒤 54개 전체 E2E가 통과했다.
+
+- 근거: `frontend/src/styles.css`, `frontend/e2e/feed-parity.spec.ts`, `frontend/e2e/desktop-visual.spec.ts`, `frontend/e2e/desktop-visual.spec.ts-snapshots/`
+- 검증: `corepack pnpm test:e2e` 54개 통과, frontend typecheck/Vitest/build와 backend `clean check migrationTest` 통과
+- trade-off: visual snapshot은 화면 계약 변경을 빠르게 감지하지만 baseline 갱신만으로 결함을 숨길 수 있다. 이번에는 snapshot을 갱신하기 전에 DOM geometry를 확인해 실제 CSS 문제와 단순 기준선 차이를 분리했다.

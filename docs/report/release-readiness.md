@@ -9,7 +9,7 @@ G1~G8을 로컬·CI에서 재현할 수 있는 현재 릴리스 상태만 기록
 - `frontend/node_modules/.bin/tsc -p frontend/tsconfig.json --noEmit`: 타입 검사 통과
 - `frontend/node_modules/.bin/vitest run`: 11개 파일, 35개 테스트 통과
 - `frontend/node_modules/.bin/vite build --config vite.config.ts`: production bundle 생성 통과
-- `frontend/e2e/parity-shell.spec.ts`: 최신 전체 E2E gate에서 기존 화면 assertion 불일치로 재정비 필요
+- `corepack pnpm test:e2e`: Chromium desktop/mobile 54개 테스트 통과
 - `migration/fixtures/logical-fixture.yaml`: guest/member/moderator와 Care·검색·신고 대표 시나리오를 고정된 logical fixture로 연결
 - `src/test/java/com/townpet/care/CareControllerTest.java`: Care Request → Application → Assignment → Feedback 전체 상태 전이 통과
 - `docker compose -f deploy/compose/portfolio.yml config`: 필요한 환경 변수를 주입한 VPS용 Compose 해석 성공
@@ -27,7 +27,7 @@ G1~G8을 로컬·CI에서 재현할 수 있는 현재 릴리스 상태만 기록
 | 항목 | 상태 | 배포 전 판단 |
 |---|---|---|
 | backend/frontend unit·build quality gate | 확인됨 | backend `clean check migrationTest`, frontend typecheck/Vitest/build 통과 |
-| browser E2E/parity gate | 미완료 | 54개 중 31개 통과·23개 실패; 현재 화면 계약·mock·visual snapshot 정비 필요 |
+| browser E2E/parity gate | 확인됨 | 최신 화면 계약·mock·visual snapshot·모바일 feed layout 반영 후 54개 전체 통과 |
 | parity inventory | 확인됨 | `pending=0`; `excluded`는 ADR 범위 밖 기능 |
 | local Docker migration·health·smoke | 확인됨 | 운영 환경과 혼동하지 않음 |
 | local backup/restore | 확인됨 | VPS에서 동일 절차와 외부 보관 위치를 다시 검증 |
