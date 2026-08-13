@@ -149,6 +149,11 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
     <main className="page feed-page">
       <header className="feed-hero">
         <div>
+          <p className="feed-location" aria-label="현재 위치">
+            <span>{homeView ? "커뮤니티" : "피드"}</span>
+            <span aria-hidden="true">/</span>
+            <strong>{homeView ? (popularView ? "HOT" : "전체글") : memberView ? "내 피드" : "전체글"}</strong>
+          </p>
           <h1>{pageTitle}</h1>
           {!homeView ? <p>{pageDescription}</p> : null}
         </div>

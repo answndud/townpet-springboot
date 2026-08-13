@@ -8,6 +8,7 @@ type CursorPaginationProps = {
 
 export default function CursorPagination({ page, hasNext, totalPages, onPageChange, disabled = false }: CursorPaginationProps) {
   const lastPage = Math.max(1, totalPages);
+  if (lastPage === 1 && !hasNext) return null;
   const windowStart = Math.max(1, Math.min(page - 2, lastPage - 4));
   const pages = Array.from({ length: Math.min(5, lastPage) }, (_, index) => windowStart + index);
   return (
