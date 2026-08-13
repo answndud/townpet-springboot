@@ -64,6 +64,7 @@
 - Compose: portfolio profile에 PostgreSQL·MinIO·backend·web health dependency 추가
 - 검증: `./gradlew compileJava spotlessApply`, identity account tests, `frontend` typecheck, portfolio compose config
 - Media authorization: owner만 attached asset signed read URL을 받고 다른 member는 404가 되는 `MediaControllerTest` 추가
+- Frontend media client: production absolute presigned URL은 direct PUT하고 local/test relative URL은 기존 server upload로 fallback
 
 아직 완료로 주장하지 않는 항목: MinIO CORS·public media domain의 실제 DNS/TLS, full browser UI flow against a fresh portfolio volume, 실제 SMTP provider deliverability, 실제 VPS offsite retention.
 
@@ -81,7 +82,7 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 
 기존 local volume과 분리한 PostgreSQL·MinIO·backend를 새 network/volume으로 시작하고 Flyway 61개 migration을 적용했다. bootstrap administrator가 `postgis`·`citext`를 provision하지 않은 첫 시도는 V001에서 중단됐고, portfolio init script의 extension 전제와 동일하게 provision한 뒤 재시작했다. 이 실패는 fresh-volume runbook에 반영할 운영 전제다.
 
-임시 verified account로 presigned URL을 발급하고, network 내부 client가 MinIO에 4-byte JPEG를 직접 PUT한 뒤 backend finalize를 호출해 HTTP `200 READY`와 SHA-256 일치를 확인했다. `TOWNPET_MINIO_PUBLIC_ENDPOINT`는 backend가 접근할 수 있고 Caddy가 동일 host로 proxy해야 signature가 유지된다. fresh volume·direct upload·finalize는 검증했지만 실제 frontend browser/CORS와 외부 DNS/TLS는 아직 검증하지 않았다. 임시 containers, volumes, network와 account는 모두 제거했다.
+임시 verified account로 presigned URL을 발급하고, network 내부 client가 MinIO에 4-byte JPEG를 직접 PUT한 뒤 backend finalize를 호출해 HTTP `200 READY`와 SHA-256 일치를 확인했다. `TOWNPET_MINIO_PUBLIC_ENDPOINT`는 backend가 접근할 수 있고 Caddy가 동일 host로 proxy해야 signature가 유지된다. fresh volume·direct upload·finalize는 검증했지만 실제 frontend browser/CORS와 외부 DNS/TLS는 아직 검증하지 않았다. 임시 containers, volumes, network와 account는 모두 제거했다. frontend Vitest 33개와 typecheck도 통과했다.
 
 ## 면접에서 설명할 trade-off
 
