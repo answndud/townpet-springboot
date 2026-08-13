@@ -22,12 +22,15 @@ class BestFeedController {
   @GetMapping
   FeedResponse list(
       @RequestParam(required = false) @Nullable String query,
-      @RequestParam(defaultValue = "ALL") String searchField) {
-    List<PublicationFeed.PopularItem> items = feed.popularRanked(30, query, searchField);
+      @RequestParam(defaultValue = "ALL") String searchField,
+      @RequestParam(required = false) @Nullable String cursor,
+      @RequestParam(defaultValue = "20") int limit) {
+    PublicationFeed.PopularPage page = feed.popularPage(limit, cursor, query, searchField);
     return new FeedResponse(
-        java.util.stream.IntStream.range(0, items.size())
-            .mapToObj(index -> response(items.get(index), index + 1))
-            .toList());
+        java.util.stream.IntStream.range(0, page.items().size())
+            .mapToObj(index -> response(page.items().get(index), index + 1))
+            .toList(),
+        new PageInfo(page.nextCursor(), page.hasNext()));
   }
 
   private static Response response(PublicationFeed.PopularItem ranked, int rank) {
@@ -36,7 +39,9 @@ class BestFeedController {
         item.id(), item.title(), item.body(), item.createdAt(), ranked.recommendationCount(), rank);
   }
 
-  record FeedResponse(List<Response> items) {}
+  record FeedResponse(List<Response> items, PageInfo page) {}
+
+  record PageInfo(@Nullable String nextCursor, boolean hasNext) {}
 
   record Response(
       UUID id, String title, String body, Instant createdAt, long recommendationCount, int rank) {}

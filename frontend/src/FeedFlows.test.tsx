@@ -92,6 +92,26 @@ describe("Publication feed journeys", () => {
     expect(await screen.findByRole("heading", { name: "로그인" })).toBeInTheDocument();
   });
 
+  it("resolves a direct page URL through the cursor chain", async () => {
+    const fetchMock = vi.fn<typeof fetch>((input) => {
+      const path = String(input);
+      if (path.includes("cursor=page-two")) {
+        return Promise.resolve(response({ items: [publication("0198f342-13d7-7000-8000-000000000012", "두 번째 페이지")], page: { nextCursor: null, hasNext: false } }));
+      }
+      return Promise.resolve(response({ items: [publication("0198f342-13d7-7000-8000-000000000011", "첫 번째 페이지")], page: { nextCursor: "page-two", hasNext: true } }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<MemoryRouter initialEntries={["/feed/guest?page=2"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "두 번째 페이지" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "첫 번째 페이지" })).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&cursor=page-two",
+      expect.objectContaining({ credentials: "include" }),
+    );
+  });
+
   it("passes the URL search term to the feed and exposes the reset action", async () => {
     const fetchMock = vi.fn<typeof fetch>(() =>
       Promise.resolve(response({ items: [publication("0198f342-13d7-7000-8000-000000000003", "산책 장소")], page: { nextCursor: null, hasNext: false } })),
