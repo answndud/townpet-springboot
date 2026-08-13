@@ -9,3 +9,5 @@ townpet:
     enabled: true
   media:
     local-root: ./.townpet/uploads
+  email:
+    enabled: false

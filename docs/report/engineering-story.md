@@ -105,10 +105,19 @@ Spring Method Security를 활성화하고 `/api/admin/**`, 신고 compatibility 
 
 도메인 기능을 추가할 때 모든 기능을 공통 `Content` 모델이나 기술별 service로 합치지 않았다. Publication은 lifecycle과 visibility를 소유하고, Comment·Reaction·Bookmark는 서로 다른 원장과 멱등성 규칙을 가진다. Lost & Found는 공개 근사 위치와 보호된 정확 위치를 분리하고, Care는 Request → Application → Assignment → Feedback의 상태 전이를 분리했다. Marketplace와 Volunteer도 결제나 단순 게시글로 축소하지 않고 상태·capacity·ownership 규칙을 각 module이 소유하게 했다.
 
-이 선택으로 화면마다 임의의 상태 문자열과 권한 조건을 복제하지 않고, 각 변경이 어느 aggregate와 DB constraint를 통과해야 하는지 설명할 수 있게 됐다. 반대로 아직 결제, 실제 이메일 전송, production object storage는 현재 범위 밖이거나 deferred이므로 구현된 기능처럼 문서화하지 않았다.
+이 선택으로 화면마다 임의의 상태 문자열과 권한 조건을 복제하지 않고, 각 변경이 어느 aggregate와 DB constraint를 통과해야 하는지 설명할 수 있게 됐다. 결제는 여전히 범위 밖이지만, 이메일 전송과 production object storage는 이제 배포 전 구현 대상으로 재분류했다.
 
 - 근거: `src/main/java/com/townpet/{publication,engagement,lostfound,care,marketplace,welfare}/`, V007~V049, `docs/PRD.md`, `docs/TRD.md`
 - trade-off: module과 상태 모델이 단순 CRUD보다 복잡하지만, 권한·동시성·복구 규칙을 한 곳에 두고 테스트할 수 있다.
+
+## 13. 배포 전 필수 기능을 기술 유행과 분리해 재분류했다
+
+production profile을 다시 읽으며 `UnavailableAccountTokenDelivery`와 `UnavailableObjectStorage`가 단순한 deferred 기능이 아니라 공개 환경에서 실제 요청을 503으로 끝낼 수 있는 경계임을 확인했다. SMTP는 공개 signup을 켜기 위한 것이 아니라 이메일 인증·비밀번호 복구라는 기본 계정 기능을 완성하기 위해 Spring Mail과 PostgreSQL event publication으로 도입한다. event payload에는 raw token을 넣지 않고 AES-GCM으로 암호화한 값만 저장하며, local/test는 동기 capture listener로 기존 검증 속성을 유지하고 production은 commit 이후 재시도 listener를 사용한다.
+
+반대로 Redis·Kafka는 성능 결과에서 해결할 병목이 입증되지 않아 계속 보류한다. public demo 계정도 showcase를 풍부하게 보이게 한다는 이유만으로 유지하지 않고, migration에 들어간 synthetic row가 web 노출 전에 남지 않도록 guarded sanitize와 private moderator bootstrap을 배치 전제로 추가했다. 이 재분류로 “기술을 많이 사용했다”가 아니라 “production에서 실패할 기능은 먼저 완성하고 운영 복잡도는 증거가 있을 때만 늘린다”는 설명이 가능해졌다.
+
+- 근거: `PLAN.md`, `ADR.md`의 ADR-0013·0014·0022·0023·0029·0030, `scripts/sanitize-production-demo.sh`, `scripts/bootstrap-private-moderator.sh`, `AccountTokenCipher`, `AccountTokenDeliveryListener`
+- 검증: identity controller 23개 테스트와 unavailable delivery rollback 테스트, `./gradlew compileJava spotlessApply`
 
 ## 11. 운영 가능한 오류와 대량 처리 경계를 별도 감사했다
 

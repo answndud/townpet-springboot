@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,8 @@ public class PasswordResetService {
   private final AuthAuditRepository audit;
   private final PasswordEncoder passwordEncoder;
   private final SessionRevocationService sessionRevocation;
-  private final AccountTokenDelivery delivery;
+  private final ApplicationEventPublisher events;
+  private final AccountTokenCipher cipher;
 
   public PasswordResetService(
       CredentialRepository credentials,
@@ -45,13 +47,15 @@ public class PasswordResetService {
       AuthAuditRepository audit,
       PasswordEncoder passwordEncoder,
       SessionRevocationService sessionRevocation,
-      AccountTokenDelivery delivery) {
+      ApplicationEventPublisher events,
+      AccountTokenCipher cipher) {
     this.credentials = credentials;
     this.tokens = tokens;
     this.audit = audit;
     this.passwordEncoder = passwordEncoder;
     this.sessionRevocation = sessionRevocation;
-    this.delivery = delivery;
+    this.events = events;
+    this.cipher = cipher;
   }
 
   @Transactional
@@ -68,7 +72,9 @@ public class PasswordResetService {
     tokens.save(
         new PasswordResetTokenEntity(
             memberId, SecureToken.hash(rawToken), now.plus(1, ChronoUnit.HOURS)));
-    delivery.deliver(AccountTokenPurpose.PASSWORD_RESET, credential.getEmail(), rawToken);
+    events.publishEvent(
+        new AccountTokenDeliveryRequested(
+            AccountTokenPurpose.PASSWORD_RESET, credential.getEmail(), cipher.encrypt(rawToken)));
   }
 
   @Transactional

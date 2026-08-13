@@ -3,6 +3,7 @@ package com.townpet.identity;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,17 +14,20 @@ public class EmailVerificationService {
   private final CredentialRepository credentials;
   private final EmailVerificationTokenRepository tokens;
   private final AuthAuditRepository audit;
-  private final AccountTokenDelivery delivery;
+  private final ApplicationEventPublisher events;
+  private final AccountTokenCipher cipher;
 
   public EmailVerificationService(
       CredentialRepository credentials,
       EmailVerificationTokenRepository tokens,
       AuthAuditRepository audit,
-      AccountTokenDelivery delivery) {
+      ApplicationEventPublisher events,
+      AccountTokenCipher cipher) {
     this.credentials = credentials;
     this.tokens = tokens;
     this.audit = audit;
-    this.delivery = delivery;
+    this.events = events;
+    this.cipher = cipher;
   }
 
   @Transactional
@@ -39,7 +43,11 @@ public class EmailVerificationService {
     tokens.save(
         new EmailVerificationTokenEntity(
             memberId, SecureToken.hash(rawToken), now.plus(1, ChronoUnit.HOURS)));
-    delivery.deliver(AccountTokenPurpose.EMAIL_VERIFICATION, credential.getEmail(), rawToken);
+    events.publishEvent(
+        new AccountTokenDeliveryRequested(
+            AccountTokenPurpose.EMAIL_VERIFICATION,
+            credential.getEmail(),
+            cipher.encrypt(rawToken)));
   }
 
   @Transactional
