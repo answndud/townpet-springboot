@@ -539,6 +539,21 @@ class IdentityMemberControllerTest {
   }
 
   @Test
+  void accountTokenRequestsAreCappedPerMemberWithoutChangingGenericResponse() throws Exception {
+    for (int attempt = 0; attempt < 4; attempt++) {
+      mockMvc
+          .perform(
+              post("/api/v1/auth/password-resets")
+                  .with(csrf())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"email\":\"mango@example.com\"}"))
+          .andExpect(status().isAccepted());
+    }
+
+    org.assertj.core.api.Assertions.assertThat(passwordResetTokens.count()).isEqualTo(3);
+  }
+
+  @Test
   void passwordResetRejectsWeakPassword() throws Exception {
     passwordResets.request("mango@example.com");
     String token =

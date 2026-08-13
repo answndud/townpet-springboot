@@ -1,0 +1,35 @@
+# 외부 운영 전제 확인 체크리스트
+
+이 문서는 코드와 로컬 Docker만으로 증명할 수 없는 마지막 항목을 배포 직전에 확인하는 기록지다. 실제 secret·토큰·credential은 이 파일에 적지 않는다. 각 항목은 담당자가 실행한 날짜, 대상 환경, 결과와 근거 링크만 별도 운영 기록에 남긴다.
+
+## 1. SMTP provider
+
+- [ ] `SPRING_MAIL_HOST`, port, username, password를 secret store에서 주입한다.
+- [ ] 587 STARTTLS 또는 provider가 지정한 TLS 정책을 확인한다. 평문 SMTP fallback은 허용하지 않는다.
+- [ ] `TOWNPET_EMAIL_FROM` 도메인이 provider에서 verified 상태다.
+- [ ] SPF와 DKIM DNS 레코드가 provider 요구값과 일치한다.
+- [ ] DMARC 정책과 bounce/complaint 수신 경로를 확인한다.
+- [ ] 실제 테스트 수신함으로 verification·password reset을 각각 발송하고 링크의 scheme/host가 `TOWNPET_PUBLIC_BASE_URL`과 일치한다.
+- [ ] 실패한 SMTP 전송이 응답 body·log에 token이나 credential을 남기지 않고, event publication retry/failed 상태로 관측된다.
+
+## 2. MinIO public media domain
+
+- [ ] `TOWNPET_MINIO_PUBLIC_ENDPOINT`가 브라우저가 접근할 HTTPS media domain이다.
+- [ ] media domain의 DNS가 Caddy/VPS를 가리키고 TLS 인증서가 유효하다.
+- [ ] `TOWNPET_MEDIA_DOMAIN`과 Caddy의 허용 origin이 실제 frontend origin과 일치한다.
+- [ ] 로그인한 owner의 presigned PUT이 브라우저에서 성공하고, 다른 member·guest가 signed read URL을 만들 수 없다.
+- [ ] 만료된 URL은 실패하고, private object가 bucket listing 또는 추측 가능한 public URL로 노출되지 않는다.
+- [ ] 업로드·finalize·삭제 후 object와 `upload_asset` metadata가 함께 정리되는지 확인한다.
+
+## 3. VPS paired backup
+
+- [ ] `deploy/backup-portfolio.sh`를 DB와 MinIO가 같은 backup id로 실행한다.
+- [ ] `manifest.txt`와 `manifest.sha256`를 offsite 저장소로 복사하고, VPS와 다른 failure domain에 보관한다.
+- [ ] 보존 기간과 최소 보관 개수를 정하고 자동 삭제 정책을 확인한다.
+- [ ] 별도 restore 환경에서 `deploy/restore-portfolio.sh` checksum 검증 후 DB row와 media object를 함께 복원한다.
+- [ ] RPO/RTO 측정값과 마지막 성공 backup id를 운영 기록에 남긴다.
+- [ ] 실패한 backup은 성공으로 표시되지 않고 알림 대상이 된다.
+
+## 판정
+
+체크되지 않은 항목이 있으면 production 공개를 완료로 표시하지 않는다. 로컬 rehearsal 통과는 이 외부 확인을 대체하지 않는다.

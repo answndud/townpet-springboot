@@ -106,6 +106,8 @@ Mailpit을 별도 Docker network에 띄우고 `smtp-local` profile backend를 �
 
 이번 운영 경계 재감사 뒤에도 `./gradlew check migrationTest`가 6분 3초에 다시 통과했고, `scripts/*.sh`·`deploy/*.sh` 전체 shell syntax와 `git diff --check`도 통과했다. 변경 범위에 맞춘 identity 테스트(`IdentityMemberControllerTest`, `AccountTokenDeliveryUnavailableTest`)도 별도로 통과했다.
 
+추가로 password reset 발급을 네 번 요청해도 네 요청 모두 `202 Accepted`이고 token row는 세 개만 생성되는 상한 테스트가 통과했다. 외부 SMTP·media domain·VPS 보존 정책은 [`docs/runbooks/external-production-checklist.md`](../runbooks/external-production-checklist.md)에 실제 배포 담당자가 채우는 미완료 전제로 분리했다.
+
 ## 면접에서 설명할 trade-off
 
 처음부터 Kafka와 Redis를 넣지 않았다. PostgreSQL transaction과 Modulith event registry만으로 현재 트래픽·일관성 요구를 만족하고, 실제 saturation이나 외부 consumer backlog가 생길 때만 운영 복잡도를 늘리기로 했다. 반대로 SMTP와 object storage는 기술 확장이 아니라 현재 API가 production에서 실패하는 필수 기능이므로 배포 전에 구현하기로 재분류했다.
