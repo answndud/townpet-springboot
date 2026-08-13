@@ -240,7 +240,9 @@ Guest cookie·step-up 자격은 제한된 작업 권한일 뿐 IP/User-Agent만�
 
 ### Evidence
 
-- `src/main/resources/db/migration/V001__platform_baseline.sql`에는 registry table만 있고 listener 구현은 없다.
+- `src/main/java/com/townpet/identity/AccountTokenDeliveryListener.java`
+- `src/main/java/com/townpet/identity/AccountTokenCipher.java`
+- `src/main/resources/db/migration/V001__platform_baseline.sql`의 event publication registry
 
 ## ADR-0014 - Production media는 private MinIO와 presigned URL을 사용한다
 
@@ -260,6 +262,8 @@ PostgreSQL은 upload metadata와 lifecycle의 source of truth로 유지하고, p
 
 - `src/main/java/com/townpet/media/UnavailableObjectStorage.java`
 - `src/main/java/com/townpet/media/LocalObjectStorage.java`
+- `src/main/java/com/townpet/media/MinioObjectStorage.java`
+- `deploy/Caddyfile`, `frontend/src/api/client.ts`
 
 ## ADR-0015 - SearchDocument read model은 검색 병목이 측정될 때 도입한다
 
@@ -398,6 +402,8 @@ Hetzner CX23 topology를 목표 후보로 유지하되, 실제 계정·도메인
 
 - `deploy/backup-postgres.sh`
 - `deploy/restore-postgres.sh`
+- `deploy/backup-portfolio.sh`
+- `deploy/restore-portfolio.sh`
 
 ## ADR-0023 - 배포 전 최소 관측성을 제공하고 외부 backend는 운영 후 선택한다
 
@@ -417,6 +423,8 @@ Actuator health/readiness, correlation id가 있는 구조화 log, JVM·HTTP·DB
 
 - `src/main/resources/application.yml`
 - `src/main/java/com/townpet/operations/WebVitalMetricController.java`
+- `src/main/java/com/townpet/common/web/RequestTraceFilter.java`
+- `docs/runbooks/observability.md`
 
 ## ADR-0024 - SLO와 error budget은 측정 후 선언한다
 
