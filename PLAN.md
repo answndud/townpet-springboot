@@ -6,14 +6,14 @@
 
 ## Active
 
-1. **운영 경계 감사 결과를 반영한다.**
+1. **운영 경계 감사 결과를 반영한다.** ✅
    - demo sanitize가 익명 telemetry를 삭제하지 않도록 범위를 제한하고, private moderator bootstrap이 중복 email을 안전하게 거절하도록 유지한다.
    - account token 발급은 계정별 시간당 상한을 적용한다. 응답은 계속 generic `202`로 유지해 email enumeration을 막는다.
-   - 완료 조건: 스크립트 syntax·컴파일·identity 회귀 테스트가 통과하고 report에 실제 변경 근거가 남는다.
+   - 완료 조건: 스크립트 syntax·컴파일·identity 회귀 테스트가 통과하고 report에 실제 변경 근거가 남는다. (완료)
 
 2. **외부 운영 전제의 마지막 확인 목록을 닫는다.**
    - SMTP provider의 TLS/SPF/DKIM·deliverability, MinIO public domain의 DNS/TLS/CORS, VPS offsite backup retention은 실제 운영 계정과 호스트에서 확인한다.
-   - 로컬에서 증명할 수 없는 항목은 구현 완료로 포장하지 않고 runbook의 operator checklist로 남긴다.
+   - 로컬에서 증명할 수 없는 항목은 구현 완료로 포장하지 않고 [`docs/runbooks/external-production-checklist.md`](docs/runbooks/external-production-checklist.md)에 operator checklist로 남긴다.
 
 3. **최종 release gate를 한 번 실행한다.**
    - 1·2번 변경 이후 backend/frontend 전체 gate, parity gate, compose/Caddy/script 검증과 핵심 권한·email·media 흐름을 재실행한다.
