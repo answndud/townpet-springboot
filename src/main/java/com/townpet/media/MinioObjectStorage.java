@@ -16,11 +16,13 @@ import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
 @Profile("production")
+@Primary
 final class MinioObjectStorage implements ObjectStoragePort {
   private final MinioClient client;
   private final MinioClient presignClient;
