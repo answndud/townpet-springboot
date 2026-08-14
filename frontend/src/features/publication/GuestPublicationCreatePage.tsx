@@ -32,7 +32,7 @@ export default function GuestPublicationCreatePage() {
     <main className="page publication-page">
       <section className="publication-hero">
         <div><p className="eyebrow">GUEST COMMUNITY</p><h1>비회원 글쓰기</h1><p>관리 비밀번호로 나중에 내 글을 수정·삭제할 수 있어요.</p></div>
-        <Link className="publication-text-link" to="/feed/guest">피드로 돌아가기</Link>
+        <Link className="publication-text-link" to="/?view=all">피드로 돌아가기</Link>
       </section>
       <form className="publication-form" onSubmit={submit} noValidate>
         <section className="surface-card publication-fields">
@@ -42,7 +42,7 @@ export default function GuestPublicationCreatePage() {
           <label>본문<textarea maxLength={20000} value={body} onChange={(event) => setBody(event.target.value)} /></label>
         </section>
         {error ? <p className="form-error publication-error" role="alert">{error}</p> : null}
-        <footer className="publication-submit-row"><Link className="publication-text-link" to="/feed/guest">취소</Link><button className="button button-primary" type="submit" disabled={submitting || password.length < 8 || !title.trim() || !body.trim()}>{submitting ? "등록 중..." : "비회원으로 등록"}</button></footer>
+        <footer className="publication-submit-row"><Link className="publication-text-link" to="/?view=all">취소</Link><button className="button button-primary" type="submit" disabled={submitting || password.length < 8 || !title.trim() || !body.trim()}>{submitting ? "등록 중..." : "비회원으로 등록"}</button></footer>
       </form>
     </main>
   );
