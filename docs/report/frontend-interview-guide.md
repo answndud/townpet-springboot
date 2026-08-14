@@ -49,7 +49,7 @@ Spring Boot 개발자의 관점에서 frontend를 다음처럼 대응시키면 �
 
 ### 2.1 최초 진입과 SPA 이동은 다르다
 
-최초 진입은 브라우저가 HTML, JS, CSS를 네트워크에서 받는 과정이다. 이후 `/feed`에서 `/boards/adoption`으로 이동할 때는 React Router가 URL을 바꾸고 필요한 component를 렌더링한다. 보통 전체 HTML 문서를 다시 받지 않는다.
+최초 진입은 브라우저가 HTML, JS, CSS를 네트워크에서 받는 과정이다. 이후 `/`에서 `/boards/adoption`으로 이동할 때는 React Router가 URL을 바꾸고 필요한 component를 렌더링한다. 보통 전체 HTML 문서를 다시 받지 않는다.
 
 ```text
 최초 진입
@@ -558,4 +558,3 @@ route/API/browser metric을 분리하고 deterministic fixture와 반복 script�
 > 댓글 답글이 맨 아래에 나타나는 문제가 있었습니다. reply target state는 올바랐지만 composer DOM이 목록 footer에 고정되어 있었기 때문에 위치가 분리된 것이 원인이었습니다. 댓글 node를 렌더링하는 자리에서 target일 때만 composer를 삽입하도록 comment thread component를 분리했습니다. 첫 댓글·마지막 댓글·중첩 답글과 desktop browser flow로 확인했습니다. 다만 현재 검증은 desktop 우선이며, 대규모 댓글 tree의 virtualization은 아직 범위가 아닙니다.
 
 프론트엔드는 “화면을 그리는 부분”만이 아니다. URL, browser lifecycle, session cookie, API contract, asynchronous state, accessibility, performance budget, 사용자에게 보이는 오류를 연결하는 실행 계층이다. 이 연결을 실제 TownPet 코드와 검증 결과로 설명하면 Spring 중심 경력도 frontend 협업 역량으로 확장해서 보여줄 수 있다.
-

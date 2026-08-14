@@ -6,7 +6,7 @@ const routeBudgetMs = 100;
 const apiBudgetMs = 250;
 const routes = ["/", "/?view=all", "/marketplace", "/lost-found", "/guides?q=%EC%82%B0%EC%B1%85", "/gatherings", "/care"];
 const apiRequests = [
-  "/api/v1/feed?limit=20",
+  "/api/v1/discovery?limit=20",
   "/api/v1/marketplace/listings?limit=30",
   "/api/v1/lost-found/alerts?limit=20",
   "/api/v1/local-resources?query=%EC%82%B0%EC%B1%85",

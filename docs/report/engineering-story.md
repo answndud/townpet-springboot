@@ -150,7 +150,7 @@ cursor pagination을 연결한 뒤 unit/integration 테스트와 desktop 화면�
 
 모바일 breakpoint에서 feed item을 grid로 전환하고 chip을 줄바꿈하도록 수정했다. 기존 화면 assertion과 pagination mock도 현재 `HOT 글`·`전체글`·`page.totalPages` 계약에 맞추고, desktop/mobile visual baseline을 재생성했다. 그 뒤 54개 전체 E2E가 통과했다.
 
-- 근거: `frontend/src/styles.css`, `frontend/e2e/feed-parity.spec.ts`, `frontend/e2e/desktop-visual.spec.ts`, `frontend/e2e/desktop-visual.spec.ts-snapshots/`
+- 근거: `frontend/src/styles.css`, `frontend/e2e/public-search-parity.spec.ts`, `frontend/e2e/desktop-visual.spec.ts`, `frontend/e2e/desktop-visual.spec.ts-snapshots/`
 - 검증: `corepack pnpm test:e2e` 54개 통과, frontend typecheck/Vitest/build와 backend `clean check migrationTest` 통과
 - trade-off: visual snapshot은 화면 계약 변경을 빠르게 감지하지만 baseline 갱신만으로 결함을 숨길 수 있다. 이번에는 snapshot을 갱신하기 전에 DOM geometry를 확인해 실제 CSS 문제와 단순 기준선 차이를 분리했다.
 

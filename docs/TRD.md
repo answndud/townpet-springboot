@@ -168,7 +168,7 @@ com.townpet.marketplace/
 ```text
 POST   /api/v1/auth/sessions
 DELETE /api/v1/auth/sessions/current
-GET    /api/v1/feed
+GET    /api/v1/discovery
 POST   /api/v1/publications
 GET    /api/v1/publications/{publicationId}
 POST   /api/v1/publications/{publicationId}/comments

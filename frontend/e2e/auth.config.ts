@@ -5,7 +5,7 @@ export default defineConfig({
   testMatch: [
     "auth-parity.spec.ts",
     "publication-parity.spec.ts",
-    "feed-parity.spec.ts",
+    "public-search-parity.spec.ts",
     "publication-management.spec.ts",
     "comment-management.spec.ts",
     "reaction-management.spec.ts",

@@ -34,7 +34,7 @@ class GlobalProblemHttpTest {
   @Test
   void methodValidationUsesProblemContract() throws Exception {
     mockMvc
-        .perform(get("/api/v1/feed").param("limit", "0"))
+        .perform(get("/api/v1/discovery").param("limit", "0"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
         .andExpect(jsonPath("$.traceId").isNotEmpty())

@@ -8,7 +8,7 @@
 
 - `/`의 전체글과 HOT 목록
 - `/best`의 독립 인기글 목록
-- `/` 공개 게시글 목록과 `/feed` 회원 피드
+- `/` 공개 게시글 목록
 - 동물별 게시판과 공통 게시판 목록
 - 검색어, 검색 범위, 게시판, 회원/비회원 범위가 유지되는 페이지 이동
 
@@ -45,10 +45,10 @@
 
 ### HOT 피드
 
-기존 `/api/v1/feed/popular`도 같은 `page` 메타데이터를 반환하도록 확장했다. `totalPages`는 현재 필터와 공개/권한 조건에 맞는 전체 개수를 `limit`으로 나눈 값이다.
+기존 `/api/v1/discovery/popular`도 같은 `page` 메타데이터를 반환하도록 확장했다. `totalPages`는 현재 필터와 공개/권한 조건에 맞는 전체 개수를 `limit`으로 나눈 값이다.
 
 ```text
-GET /api/v1/feed/popular?limit=20&cursor=...&query=...&searchField=TITLE
+GET /api/v1/discovery/popular?limit=20&cursor=...&query=...&searchField=TITLE
 ```
 
 정렬 기준은 다음과 같다.
@@ -87,7 +87,7 @@ HOT cursor에는 `v1|추천수|작성시각|게시글ID`가 URL-safe Base64로 �
 1. HOT API에 `cursor`, `limit`, `page.nextCursor`, `page.hasNext` 추가
 2. HOT 정렬 경계를 포함하는 versioned cursor 구현
 3. 프론트 공통 cursor pagination hook과 번호형 UI 추가
-4. 전체글·HOT·`/best`·`/feed`·게시판 목록의 `더 보기` 제거 및 페이지 이동 연결
+4. 전체글·HOT·`/best`·게시판 목록의 `더 보기` 제거 및 페이지 이동 연결
 5. 검색/필터 변경 시 page 초기화와 URL 보존 확인
 6. typecheck, frontend test, build budget, backend compile/test와 Chromium desktop/mobile E2E 실행
 

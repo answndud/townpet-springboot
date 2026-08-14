@@ -68,7 +68,7 @@
 
 ### G3.3 — 게시판 상호작용을 제품 규칙에 맞게 완성
 
-- 파일: `frontend/src/features/publication/PublicationDetailPage.tsx`, `frontend/src/features/publication/PublicationFeedPage.tsx`, `frontend/src/api/client.ts`, `frontend/src/PublicationFlows.test.tsx`
+- 파일: `frontend/src/features/publication/PublicationDetailPage.tsx`, `frontend/src/HomeFeedPage.tsx`, `frontend/src/api/client.ts`, `frontend/src/PublicationFlows.test.tsx`
 - 변경:
   - 댓글의 답글 작성기는 해당 댓글 바로 아래에 삽입하고, 다른 댓글·페이지 하단으로 이동하지 않도록 유지한다.
   - 댓글/답글 등록·취소·삭제, 좋아요·북마크의 optimistic/pending/error 상태와 상태 재조회 규칙을 통일한다.
@@ -209,7 +209,7 @@
 - 파일: `frontend/src/utils/performance.ts`, `frontend/scripts/check-bundle.mjs`, 신규 `frontend/scripts/measure-performance.mjs`; 프론트엔드 evidence는 백엔드 기록과 분리된 `docs/frontend-performance/baseline-YYYY-MM-DD.md`에 기록한다.
 - 변경:
   - route resolve time, API duration/count, JS/CSS transfer, first content, settled content를 동일 schema로 기록한다.
-  - public home/feed, login→profile, marketplace, post detail, admin을 대표 route로 고정한다.
+  - public home, login→profile, marketplace, post detail, admin을 대표 route로 고정한다.
   - desktop budget을 문서화한다: initial entry JS gzip, CSS, route transition p75, API read/write p75, long task count.
   - user input·credential·session·정확 위치가 측정 payload/log에 들어가지 않게 한다.
 - 검증: controlled local run 3회 이상, 결과 median/p75 기록, bundle script

@@ -13,7 +13,7 @@
 - 동물 게시판 조회 API: `GET /api/v1/communities/{animalCode}/feed?board={boardCode}`
 - 공통게시판 조회 API: `GET /api/v1/boards/{boardCode}/feed`
 - 동물 콘텐츠 분류: `content_animal_community(content_kind, content_id, animal_code)` 다중 분류 인덱스
-- 기존 `/api/v1/feed`와 도메인 상세 URL은 호환 계층으로 유지
+- 기존 통합 공개 목록은 `/api/v1/discovery`로 제공하며 도메인 상세 URL은 호환 계층으로 유지
 
 ## 결정
 

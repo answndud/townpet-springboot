@@ -20,7 +20,7 @@
 ## Fixture and workload
 
 - scale: `small`
-- endpoint: `GET /api/v1/feed?limit=20` (scope 제거 전 측정 문서는 historical baseline으로 보존)
+- endpoint: `GET /api/v1/discovery?limit=20` (scope 제거 전 측정 문서는 historical baseline으로 보존)
 - VU: 1
 - profile: `smoke` (30 seconds)
 - repetitions: 3

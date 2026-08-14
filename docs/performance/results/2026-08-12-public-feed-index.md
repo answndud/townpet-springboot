@@ -20,7 +20,7 @@
 
 ## Workload
 
-- scenario: `feed-read` — `GET /api/v1/feed?audience=GLOBAL&limit=20`
+- scenario: `discovery-read` — `GET /api/v1/discovery?audience=GLOBAL&limit=20`
 - VU: 1
 - stages: 30초 동안 1 VU
 - warm-up: 별도 warm-up 없이 smoke profile 실행

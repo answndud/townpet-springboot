@@ -3,11 +3,11 @@ import { expect, test } from "@playwright/test";
 const PASSWORD = "townpet-demo-123!";
 
 async function login(page: import("@playwright/test").Page, email: string) {
-  await page.goto("/login?next=/feed");
+  await page.goto("/login?next=/profile");
   await page.getByLabel("이메일").fill(email);
   await page.getByLabel("비밀번호", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "이메일로 로그인" }).click();
-  await expect.poll(() => new URL(page.url()).pathname).toBe("/feed");
+  await expect.poll(() => new URL(page.url()).pathname).toBe("/profile");
 }
 
 async function loginViaApi(page: import("@playwright/test").Page, email: string) {

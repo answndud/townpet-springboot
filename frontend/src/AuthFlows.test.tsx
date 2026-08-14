@@ -51,7 +51,7 @@ describe("Credentials journeys", () => {
     fireEvent.click(screen.getByRole("button", { name: "이메일로 로그인" }));
 
     expect(await screen.findByRole("heading", { name: "demo-member-1님의 프로필" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "내 피드" })).toHaveAttribute("href", "/feed");
+    expect(screen.getByRole("link", { name: "내 작성글" })).toHaveAttribute("href", "/my-posts");
     expect(screen.queryByRole("heading", { name: "로그인" })).not.toBeInTheDocument();
   });
 

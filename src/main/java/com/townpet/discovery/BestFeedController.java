@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/feed/popular")
+@RequestMapping("/api/v1/discovery/popular")
 class BestFeedController {
   private final PublicationFeed feed;
 

@@ -156,7 +156,7 @@ E2E binary가 없는 경우에는 in-app browser와 API 직접 검증을 사용�
 - `corepack pnpm test`: 11 files / 35 tests pass
 - `corepack pnpm build`: pass; entry JS 280.78KB raw / 86.59KB gzip, CSS 35.24KB
 - `corepack pnpm test:e2e`: desktop·mobile 포함 54/54 pass
-- `e2e/desktop-visual.spec.ts`: exact 1280×900·1440×900 home/feed/form/reply screenshots 8/8 pass
+- `e2e/desktop-visual.spec.ts`: exact 1280×900·1440×900 home/public-list/form/reply screenshots 8/8 pass
 - `e2e/domain-error-journeys.spec.ts`: marketplace·lost-found·care·gathering·moderator normal/error write journeys 9/9 pass
 - `corepack pnpm measure:browser` on Vite preview: 7 representative routes measured for FCP/LCP/INP/CLS and route settle; CLS was 0 for all routes
 - `node scripts/measure-performance.mjs`: 39 route/API samples, all 200; route median 1.72–4.46ms, API median 8.37–35.63ms; route p75 max 37.07ms, API p75 max 48.17ms

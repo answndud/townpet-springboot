@@ -121,7 +121,7 @@
 - `src/main/java/com/townpet/discovery/`
 - `src/main/java/com/townpet/publication/api/PublicationFeed.java`
 - `frontend/src/api/client.ts`
-- `frontend/src/features/publication/PublicationFeedPage.tsx`
+- `frontend/src/HomeFeedPage.tsx`
 - 관련 controller·frontend flow tests
 
 구현 내용:

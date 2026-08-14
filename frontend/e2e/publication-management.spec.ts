@@ -43,7 +43,7 @@ test("author edits and lifecycle-deletes a free-board post", async ({ page }, te
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "삭제", exact: true }).click();
-  await expect(page).toHaveURL(/\/feed$/);
+  await expect(page).toHaveURL(/\/my-posts$/);
   await expect(page.getByRole("heading", { name: editedTitle })).toHaveCount(0);
 
   expectingDeletedDetail = true;

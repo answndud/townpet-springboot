@@ -14,7 +14,7 @@ audit:
   evidence:
     shell: [frontend/e2e/parity-shell.spec.ts, docs/parity/shell.md]
     auth: [frontend/e2e/auth-parity.spec.ts, src/test/java/com/townpet/identity/IdentityMemberControllerTest.java]
-    publication: [frontend/e2e/publication-parity.spec.ts, frontend/e2e/publication-management.spec.ts, frontend/e2e/feed-parity.spec.ts, src/test/java/com/townpet/publication/PublicationControllerTest.java]
+    publication: [frontend/e2e/publication-parity.spec.ts, frontend/e2e/publication-management.spec.ts, frontend/e2e/public-search-parity.spec.ts, src/test/java/com/townpet/publication/PublicationControllerTest.java]
     engagement: [frontend/e2e/comment-management.spec.ts, frontend/e2e/reaction-management.spec.ts, frontend/e2e/bookmark-management.spec.ts]
     relationship: [frontend/e2e/relationship-management.spec.ts, src/test/java/com/townpet/relationship/RelationshipControllerTest.java]
     lostfound: [frontend/src/LostFoundFlows.test.tsx, src/test/java/com/townpet/lostfound/LostFoundAlertControllerTest.java]
@@ -90,14 +90,6 @@ pages:
   - path: /corrections/new
     legacy: true
     spring: verified
-  - path: /feed
-    legacy: true
-    spring: verified
-    evidence: [frontend/e2e/feed-parity.spec.ts, src/main/java/com/townpet/discovery/CommunityFeed.java]
-  - path: /feed/guest
-    legacy: true
-    spring: excluded
-    decision: 공개 피드는 `/`의 최신 HomeFeedPage로 통합
   - path: /guides/{guideSlug}
     legacy: true
     spring: verified
@@ -278,7 +270,7 @@ apiRoutes:
     methods: [GET]
     legacy: true
     spring: excluded
-    decision: `/api/v1/feed`로 통합
+    decision: `/api/v1/discovery`로 통합
   - path: /api/feed/personalization
     methods: [POST]
     legacy: true
@@ -296,7 +288,7 @@ apiRoutes:
     methods: [GET]
     legacy: true
     spring: excluded
-    decision: `/api/v1/feed`로 통합
+    decision: `/api/v1/discovery`로 통합
   - path: /api/lounges/breeds/{breedCode}/groupbuys
     methods: [POST]
     legacy: true
@@ -387,7 +379,7 @@ apiRoutes:
     methods: [GET]
     legacy: true
     spring: excluded
-    decision: 공개 검색도 `/api/v1/feed`로 통합
+    decision: 공개 검색도 `/api/v1/discovery`로 통합
   - path: /api/search/log
     methods: [POST]
     legacy: true

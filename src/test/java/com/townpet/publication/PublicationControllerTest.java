@@ -68,7 +68,7 @@ class PublicationControllerTest {
   @BeforeEach
   void resetPublicationState() {
     // V021/V022 contain public catalog demo rows; isolate publication feed
-    // assertions from those rows because /api/v1/feed is now an aggregate feed.
+    // assertions from those rows because /api/v1/discovery is now an aggregate discovery endpoint.
     jdbc.update("DELETE FROM content_animal_community");
     jdbc.update("DELETE FROM gathering_participant");
     jdbc.update("DELETE FROM gathering");
@@ -329,7 +329,7 @@ class PublicationControllerTest {
 
     MvcResult firstPage =
         mockMvc
-            .perform(get("/api/v1/feed").queryParam("limit", "1"))
+            .perform(get("/api/v1/discovery").queryParam("limit", "1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.items.length()").value(1))
             .andExpect(jsonPath("$.items[0].id").value(globalNewId.toString()))
@@ -344,14 +344,14 @@ class PublicationControllerTest {
             .asText();
 
     mockMvc
-        .perform(get("/api/v1/feed").queryParam("limit", "1").queryParam("cursor", cursor))
+        .perform(get("/api/v1/discovery").queryParam("limit", "1").queryParam("cursor", cursor))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(1))
         .andExpect(jsonPath("$.items[0].id").value(localOwnedId.toString()))
         .andExpect(jsonPath("$.page.hasNext").value(true));
 
     mockMvc
-        .perform(get("/api/v1/feed").cookie(login()))
+        .perform(get("/api/v1/discovery").cookie(login()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(4))
         .andExpect(jsonPath("$.items[0].id").value(globalNewId.toString()))
@@ -360,7 +360,7 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.items[3].id").value(globalOldId.toString()));
 
     mockMvc
-        .perform(get("/api/v1/feed").cookie(login()))
+        .perform(get("/api/v1/discovery").cookie(login()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(4))
         .andExpect(jsonPath("$.items[0].id").value(globalNewId.toString()))
@@ -372,7 +372,7 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.items[0].id").value(localOwnedId.toString()));
 
     mockMvc
-        .perform(get("/api/v1/feed").queryParam("cursor", "not-a-cursor"))
+        .perform(get("/api/v1/discovery").queryParam("cursor", "not-a-cursor"))
         .andExpect(status().isBadRequest());
   }
 
@@ -386,14 +386,14 @@ class PublicationControllerTest {
     insertPublicationWithAnimal(catId, "고양이 놀이", "CAT", "2026-08-10T10:01:00Z");
 
     mockMvc
-        .perform(get("/api/v1/feed").queryParam("animals", "DOG"))
+        .perform(get("/api/v1/discovery").queryParam("animals", "DOG"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].id").value(generalId.toString()))
         .andExpect(jsonPath("$.items[1].animalInterestCode").value("DOG"));
 
     mockMvc
-        .perform(get("/api/v1/feed").queryParam("animals", "NOPE"))
+        .perform(get("/api/v1/discovery").queryParam("animals", "NOPE"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(1))
         .andExpect(jsonPath("$.items[0].animalInterestCode").doesNotExist());
@@ -463,7 +463,7 @@ class PublicationControllerTest {
         now.minusMinutes(7));
 
     mockMvc
-        .perform(get("/api/v1/feed").queryParam("limit", "20"))
+        .perform(get("/api/v1/discovery").queryParam("limit", "20"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(8))
         .andExpect(
@@ -516,7 +516,7 @@ class PublicationControllerTest {
         MEMBER_ID);
 
     mockMvc
-        .perform(get("/api/v1/feed/popular"))
+        .perform(get("/api/v1/discovery/popular"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].id").value(mostRecommendedId.toString()))
@@ -530,7 +530,7 @@ class PublicationControllerTest {
 
     MvcResult firstPopularPage =
         mockMvc
-            .perform(get("/api/v1/feed/popular").queryParam("limit", "1"))
+            .perform(get("/api/v1/discovery/popular").queryParam("limit", "1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.items.length()").value(1))
             .andExpect(jsonPath("$.items[0].id").value(mostRecommendedId.toString()))
@@ -547,7 +547,7 @@ class PublicationControllerTest {
 
     mockMvc
         .perform(
-            get("/api/v1/feed/popular")
+            get("/api/v1/discovery/popular")
                 .queryParam("limit", "1")
                 .queryParam("cursor", popularCursor))
         .andExpect(status().isOk())
@@ -570,11 +570,11 @@ class PublicationControllerTest {
 
     Cookie viewer = login("demo-member-2@townpet.local");
     mockMvc
-        .perform(get("/api/v1/feed").cookie(viewer))
+        .perform(get("/api/v1/discovery").cookie(viewer))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(0));
     mockMvc
-        .perform(get("/api/v1/feed"))
+        .perform(get("/api/v1/discovery"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].id").value(publicationId.toString()));
     mockMvc
@@ -682,7 +682,7 @@ class PublicationControllerTest {
         .perform(get("/api/v1/publications/{publicationId}", publicationId))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/api/v1/feed"))
+        .perform(get("/api/v1/discovery"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(0));
     assertThat(

@@ -88,7 +88,7 @@ fi
 for test_filter in "$@"; do
   [[ "${test_filter}" == *"auth-parity"* ]] && verify_auth_evidence=true
   [[ "${test_filter}" == *"publication-parity"* ]] && verify_publication_evidence=true
-  [[ "${test_filter}" == *"feed-parity"* ]] && verify_publication_evidence=true
+  [[ "${test_filter}" == *"public-search-parity"* ]] && verify_publication_evidence=true
   [[ "${test_filter}" == *"publication-management"* ]] && verify_deleted_publication_evidence=true
   [[ "${test_filter}" == *"comment-management"* ]] && verify_comment_evidence=true
   [[ "${test_filter}" == *"reaction-management"* ]] && verify_reaction_evidence=true
