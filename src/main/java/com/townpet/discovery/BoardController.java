@@ -47,10 +47,8 @@ class BoardController {
   FeedController.FeedResponse list(
       @PathVariable String boardCode,
       @AuthenticationPrincipal @Nullable UserDetails principal,
-      @RequestParam(defaultValue = "VIEWER") FeedController.FeedAudience audience,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
-      @RequestParam(defaultValue = "ALL") FeedController.FeedScope scope,
       @RequestParam(required = false) @Size(max = 80) @Nullable String query,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
@@ -62,11 +60,10 @@ class BoardController {
       CommunityFeed.Page page =
           feed.list(
               memberId(principal),
-              audience == FeedController.FeedAudience.VIEWER,
+              principal != null,
               cursor,
               limit,
               query,
-              scope.name(),
               from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
               to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
               null,
@@ -106,7 +103,6 @@ class BoardController {
         item.itemType(),
         item.title(),
         item.summary(),
-        item.scope(),
         item.authorId(),
         item.neighborhoodId(),
         null,

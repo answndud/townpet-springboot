@@ -50,7 +50,7 @@ class GlobalProblemHttpTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"title":"", "body":"", "scope":"GLOBAL"}
+                    {"title":"", "body":""}
                     """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))

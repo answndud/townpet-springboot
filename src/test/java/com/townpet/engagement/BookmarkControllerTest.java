@@ -159,7 +159,7 @@ class BookmarkControllerTest {
                     .cookie(session)
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"title\":\"bookmark\",\"body\":\"body\",\"scope\":\"GLOBAL\"}"))
+                    .content("{\"title\":\"bookmark\",\"body\":\"body\"}"))
             .andExpect(status().isCreated())
             .andReturn();
     return com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), "$.id");

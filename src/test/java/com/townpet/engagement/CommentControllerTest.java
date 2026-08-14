@@ -195,7 +195,7 @@ class CommentControllerTest {
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
-                        "{\"title\":\"댓글 대상 글\",\"body\":\"댓글을 남겨 주세요.\",\"scope\":\"GLOBAL\"}"))
+                        "{\"title\":\"댓글 대상 글\",\"body\":\"댓글을 남겨 주세요.\"}"))
             .andExpect(status().isCreated())
             .andExpect(header().string("Location", startsWith("/api/v1/publications/")))
             .andReturn();

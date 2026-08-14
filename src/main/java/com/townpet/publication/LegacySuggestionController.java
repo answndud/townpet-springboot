@@ -23,9 +23,7 @@ class LegacySuggestionController {
                 new PublicationController.PublicationResponse(
                     item.id(),
                     PublicationType.valueOf(item.type()),
-                    PublicationScope.valueOf(item.scope()),
                     item.authorId(),
-                    item.neighborhoodId(),
                     item.title(),
                     item.body(),
                     PublicationLifecycle.valueOf(item.lifecycle()),

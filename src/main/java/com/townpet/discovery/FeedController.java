@@ -37,44 +37,36 @@ class FeedController {
   @GetMapping
   FeedResponse list(
       @AuthenticationPrincipal @Nullable UserDetails principal,
-      @RequestParam(defaultValue = "VIEWER") FeedAudience audience,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam(defaultValue = "ALL") @Size(max = 10) String searchField,
-      @RequestParam(defaultValue = "ALL") FeedScope scope,
       @RequestParam(required = false) @Size(max = 512) @Nullable String animals,
       @RequestParam(required = false) @Size(max = 40) @Nullable String type,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
-    return listFeed(
-        principal, audience, cursor, limit, null, searchField, scope, animals, type, from, to);
+    return listFeed(principal, cursor, limit, null, searchField, animals, type, from, to);
   }
 
   @GetMapping(params = "query")
   FeedResponse list(
       @AuthenticationPrincipal @Nullable UserDetails principal,
-      @RequestParam(defaultValue = "VIEWER") FeedAudience audience,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam @Size(max = 80) String query,
       @RequestParam(defaultValue = "ALL") @Size(max = 10) String searchField,
-      @RequestParam(defaultValue = "ALL") FeedScope scope,
       @RequestParam(required = false) @Size(max = 512) @Nullable String animals,
       @RequestParam(required = false) @Size(max = 40) @Nullable String type,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
-    return listFeed(
-        principal, audience, cursor, limit, query, searchField, scope, animals, type, from, to);
+    return listFeed(principal, cursor, limit, query, searchField, animals, type, from, to);
   }
 
   private FeedResponse listFeed(
       @AuthenticationPrincipal @Nullable UserDetails principal,
-      FeedAudience audience,
       @Nullable String cursor,
       int limit,
       @Nullable String query,
       String searchField,
-      FeedScope scope,
       @Nullable String animals,
       @Nullable String type,
       @Nullable LocalDate from,
@@ -86,12 +78,11 @@ class FeedController {
       CommunityFeed.Page page =
           feed.list(
               memberId(principal),
-              audience == FeedAudience.VIEWER,
+              principal != null,
               cursor,
               limit,
               query,
               searchField,
-              scope.name(),
               from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
               to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
               parseAnimals(animals),
@@ -123,7 +114,6 @@ class FeedController {
         item.itemType(),
         item.title(),
         item.summary(),
-        item.scope(),
         item.authorId(),
         item.neighborhoodId(),
         item.animalInterestCode(),
@@ -145,7 +135,6 @@ class FeedController {
       String type,
       String title,
       String body,
-      String scope,
       @Nullable UUID authorId,
       @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
@@ -161,7 +150,6 @@ class FeedController {
         String type,
         String title,
         String body,
-        String scope,
         @Nullable UUID authorId,
         @Nullable UUID neighborhoodId,
         String lifecycle,
@@ -174,7 +162,6 @@ class FeedController {
           type,
           title,
           body,
-          scope,
           authorId,
           neighborhoodId,
           null,
@@ -185,17 +172,6 @@ class FeedController {
           version,
           null);
     }
-  }
-
-  enum FeedAudience {
-    GLOBAL,
-    VIEWER
-  }
-
-  enum FeedScope {
-    ALL,
-    GLOBAL,
-    LOCAL
   }
 
   @Nullable
