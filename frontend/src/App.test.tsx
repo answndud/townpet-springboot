@@ -142,7 +142,7 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/onboarding"]}><App /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "전체글" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "내 동네와 반려동물 설정" })).not.toBeInTheDocument();
   });
 
@@ -170,7 +170,7 @@ describe("TownPet Vite shell", () => {
       vi.fn(() => Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }))),
     );
 
-    render(<MemoryRouter initialEntries={["/feed/guest"]}><App /></MemoryRouter>);
+    render(<MemoryRouter initialEntries={["/?view=all"]}><App /></MemoryRouter>);
 
     expect(screen.getByRole("button", { name: "공통게시판" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "동물 게시판" })).toBeInTheDocument();
@@ -198,7 +198,7 @@ describe("TownPet Vite shell", () => {
       }),
     );
 
-    render(<MemoryRouter initialEntries={["/feed/guest"]}><App /></MemoryRouter>);
+    render(<MemoryRouter initialEntries={["/?view=all"]}><App /></MemoryRouter>);
 
     fireEvent.click(screen.getByRole("button", { name: "동물 게시판" }));
     expect(screen.getByRole("menuitem", { name: "전체 동물 게시판" })).toBeInTheDocument();

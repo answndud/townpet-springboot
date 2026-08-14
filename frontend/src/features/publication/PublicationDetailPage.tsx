@@ -284,7 +284,7 @@ export default function PublicationDetailPage() {
     if (!publication || guestManagePassword.length < 8 || !window.confirm("비회원 게시글을 삭제할까요?")) return;
     try {
       await guestApi.deletePublication(publication.id, { password: guestManagePassword, version: publication.version });
-      navigate("/feed/guest", { replace: true });
+      navigate("/?view=all", { replace: true });
     } catch (requestError) {
       setMutationError(requestError instanceof ApiError && requestError.status === 409 ? "다른 곳에서 게시글이 변경되었습니다." : "비회원 게시글을 삭제하지 못했습니다.");
     }
@@ -330,7 +330,7 @@ export default function PublicationDetailPage() {
           <p className="eyebrow">게시글 상세</p>
           <h1>글을 열 수 없습니다</h1>
           <p role="alert">{error}</p>
-          <Link className="button button-soft" to="/feed/guest">게시판으로</Link>
+          <Link className="button button-soft" to="/?view=all">게시판으로</Link>
         </section>
       </main>
     );
@@ -347,7 +347,7 @@ export default function PublicationDetailPage() {
   return (
     <main className="page publication-page publication-detail-page">
       <div className="publication-detail-nav">
-        <Link className="publication-text-link" to="/feed/guest">목록으로</Link>
+        <Link className="publication-text-link" to="/?view=all">목록으로</Link>
         <div className="publication-detail-actions">
           {memberViewer && viewerId === publication.authorId ? (
             <>
