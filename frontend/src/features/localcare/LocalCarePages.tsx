@@ -31,10 +31,6 @@ export function LocalCareListPage() {
         <h1>우리 동네 반려생활 가이드</h1>
         <p>산책 장소부터 복지 제도와 케어 팁까지, 출처와 갱신 시각을 함께 확인하세요.</p>
       </section>
-      <form className="search-panel" onSubmit={load}>
-        <label><span>정보 검색</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="산책, 등록, 여름..." /></label>
-        <button className="button button-primary" type="submit">검색</button>
-      </form>
       <div className="localcare-tabs" role="group" aria-label="정보 유형 필터">
         <button className={!kind ? "market-filter active" : "market-filter"} aria-pressed={!kind} type="button" onClick={() => { setKind(undefined); setSearchParams(submittedQuery ? { q: submittedQuery } : {}); }}>전체</button>
         {(Object.keys(labels) as LocalResourceKind[]).map((item) => (
@@ -48,6 +44,10 @@ export function LocalCareListPage() {
         {items.map((item) => <Link className="surface-card localcare-card" key={item.id} to={`/guides/${item.id}`}><span className="publication-chip publication-chip-primary">{labels[item.kind]}</span><h2>{item.title}</h2><p>{item.summary}</p><small>{item.sourceName} · {formatDateOnly(item.updatedAt)} 업데이트</small></Link>)}
       </section>
       {!items.length && !error && !loading ? <p className="surface-card localcare-empty">조건에 맞는 정보가 없습니다.</p> : null}
+      <form aria-label="지역 생활 정보 검색" className="search-panel feed-bottom-search" onSubmit={load}>
+        <label><span className="search-label">정보 검색</span><input aria-label="정보 검색" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="산책, 등록, 여름..." /></label>
+        <button className="button button-soft" type="submit">검색</button>
+      </form>
     </main>
   );
 }
