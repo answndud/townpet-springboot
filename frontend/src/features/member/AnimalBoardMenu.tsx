@@ -10,6 +10,7 @@ const MENU_LINKS = [
 export default function AnimalBoardMenu() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const menuActive = location.pathname.startsWith("/animals/");
   const menuRef = useRef<HTMLDivElement>(null);
   const menuItemsRef = useRef<HTMLAnchorElement[]>([]);
 
@@ -61,7 +62,7 @@ export default function AnimalBoardMenu() {
   return (
     <div ref={menuRef} className={`header-menu animal-board-menu${open ? " open" : ""}`}>
       <button
-        className="header-menu-trigger"
+        className={`header-menu-trigger${menuActive ? " active" : ""}`}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
