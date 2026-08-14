@@ -199,7 +199,7 @@ class IdentityMemberControllerTest {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"title\":\"운영자 작성 제한\",\"body\":\"회원 전용 기능\"," + "\"scope\":\"GLOBAL\"}"))
+                    "{\"title\":\"운영자 작성 제한\",\"body\":\"회원 전용 기능\"}"))
         .andExpect(status().isForbidden());
   }
 

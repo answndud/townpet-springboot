@@ -1,8 +1,6 @@
 package com.townpet.discovery;
 
 import com.townpet.common.MemberOnly;
-import com.townpet.member.api.MemberDirectory;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,12 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 class LegacyDiscoveryCompatibilityController {
   private final com.townpet.publication.api.PublicationFeed feed;
-  private final MemberDirectory members;
 
-  LegacyDiscoveryCompatibilityController(
-      com.townpet.publication.api.PublicationFeed feed, MemberDirectory members) {
+  LegacyDiscoveryCompatibilityController(com.townpet.publication.api.PublicationFeed feed) {
     this.feed = feed;
-    this.members = members;
   }
 
   @PostMapping("/api/feed/personalization")
@@ -36,23 +31,6 @@ class LegacyDiscoveryCompatibilityController {
         new FeedController.PageInfo(page.nextCursor(), page.hasNext(), page.totalPages()));
   }
 
-  @GetMapping("/api/profile/audience-segments")
-  @MemberOnly
-  AudienceResponse segments(@AuthenticationPrincipal UserDetails principal) {
-    UUID memberId = requiredMemberId(principal);
-    List<String> segments = new java.util.ArrayList<>(List.of("PUBLIC"));
-    if (members
-            .findPublicationContext(memberId)
-            .map(MemberDirectory.MemberPublicationContext::neighborhoodId)
-            .orElse(null)
-        != null) {
-      segments.add("LOCAL");
-    }
-    return new AudienceResponse(List.copyOf(segments));
-  }
-
-  record AudienceResponse(List<String> segments) {}
-
   private static FeedController.FeedItemResponse response(
       com.townpet.publication.api.PublicationFeed.Item item) {
     return new FeedController.FeedItemResponse(
@@ -61,9 +39,8 @@ class LegacyDiscoveryCompatibilityController {
         item.type(),
         item.title(),
         item.body(),
-        item.scope(),
         item.authorId(),
-        item.neighborhoodId(),
+        null,
         item.lifecycle(),
         item.createdAt(),
         item.updatedAt(),
@@ -80,11 +57,4 @@ class LegacyDiscoveryCompatibilityController {
     }
   }
 
-  private static UUID requiredMemberId(UserDetails principal) {
-    UUID memberId = memberId((UserDetails) principal);
-    if (memberId == null)
-      throw new org.springframework.web.server.ResponseStatusException(
-          org.springframework.http.HttpStatus.UNAUTHORIZED);
-    return memberId;
-  }
 }

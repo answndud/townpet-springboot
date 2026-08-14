@@ -83,7 +83,7 @@ Spring Method Security를 활성화하고 `/api/admin/**`, 신고 compatibility 
 
 기존 통합 테스트가 정상 사용자 흐름은 확인했지만, Spring Security filter에서 바로 끝나는 401·403 응답은 MVC의 ProblemDetail 규칙을 거치지 않는다는 점을 발견했다. 인증 entry point와 access denied handler를 identity 모듈 안에 두어 기계 판독 code와 trace id를 같은 응답으로 반환하게 했다. moderator가 자기 계정을 제재할 수 있는 운영 경계와 빈 reason·무제한 bulk ID 같은 입력 경계도 함께 닫았다.
 
-작성자 콘텐츠 공개 범위 변경은 모든 게시글을 JPA entity로 읽어 변경·저장하고 있었다. 게시글 수가 늘면 메모리와 flush 비용이 선형으로 커지고, 응답의 affected 수에도 이미 같은 상태인 row가 섞였다. 조건부 PostgreSQL bulk update로 ACTIVE↔HIDDEN row만 version과 updatedAt을 함께 갱신하고, 작성자/lifecycle index를 추가했다. 이때 entity·repository를 다른 모듈에 노출하지 않도록 Modulith named boundary를 유지했다.
+작성자 콘텐츠 lifecycle 변경은 모든 게시글을 JPA entity로 읽어 변경·저장하고 있었다. 게시글 수가 늘면 메모리와 flush 비용이 선형으로 커지고, 응답의 affected 수에도 이미 같은 상태인 row가 섞였다. 조건부 PostgreSQL bulk update로 ACTIVE↔HIDDEN row만 version과 updatedAt을 함께 갱신하고, 작성자/lifecycle index를 추가했다. 이때 entity·repository를 다른 모듈에 노출하지 않도록 Modulith named boundary를 유지했다.
 
 마지막으로 request trace를 response header에만 남기면 장애 시 서버 로그와 연결되지 않는 문제가 있어, query string을 제외한 method/path/status/duration을 MDC trace id와 함께 기록했다. graceful shutdown timeout도 명시해 종료가 무한정 대기하지 않게 했다. 이 세 변경은 작은 파일별 작업이 아니라 보안·데이터 효율·운영 진단이라는 세 개의 감사 사이클로 묶었고, 최종 판단은 fresh backend/Docker gate 이후로 유보한다.
 
@@ -121,7 +121,7 @@ production profile을 다시 읽으며 `UnavailableAccountTokenDelivery`와 `Una
 
 ## 11. 운영 가능한 오류와 대량 처리 경계를 별도 감사했다
 
-정상 흐름이 통과한 뒤에도 운영 실패를 별도로 점검했다. Spring Security filter에서 끝나는 401·403이 MVC ProblemDetail과 다른 형식으로 반환되던 문제는 entry point와 access denied handler를 추가해 trace ID와 machine-readable code를 통일했다. 작성자 콘텐츠 공개 범위 일괄 변경은 entity 전체 로딩 대신 조건부 PostgreSQL bulk update로 바꾸고, 실제로 변경된 row만 version과 `updatedAt`을 갱신했다. 요청 로그에는 query string과 민감 body를 넣지 않으면서 MDC trace ID·method·path·status·duration을 남겼고, graceful shutdown timeout도 설정했다.
+정상 흐름이 통과한 뒤에도 운영 실패를 별도로 점검했다. Spring Security filter에서 끝나는 401·403이 MVC ProblemDetail과 다른 형식으로 반환되던 문제는 entry point와 access denied handler를 추가해 trace ID와 machine-readable code를 통일했다. 작성자 콘텐츠 lifecycle 일괄 변경은 entity 전체 로딩 대신 조건부 PostgreSQL bulk update로 바꾸고, 실제로 변경된 row만 version과 `updatedAt`을 갱신했다. 요청 로그에는 query string과 민감 body를 넣지 않으면서 MDC trace ID·method·path·status·duration을 남겼고, graceful shutdown timeout도 설정했다.
 
 이 사건들은 기능 하나를 추가한 기록이 아니라, 정상 요청만 확인하면 놓치는 보안·메모리·장애 진단 문제를 production 경계에서 다시 본 사례다. bulk update는 JPA lifecycle callback이 필요한 규칙에는 사용하지 않는다는 제한도 함께 남겼다.
 
@@ -153,3 +153,13 @@ cursor pagination을 연결한 뒤 unit/integration 테스트와 desktop 화면�
 - 근거: `frontend/src/styles.css`, `frontend/e2e/feed-parity.spec.ts`, `frontend/e2e/desktop-visual.spec.ts`, `frontend/e2e/desktop-visual.spec.ts-snapshots/`
 - 검증: `corepack pnpm test:e2e` 54개 통과, frontend typecheck/Vitest/build와 backend `clean check migrationTest` 통과
 - trade-off: visual snapshot은 화면 계약 변경을 빠르게 감지하지만 baseline 갱신만으로 결함을 숨길 수 있다. 이번에는 snapshot을 갱신하기 전에 DOM geometry를 확인해 실제 CSS 문제와 단순 기준선 차이를 분리했다.
+
+## 16. 커뮤니티 확산을 막던 publication 지역 공개 범위를 제거했다
+
+초기 parity 모델은 publication마다 `GLOBAL`·`LOCAL`과 publication 전용 neighborhood를 저장했다. 그 결과 글 작성 화면에는 공개 범위 선택이 생겼고, 로그인 여부·대표 동네·feed query가 같은 글의 노출을 다르게 만들었다. 커뮤니티 전체 클릭과 검색을 우선하기로 결정하면서 이 구분은 제품 가치보다 계약·인덱스·테스트 비용을 키우는 제약이 됐다.
+
+V062에서 적용된 publication 제약·컬럼·scope 인덱스를 제거하고, projection view를 active lifecycle 중심으로 재생성했다. JPA entity와 service, jOOQ feed, controller DTO에서 scope와 publication neighborhood를 삭제했으며, 로그인 viewer에게만 block 정책을 남겼다. 입양·지역 가이드의 자체 neighborhood와 guest step-up 보안 scope는 별도 도메인이어서 보존했다. React 작성·수정 화면과 feed 탭·chip·query도 함께 제거하고, fixture와 요청 mock을 새 계약으로 바꿨다.
+
+- 근거: `V062__remove_publication_scope.sql`, `PublicationEntity`, `PublicationFeed`, `CommunityFeed`, `frontend/src/api/client.ts`, `PLAN.md`
+- 검증: `./gradlew compileJava`, `./gradlew compileTestJava`, frontend `tsc --noEmit`, Vitest 37개 통과. Testcontainers 기반 전체 migration/integration gate는 Docker container log wait 실패와 build image의 디스크 부족으로 완료하지 못했으며, 이 환경 한계를 배포 완료로 포장하지 않는다.
+- trade-off·한계: publication 작성은 단순해졌지만 neighborhood 기반 개인화 feed는 사라졌다. 실제 지역별 discovery가 필요해지면 publication visibility를 되살리기보다 별도 지역 탐색 기능과 새 ADR을 검토한다.

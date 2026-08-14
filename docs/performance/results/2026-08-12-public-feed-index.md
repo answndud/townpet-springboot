@@ -1,5 +1,7 @@
 # 공개 feed cursor 인덱스 - improved
 
+> Historical baseline: 이 측정은 publication에 GLOBAL/LOCAL scope와 전용 인덱스가 있던 V054 시점의 증거다. V062에서 해당 모델을 제거했으므로 아래 SQL과 수치는 과거 개선 근거로만 보존하고, 현재 API 재현에는 사용하지 않는다.
+
 ## Summary
 
 - 실행일: 2026-08-12

@@ -69,8 +69,8 @@ class BlockedEngagementPolicyTest {
     jdbc.update("DELETE FROM relationship_block");
     jdbc.update("DELETE FROM publication");
     jdbc.update(
-        "INSERT INTO publication (id, author_member_id, type, scope, neighborhood_id, title, body, lifecycle, created_at, updated_at, version) "
-            + "VALUES (?, ?, 'FREE_BOARD', 'GLOBAL', NULL, 'blocked', 'blocked body', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)",
+        "INSERT INTO publication (id, author_member_id, type, title, body, lifecycle, created_at, updated_at, version) "
+            + "VALUES (?, ?, 'FREE_BOARD', 'blocked', 'blocked body', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0)",
         PUBLICATION_ID,
         AUTHOR_ID);
     jdbc.update(

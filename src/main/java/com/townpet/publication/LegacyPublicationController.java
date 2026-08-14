@@ -40,9 +40,7 @@ class LegacyPublicationController {
     return new PublicationController.PublicationResponse(
         p.getId(),
         p.getType(),
-        p.getScope(),
         p.getAuthorMemberId(),
-        p.getNeighborhoodId(),
         p.getTitle(),
         p.getBody(),
         p.getLifecycle(),

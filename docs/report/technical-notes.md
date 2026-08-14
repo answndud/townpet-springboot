@@ -21,8 +21,8 @@
 ## Modular monolith와 API 계약
 
 - 모듈은 기술 layer가 아니라 변경 이유와 data write ownership으로 나눈다. 다른 모듈의 JPA entity/repository 대신 식별자, 공개 application API 또는 event를 사용한다.
-- Publication은 작성자 UUID만 소유하고 Member의 공개 `MemberDirectory`로 현재 대표 동네를 확인한다. `LOCAL/GLOBAL`과 동네 필드의 구조적 일관성은 DB 제약으로, 실제 회원 동네 소유권은 transaction 안의 application policy로 검증한다.
-- Publication write는 JPA aggregate로 처리하고 최신 피드는 jOOQ read path에서 `(createdAt, id)` keyset cursor로 조회한다. `GLOBAL` audience는 로그인 cookie가 있어도 동네 글을 섞지 않고, `VIEWER`만 현재 회원의 대표 동네를 추가한다.
+- Publication은 작성자 UUID만 소유하고 Member의 공개 `MemberDirectory`와 분리된다. 회원의 대표 동네는 지역 기능에서만 사용하며 publication 공개 범위에는 관여하지 않는다.
+- Publication write는 JPA aggregate로 처리하고 최신 피드는 jOOQ read path에서 `(createdAt, id)` keyset cursor로 조회한다. 공개 feed는 로그인 여부와 무관하게 active publication을 동일하게 반환하고, 로그인 viewer에게만 block 정책을 추가한다.
 - Publication 변경 명령의 actor는 session principal에서만 가져오며 `authorMemberId`와 일치해야 한다. Client가 읽은 `version`을 먼저 비교하고 JPA `@Version`이 검사 이후의 경합도 감지해 stale write를 `409`로 반환한다. 삭제는 row 제거가 아니라 `ACTIVE → DELETED` lifecycle 전이이며 상세와 피드가 같은 상태 조건으로 즉시 제외한다. 작성자 복구는 삭제 응답의 `ETag` version을 사용해 `DELETED → ACTIVE`로 되돌리고, 삭제 상태를 통과한 비작성자·engagement 요청은 계속 거부한다.
 - Engagement의 일반 Comment는 `publicationId` 값만 저장하고 publication 모듈의 `PublicationAccess` 공개 API로 부모의 `ACTIVE` 여부만 확인한다. 댓글 작성자 ID는 인증 principal에서만 가져오며, 목록은 `createdAt + id` 오름차순으로 고정하고 삭제는 댓글 자체의 `ACTIVE → DELETED` 전이로 처리한다.
 - Reaction은 삭제 lifecycle 대신 원장 row의 존재 여부로 `LIKE` 활성 상태를 표현한다. `(publicationId, authorMemberId, type)` unique constraint와 명시적인 `active` PUT을 함께 사용해 같은 요청을 반복해도 중복 row나 상태 반전이 생기지 않으며, count와 현재 회원 상태는 같은 transaction 경계에서 반환한다.
@@ -30,7 +30,7 @@
 - Media는 binary 자체가 아니라 upload metadata와 상태를 소유한다. `UPLOADING → READY → ATTACHED` 전이는 owner·checksum·expiration과 magic-byte로 감지한 MIME allowlist를 확인하고, `PublicationAccess`가 active publication과 같은 author인지 확인하기 전에는 attachment row를 만들지 않는다. `ObjectStoragePort`는 presigned URL·metadata 조회·삭제만 공개하며, test/e2e profile은 local adapter, 그 외 profile은 명시적 unavailable adapter를 사용한다. 실제 object가 없거나 MIME·byte·checksum·signature가 metadata와 다르면 `READY` 전환을 거부하고, 만료된 `UPLOADING` row는 object와 metadata를 함께 삭제하는 idempotent cleanup 대상이 된다.
 - Follow와 block은 서로 다른 원장과 unique 제약으로 분리한다. 한 번의 relationship PUT에서 block을 켜면 follow를 제거해 상충 상태를 없애고, 자기 자신은 DB check와 application policy 양쪽에서 차단한다. 상세 화면의 relationship 조회는 publication의 `authorId`를 통해서만 수행하며, `V011`, `RelationshipControllerTest`, `relationship-management.spec.ts`가 중복·IDOR·새로고침 상태를 검증한다.
 - follow와 block은 서로 다른 원장이므로 unique constraint만으로 상호 배타성을 보장할 수 없다. 동일 viewer-target 쌍의 mutation 시작 시 PostgreSQL transaction advisory lock을 획득해 조회·삭제·삽입 구간을 직렬화하고, `RelationshipControllerTest.concurrentFollowAndBlockRequestsNeverLeaveBothRelationshipRows`로 병렬 요청에서도 한 원장만 남는지 검증한다.
-- Relationship은 `BlockDirectory` 공개 API만 제공하고 publication/discovery가 `BlockEntity`나 repository를 직접 참조하지 않는다. `VIEWER` feed와 회원 상세만 차단 작성자를 제외하며 `GLOBAL` feed·비회원 상세는 공개 정책을 유지한다. 차단 작성자 상세는 회원에게도 `404`로 수렴해 feed와 direct URL의 정책 차이를 없앤다.
+- Relationship은 `BlockDirectory` 공개 API만 제공하고 publication/discovery가 `BlockEntity`나 repository를 직접 참조하지 않는다. 로그인 viewer feed와 회원 상세에서만 차단 작성자를 제외하며, 비회원 공개 feed는 전체 active 글을 조회한다. 차단 작성자 상세는 회원에게도 `404`로 수렴해 feed와 direct URL의 정책 차이를 없앤다.
 - Follow/block 활성화는 단순 `find → save`가 아니라 PostgreSQL `ON CONFLICT DO NOTHING` upsert를 사용한다. 애플리케이션 멱등성 검사와 DB unique constraint를 함께 두고, 실제 병렬 MockMvc 요청에서도 한 원장만 남도록 검증한다. 관계 조회는 항상 authenticated principal을 viewer로 사용해 다른 회원의 상태를 읽거나 바꿀 수 없다.
 - Engagement는 `PublicationAccess.activeAuthorMemberId`와 `BlockDirectory`를 함께 사용해 publication 작성자 차단 정책을 재확인한다. 차단 회원의 댓글 목록·작성, reaction·bookmark 상태 조회·변경은 모두 `404`로 수렴하고, 비회원 공개 읽기는 유지해 UI별 정책 차이를 만들지 않는다.
 - V012는 세 engagement 원장에 PostgreSQL `BEFORE INSERT` guard를 추가한다. 애플리케이션 정책 조회와 block 전환 사이에 경합이 생겨도 차단된 actor의 새 원장 삽입은 DB에서 거부되며, 서비스는 이를 publication-not-found 정책 오류로 변환한다. 캐시는 도입하지 않아 별도 무효화나 stale state가 없다.
@@ -44,7 +44,7 @@
 
 ### 도메인 상태와 원장 분리
 
-- Publication은 `ACTIVE`, `HIDDEN`, `DELETED` lifecycle과 `GLOBAL`, `LOCAL` visibility를 소유한다. 피드·상세·engagement는 같은 active 조건을 사용해 삭제된 콘텐츠가 다른 경로에 남지 않게 한다.
+- Publication은 `ACTIVE`, `HIDDEN`, `DELETED` lifecycle을 소유한다. 피드·상세·engagement는 같은 active 조건을 사용해 삭제된 콘텐츠가 다른 경로에 남지 않게 한다.
 - Comment는 삭제 상태를 보존하는 원장이고, Reaction·Bookmark는 unique key와 명시적인 `active` 요청으로 현재 상태를 표현한다. 따라서 댓글 삭제와 좋아요/북마크 해제를 같은 방식으로 처리하지 않는다.
 - Lost & Found의 공개 근사 위치와 보호된 정확 위치는 서로 다른 read policy를 통과한다. 정확 위치·연락 증거는 public projection, log, 오류 응답에 포함하지 않는다.
 - Care의 Request, Application, Assignment, Feedback은 서로 다른 actor와 상태 전이를 가지므로 한 테이블의 상태 값으로 합치지 않는다. Volunteer capacity와 Marketplace lifecycle도 각 module의 service와 DB 불변식이 소유한다.
@@ -76,7 +76,7 @@
 ### 운영 오류·대량 변경·관측 경계
 
 - 인증되지 않은 요청과 권한 부족 요청은 Spring MVC controller에 도달하기 전에 종료될 수 있으므로 Security entry point와 access denied handler도 ProblemDetail 계약을 직접 만든다.
-- 작성자 공개 범위 일괄 변경은 변경 대상 조건을 DB에 내려 `ACTIVE ↔ HIDDEN` 행만 bulk update한다. JPA entity callback이 필요한 규칙에는 이 경로를 사용하지 않는다.
+- 작성자 콘텐츠 lifecycle 일괄 변경은 변경 대상 조건을 DB에 내려 `ACTIVE ↔ HIDDEN` 행만 bulk update한다. JPA entity callback이 필요한 규칙에는 이 경로를 사용하지 않는다.
 - request trace는 MDC trace ID와 method·path·status·duration을 서버 로그에 남기되 query string, credential, session, 정확 위치와 body는 기록하지 않는다. `server.shutdown=graceful`과 종료 timeout은 진행 중 요청을 정리할 시간을 제한한다.
 - 이 경계는 “테스트가 통과했다”는 사실보다 장애 시 어떤 요청을 어떤 로그와 연결할 수 있고, 대량 변경이 application heap을 얼마나 사용하지 않도록 했는지를 설명하기 위한 것이다.
 

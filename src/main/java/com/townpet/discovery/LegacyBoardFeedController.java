@@ -32,7 +32,6 @@ class LegacyBoardFeedController {
   LegacyList list(
       @PathVariable @Size(min = 1, max = 40) String board,
       @AuthenticationPrincipal @Nullable UserDetails principal,
-      @RequestParam(defaultValue = "VIEWER") FeedController.FeedAudience audience,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit) {
     if (board.equalsIgnoreCase("adoption")) {
@@ -41,7 +40,7 @@ class LegacyBoardFeedController {
     try {
       PublicationFeed.Page page =
           publications.list(
-              memberId(principal), audience == FeedController.FeedAudience.VIEWER, cursor, limit);
+              memberId(principal), principal != null, cursor, limit);
       return new LegacyList(page.items(), page.nextCursor(), page.hasNext());
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed cursor");

@@ -41,7 +41,6 @@ class PublicMemberPublicationController {
         publication.getId(),
         publication.getTitle(),
         publication.getBody(),
-        publication.getScope(),
         publication.getCreatedAt(),
         publication.getUpdatedAt());
   }
@@ -50,7 +49,6 @@ class PublicMemberPublicationController {
       UUID id,
       String title,
       String body,
-      PublicationScope scope,
       Instant createdAt,
       Instant updatedAt) {}
 }

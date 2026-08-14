@@ -39,7 +39,7 @@ CSR이라고 검색엔진에 반드시 색인되지 않는 것은 아니다. 다
 ## 결정 원칙
 
 1. **전체 frontend를 먼저 SSR로 마이그레이션하지 않는다.** 공개 유입에 직접 영향을 주는 게시글 상세와 공개 목록부터 선택적으로 해결한다.
-2. **Spring Boot를 source of truth로 유지한다.** 게시글 상태·공개 범위·제재 상태·대표 이미지는 backend 정책과 같은 규칙을 사용한다.
+2. **Spring Boot를 source of truth로 유지한다.** 게시글 lifecycle·제재 상태·대표 이미지는 backend 정책과 같은 규칙을 사용한다.
 3. **공개 콘텐츠와 개인화 콘텐츠를 분리한다.** `/`의 전체글·인기글은 SEO 후보가 될 수 있지만 내 피드·관심 동물 필터·로그인 화면은 색인 대상이 아니다.
 4. **SEO metadata는 보안 경계가 아니다.** 정확한 위치·연락처·비공개 정보·로그인 전용 필드를 description, JSON-LD, OG image에 넣지 않는다.
 5. **실제 색인과 공유 preview를 각각 검증한다.** 검색 crawler가 HTML을 읽는지와 카카오/소셜 crawler가 OG metadata를 읽는지는 별도 acceptance로 취급한다.
@@ -53,7 +53,7 @@ CSR이라고 검색엔진에 반드시 색인되지 않는 것은 아니다. 다
 
 - 공개 대상: 게시글 상세, 공개 게시글 목록, 추천 기반 인기글 목록, 공개 community/board detail
 - 제외 대상: 내 피드, 북마크, 알림, 프로필의 비공개 활동, 관리자, 작성·수정 form, 로그인·온보딩, guest 관리 password flow
-- 상태별 정책: `ACTIVE + 공개 범위 허용`만 indexable; 삭제·hidden·restricted·비공개는 `noindex` 또는 404/410 정책을 사용
+- 상태별 정책: `ACTIVE`만 indexable; 삭제·hidden·restricted는 `noindex` 또는 404/410 정책을 사용
 - URL 정책: 게시글 canonical은 `/posts/{publicationId}` 하나로 고정하고 `/posts/{id}/guest`는 canonical로 redirect하거나 동일 canonical metadata를 사용
 - query 정책: `q`, `scope`, 개인화·tracking parameter는 canonical에서 제거하고 필요하면 `noindex,follow`
 

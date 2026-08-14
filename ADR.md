@@ -327,7 +327,7 @@ PostgreSQL은 upload metadata와 lifecycle의 source of truth로 유지하고, p
 
 ### Decision
 
-삭제·숨김·공개 lifecycle과 GLOBAL/LOCAL scope, block·moderation 접근 정책을 별도로 표현한다. controller가 아닌 application/data query에서 적용한다.
+삭제·숨김 lifecycle과 block·moderation 접근 정책을 별도로 표현한다. 일반 publication에는 지역 공개 범위를 두지 않고 모든 active 글을 동일한 공개 피드에서 조회하며, controller가 아닌 application/data query에서 lifecycle·관계 정책을 적용한다.
 
 ### Evidence
 

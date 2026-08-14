@@ -22,7 +22,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.lang.Nullable;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -44,8 +43,6 @@ class PublicationControllerTest {
   private static final UUID MEMBER_ID = UUID.fromString("00000000-0000-4000-8000-000000000201");
   private static final UUID NEIGHBORHOOD_ID =
       UUID.fromString("00000000-0000-4000-8000-000000000101");
-  private static final UUID OTHER_NEIGHBORHOOD_ID =
-      UUID.fromString("00000000-0000-4000-8000-000000000102");
 
   @Container
   static final PostgreSQLContainer<?> POSTGRES =
@@ -100,7 +97,6 @@ class PublicationControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{\"title\":\"레거시 제목\",\"body\":\"레거시 본문\"}"))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.scope").value("GLOBAL"))
             .andReturn();
     String publicationId =
         new com.fasterxml.jackson.databind.ObjectMapper()
@@ -119,13 +115,13 @@ class PublicationControllerTest {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"title\":\"변경 제목\",\"body\":\"변경 본문\",\"scope\":\"GLOBAL\",\"version\":0}"))
+                    "{\"title\":\"변경 제목\",\"body\":\"변경 본문\",\"version\":0}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("변경 제목"));
   }
 
   @Test
-  void memberCreatesGlobalPublicationAndGuestReadsDirectDetail() throws Exception {
+  void memberCreatesPublicationAndGuestReadsDirectDetail() throws Exception {
     Cookie session = login();
     MvcResult created =
         mockMvc
@@ -138,8 +134,7 @@ class PublicationControllerTest {
                         """
                         {
                           "title": "  함께 걷기 좋은 길  ",
-                          "body": "  저녁 산책 정보를 나눠요.  ",
-                          "scope": "GLOBAL"
+                          "body": "  저녁 산책 정보를 나눠요.  "
                         }
                         """))
             .andExpect(status().isCreated())
@@ -147,7 +142,6 @@ class PublicationControllerTest {
                 header()
                     .string("Location", org.hamcrest.Matchers.startsWith("/api/v1/publications/")))
             .andExpect(jsonPath("$.type").value("FREE_BOARD"))
-            .andExpect(jsonPath("$.scope").value("GLOBAL"))
             .andExpect(jsonPath("$.lifecycle").value("ACTIVE"))
             .andExpect(jsonPath("$.title").value("함께 걷기 좋은 길"))
             .andExpect(jsonPath("$.body").value("저녁 산책 정보를 나눠요."))
@@ -182,7 +176,6 @@ class PublicationControllerTest {
                           "title": "강아지 질문",
                           "body": "강아지 산책 질문입니다.",
                           "type": "QA_QUESTION",
-                          "scope": "GLOBAL",
                           "animalCommunityCodes": ["DOG", "CAT"]
                         }
                         """))
@@ -207,7 +200,6 @@ class PublicationControllerTest {
                     {
                       "title": "강아지 질문 수정",
                       "body": "기존 다중 동물 태그를 유지합니다.",
-                      "scope": "GLOBAL",
                       "version": 0
                     }
                     """))
@@ -216,7 +208,7 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.animalCommunityCodes[1]").value("CAT"));
 
     mockMvc
-        .perform(get("/api/v1/communities/dog/feed?board=questions&audience=GLOBAL"))
+        .perform(get("/api/v1/communities/dog/feed?board=questions"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.animalCode").value("dog"))
         .andExpect(jsonPath("$.board").value("questions"))
@@ -224,7 +216,7 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.items[0].animalCode").value("DOG"));
 
     mockMvc
-        .perform(get("/api/v1/communities/cat/feed?board=questions&audience=GLOBAL"))
+        .perform(get("/api/v1/communities/cat/feed?board=questions"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].title").value("강아지 질문 수정"))
         .andExpect(jsonPath("$.items[0].animalCode").value("CAT"));
@@ -240,7 +232,6 @@ class PublicationControllerTest {
                     {
                       "title": "잘못된 태그",
                       "body": "알 수 없는 동물 코드는 거부합니다.",
-                      "scope": "GLOBAL",
                       "animalCommunityCodes": ["NOT_AN_ANIMAL"]
                     }
                     """))
@@ -269,13 +260,13 @@ class PublicationControllerTest {
         .andExpect(status().isCreated());
 
     mockMvc
-        .perform(get("/api/v1/boards/marketplace/feed").queryParam("audience", "GLOBAL"))
+        .perform(get("/api/v1/boards/marketplace/feed"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].title").value("공통 거래 게시판 글"))
         .andExpect(jsonPath("$.items[0].kind").value("MARKETPLACE"));
 
     mockMvc
-        .perform(get("/api/v1/boards/all/feed").queryParam("audience", "GLOBAL"))
+        .perform(get("/api/v1/boards/all/feed"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].title").value("공통 거래 게시판 글"));
 
@@ -284,29 +275,19 @@ class PublicationControllerTest {
         .andExpect(status().isNotFound());
 
     mockMvc
-        .perform(get("/api/v1/communities/dog/feed").queryParam("audience", "GLOBAL"))
+        .perform(get("/api/v1/communities/dog/feed"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items").isEmpty());
   }
 
   @Test
-  void creationRequiresAuthenticationValidInputAndOwnedLocalNeighborhood() throws Exception {
-    String localRequest =
-        """
-        {
-          "title": "동네 산책 모임",
-          "body": "주말 아침에 만나요.",
-          "scope": "LOCAL",
-          "neighborhoodId": "%s"
-        }
-        """;
-
+  void creationRequiresAuthenticationAndValidInput() throws Exception {
     mockMvc
         .perform(
             post("/api/v1/publications")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(localRequest.formatted(NEIGHBORHOOD_ID)))
+                .content("{\"title\":\"동네 산책 모임\",\"body\":\"주말 아침에 만나요.\"}"))
         .andExpect(status().isUnauthorized());
 
     Cookie session = login();
@@ -316,7 +297,7 @@ class PublicationControllerTest {
                 .cookie(session)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(localRequest.formatted(OTHER_NEIGHBORHOOD_ID)))
+                .content("{\"title\":\"   \",\"body\":\"내용\"}"))
         .andExpect(status().isBadRequest());
 
     mockMvc
@@ -325,38 +306,26 @@ class PublicationControllerTest {
                 .cookie(session)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"title\":\"   \",\"body\":\"내용\",\"scope\":\"GLOBAL\"}"))
-        .andExpect(status().isBadRequest());
-
-    mockMvc
-        .perform(
-            post("/api/v1/publications")
-                .cookie(session)
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(localRequest.formatted(NEIGHBORHOOD_ID)))
+                .content("{\"title\":\"동네 산책 모임\",\"body\":\"주말 아침에 만나요.\"}"))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.scope").value("LOCAL"))
-        .andExpect(jsonPath("$.neighborhoodId").value(NEIGHBORHOOD_ID.toString()));
+        .andExpect(jsonPath("$.title").value("동네 산책 모임"));
   }
 
   @Test
-  void feedUsesViewerSafeScopeAndStableCursor() throws Exception {
+  void feedIsPublicAndUsesStableCursor() throws Exception {
     UUID deletedId = UUID.fromString("00000000-0000-4000-8000-000000000305");
     UUID globalNewId = UUID.fromString("00000000-0000-4000-8000-000000000304");
     UUID localOwnedId = UUID.fromString("00000000-0000-4000-8000-000000000303");
     UUID localOtherId = UUID.fromString("00000000-0000-4000-8000-000000000302");
     UUID globalOldId = UUID.fromString("00000000-0000-4000-8000-000000000301");
-    insertPublication(deletedId, "삭제된 글", "GLOBAL", null, "DELETED", "2026-08-10T10:05:00Z");
-    insertPublication(globalNewId, "새 전체 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:04:00Z");
-    insertPublication(
-        localOwnedId, "내 동네 글", "LOCAL", NEIGHBORHOOD_ID, "ACTIVE", "2026-08-10T10:03:00Z");
+    insertPublication(deletedId, "삭제된 글", "DELETED", "2026-08-10T10:05:00Z");
+    insertPublication(globalNewId, "새 공개 글", "ACTIVE", "2026-08-10T10:04:00Z");
+    insertPublication(localOwnedId, "두 번째 공개 글", "ACTIVE", "2026-08-10T10:03:00Z");
     jdbc.update(
         "INSERT INTO content_animal_community (content_kind, content_id, animal_code) VALUES ('PUBLICATION', ?, 'DOG')",
         localOwnedId);
-    insertPublication(
-        localOtherId, "다른 동네 글", "LOCAL", OTHER_NEIGHBORHOOD_ID, "ACTIVE", "2026-08-10T10:02:00Z");
-    insertPublication(globalOldId, "이전 전체 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:01:00Z");
+    insertPublication(localOtherId, "세 번째 공개 글", "ACTIVE", "2026-08-10T10:02:00Z");
+    insertPublication(globalOldId, "이전 공개 글", "ACTIVE", "2026-08-10T10:01:00Z");
 
     MvcResult firstPage =
         mockMvc
@@ -378,37 +347,27 @@ class PublicationControllerTest {
         .perform(get("/api/v1/feed").queryParam("limit", "1").queryParam("cursor", cursor))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(1))
-        .andExpect(jsonPath("$.items[0].id").value(globalOldId.toString()))
-        .andExpect(jsonPath("$.page.hasNext").value(false))
-        .andExpect(jsonPath("$.page.nextCursor").isEmpty());
+        .andExpect(jsonPath("$.items[0].id").value(localOwnedId.toString()))
+        .andExpect(jsonPath("$.page.hasNext").value(true));
 
     mockMvc
         .perform(get("/api/v1/feed").cookie(login()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items.length()").value(3))
+        .andExpect(jsonPath("$.items.length()").value(4))
         .andExpect(jsonPath("$.items[0].id").value(globalNewId.toString()))
         .andExpect(jsonPath("$.items[1].id").value(localOwnedId.toString()))
-        .andExpect(jsonPath("$.items[2].id").value(globalOldId.toString()));
+        .andExpect(jsonPath("$.items[2].id").value(localOtherId.toString()))
+        .andExpect(jsonPath("$.items[3].id").value(globalOldId.toString()));
 
     mockMvc
-        .perform(get("/api/v1/feed").cookie(login()).queryParam("audience", "GLOBAL"))
+        .perform(get("/api/v1/feed").cookie(login()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items.length()").value(4))
         .andExpect(jsonPath("$.items[0].id").value(globalNewId.toString()))
-        .andExpect(jsonPath("$.items[1].id").value(globalOldId.toString()));
+        .andExpect(jsonPath("$.items[1].id").value(localOwnedId.toString()));
 
     mockMvc
-        .perform(get("/api/v1/feed").queryParam("scope", "LOCAL"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items").isEmpty());
-
-    mockMvc
-        .perform(get("/api/v1/communities/dog/feed").queryParam("scope", "LOCAL"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items").isEmpty());
-
-    mockMvc
-        .perform(get("/api/v1/communities/dog/feed").cookie(login()).queryParam("scope", "LOCAL"))
+        .perform(get("/api/v1/communities/dog/feed").cookie(login()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].id").value(localOwnedId.toString()));
 
@@ -422,12 +381,12 @@ class PublicationControllerTest {
     UUID generalId = UUID.fromString("00000000-0000-4000-8000-000000000321");
     UUID dogId = UUID.fromString("00000000-0000-4000-8000-000000000322");
     UUID catId = UUID.fromString("00000000-0000-4000-8000-000000000323");
-    insertPublication(generalId, "일반 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:03:00Z");
+    insertPublication(generalId, "일반 글", "ACTIVE", "2026-08-10T10:03:00Z");
     insertPublicationWithAnimal(dogId, "강아지 산책", "DOG", "2026-08-10T10:02:00Z");
     insertPublicationWithAnimal(catId, "고양이 놀이", "CAT", "2026-08-10T10:01:00Z");
 
     mockMvc
-        .perform(get("/api/v1/feed").queryParam("audience", "GLOBAL").queryParam("animals", "DOG"))
+        .perform(get("/api/v1/feed").queryParam("animals", "DOG"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].id").value(generalId.toString()))
@@ -504,7 +463,7 @@ class PublicationControllerTest {
         now.minusMinutes(7));
 
     mockMvc
-        .perform(get("/api/v1/feed").queryParam("audience", "GLOBAL").queryParam("limit", "20"))
+        .perform(get("/api/v1/feed").queryParam("limit", "20"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(8))
         .andExpect(
@@ -530,21 +489,17 @@ class PublicationControllerTest {
   }
 
   @Test
-  void popularFeedRanksOnlyActiveGlobalPostsByRecommendationCount() throws Exception {
+  void popularFeedRanksOnlyActivePostsByRecommendationCount() throws Exception {
     UUID mostRecommendedId = UUID.fromString("00000000-0000-4000-8000-000000000307");
     UUID lessRecommendedId = UUID.fromString("00000000-0000-4000-8000-000000000308");
     UUID noRecommendationId = UUID.fromString("00000000-0000-4000-8000-000000000309");
     UUID localId = UUID.fromString("00000000-0000-4000-8000-000000000310");
     UUID deletedId = UUID.fromString("00000000-0000-4000-8000-000000000311");
-    insertPublication(
-        mostRecommendedId, "추천이 가장 많은 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:10:00Z");
-    insertPublication(
-        lessRecommendedId, "추천이 적은 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:11:00Z");
-    insertPublication(
-        noRecommendationId, "추천이 없는 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:12:00Z");
-    insertPublication(
-        localId, "동네 추천 글", "LOCAL", NEIGHBORHOOD_ID, "ACTIVE", "2026-08-10T10:13:00Z");
-    insertPublication(deletedId, "삭제된 추천 글", "GLOBAL", null, "DELETED", "2026-08-10T10:14:00Z");
+    insertPublication(mostRecommendedId, "추천이 가장 많은 글", "ACTIVE", "2026-08-10T10:10:00Z");
+    insertPublication(lessRecommendedId, "추천이 적은 글", "ACTIVE", "2026-08-10T10:11:00Z");
+    insertPublication(noRecommendationId, "추천이 없는 글", "ACTIVE", "2026-08-10T10:12:00Z");
+    insertPublication(localId, "추천 공개 글", "ACTIVE", "2026-08-10T10:13:00Z");
+    insertPublication(deletedId, "삭제된 추천 글", "DELETED", "2026-08-10T10:14:00Z");
 
     jdbc.update(
         "INSERT INTO engagement_reaction (id, publication_id, author_member_id, type, created_at) "
@@ -602,9 +557,9 @@ class PublicationControllerTest {
   }
 
   @Test
-  void blockHidesAuthorFromViewerFeedAndDetailButNotGlobalGuestReads() throws Exception {
+  void blockHidesAuthorFromViewerFeedAndDetailButNotGuestReads() throws Exception {
     UUID publicationId = UUID.fromString("00000000-0000-4000-8000-000000000306");
-    insertPublication(publicationId, "차단 작성자 글", "GLOBAL", null, "ACTIVE", "2026-08-10T10:06:00Z");
+    insertPublication(publicationId, "차단 작성자 글", "ACTIVE", "2026-08-10T10:06:00Z");
     UUID viewerId = UUID.fromString("00000000-0000-4000-8000-000000000202");
     jdbc.update(
         "INSERT INTO relationship_block (id, blocker_member_id, blocked_member_id, created_at) "
@@ -615,11 +570,11 @@ class PublicationControllerTest {
 
     Cookie viewer = login("demo-member-2@townpet.local");
     mockMvc
-        .perform(get("/api/v1/feed").cookie(viewer).queryParam("audience", "VIEWER"))
+        .perform(get("/api/v1/feed").cookie(viewer))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(0));
     mockMvc
-        .perform(get("/api/v1/feed").cookie(viewer).queryParam("audience", "GLOBAL"))
+        .perform(get("/api/v1/feed"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].id").value(publicationId.toString()));
     mockMvc
@@ -645,8 +600,7 @@ class PublicationControllerTest {
                         """
                         {
                           "title": "수정 전 제목",
-                          "body": "수정 전 본문",
-                          "scope": "GLOBAL"
+                          "body": "수정 전 본문"
                         }
                         """))
             .andExpect(status().isCreated())
@@ -665,7 +619,7 @@ class PublicationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"title":"가로챈 제목","body":"가로챈 본문","scope":"GLOBAL","version":0}
+                    {"title":"가로챈 제목","body":"가로챈 본문","version":0}
                     """))
         .andExpect(status().isForbidden());
 
@@ -677,7 +631,7 @@ class PublicationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"title":"수정한 제목","body":"수정한 본문","scope":"GLOBAL","version":0}
+                    {"title":"수정한 제목","body":"수정한 본문","version":0}
                     """))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("수정한 제목"))
@@ -692,7 +646,7 @@ class PublicationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"title":"오래된 수정","body":"덮어쓰면 안 됨","scope":"GLOBAL","version":0}
+                    {"title":"오래된 수정","body":"덮어쓰면 안 됨","version":0}
                     """))
         .andExpect(status().isConflict());
 
@@ -728,7 +682,7 @@ class PublicationControllerTest {
         .perform(get("/api/v1/publications/{publicationId}", publicationId))
         .andExpect(status().isNotFound());
     mockMvc
-        .perform(get("/api/v1/feed").queryParam("audience", "GLOBAL"))
+        .perform(get("/api/v1/feed"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(0));
     assertThat(
@@ -762,21 +716,13 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.title").value("수정한 제목"));
   }
 
-  private void insertPublication(
-      UUID id,
-      String title,
-      String scope,
-      @Nullable UUID neighborhoodId,
-      String lifecycle,
-      String createdAt) {
+  private void insertPublication(UUID id, String title, String lifecycle, String createdAt) {
     OffsetDateTime timestamp = OffsetDateTime.parse(createdAt);
     jdbc.update(
-        "INSERT INTO publication (id, author_member_id, type, scope, neighborhood_id, title, body, "
-            + "lifecycle, created_at, updated_at, version) VALUES (?, ?, 'FREE_BOARD', ?, ?, ?, ?, ?, ?, ?, 0)",
+        "INSERT INTO publication (id, author_member_id, type, title, body, "
+            + "lifecycle, created_at, updated_at, version) VALUES (?, ?, 'FREE_BOARD', ?, ?, ?, ?, ?, 0)",
         id,
         MEMBER_ID,
-        scope,
-        neighborhoodId,
         title,
         title + " 본문",
         lifecycle,
@@ -788,8 +734,8 @@ class PublicationControllerTest {
       UUID id, String title, String animalInterestCode, String createdAt) {
     OffsetDateTime timestamp = OffsetDateTime.parse(createdAt);
     jdbc.update(
-        "INSERT INTO publication (id, author_member_id, type, scope, neighborhood_id, animal_interest_code, title, body, "
-            + "lifecycle, created_at, updated_at, version) VALUES (?, ?, 'FREE_BOARD', 'GLOBAL', NULL, ?, ?, ?, 'ACTIVE', ?, ?, 0)",
+        "INSERT INTO publication (id, author_member_id, type, animal_interest_code, title, body, "
+            + "lifecycle, created_at, updated_at, version) VALUES (?, ?, 'FREE_BOARD', ?, ?, ?, 'ACTIVE', ?, ?, 0)",
         id,
         MEMBER_ID,
         animalInterestCode,

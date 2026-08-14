@@ -92,7 +92,7 @@ townpet-springboot/
 | `identity` | credential, session, email verification·account recovery, staff identity | credential, session, verification_token, password_reset_token | member |
 | `member` | 회원 profile, onboarding, neighborhood, preference | member, member_profile, member_neighborhood | catalog |
 | `catalog` | neighborhood, community, breed, pet type 기준 정보 | neighborhood, community, breed, pet_type | 없음 |
-| `publication` | 공통 게시 내용, scope, author, lifecycle, effective visibility | publication, publication_image_ref, visibility_restriction | identity, member, catalog |
+| `publication` | 공통 공개 게시 내용, author, lifecycle | publication, publication_image_ref, visibility_restriction | identity, member, catalog |
 | `engagement` | comment, reaction, bookmark, view와 summary | comment, reaction, bookmark, engagement_summary, view_bucket | publication, relationship |
 | `localguide` | 병원·장소 후기와 산책 구조화 정보 | hospital_review, place_review, walk_route | publication, catalog |
 | `marketplace` | 판매·대여·나눔 조건과 listing lifecycle | market_listing, market_status_event | publication |

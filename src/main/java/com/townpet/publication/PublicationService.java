@@ -3,7 +3,6 @@ package com.townpet.publication;
 import com.townpet.catalog.api.AnimalCommunityTagger;
 import com.townpet.catalog.api.AnimalInterestCatalog;
 import com.townpet.member.api.MemberDirectory;
-import com.townpet.member.api.MemberDirectory.MemberPublicationContext;
 import com.townpet.publication.api.GuestDirectory;
 import com.townpet.publication.api.PublicationModeration;
 import com.townpet.relationship.api.BlockDirectory;
@@ -42,48 +41,14 @@ class PublicationService implements PublicationModeration {
   @Transactional
   PublicationEntity create(
       UUID memberId,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
-      String title,
-      String body) {
-    return create(
-        memberId, PublicationType.FREE_BOARD, scope, neighborhoodId, null, title, body, null);
-  }
-
-  @Transactional
-  PublicationEntity create(
-      UUID memberId,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
-      @Nullable String animalInterestCode,
-      String title,
-      String body) {
-    return create(
-        memberId,
-        PublicationType.FREE_BOARD,
-        scope,
-        neighborhoodId,
-        animalInterestCode,
-        title,
-        body,
-        animalInterestCode == null ? null : Set.of(animalInterestCode));
-  }
-
-  @Transactional
-  PublicationEntity create(
-      UUID memberId,
       PublicationType type,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
       String title,
       String body,
       @Nullable Collection<String> animalCommunityCodes) {
-    MemberPublicationContext member =
-        members
-            .findPublicationContext(memberId)
-            .orElseThrow(() -> new PublicationPolicyException("Member does not exist"));
-    UUID resolvedNeighborhoodId = resolveNeighborhood(member, scope, neighborhoodId);
+    if (members.findPublicationContext(memberId).isEmpty()) {
+      throw new PublicationPolicyException("Member does not exist");
+    }
     List<String> normalizedCommunityCodes = normalizeAnimalCommunityCodes(animalCommunityCodes);
     String normalizedAnimalInterestCode = normalizeAnimalInterestCode(animalInterestCode);
     if (animalCommunityCodes != null) {
@@ -100,8 +65,6 @@ class PublicationService implements PublicationModeration {
             new PublicationEntity(
                 memberId,
                 type == null ? PublicationType.FREE_BOARD : type,
-                scope,
-                resolvedNeighborhoodId,
                 normalizedAnimalInterestCode,
                 title.trim(),
                 body.trim()));
@@ -149,8 +112,7 @@ class PublicationService implements PublicationModeration {
     if (!guest.internalId().equals(publication.getGuestAuthorId()))
       throw new PublicationOwnershipException();
     requireCurrentVersion(publication, expectedVersion);
-    publication.edit(
-        PublicationScope.GLOBAL, null, title.trim(), body.trim(), java.time.Instant.now());
+    publication.edit(null, title.trim(), body.trim(), java.time.Instant.now());
     return publications.saveAndFlush(publication);
   }
 
@@ -197,55 +159,16 @@ class PublicationService implements PublicationModeration {
       UUID memberId,
       UUID publicationId,
       long expectedVersion,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
-      String title,
-      String body) {
-    return edit(memberId, publicationId, expectedVersion, scope, neighborhoodId, null, title, body);
-  }
-
-  @Transactional
-  PublicationEntity edit(
-      UUID memberId,
-      UUID publicationId,
-      long expectedVersion,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
-      @Nullable String animalInterestCode,
-      String title,
-      String body) {
-    return edit(
-        memberId,
-        publicationId,
-        expectedVersion,
-        null,
-        scope,
-        neighborhoodId,
-        animalInterestCode,
-        title,
-        body,
-        animalInterestCode == null ? null : Set.of(animalInterestCode));
-  }
-
-  @Transactional
-  PublicationEntity edit(
-      UUID memberId,
-      UUID publicationId,
-      long expectedVersion,
       @Nullable PublicationType type,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
       String title,
       String body,
       @Nullable Collection<String> animalCommunityCodes) {
     PublicationEntity publication = ownedActivePublication(memberId, publicationId);
     requireCurrentVersion(publication, expectedVersion);
-    MemberPublicationContext member =
-        members
-            .findPublicationContext(memberId)
-            .orElseThrow(() -> new PublicationPolicyException("Member does not exist"));
-    UUID resolvedNeighborhoodId = resolveNeighborhood(member, scope, neighborhoodId);
+    if (members.findPublicationContext(memberId).isEmpty()) {
+      throw new PublicationPolicyException("Member does not exist");
+    }
     boolean replacesCommunityCodes = animalCommunityCodes != null;
     List<String> normalizedCommunityCodes = normalizeAnimalCommunityCodes(animalCommunityCodes);
     String normalizedAnimalInterestCode = normalizeAnimalInterestCode(animalInterestCode);
@@ -266,8 +189,6 @@ class PublicationService implements PublicationModeration {
                 : normalizedAnimalInterestCode);
     publication.edit(
         type == null ? publication.getType() : type,
-        scope,
-        resolvedNeighborhoodId,
         resolvedAnimalInterestCode,
         title.trim(),
         body.trim(),
@@ -318,24 +239,6 @@ class PublicationService implements PublicationModeration {
     if (publication.getVersion() != expectedVersion) {
       throw new PublicationVersionConflictException();
     }
-  }
-
-  @Nullable
-  private static UUID resolveNeighborhood(
-      MemberPublicationContext member,
-      PublicationScope scope,
-      @Nullable UUID requestedNeighborhoodId) {
-    if (scope == PublicationScope.GLOBAL) {
-      if (requestedNeighborhoodId != null) {
-        throw new PublicationPolicyException("GLOBAL publication cannot select a neighborhood");
-      }
-      return null;
-    }
-    if (requestedNeighborhoodId == null
-        || !requestedNeighborhoodId.equals(member.neighborhoodId())) {
-      throw new PublicationPolicyException("LOCAL publication requires the member neighborhood");
-    }
-    return requestedNeighborhoodId;
   }
 
   @Nullable

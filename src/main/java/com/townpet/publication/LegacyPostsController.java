@@ -61,10 +61,11 @@ class LegacyPostsController {
       PublicationEntity publication =
           publications.create(
               requiredMemberId(principal),
-              request.scope() == null ? PublicationScope.GLOBAL : request.scope(),
-              request.neighborhoodId(),
+              PublicationType.FREE_BOARD,
+              null,
               request.title(),
-              request.body());
+              request.body(),
+              null);
       return response(publication);
     } catch (PublicationPolicyException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
@@ -92,10 +93,11 @@ class LegacyPostsController {
               requiredMemberId(principal),
               id,
               request.version(),
-              request.scope(),
-              request.neighborhoodId(),
+              null,
+              null,
               request.title(),
-              request.body()));
+              request.body(),
+              null));
     } catch (PublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (PublicationOwnershipException exception) {
@@ -144,9 +146,7 @@ class LegacyPostsController {
     return new PublicationController.PublicationResponse(
         publication.getId(),
         publication.getType(),
-        publication.getScope(),
         publication.getAuthorMemberId(),
-        publication.getNeighborhoodId(),
         publication.getTitle(),
         publication.getBody(),
         publication.getLifecycle(),
@@ -160,15 +160,11 @@ class LegacyPostsController {
 
   record CreateRequest(
       @NotBlank @Size(max = 120) String title,
-      @NotBlank @Size(max = 20000) String body,
-      @Nullable PublicationScope scope,
-      @Nullable UUID neighborhoodId) {}
+      @NotBlank @Size(max = 20000) String body) {}
 
   record EditRequest(
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 20000) String body,
-      @NotNull PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       @NotNull @Min(0) Long version) {}
 
   record DeleteRequest(@NotNull @Min(0) Long version) {}

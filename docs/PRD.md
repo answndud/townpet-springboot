@@ -98,7 +98,7 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 
 ### J-03 지역·전체 피드
 
-회원은 `LOCAL / GLOBAL`, 게시 유형, 정렬과 기간 filter를 바꾸며 stable cursor로 피드를 탐색한다. 차단·restriction·publication lifecycle이 모든 목록과 상세에 동일하게 적용된다.
+회원과 비회원은 동일한 공개 게시글 피드를 게시 유형, 정렬과 기간 filter로 탐색한다. 차단·restriction·publication lifecycle이 모든 목록과 상세에 동일하게 적용된다.
 
 ### J-04 게시물 작성과 관리
 
@@ -144,7 +144,7 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 
 - FR-PUB-01: 모든 게시물은 공통 Publication과 선택적 구조화 aggregate로 표현돼야 한다.
 - FR-PUB-02: Publication lifecycle과 moderator VisibilityRestriction은 분리돼야 하며 작성자 삭제가 restriction을 해제해서는 안 된다.
-- FR-PUB-03: `LOCAL / GLOBAL`, neighborhood, community, post type과 animal tag 의미가 기존과 동등해야 한다.
+- FR-PUB-03: 모든 publication은 동일한 공개 피드에 노출되며, community, post type과 animal tag 의미를 유지해야 한다. 회원의 대표 neighborhood는 지역 기능의 정보로만 사용한다.
 - FR-PUB-04: 게시 유형별 필수 필드, 길이, 금액, 시간과 안전 정책은 UI가 아닌 server에서도 강제돼야 한다.
 - FR-PUB-05: 다른 module의 entity를 직접 연결하지 않고 stable identifier와 공개 use case로 참조해야 한다.
 - FR-PUB-06: 공개 URL의 title, description, Open Graph와 canonical metadata가 기존 검색·공유 의도를 유지해야 한다.

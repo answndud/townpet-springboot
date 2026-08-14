@@ -55,7 +55,7 @@ PostgreSQL은 업무 데이터·session·Flyway history·Modulith event publicat
 
 인증에서는 session이 실제 JDBC에 저장되지 않고 memory session처럼 동작하던 문제를 발견해 `spring-boot-starter-session-jdbc`와 실제 `SESSION` cookie 검증으로 수정했다. 권한 감사에서는 URL matcher와 method security의 경계가 달라 MEMBER가 운영 API에 접근할 수 있던 문제와, guest cookie가 인증된 MODERATOR 경로를 우회할 수 있던 문제를 닫았다.
 
-동시성에서는 조회수 upsert, volunteer capacity row lock, 신고 partial unique index, media attachment lock을 적용했다. 대량 공개 범위 변경은 entity 전체를 읽지 않고 조건부 bulk update로 바꿨다.
+동시성에서는 조회수 upsert, volunteer capacity row lock, 신고 partial unique index, media attachment lock을 적용했다. 작성자 콘텐츠 lifecycle 일괄 변경은 entity 전체를 읽지 않고 조건부 bulk update로 바꿨다.
 
 ### 검증과 한계
 
@@ -186,7 +186,7 @@ feed는 `(created_at, id)`를 cursor로 사용하는 keyset pagination을 사용
 → offset 증가에 따른 앞부분 재스캔 회피
 ```
 
-`GLOBAL`은 로그인 여부와 관계없이 global 게시글만 읽고, `VIEWER`는 현재 회원의 대표 동네 정책을 추가한다. 로그인 cookie가 있다고 해서 global feed에 local 글을 섞지 않는다.
+공개 feed는 로그인 여부와 관계없이 active 게시글을 동일하게 읽는다. 로그인 viewer에게는 차단 작성자 제외 같은 관계 정책만 추가하고, 회원의 대표 동네는 publication 노출을 제한하지 않는다.
 
 ### 6.3 댓글·reaction·bookmark
 
@@ -227,7 +227,7 @@ Care Request
 
 | actor | 공개 읽기 | 일반 사용자 mutation | 운영 API | 설명 |
 |---|---|---|---|---|
-| anonymous | 공개 범위 | guest 허용 범위 | 거부 | IP만으로 신원을 증명하지 않음 |
+| anonymous | active 공개 글 | guest 허용 범위 | 거부 | IP만으로 신원을 증명하지 않음 |
 | MEMBER | 허용 범위 | 게시·engagement·관계·care 등 | 거부 | principal의 member ID 사용 |
 | MODERATOR | 공개·운영 읽기 | 일반 사용자 mutation 거부 | 허용 | 신고·moderation 전용 |
 | ADMIN/OPERATOR | 현재 demo 공개 안 함 | 운영 범위 | 공개하지 않음 | 공개 sandbox credential 정책 |
@@ -310,7 +310,7 @@ Care Request
 
 **면접 포인트**: 한 번의 빠른 결과를 최적화 성과로 포장하지 않고, 측정 순서와 반복성까지 확인해 기각했다.
 
-### 사례 F. 대량 공개 범위 변경
+### 사례 F. 대량 publication lifecycle 변경
 
 **상황**: 모든 publication entity를 읽어 변경·저장하면 row 수에 따라 heap·flush 비용이 커지고, 이미 같은 상태인 row까지 affected 수에 포함됐다.
 

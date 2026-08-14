@@ -71,11 +71,11 @@ BEGIN
       END;
 
       INSERT INTO publication (
-        id, author_member_id, type, scope, neighborhood_id, animal_interest_code,
+        id, author_member_id, type, animal_interest_code,
         title, body, lifecycle, created_at, updated_at, version
       )
       VALUES (
-        publication_id, author_id, post_types[type_no], 'GLOBAL', NULL, animal_codes[animal_no],
+        publication_id, author_id, post_types[type_no], animal_codes[animal_no],
         animal_labels[animal_no] || ' ' || type_labels[type_no] || ' 데모 ' || lpad(post_no::TEXT, 2, '0'),
         CASE post_types[type_no]
           WHEN 'FREE_BOARD' THEN animal_labels[animal_no] || ' 가족이 함께 참고할 산책·생활 팁을 정리했습니다. 처음 시작하는 보호자도 편하게 경험을 나눠 주세요.'
