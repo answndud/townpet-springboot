@@ -104,6 +104,7 @@ function HeaderMenu({
 }) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const menuActive = links.some(([, href]) => location.pathname === href || location.pathname.startsWith(`${href}/`));
   const menuRef = useRef<HTMLDivElement>(null);
   const menuItemsRef = useRef<HTMLAnchorElement[]>([]);
 
@@ -157,7 +158,7 @@ function HeaderMenu({
   return (
     <div ref={menuRef} className={`header-menu${className ? ` ${className}` : ""}${open ? " open" : ""}`}>
       <button
-        className="header-menu-trigger"
+        className={`header-menu-trigger${menuActive ? " active" : ""}`}
         type="button"
         aria-haspopup="true"
         aria-expanded={open}
