@@ -35,7 +35,7 @@ describe("TownPet Vite shell", () => {
       "/posts/00000000-0000-4000-8000-000000000301",
     );
     expect(screen.getByTestId("location")).toHaveTextContent("/");
-    expect(screen.getByRole("button", { name: "전체", exact: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^전체$/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "HOT" })).toHaveAttribute("aria-current", "page");
   });
 
@@ -52,7 +52,7 @@ describe("TownPet Vite shell", () => {
 
     expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
     expect(screen.getByTestId("location")).toHaveTextContent("/");
-    expect(screen.getByRole("button", { name: "전체", exact: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^전체$/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "HOT" })).toBeInTheDocument();
   });
 
