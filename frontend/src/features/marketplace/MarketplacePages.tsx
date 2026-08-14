@@ -35,7 +35,7 @@ function MarketplaceHeader({ action = true }: { action?: boolean }) {
         <h1>반려생활 물품을 나누고 거래해요</h1>
         <p>결제 없이 판매·대여·나눔 조건을 정리하고 안전하게 상태를 공유합니다.</p>
       </div>
-      {action ? <Link className="button button-primary" to="/marketplace/new">글 올리기</Link> : null}
+      {action ? <Link className="button button-write" to="/marketplace/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>물품 등록</span></Link> : null}
     </header>
   );
 }
@@ -63,7 +63,7 @@ export function MarketplaceListPage() {
       {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
       {loading ? <section className="surface-card" role="status">거래 목록을 불러오는 중...</section> : null}
       {!loading && listings.length === 0 ? (
-        <section className="surface-card marketplace-empty"><h2>아직 등록된 물품이 없습니다</h2><p>첫 번째 반려생활 물품을 올려 보세요.</p>{viewerRole !== "MODERATOR" ? <Link className="button button-soft" to="/marketplace/new">물품 올리기</Link> : null}</section>
+        <section className="surface-card marketplace-empty"><h2>아직 등록된 물품이 없습니다</h2><p>첫 번째 반려생활 물품을 올려 보세요.</p>{viewerRole !== "MODERATOR" ? <Link className="button button-write" to="/marketplace/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>물품 등록</span></Link> : null}</section>
       ) : null}
       {!loading && listings.length > 0 ? (
         <section className="marketplace-grid" aria-label="거래 목록">
