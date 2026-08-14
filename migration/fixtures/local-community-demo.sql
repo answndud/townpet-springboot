@@ -36,6 +36,10 @@ WHERE publication_id IN (
   WHERE id >= '00000000-0000-4000-8000-200000000001'::uuid
     AND id <= '00000000-0000-4000-8000-200000000048'::uuid
 );
+-- Local-only voter accounts provide enough distinct authors to exercise the
+-- LIKE uniqueness constraint at the 10/20 recommendation thresholds.
+DELETE FROM member_account
+WHERE email LIKE 'demo-voter-%@townpet.local';
 DELETE FROM content_animal_community
 WHERE content_kind = 'PUBLICATION'
   AND content_id >= '00000000-0000-4000-8000-200000000001'::uuid
@@ -43,6 +47,16 @@ WHERE content_kind = 'PUBLICATION'
 DELETE FROM publication
 WHERE id >= '00000000-0000-4000-8000-200000000001'::uuid
   AND id <= '00000000-0000-4000-8000-200000000048'::uuid;
+
+INSERT INTO member_account (id, email, nickname)
+SELECT
+  md5('townpet-local-voter-' || voter_no::TEXT)::UUID,
+  'demo-voter-' || lpad(voter_no::TEXT, 2, '0') || '@townpet.local',
+  'demo-voter-' || lpad(voter_no::TEXT, 2, '0')
+FROM generate_series(1, 48) AS voter_no
+ON CONFLICT (id) DO UPDATE
+SET email = EXCLUDED.email,
+    nickname = EXCLUDED.nickname;
 
 DO $$
 DECLARE
@@ -93,8 +107,8 @@ BEGIN
       VALUES ('PUBLICATION', publication_id, animal_codes[animal_no])
       ON CONFLICT DO NOTHING;
 
-      FOR comment_no IN 1..3 LOOP
-        comment_id := ('00000000-0000-4000-8000-' || lpad((400000000000 + ((post_no - 1) * 3) + comment_no)::TEXT, 12, '0'))::UUID;
+      FOR comment_no IN 1..8 LOOP
+        comment_id := ('00000000-0000-4000-8000-' || lpad((400000000000 + ((post_no - 1) * 8) + comment_no)::TEXT, 12, '0'))::UUID;
         IF comment_no = 1 THEN
           first_comment_id := comment_id;
         END IF;
@@ -110,8 +124,8 @@ BEGIN
         )
         VALUES (
           comment_id, publication_id, author_id,
-          CASE WHEN comment_no = 3 THEN first_comment_id ELSE NULL END,
-          CASE WHEN comment_no = 3
+          CASE WHEN comment_no IN (3, 4) THEN first_comment_id ELSE NULL END,
+          CASE WHEN comment_no IN (3, 4)
             THEN '첫 댓글에 공감해요. 저도 다음에 시도해 보고 결과를 공유할게요.'
             WHEN type_no = 1
             THEN '정리해 주셔서 감사합니다. 실제로 적용해 본 뒤 다시 알려 드릴게요.'
@@ -128,34 +142,29 @@ BEGIN
 END
 $$;
 
--- Seed a visible HOT ranking for the local feed. The first eight animal posts
--- receive descending LIKE counts (4 through 1, repeated), distributed across demo members
--- so the popular endpoint returns several deterministic ranked examples.
+-- Seed visible popular/HOT examples for the local feed. All 48 animal posts
+-- receive 48 down to 1 LIKEs, so both thresholds have enough rows to exercise
+-- scrolling and pagination while the boundary remains visible.
 DO $$
 DECLARE
   hot_post_no INTEGER;
   reaction_no INTEGER;
   publication_id UUID;
-  author_id UUID;
   reaction_id UUID;
+  recommendation_count INTEGER;
 BEGIN
-  FOR hot_post_no IN 1..8 LOOP
+  FOR hot_post_no IN 1..48 LOOP
     publication_id := ('00000000-0000-4000-8000-' || lpad((200000000000 + hot_post_no)::TEXT, 12, '0'))::UUID;
-    FOR reaction_no IN 1..(4 - ((hot_post_no - 1) % 4)) LOOP
-      reaction_id := ('00000000-0000-4000-8000-' || lpad((500000000000 + ((hot_post_no - 1) * 8) + reaction_no)::TEXT, 12, '0'))::UUID;
-      author_id := CASE ((hot_post_no + reaction_no) % 4)
-        WHEN 0 THEN '00000000-0000-4000-8000-000000000201'::UUID
-        WHEN 1 THEN '00000000-0000-4000-8000-000000000202'::UUID
-        WHEN 2 THEN '00000000-0000-4000-8000-000000000203'::UUID
-        ELSE '00000000-0000-4000-8000-000000000204'::UUID
-      END;
+    recommendation_count := 49 - hot_post_no;
+    FOR reaction_no IN 1..recommendation_count LOOP
+      reaction_id := ('00000000-0000-4000-8000-' || lpad((500000000000 + ((hot_post_no - 1) * 48) + reaction_no)::TEXT, 12, '0'))::UUID;
       INSERT INTO engagement_reaction (id, publication_id, author_member_id, type, created_at)
       VALUES (
         reaction_id,
         publication_id,
-        author_id,
+        md5('townpet-local-voter-' || reaction_no::TEXT)::UUID,
         'LIKE',
-        ('2026-08-12T' || lpad((10 + hot_post_no)::TEXT, 2, '0') || ':' || lpad(reaction_no::TEXT, 2, '0') || ':00+09:00')::TIMESTAMPTZ
+        ('2026-08-12T' || lpad((10 + ((hot_post_no - 1) % 12))::TEXT, 2, '0') || ':' || lpad(reaction_no::TEXT, 2, '0') || ':00+09:00')::TIMESTAMPTZ
       );
     END LOOP;
   END LOOP;
