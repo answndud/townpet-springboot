@@ -18,9 +18,7 @@ function publication() {
     type: "FREE_BOARD",
     title: "저녁 산책 정보를 나눠요",
     body: "공원 입구가 한산해요.",
-    scope: "GLOBAL",
     authorId: "00000000-0000-4000-8000-000000000201",
-    neighborhoodId: null,
     lifecycle: "ACTIVE",
     createdAt: "2026-08-10T09:00:00Z",
     updatedAt: "2026-08-10T09:00:00Z",
@@ -54,17 +52,6 @@ describe("Publication journeys", () => {
           }),
         );
       }
-      if (path.endsWith("/api/v1/catalog/neighborhoods")) {
-        return Promise.resolve(
-          response([
-            {
-              id: "00000000-0000-4000-8000-000000000101",
-              slug: "seoul-mapogu",
-              name: "서울 마포구",
-            },
-          ]),
-        );
-      }
       if (path.endsWith("/api/v1/auth/csrf")) {
         return Promise.resolve(response({ token: "csrf-token" }));
       }
@@ -86,14 +73,12 @@ describe("Publication journeys", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "새 글 작성" })).toBeInTheDocument();
-    expect(screen.getByText("서울 마포구")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("제목"), {
       target: { value: "저녁 산책 정보를 나눠요" },
     });
     fireEvent.change(screen.getByLabelText("본문"), {
       target: { value: "공원 입구가 한산해요." },
     });
-    fireEvent.click(screen.getByRole("radio", { name: /내 동네/ }));
     fireEvent.click(screen.getByRole("button", { name: "등록" }));
 
     expect(
@@ -109,8 +94,6 @@ describe("Publication journeys", () => {
         JSON.stringify({
           title: "저녁 산책 정보를 나눠요",
           body: "공원 입구가 한산해요.",
-          scope: "LOCAL",
-          neighborhoodId: "00000000-0000-4000-8000-000000000101",
         }),
       );
     });
@@ -216,17 +199,6 @@ describe("Publication journeys", () => {
           }),
         );
       }
-      if (path.endsWith("/api/v1/catalog/neighborhoods")) {
-        return Promise.resolve(
-          response([
-            {
-              id: "00000000-0000-4000-8000-000000000101",
-              slug: "seoul-mapogu",
-              name: "서울 마포구",
-            },
-          ]),
-        );
-      }
       if (path.endsWith("/api/v1/auth/csrf")) {
         return Promise.resolve(response({ token: "csrf-token" }));
       }
@@ -273,7 +245,6 @@ describe("Publication journeys", () => {
       JSON.stringify({
         title: "수정한 산책 정보",
         body: "수정한 공원 정보입니다.",
-        scope: "GLOBAL",
         version: 0,
         animalInterestCode: "DOG",
         animalCommunityCodes: ["DOG", "CAT"],

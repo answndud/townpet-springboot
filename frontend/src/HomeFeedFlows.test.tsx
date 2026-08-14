@@ -31,7 +31,6 @@ describe("Home feed journeys", () => {
           type: "FREE_BOARD",
           title: "최신 전체글",
           body: "최신 전체글 본문입니다.",
-          scope: "GLOBAL",
           authorId: "00000000-0000-4000-8000-000000000201",
           neighborhoodId: null,
           status: "ACTIVE",
@@ -57,7 +56,7 @@ describe("Home feed journeys", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "검색어" }), { target: { value: "산책" } });
     fireEvent.click(screen.getByRole("button", { name: "검색" }));
     expect(fetchMock).toHaveBeenLastCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&query=%EC%82%B0%EC%B1%85&searchField=TITLE",
+      "/api/v1/feed?limit=20&query=%EC%82%B0%EC%B1%85&searchField=TITLE",
       expect.objectContaining({ credentials: "include" }),
     );
     expect(await screen.findByRole("heading", { name: "최신 전체글" })).toBeInTheDocument();

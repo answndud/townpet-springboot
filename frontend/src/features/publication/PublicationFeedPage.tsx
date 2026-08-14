@@ -93,15 +93,14 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
   const query = searchParams.get("q") ?? "";
   const type = searchParams.get("type") ?? "";
   const popularView = homeView && searchParams.get("view") === "popular";
-  const scope = memberView && searchParams.get("scope") === "LOCAL" ? "LOCAL" : "ALL";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const queryKey = `${memberView ? "member" : "guest"}|${query}|${scope}|${type}|${popularView}`;
+  const queryKey = `${memberView ? "member" : "guest"}|${query}|${type}|${popularView}`;
   const feed = useCursorPagination<FeedItem>({
     enabled: !(homeView && popularView) && (!memberView || authStatus === "authenticated"),
     page,
     pageSize: 20,
     queryKey,
-    fetchPage: (cursor, signal) => publicationApi.feed({ audience: memberView ? "VIEWER" : "GLOBAL", cursor, query, scope, type: type || undefined, signal }),
+    fetchPage: (cursor, signal) => publicationApi.feed({ cursor, query, type: type || undefined, signal }),
   });
   const popularFeed = useCursorPagination<PopularFeedItem>({
     enabled: homeView && popularView,
@@ -157,7 +156,7 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
           <h1>{pageTitle}</h1>
           {!homeView ? <p>{pageDescription}</p> : null}
         </div>
-        {canWrite ? <Link className="button button-primary" to={writeHref}>글쓰기</Link> : null}
+        {canWrite ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}
       </header>
 
       {!homeView || !popularView ? (
@@ -194,32 +193,11 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
         </nav>
       ) : null}
 
-      {memberView ? (
-        <div className="feed-scope-tabs" role="group" aria-label="게시글 범위">
-          <button
-            className={scope === "ALL" ? "market-filter active" : "market-filter"}
-            aria-pressed={scope === "ALL"}
-            type="button"
-            onClick={() => setSearchParams({ ...(query ? { q: query } : {}), ...(type ? { type } : {}) })}
-          >
-            전체
-          </button>
-          <button
-            className={scope === "LOCAL" ? "market-filter active" : "market-filter"}
-            aria-pressed={scope === "LOCAL"}
-            type="button"
-            onClick={() => setSearchParams({ ...(query ? { q: query } : {}), ...(type ? { type } : {}), scope: "LOCAL" })}
-          >
-            내 동네
-          </button>
-        </div>
-      ) : null}
-
       {popularView ? <PopularFeedList items={popularItems} loading={popularLoading} error={popularError} page={page} hasNext={popularFeed.hasNext} totalPages={popularFeed.totalPages} onPageChange={setPage} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : items.length === 0 ? (
         <section className="surface-card feed-empty">
           <h2>{query ? "검색 결과가 없습니다" : "아직 표시할 글이 없습니다"}</h2>
           <p>{query ? "다른 검색어로 다시 시도해 보세요." : "첫 번째 반려생활 이야기를 나눠 보세요."}</p>
-          {canWrite ? <Link className="button button-soft" to={writeHref}>글 작성하기</Link> : null}
+          {canWrite ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}
         </section>
       ) : (
         <section className="surface-card feed-list" aria-label="게시글 목록">
@@ -239,9 +217,6 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
                     {ANIMAL_BOARD_GROUPS.flatMap((group) => group.options).find((option) => option.code === item.animalInterestCode)?.label ?? "동물 게시판"}
                   </span>
                 ) : null}
-                <span className="publication-chip">
-                  {item.scope === "LOCAL" ? "내 동네" : "전체"}
-                </span>
                 </div>
                 <Link className="feed-item-title" to={itemHref}>
                   <h2>{item.title}</h2>
