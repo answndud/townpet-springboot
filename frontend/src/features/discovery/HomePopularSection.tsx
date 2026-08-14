@@ -17,7 +17,7 @@ type PopularFeedResponse = {
 
 export default function HomePopularSection() {
   const { data, error, loading } = useAbortableRequest<PopularFeedResponse>(
-    (signal) => apiFetch<PopularFeedResponse>("/api/v1/feed/popular", { signal }),
+    (signal) => apiFetch<PopularFeedResponse>("/api/v1/discovery/popular", { signal }),
     [],
   );
   const items = (data?.items ?? []).slice(0, 5);

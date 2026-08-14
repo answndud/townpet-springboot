@@ -19,7 +19,7 @@ describe("Home feed journeys", () => {
     const fetchMock = vi.fn<typeof fetch>((input) => {
       const path = String(input);
       if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response({ title: "Unauthorized" }, 401));
-      if (path.includes("/api/v1/feed/popular")) {
+      if (path.includes("/api/v1/discovery/popular")) {
         return Promise.resolve(response({
           items: [{ id: "0198f342-13d7-7000-8000-000000000005", title: "추천받은 산책 이야기", body: "인기글 본문입니다.", createdAt: "2026-08-12T08:00:00Z", recommendationCount: 7, rank: 1 }],
         }));
@@ -56,7 +56,7 @@ describe("Home feed journeys", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "검색어" }), { target: { value: "산책" } });
     fireEvent.click(screen.getByRole("button", { name: "검색" }));
     expect(fetchMock).toHaveBeenLastCalledWith(
-      "/api/v1/feed?limit=20&query=%EC%82%B0%EC%B1%85&searchField=TITLE",
+      "/api/v1/discovery?limit=20&query=%EC%82%B0%EC%B1%85&searchField=TITLE",
       expect.objectContaining({ credentials: "include" }),
     );
     expect(await screen.findByRole("heading", { name: "최신 전체글" })).toBeInTheDocument();

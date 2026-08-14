@@ -265,7 +265,7 @@ export default function PublicationDetailPage() {
     setMutationError(null);
     try {
       await publicationApi.delete(publication.id, publication.version);
-      navigate("/feed", { replace: true });
+      navigate("/my-posts", { replace: true });
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 409) {
         setMutationError("다른 곳에서 게시글이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");

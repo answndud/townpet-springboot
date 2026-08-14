@@ -100,7 +100,7 @@ export default function PublicationCreatePage() {
           <p className="eyebrow">글 작성</p>
           <h1>글쓰기 준비가 지연됐습니다</h1>
           <p className="form-error" role="alert">{error}</p>
-          <Link className="button button-soft" to="/feed">피드로 돌아가기</Link>
+          <Link className="button button-soft" to="/my-posts">작성글로 돌아가기</Link>
         </section>
       </main>
     );
@@ -116,7 +116,7 @@ export default function PublicationCreatePage() {
         </div>
         <div className="publication-hero-actions">
           <span className="publication-chip">회원 작성</span>
-          <Link className="publication-text-link" to="/feed">피드로 돌아가기</Link>
+          <Link className="publication-text-link" to="/my-posts">작성글로 돌아가기</Link>
         </div>
       </section>
 
@@ -182,7 +182,7 @@ export default function PublicationCreatePage() {
 
         {error ? <p className="form-error publication-error" role="alert">{error} {partialPublicationId ? <Link className="publication-text-link" to={`/posts/${partialPublicationId}`}>등록된 글 열기</Link> : null}</p> : null}
         <footer className="publication-submit-row">
-          <Link className="publication-text-link" to="/feed">취소</Link>
+          <Link className="publication-text-link" to="/my-posts">취소</Link>
           <button className="button button-primary" type="submit" disabled={!canSubmit}>
             {submitting ? "등록 중..." : "등록"}
           </button>

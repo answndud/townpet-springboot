@@ -69,27 +69,9 @@ describe("Publication feed journeys", () => {
     expect(await screen.findByRole("heading", { name: "두 번째 전체 글" })).toBeInTheDocument();
     expect(screen.getAllByRole("article")).toHaveLength(1);
     expect(fetchMock).toHaveBeenLastCalledWith(
-      "/api/v1/feed?limit=20&cursor=next-page",
+      "/api/v1/discovery?limit=20&cursor=next-page",
       expect.objectContaining({ credentials: "include" }),
     );
-  });
-
-  it("requires a current member for the member feed route", async () => {
-    const fetchMock = vi.fn<typeof fetch>((input) => {
-      if (String(input).endsWith("/api/v1/members/me")) {
-        return Promise.resolve(response({ title: "Unauthorized" }, 401));
-      }
-      return Promise.resolve(response({ items: [], page: { nextCursor: null, hasNext: false } }));
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    render(
-      <MemoryRouter initialEntries={["/feed"]}>
-        <App />
-      </MemoryRouter>,
-    );
-
-    expect(await screen.findByRole("heading", { name: "로그인" })).toBeInTheDocument();
   });
 
   it("resolves a direct page URL through the cursor chain", async () => {
@@ -108,7 +90,7 @@ describe("Publication feed journeys", () => {
     expect(await screen.findByRole("heading", { name: "두 번째 페이지" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "첫 번째 페이지" })).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenLastCalledWith(
-      "/api/v1/feed?limit=20&cursor=page-two",
+      "/api/v1/discovery?limit=20&cursor=page-two",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -129,14 +111,14 @@ describe("Publication feed journeys", () => {
     expect(await screen.findByRole("heading", { name: "산책 장소" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("산책")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?limit=20&query=%EC%82%B0%EC%B1%85",
+      "/api/v1/discovery?limit=20&query=%EC%82%B0%EC%B1%85",
       expect.objectContaining({ credentials: "include" }),
     );
   });
 
   it("executes a guest search when opened from a direct URL", async () => {
     const fetchMock = vi.fn<typeof fetch>((input) => {
-      if (String(input).includes("/api/v1/feed?")) {
+      if (String(input).includes("/api/v1/discovery?")) {
         return Promise.resolve(response({ items: [publication("0198f342-13d7-7000-8000-000000000004", "산책 검색 결과")], page: { nextCursor: null, hasNext: false } }));
       }
       return Promise.resolve(response({ title: "Unauthorized" }, 401));
@@ -147,7 +129,7 @@ describe("Publication feed journeys", () => {
 
     expect(await screen.findByRole("heading", { name: "산책 검색 결과" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?limit=20&query=%EC%82%B0%EC%B1%85",
+      "/api/v1/discovery?limit=20&query=%EC%82%B0%EC%B1%85",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -163,7 +145,7 @@ describe("Publication feed journeys", () => {
 
     await screen.findByRole("heading", { name: "전체글" });
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?limit=20",
+      "/api/v1/discovery?limit=20",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -179,7 +161,7 @@ describe("Publication feed journeys", () => {
 
     await screen.findByRole("heading", { name: "전체글" });
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?limit=20&query=%EC%A7%88%EB%AC%B8",
+      "/api/v1/discovery?limit=20&query=%EC%A7%88%EB%AC%B8",
       expect.objectContaining({ credentials: "include" }),
     );
   });
