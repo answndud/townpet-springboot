@@ -672,6 +672,37 @@ h1, h2, p { margin: 0; }
 .localcare-card > .button, .gathering-card > .button, .lostfound-card > .button { justify-self: start; }
 .localcare-page > .publication-fields { width: min(100%, 820px); }
 
+/* Desktop visual rhythm: keep board context and actions in one compact band. */
+.community-hero,
+.marketplace-hero,
+.lostfound-hero,
+.localcare-hero {
+  min-height: 0;
+  padding: 16px 18px;
+}
+.community-hero h1,
+.marketplace-hero h1,
+.lostfound-hero h1,
+.localcare-hero h1 { margin-top: 4px; }
+.community-hero p:not(.eyebrow),
+.marketplace-hero p:not(.eyebrow),
+.lostfound-hero p:not(.eyebrow),
+.localcare-hero p:not(.eyebrow) { margin-top: 5px; line-height: 1.5; }
+.localcare-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.localcare-hero > .button { flex: 0 0 auto; margin-top: 0; }
+.marketplace-empty,
+.community-state { padding-block: 22px; }
+.publication-detail-card,
+.lostfound-detail,
+.marketplace-detail-card,
+.gathering-detail,
+.localcare-detail { padding-block: 20px; }
+
+@media (max-width: 760px) {
+  .localcare-hero { align-items: stretch; flex-direction: column; }
+  .localcare-hero > .button { align-self: flex-start; }
+}
+
 @media (max-width: 760px) {
   .community-bottom-search { width: 100%; }
   .feed-toolbar { align-items: stretch; flex-direction: column; gap: 8px; }

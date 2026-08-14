@@ -16,7 +16,7 @@ const dateFormat = new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numer
 const dateText = (value: string) => dateFormat.format(new Date(value));
 
 function LostFoundHero({ canWrite }: { canWrite: boolean }) {
-  return <header className="lostfound-hero"><div><p className="eyebrow">LOST & FOUND</p><h1>분실·목격 제보</h1><p>근처의 분실·발견 소식을 확인하고, 목격 정보를 안전하게 공유하세요.</p></div>{canWrite ? <Link className="button button-primary" to="/lost-found/new">제보 등록</Link> : null}</header>;
+  return <header className="lostfound-hero"><div><p className="eyebrow">LOST & FOUND</p><h1>분실·목격 제보</h1><p>근처의 분실·발견 소식을 확인하고, 목격 정보를 안전하게 공유하세요.</p></div>{canWrite ? <Link className="button button-write" to="/lost-found/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>제보 등록</span></Link> : null}</header>;
 }
 
 export function LostFoundListPage() {
