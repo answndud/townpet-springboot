@@ -25,9 +25,6 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping({
   "/api/v1/feed",
-  "/api/search/guest",
-  "/api/home/feed",
-  "/api/feed/guest",
   "/api/lounges/breeds/{breedCode}/posts"
 })
 class FeedController {

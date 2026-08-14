@@ -9,7 +9,7 @@ P1.5는 기존 Next.js server runtime을 복제하지 않고, 사용자가 먼�
 | TownPet 로고와 공개 헤더 | `townpet/app/src/components/navigation/app-shell-header.tsx` | `frontend/src/App.tsx` |
 | 배경 격자·blue palette·card shadow | `townpet/app/src/app/globals.css` | `frontend/src/styles.css` |
 | 홈 제목·설명·primary CTA | `townpet/app/src/app/page.tsx` | `frontend/src/App.tsx` |
-| 공개 주요 이동 `/feed/guest`, `/login` | header/page route contract | `frontend/e2e/parity-shell.spec.ts` |
+| 공개 주요 이동 `/`, `/login` | header/page route contract | `frontend/e2e/parity-shell.spec.ts` |
 
 ## 검증 규칙
 

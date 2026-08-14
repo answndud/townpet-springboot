@@ -61,7 +61,6 @@ const HospitalReviewPage = lazy(() => import("./HospitalReviewPage"));
 
 const ROUTE_PRELOADERS = new Map<string, () => Promise<unknown>>([
   ["/feed", () => import("./features/publication/PublicationFeedPage")],
-  ["/feed/guest", () => import("./features/publication/PublicationFeedPage")],
   ["/best", () => import("./BestPage")],
   ["/boards", () => import("./features/community/AnimalCommunityPage")],
   ["/marketplace", () => import("./features/marketplace/MarketplacePages")],
@@ -267,7 +266,7 @@ function MemberRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (status === "anonymous") navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`, { replace: true });
-    else if (status === "authenticated" && member?.role !== "MEMBER") navigate("/feed/guest", { replace: true });
+    else if (status === "authenticated" && member?.role !== "MEMBER") navigate("/", { replace: true });
   }, [location.pathname, location.search, member?.role, navigate, status]);
 
   if (status === "error") return <AuthError />;
@@ -282,7 +281,7 @@ function NonModeratorRoute({ children }: { children: ReactNode }) {
   const { status, member } = useAuth();
 
   useEffect(() => {
-    if (status === "authenticated" && member?.role === "MODERATOR") navigate("/feed/guest", { replace: true });
+    if (status === "authenticated" && member?.role === "MODERATOR") navigate("/", { replace: true });
   }, [member?.role, navigate, status]);
 
   if (status === "error") return <AuthError />;
@@ -431,7 +430,6 @@ function AppShell() {
         <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />
         <Route path="/posts/:publicationId/guest" element={<PublicationDetailPage />} />
         <Route path="/feed" element={<MemberRoute><PublicationFeedPage memberView /></MemberRoute>} />
-        <Route path="/feed/guest" element={<PublicationFeedPage memberView={false} />} />
         <Route path="/marketplace" element={<MarketplaceListPage />} />
         <Route path="/marketplace/new" element={<MemberRoute><MarketplaceFormPage /></MemberRoute>} />
         <Route path="/marketplace/:listingId/edit" element={<MemberRoute><MarketplaceFormPage edit /></MemberRoute>} />

@@ -20,7 +20,7 @@ export default function PublicMemberProfilePage() {
   useEffect(() => {
     if (profileError instanceof ApiError && profileError.status === 401) navigate(`/login?next=/users/${encodeURIComponent(memberId)}`, { replace: true });
   }, [memberId, navigate, profileError]);
-  if (error) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/feed/guest">게시판으로</Link></section></main>;
+  if (error) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/?view=all">게시판으로</Link></section></main>;
   if (!profile || profileLoading) return <main className="page placeholder-page"><section className="surface-card" role="status">프로필을 불러오는 중...</section></main>;
   const ownProfile = viewer?.id === profile.id;
   const tabVisible = tab === "posts" ? profile.showPublicPosts : tab === "comments" ? profile.showPublicComments : profile.showPublicReactions;

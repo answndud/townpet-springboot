@@ -96,8 +96,8 @@ pages:
     evidence: [frontend/e2e/feed-parity.spec.ts, src/main/java/com/townpet/discovery/CommunityFeed.java]
   - path: /feed/guest
     legacy: true
-    spring: verified
-    evidence: [frontend/e2e/feed-parity.spec.ts, src/main/java/com/townpet/discovery/CommunityFeed.java]
+    spring: excluded
+    decision: 공개 피드는 `/`의 최신 HomeFeedPage로 통합
   - path: /guides/{guideSlug}
     legacy: true
     spring: verified
@@ -277,7 +277,8 @@ apiRoutes:
   - path: /api/feed/guest
     methods: [GET]
     legacy: true
-    spring: verified
+    spring: excluded
+    decision: `/api/v1/feed`로 통합
   - path: /api/feed/personalization
     methods: [POST]
     legacy: true
@@ -294,7 +295,8 @@ apiRoutes:
   - path: /api/home/feed
     methods: [GET]
     legacy: true
-    spring: verified
+    spring: excluded
+    decision: `/api/v1/feed`로 통합
   - path: /api/lounges/breeds/{breedCode}/groupbuys
     methods: [POST]
     legacy: true
@@ -384,8 +386,8 @@ apiRoutes:
   - path: /api/search/guest
     methods: [GET]
     legacy: true
-    spring: verified
-    evidence: [src/main/java/com/townpet/discovery/FeedController.java, src/main/java/com/townpet/publication/api/PublicationFeed.java]
+    spring: excluded
+    decision: 공개 검색도 `/api/v1/feed`로 통합
   - path: /api/search/log
     methods: [POST]
     legacy: true

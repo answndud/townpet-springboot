@@ -90,7 +90,7 @@ TownPet은 반려인이 `지역 + 상황` 기준으로 병원, 산책, 실종·�
 
 ### J-01 공개 탐색
 
-방문자는 홈, 지역 landing, guest feed와 guest search에서 공개 가능한 콘텐츠를 탐색하고 direct URL 새로고침과 공유 링크로 같은 화면에 도달한다.
+방문자는 홈 공개 피드, 지역 landing과 guest search에서 공개 가능한 콘텐츠를 탐색하고 direct URL 새로고침과 공유 링크로 같은 화면에 도달한다.
 
 ### J-02 인증과 계정 보안
 

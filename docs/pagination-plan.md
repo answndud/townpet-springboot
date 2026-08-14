@@ -8,7 +8,7 @@
 
 - `/`의 전체글과 HOT 목록
 - `/best`의 독립 인기글 목록
-- `/feed`, `/feed/guest`의 게시글 목록
+- `/` 공개 게시글 목록과 `/feed` 회원 피드
 - 동물별 게시판과 공통 게시판 목록
 - 검색어, 검색 범위, 게시판, 회원/비회원 범위가 유지되는 페이지 이동
 
@@ -19,7 +19,7 @@
 ```text
 /?view=all&page=2&q=산책&searchField=TITLE
 /boards/adoption?page=3&q=입양
-/feed/guest?page=2&q=강아지
+/?view=all&page=2&q=강아지
 ```
 
 첫 페이지는 기존 URL과의 호환을 위해 `page=1`을 생략한다. 검색 조건이나 게시판 조건이 바뀌면 페이지를 1로 되돌린다.

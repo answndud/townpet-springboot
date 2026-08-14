@@ -82,7 +82,7 @@ docker compose -f deploy/compose/local.yml up -d minio
 
 | 테스트 대상 | 화면 |
 | --- | --- |
-| 커뮤니티 글·댓글·대댓글·좋아요·북마크 | `/feed/guest` |
+| 커뮤니티 글·댓글·대댓글·좋아요·북마크 | `/?view=all` |
 | 거래 글 | `/marketplace` |
 | 분실·발견 및 목격 제보 | `/lost-found` |
 | 입양 정보 | `/boards/adoption` |
