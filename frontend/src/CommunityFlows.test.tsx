@@ -13,7 +13,7 @@ describe("Animal community journeys", () => {
         return Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }));
       }
       return Promise.resolve(new Response(JSON.stringify({
-        items: [{ id: "dog-post", kind: "PUBLICATION", type: "FREE_BOARD", title: "강아지 산책 질문", body: "강아지와 걷기 좋은 길을 알려 주세요.", scope: "GLOBAL", authorId: "member", neighborhoodId: null, animalCode: "DOG", status: "ACTIVE", lifecycle: "ACTIVE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/posts/dog-post" }],
+        items: [{ id: "dog-post", kind: "PUBLICATION", type: "FREE_BOARD", title: "강아지 산책 질문", body: "강아지와 걷기 좋은 길을 알려 주세요.", authorId: "member", neighborhoodId: null, animalCode: "DOG", status: "ACTIVE", lifecycle: "ACTIVE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/posts/dog-post" }],
         page: { nextCursor: null, hasNext: false },
         animalCode: "dog",
         board: "questions",
@@ -28,7 +28,7 @@ describe("Animal community journeys", () => {
     expect(screen.queryByRole("link", { name: "입양" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "반려동물 자랑" })).toHaveAttribute("href", "/animals/dog/showcase");
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/communities/dog/feed?audience=VIEWER&board=questions&limit=20&scope=ALL",
+      "/api/v1/communities/dog/feed?board=questions&limit=20",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -39,7 +39,7 @@ describe("Animal community journeys", () => {
         return Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }));
       }
       return Promise.resolve(new Response(JSON.stringify({
-        items: [{ id: "guest-post", kind: "PUBLICATION", type: "FREE_BOARD", title: "익명 질문", body: "내용", scope: "GLOBAL", authorId: null, neighborhoodId: null, animalCode: "DOG", status: "ACTIVE", lifecycle: "ACTIVE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/posts/guest-post" }],
+        items: [{ id: "guest-post", kind: "PUBLICATION", type: "FREE_BOARD", title: "익명 질문", body: "내용", authorId: null, neighborhoodId: null, animalCode: "DOG", status: "ACTIVE", lifecycle: "ACTIVE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/posts/guest-post" }],
         page: { nextCursor: null, hasNext: false }, animalCode: "dog", board: "free",
       }), { status: 200, headers: { "content-type": "application/json" } }));
     }));
@@ -57,7 +57,7 @@ describe("Animal community journeys", () => {
         return Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }));
       }
       return Promise.resolve(new Response(JSON.stringify({
-        items: [{ id: "market-post", kind: "MARKETPLACE", type: "MARKETPLACE", title: "강아지 용품 거래", body: "공통 거래 게시판 글입니다.", scope: "GLOBAL", authorId: "member", neighborhoodId: null, animalCode: null, status: "AVAILABLE", lifecycle: "AVAILABLE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/marketplace/market-post" }],
+        items: [{ id: "market-post", kind: "MARKETPLACE", type: "MARKETPLACE", title: "강아지 용품 거래", body: "공통 거래 게시판 글입니다.", authorId: "member", neighborhoodId: null, animalCode: null, status: "AVAILABLE", lifecycle: "AVAILABLE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/marketplace/market-post" }],
         page: { nextCursor: null, hasNext: false },
       }), { status: 200, headers: { "content-type": "application/json" } }));
     });
@@ -69,7 +69,7 @@ describe("Animal community journeys", () => {
     expect(await screen.findByRole("heading", { name: "강아지 용품 거래" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "봉사" })).toHaveAttribute("href", "/boards/volunteer");
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/boards/marketplace/feed?audience=VIEWER&limit=20&scope=ALL",
+      "/api/v1/boards/marketplace/feed?limit=20",
       expect.objectContaining({ credentials: "include" }),
     );
   });

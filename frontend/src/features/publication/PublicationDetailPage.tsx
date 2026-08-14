@@ -16,6 +16,20 @@ import { useAuth } from "../../auth/AuthContext";
 import { formatDateTimeLong } from "../../utils/date";
 import { PublicationCommentThread } from "./components/PublicationCommentThread";
 
+const PUBLICATION_BOARD_META: Record<Publication["type"], { label: string; path: string }> = {
+  FREE_BOARD: { label: "자유게시판", path: "" },
+  QA_QUESTION: { label: "질문·답변", path: "questions" },
+  PET_SHOWCASE: { label: "반려동물 자랑", path: "showcase" },
+  PRODUCT_REVIEW: { label: "용품 후기", path: "product-reviews" },
+};
+
+function publicationBoardLink(publication: Publication) {
+  const board = PUBLICATION_BOARD_META[publication.type];
+  if (!publication.animalInterestCode) return "/?view=all";
+  const animalCode = publication.animalInterestCode.toLowerCase();
+  return board.path ? `/animals/${animalCode}/${board.path}` : `/animals/${animalCode}`;
+}
+
 function ActionIcon({ type }: { type: "like" | "bookmark" }) {
   return (
     <svg className="publication-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -347,7 +361,7 @@ export default function PublicationDetailPage() {
   return (
     <main className="page publication-page publication-detail-page">
       <div className="publication-detail-nav">
-        <Link className="publication-text-link" to="/?view=all">목록으로</Link>
+        <Link className="publication-text-link" to="/">홈으로</Link>
         <div className="publication-detail-actions">
           {memberViewer && viewerId === publication.authorId ? (
             <>
@@ -366,7 +380,7 @@ export default function PublicationDetailPage() {
             <button className="button button-soft" type="button" onClick={() => setGuestEditing((current) => !current)}>{guestEditing ? "수정 취소" : "비회원 수정"}</button>
             <button className="button button-danger" type="button" onClick={() => void deleteGuestPublication()}>비회원 삭제</button>
           </> : null}
-          {!moderatorViewer ? <Link className="button button-soft" to="/posts/new">새 글 작성</Link> : null}
+          {!moderatorViewer ? <Link className="button button-write" to="/posts/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}
           <button className="button button-soft" type="button" disabled={shareSubmitting} onClick={sharePublication}>
             {shareSubmitting ? "공유 중..." : "공유"}
           </button>
@@ -386,10 +400,9 @@ export default function PublicationDetailPage() {
       ) : null}
       <article className="surface-card publication-detail-card">
         <div className="publication-detail-chips">
-          <span className="publication-chip publication-chip-primary">자유게시판</span>
-          <span className="publication-chip">
-            {publication.scope === "LOCAL" ? "내 동네" : "전체"}
-          </span>
+          <Link className="publication-chip publication-chip-primary publication-chip-link" to={publicationBoardLink(publication)}>
+            {PUBLICATION_BOARD_META[publication.type].label}
+          </Link>
         </div>
         <header className="publication-detail-heading">
           <h1>{publication.title}</h1>

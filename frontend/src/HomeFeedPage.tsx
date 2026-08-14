@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { publicationApi, type Publication } from "./api/client";
+import { publicationApi, type FeedItem, type Publication } from "./api/client";
 import { useAuth } from "./auth/AuthContext";
 import CursorPagination from "./components/CursorPagination";
 import { useCursorPagination } from "./hooks/useCursorPagination";
@@ -9,13 +9,26 @@ type PopularItem = Pick<Publication, "id" | "title" | "body" | "createdAt"> & {
   rank?: number;
 };
 
-type HomeFeedItem = {
-  id: string;
-  title: string;
-  body: string;
-  scope: string;
-  createdAt: string;
+const HOME_FEED_TYPE_LABELS: Record<string, string> = {
+  FREE_BOARD: "자유게시판",
+  QA_QUESTION: "질문·답변",
+  PET_SHOWCASE: "반려동물 자랑",
+  PRODUCT_REVIEW: "용품 후기",
+  MARKETPLACE: "동네 거래",
+  ADOPTION: "입양",
+  LOST_FOUND: "분실·목격",
+  HOSPITAL_REVIEW: "동물병원 후기",
+  GATHERING: "동네 모임",
+  CARE_REQUEST: "이웃 돌봄",
+  VOLUNTEER: "봉사 기회",
+  LOCAL_GUIDE: "지역 가이드",
+  WELFARE: "복지 안내",
+  CARE: "케어 가이드",
 };
+
+function homeFeedLabel(item: FeedItem) {
+  return HOME_FEED_TYPE_LABELS[item.type] ?? (item.kind === "PUBLICATION" ? "게시글" : "반려생활 소식");
+}
 
 const FEED_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   month: "long",
@@ -64,12 +77,12 @@ export default function HomeFeedPage() {
   const popularView = searchParams.get("view") !== "all";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
   const queryKey = `${popularView ? "popular" : "all"}|${query}|${searchField}`;
-  const allFeed = useCursorPagination<HomeFeedItem>({
+  const allFeed = useCursorPagination<FeedItem>({
     enabled: !popularView,
     page,
     pageSize: 20,
     queryKey,
-    fetchPage: (cursor, signal) => publicationApi.feed({ audience: "GLOBAL", cursor, query, searchField, scope: "ALL", signal }) as Promise<{ items: HomeFeedItem[]; page: { nextCursor: string | null; hasNext: boolean } }>,
+    fetchPage: (cursor, signal) => publicationApi.feed({ cursor, query, searchField, signal }),
   });
   const popularFeed = useCursorPagination<PopularItem>({
     enabled: popularView,
@@ -104,41 +117,14 @@ export default function HomeFeedPage() {
           </p>
           <h1>{popularView ? "HOT 글" : "전체글"}</h1>
         </div>
-        {canWrite ? <Link className="button button-primary" to={writeHref}>글쓰기</Link> : null}
+        {canWrite ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}
       </header>
 
-      <div className="feed-toolbar">
-        <div className="feed-view-tabs" role="group" aria-label="글 보기 전환">
+      <nav className="community-board-tabs feed-home-tabs" aria-label="피드 보기 전환">
         <span className="feed-toolbar-label">피드</span>
-        <button className={!popularView ? "active" : ""} aria-pressed={!popularView} type="button" onClick={() => setSearchParams({ view: "all", ...(query ? { q: query } : {}), ...(searchField !== "ALL" ? { searchField } : {}) })}>전체글</button>
-        <button className={popularView ? "active" : ""} aria-pressed={popularView} type="button" onClick={() => setSearchParams({ view: "popular", ...(query ? { q: query } : {}), ...(searchField !== "ALL" ? { searchField } : {}) })}>HOT</button>
-      </div>
-
-        <form
-          aria-label="피드 게시글 검색"
-          className="search-panel feed-search-inline"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const form = new FormData(event.currentTarget);
-            const value = String(form.get("q") ?? "").trim();
-            const field = String(form.get("searchField") ?? "ALL");
-            setSearchParams({ view: popularView ? "popular" : "all", ...(value ? { q: value } : {}), ...(field !== "ALL" ? { searchField: field } : {}) });
-          }}
-        >
-          <label>
-            <select aria-label="검색 위치" name="searchField" defaultValue={searchField}>
-              <option value="ALL">제목+내용</option>
-              <option value="TITLE">제목</option>
-              <option value="BODY">내용</option>
-            </select>
-          </label>
-          <label>
-            <input aria-label="검색어" name="q" defaultValue={query} placeholder="검색어 입력" />
-          </label>
-          <button className="button button-soft" type="submit">검색</button>
-          {query ? <button className="button button-soft" type="button" onClick={() => setSearchParams({ view: popularView ? "popular" : "all" })}>초기화</button> : null}
-        </form>
-      </div>
+        <button className={!popularView ? "active" : ""} aria-current={!popularView ? "page" : undefined} type="button" onClick={() => setSearchParams({ view: "all", ...(query ? { q: query } : {}), ...(searchField !== "ALL" ? { searchField } : {}) })}>전체</button>
+        <button className={popularView ? "active" : ""} aria-current={popularView ? "page" : undefined} type="button" onClick={() => setSearchParams({ view: "popular", ...(query ? { q: query } : {}), ...(searchField !== "ALL" ? { searchField } : {}) })}>HOT</button>
+      </nav>
 
       {popularView ? <HotFeedList items={popularItems} loading={popularLoading} error={popularError} page={page} hasNext={popularFeed.hasNext} totalPages={popularFeed.totalPages} onPageChange={setPage} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : loading ? (
         <section className="surface-card feed-list" aria-busy="true" aria-label="전체글 목록">
@@ -148,15 +134,14 @@ export default function HomeFeedPage() {
         <section className="surface-card feed-empty">
           <h2>{query ? "검색 결과가 없습니다" : "아직 표시할 글이 없습니다"}</h2>
           <p>{query ? "다른 검색어로 다시 시도해 보세요." : "첫 번째 반려생활 이야기를 나눠 보세요."}</p>
-          {canWrite ? <Link className="button button-soft" to={writeHref}>글 작성하기</Link> : null}
+          {canWrite ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}
         </section>
       ) : (
         <section className="surface-card feed-list" aria-label="게시글 목록">
           {items.map((item) => (
             <article className="feed-item" key={item.id}>
               <div className="feed-item-chips">
-                <span className="publication-chip publication-chip-primary">자유게시판</span>
-                <span className="publication-chip">{item.scope === "LOCAL" ? "내 동네" : "전체"}</span>
+                <span className="publication-chip publication-chip-primary">{homeFeedLabel(item)}</span>
               </div>
               <Link className="feed-item-title" to={`/posts/${item.id}`}><h2>{item.title}</h2></Link>
               <div className="feed-item-meta">
@@ -169,6 +154,18 @@ export default function HomeFeedPage() {
           <CursorPagination page={page} hasNext={allFeed.hasNext} totalPages={allFeed.totalPages} disabled={allFeed.loading} onPageChange={setPage} />
         </section>
       )}
+
+      <form aria-label="피드 게시글 검색" className="search-panel community-bottom-search feed-bottom-search" onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        const value = String(form.get("q") ?? "").trim();
+        const field = String(form.get("searchField") ?? "ALL");
+        setSearchParams({ view: popularView ? "popular" : "all", ...(value ? { q: value } : {}), ...(field !== "ALL" ? { searchField: field } : {}) });
+      }}>
+        <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
+        <label><span className="search-label">피드 게시글 검색</span><input aria-label="검색어" name="q" defaultValue={query} placeholder="제목이나 내용" /></label>
+        <button className="button button-soft" type="submit">검색</button>
+      </form>
     </main>
   );
 }

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { publicationApi, type FeedItem } from "../../api/client";
 import { isAbortError } from "../../hooks/useAbortableRequest";
 
-export default function SearchPage({ guest = false }: { guest?: boolean }) {
+export default function SearchPage(_props: { guest?: boolean }) {
   const [params, setParams] = useSearchParams();
   const urlQuery = params.get("q") ?? "";
   const urlFrom = params.get("from") ?? "";
@@ -28,7 +28,7 @@ export default function SearchPage({ guest = false }: { guest?: boolean }) {
     }
     setError(null);
     setLoading(true);
-    publicationApi.feed({ audience: guest ? "GLOBAL" : "VIEWER", query: urlQuery, from: urlFrom, to: urlTo, signal: controller.signal })
+    publicationApi.feed({ query: urlQuery, from: urlFrom, to: urlTo, signal: controller.signal })
       .then((page) => setItems(page.items))
       .catch((requestError: unknown) => {
         if (isAbortError(requestError)) return;
@@ -36,7 +36,7 @@ export default function SearchPage({ guest = false }: { guest?: boolean }) {
       })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [guest, urlFrom, urlQuery, urlTo]);
+  }, [urlFrom, urlQuery, urlTo]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
