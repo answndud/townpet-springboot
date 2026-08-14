@@ -25,7 +25,6 @@ const PublicMemberProfilePage = lazy(() => import("./PublicMemberProfilePage"));
 const PublicationCreatePage = lazy(() => import("./features/publication/PublicationCreatePage"));
 const PublicationDetailPage = lazy(() => import("./features/publication/PublicationDetailPage"));
 const PublicationEditPage = lazy(() => import("./features/publication/PublicationEditPage"));
-const PublicationFeedPage = lazy(() => import("./features/publication/PublicationFeedPage"));
 const AnimalCommunityPage = lazy(() => import("./features/community/AnimalCommunityPage"));
 const CommonBoardPage = lazy(() => import("./features/community/AnimalCommunityPage").then(({ CommonBoardPage }) => ({ default: CommonBoardPage })));
 const GuestPublicationCreatePage = lazy(() => import("./features/publication/GuestPublicationCreatePage"));
@@ -60,7 +59,6 @@ const VolunteerPage = lazy(() => import("./VolunteerPage"));
 const HospitalReviewPage = lazy(() => import("./HospitalReviewPage"));
 
 const ROUTE_PRELOADERS = new Map<string, () => Promise<unknown>>([
-  ["/feed", () => import("./features/publication/PublicationFeedPage")],
   ["/best", () => import("./BestPage")],
   ["/boards", () => import("./features/community/AnimalCommunityPage")],
   ["/marketplace", () => import("./features/marketplace/MarketplacePages")],
@@ -430,7 +428,6 @@ function AppShell() {
         <Route path="/posts/:publicationId/edit" element={<MemberRoute><PublicationEditPage /></MemberRoute>} />
         <Route path="/posts/:publicationId" element={<PublicationDetailPage />} />
         <Route path="/posts/:publicationId/guest" element={<PublicationDetailPage />} />
-        <Route path="/feed" element={<MemberRoute><PublicationFeedPage memberView /></MemberRoute>} />
         <Route path="/marketplace" element={<MarketplaceListPage />} />
         <Route path="/marketplace/new" element={<MemberRoute><MarketplaceFormPage /></MemberRoute>} />
         <Route path="/marketplace/:listingId/edit" element={<MemberRoute><MarketplaceFormPage edit /></MemberRoute>} />

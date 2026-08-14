@@ -85,7 +85,6 @@ export default function ProfilePage() {
             <p>{member.bio ?? "아직 소개가 없어요."}</p>
             {member.role === "MEMBER" ? (
               <div className="profile-actions">
-                <Link className="button button-soft" to="/feed">내 피드</Link>
                 <Link className="button button-soft" to="/my-posts">내 작성글</Link>
                 <Link className="button button-soft" to="/bookmarks">북마크</Link>
               </div>

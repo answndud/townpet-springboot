@@ -217,7 +217,10 @@ describe("Publication journeys", () => {
       if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}`)) {
         return Promise.resolve(response(currentPublication));
       }
-      if (path.includes("/api/v1/feed?")) {
+      if (path.endsWith("/api/v1/members/me/posts")) {
+        return Promise.resolve(response([]));
+      }
+      if (path.includes("/api/v1/discovery?")) {
         return Promise.resolve(response({ items: [], page: { nextCursor: null, hasNext: false } }));
       }
       return Promise.reject(new Error(`Unexpected request: ${path}`));
@@ -252,7 +255,7 @@ describe("Publication journeys", () => {
     );
 
     fireEvent.click(await screen.findByRole("button", { name: "삭제" }));
-    expect(await screen.findByRole("heading", { name: "내 피드" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "내가 쓴 글" })).toBeInTheDocument();
     const deleteCall = fetchMock.mock.calls.find(([, init]) => init?.method === "DELETE");
     expect(deleteCall?.[1]?.body).toBe(JSON.stringify({ version: 1 }));
   });

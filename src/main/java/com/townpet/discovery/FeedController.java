@@ -24,7 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Validated
 @RestController
 @RequestMapping({
-  "/api/v1/feed",
+  "/api/v1/discovery",
   "/api/lounges/breeds/{breedCode}/posts"
 })
 class FeedController {

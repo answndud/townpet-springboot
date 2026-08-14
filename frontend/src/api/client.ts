@@ -694,7 +694,7 @@ export const publicationApi = {
     if (to) search.set("to", to);
     if (animalInterestCodes) search.set("animals", animalInterestCodes.join(","));
     if (type) search.set("type", type);
-    return apiFetch<FeedPageResponse>(`/api/v1/feed?${search}`, { signal }).then(normalizeFeedPage);
+    return apiFetch<FeedPageResponse>(`/api/v1/discovery?${search}`, { signal }).then(normalizeFeedPage);
   },
   popular({ limit = 20, cursor, signal, query, searchField = "ALL" }: {
     limit?: number;
@@ -707,7 +707,7 @@ export const publicationApi = {
     if (cursor) search.set("cursor", cursor);
     if (query) search.set("query", query);
     if (searchField !== "ALL") search.set("searchField", searchField);
-    return apiFetch<PopularFeedPageResponse>(`/api/v1/feed/popular?${search}`, { signal }).then(normalizePopularFeedPage);
+    return apiFetch<PopularFeedPageResponse>(`/api/v1/discovery/popular?${search}`, { signal }).then(normalizePopularFeedPage);
   },
 };
 
