@@ -6,7 +6,7 @@
 
 ## Active
 
-No active work. P1~P3의 저장소 내부 작업과 최종 검증을 완료했고, frontend release polish까지 commit으로 고정했다. 실제 VPS·외부 provider 검증만 배포 단계의 backlog다.
+현재 실행 중인 slice 없음. Publication GLOBAL/LOCAL 제거는 V062 migration, backend/frontend 계약, fixture·문서 정리까지 완료됐다. 다음 작업을 선택하면 이 위치에 새 vertical goal을 추가한다.
 
 ## Backlog
 

@@ -49,8 +49,6 @@ class PublicationController {
           publications.create(
               memberId,
               request.type() == null ? PublicationType.FREE_BOARD : request.type(),
-              request.scope(),
-              request.neighborhoodId(),
               request.animalInterestCode(),
               request.title(),
               request.body(),
@@ -97,8 +95,6 @@ class PublicationController {
               publicationId,
               request.version(),
               request.type(),
-              request.scope(),
-              request.neighborhoodId(),
               request.animalInterestCode(),
               request.title(),
               request.body(),
@@ -184,9 +180,7 @@ class PublicationController {
     return new PublicationResponse(
         publication.getId(),
         publication.getType(),
-        publication.getScope(),
         publication.getAuthorMemberId(),
-        publication.getNeighborhoodId(),
         publication.getAnimalInterestCode(),
         animalCommunityCodes,
         publication.getTitle(),
@@ -201,8 +195,6 @@ class PublicationController {
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 20000) String body,
       @Nullable PublicationType type,
-      @NotNull PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       @Nullable @Size(max = 40) String animalInterestCode,
       @Nullable @Size(max = 12) @ValidAnimalCommunityCodes
           Collection<@Size(max = 40) String> animalCommunityCodes) {}
@@ -211,8 +203,6 @@ class PublicationController {
       @NotBlank @Size(max = 120) String title,
       @NotBlank @Size(max = 20000) String body,
       @Nullable PublicationType type,
-      @NotNull PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       @Nullable @Size(max = 40) String animalInterestCode,
       @Nullable @Size(max = 12) @ValidAnimalCommunityCodes
           Collection<@Size(max = 40) String> animalCommunityCodes,
@@ -225,9 +215,7 @@ class PublicationController {
   record PublicationResponse(
       UUID id,
       PublicationType type,
-      PublicationScope scope,
       @Nullable UUID authorId,
-      @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
       List<String> animalCommunityCodes,
       String title,
@@ -239,9 +227,7 @@ class PublicationController {
     PublicationResponse(
         UUID id,
         PublicationType type,
-        PublicationScope scope,
         @Nullable UUID authorId,
-        @Nullable UUID neighborhoodId,
         String title,
         String body,
         PublicationLifecycle lifecycle,
@@ -251,9 +237,7 @@ class PublicationController {
       this(
           id,
           type,
-          scope,
           authorId,
-          neighborhoodId,
           null,
           List.of(),
           title,

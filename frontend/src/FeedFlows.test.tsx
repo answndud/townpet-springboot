@@ -128,7 +128,6 @@ describe("Publication feed journeys", () => {
 
     expect(await screen.findByRole("heading", { name: "산책 장소" })).toBeInTheDocument();
     expect(screen.getByDisplayValue("산책")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "검색어 초기화" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/feed?limit=20&query=%EC%82%B0%EC%B1%85",
       expect.objectContaining({ credentials: "include" }),

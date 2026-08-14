@@ -4,9 +4,7 @@ const publication = {
   id: "00000000-0000-4000-8000-000000003901",
   title: "데스크톱 시각 기준선 게시글",
   body: "1280과 1440 데스크톱 화면의 시각 회귀를 확인하는 고정 fixture입니다.",
-  scope: "GLOBAL",
   authorId: "00000000-0000-4000-8000-000000000202",
-  neighborhoodId: null,
   lifecycle: "ACTIVE",
   createdAt: "2026-08-01T10:00:00Z",
   updatedAt: "2026-08-01T10:00:00Z",
@@ -57,7 +55,7 @@ for (const viewport of [
     });
 
     test("keeps the public feed layout visually stable", async ({ page }) => {
-      await page.goto("/feed/guest");
+      await page.goto("/?view=all");
       await expect(page.getByRole("heading", { name: "전체글" })).toBeVisible();
       await expect(page.getByRole("heading", { name: publication.title })).toBeVisible();
       await expect(page).toHaveScreenshot(`${viewport.name}-public-feed.png`, { animations: "disabled", caret: "hide" });

@@ -1,6 +1,5 @@
 package com.townpet.discovery;
 
-import com.townpet.member.api.MemberDirectory;
 import com.townpet.relationship.api.BlockDirectory;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -33,7 +32,6 @@ class CommunityFeed {
       DSL.field(DSL.name("f", "item_type"), String.class);
   private static final Field<String> TITLE = DSL.field(DSL.name("f", "title"), String.class);
   private static final Field<String> SUMMARY = DSL.field(DSL.name("f", "summary"), String.class);
-  private static final Field<String> SCOPE = DSL.field(DSL.name("f", "scope"), String.class);
   private static final Field<UUID> AUTHOR_ID =
       DSL.field(DSL.name("f", "author_member_id"), UUID.class);
   private static final Field<UUID> NEIGHBORHOOD_ID =
@@ -57,8 +55,6 @@ class CommunityFeed {
       DSL.field(DSL.name("c", "title"), String.class);
   private static final Field<String> COMMUNITY_SUMMARY =
       DSL.field(DSL.name("c", "summary"), String.class);
-  private static final Field<String> COMMUNITY_SCOPE =
-      DSL.field(DSL.name("c", "scope"), String.class);
   private static final Field<UUID> COMMUNITY_AUTHOR_ID =
       DSL.field(DSL.name("c", "author_member_id"), UUID.class);
   private static final Field<UUID> COMMUNITY_NEIGHBORHOOD_ID =
@@ -75,12 +71,10 @@ class CommunityFeed {
       DSL.field(DSL.name("c", "target_path"), String.class);
 
   private final DSLContext query;
-  private final MemberDirectory members;
   private final BlockDirectory blocks;
 
-  CommunityFeed(DSLContext query, MemberDirectory members, BlockDirectory blocks) {
+  CommunityFeed(DSLContext query, BlockDirectory blocks) {
     this.query = query;
-    this.members = members;
     this.blocks = blocks;
   }
 
@@ -91,7 +85,6 @@ class CommunityFeed {
       @Nullable String encodedCursor,
       int limit,
       @Nullable String searchQuery,
-      @Nullable String scopeFilter,
       @Nullable Instant from,
       @Nullable Instant to,
       @Nullable Set<String> animalInterestCodes,
@@ -103,7 +96,6 @@ class CommunityFeed {
         limit,
         searchQuery,
         "ALL",
-        scopeFilter,
         from,
         to,
         animalInterestCodes,
@@ -117,7 +109,6 @@ class CommunityFeed {
       int limit,
       @Nullable String searchQuery,
       String searchField,
-      @Nullable String scopeFilter,
       @Nullable Instant from,
       @Nullable Instant to,
       @Nullable Set<String> animalInterestCodes,
@@ -132,15 +123,7 @@ class CommunityFeed {
     validateSearchField(searchField);
 
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
-    UUID viewerNeighborhoodId =
-        viewerMemberId == null || !includeViewerNeighborhood
-            ? null
-            : members
-                .findPublicationContext(viewerMemberId)
-                .map(MemberDirectory.MemberPublicationContext::neighborhoodId)
-                .orElse(null);
-
-    Condition condition = visibility(SCOPE, NEIGHBORHOOD_ID, viewerNeighborhoodId, scopeFilter);
+    Condition condition = DSL.trueCondition();
     if (from != null) condition = condition.and(CREATED_AT.ge(from.atOffset(ZoneOffset.UTC)));
     if (to != null) condition = condition.and(CREATED_AT.lt(to.atOffset(ZoneOffset.UTC)));
     if (searchQuery != null && !searchQuery.isBlank()) {
@@ -193,7 +176,6 @@ class CommunityFeed {
                 ITEM_TYPE,
                 TITLE,
                 SUMMARY,
-                SCOPE,
                 AUTHOR_ID,
                 NEIGHBORHOOD_ID,
                 ANIMAL_INTEREST_CODE,
@@ -241,7 +223,6 @@ class CommunityFeed {
       @Nullable String encodedCursor,
       int limit,
       @Nullable String searchQuery,
-      @Nullable String scopeFilter,
       @Nullable Instant from,
       @Nullable Instant to) {
     if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid feed limit");
@@ -256,17 +237,7 @@ class CommunityFeed {
     }
 
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
-    UUID viewerNeighborhoodId =
-        viewerMemberId == null || !includeViewerNeighborhood
-            ? null
-            : members
-                .findPublicationContext(viewerMemberId)
-                .map(MemberDirectory.MemberPublicationContext::neighborhoodId)
-                .orElse(null);
-
-    Condition condition =
-        visibility(COMMUNITY_SCOPE, COMMUNITY_NEIGHBORHOOD_ID, viewerNeighborhoodId, scopeFilter)
-            .and(COMMUNITY_ANIMAL_CODE.eq(animalCode));
+    Condition condition = COMMUNITY_ANIMAL_CODE.eq(animalCode);
     if (boardTypes != null) {
       condition =
           boardTypes.isEmpty()
@@ -317,7 +288,6 @@ class CommunityFeed {
                 COMMUNITY_ITEM_TYPE,
                 COMMUNITY_TITLE,
                 COMMUNITY_SUMMARY,
-                COMMUNITY_SCOPE,
                 COMMUNITY_AUTHOR_ID,
                 COMMUNITY_NEIGHBORHOOD_ID,
                 COMMUNITY_ANIMAL_CODE,
@@ -338,7 +308,6 @@ class CommunityFeed {
                         record.get(COMMUNITY_ITEM_TYPE),
                         record.get(COMMUNITY_TITLE),
                         record.get(COMMUNITY_SUMMARY),
-                        record.get(COMMUNITY_SCOPE),
                         record.get(COMMUNITY_AUTHOR_ID),
                         record.get(COMMUNITY_NEIGHBORHOOD_ID),
                         record.get(COMMUNITY_ANIMAL_CODE),
@@ -369,7 +338,6 @@ class CommunityFeed {
         record.get(ITEM_TYPE),
         record.get(TITLE),
         record.get(SUMMARY),
-        record.get(SCOPE),
         record.get(AUTHOR_ID),
         record.get(NEIGHBORHOOD_ID),
         record.get(ANIMAL_INTEREST_CODE),
@@ -377,25 +345,6 @@ class CommunityFeed {
         record.get(CREATED_AT).toInstant(),
         record.get(UPDATED_AT).toInstant(),
         record.get(TARGET_PATH));
-  }
-
-  private static Condition visibility(
-      Field<String> scope,
-      Field<UUID> neighborhoodId,
-      @Nullable UUID viewerNeighborhoodId,
-      @Nullable String scopeFilter) {
-    if (scopeFilter != null && scopeFilter.equalsIgnoreCase("LOCAL")) {
-      return viewerNeighborhoodId == null
-          ? DSL.falseCondition()
-          : scope.eq("LOCAL").and(neighborhoodId.eq(viewerNeighborhoodId));
-    }
-    if (scopeFilter != null && scopeFilter.equalsIgnoreCase("GLOBAL")) {
-      return scope.eq("GLOBAL");
-    }
-    Condition visible = scope.eq("GLOBAL");
-    return viewerNeighborhoodId == null
-        ? visible
-        : visible.or(scope.eq("LOCAL").and(neighborhoodId.eq(viewerNeighborhoodId)));
   }
 
   record Page(List<Item> items, @Nullable String nextCursor, boolean hasNext, int totalPages) {}
@@ -406,7 +355,6 @@ class CommunityFeed {
       String itemType,
       String title,
       String summary,
-      String scope,
       @Nullable UUID authorId,
       @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,

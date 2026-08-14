@@ -1,7 +1,7 @@
 import { chromium } from "@playwright/test";
 
 const baseUrl = process.env.TOWNPET_BROWSER_BASE_URL ?? "http://127.0.0.1:4173";
-const routes = ["/", "/feed/guest", "/marketplace", "/lost-found", "/guides?q=%EC%82%B0%EC%B1%85", "/gatherings", "/care"];
+const routes = ["/", "/?view=all", "/marketplace", "/lost-found", "/guides?q=%EC%82%B0%EC%B1%85", "/gatherings", "/care"];
 const settleWaitMs = Number(process.env.TOWNPET_BROWSER_SETTLE_MS ?? 500);
 
 const browser = await chromium.launch({ headless: true });

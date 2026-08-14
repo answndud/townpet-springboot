@@ -54,11 +54,9 @@ class CommunityController {
   CommunityFeedResponse list(
       @PathVariable String animalCode,
       @AuthenticationPrincipal @Nullable UserDetails principal,
-      @RequestParam(defaultValue = "VIEWER") FeedController.FeedAudience audience,
       @RequestParam(defaultValue = "all") String board,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
-      @RequestParam(defaultValue = "ALL") FeedController.FeedScope scope,
       @RequestParam(required = false) @Size(max = 80) @Nullable String query,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
@@ -76,24 +74,22 @@ class CommunityController {
           "all".equals(normalizedAnimal)
               ? feed.list(
                   memberId(principal),
-                  audience == FeedController.FeedAudience.VIEWER,
+                  principal != null,
                   cursor,
                   limit,
                   query,
-                  scope.name(),
                   from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
                   to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
                   null,
                   boardTypes(normalizedBoard))
               : feed.listCommunity(
                   memberId(principal),
-                  audience == FeedController.FeedAudience.VIEWER,
+                  principal != null,
                   normalizedAnimal.toUpperCase(java.util.Locale.ROOT),
                   boardTypes(normalizedBoard),
                   cursor,
                   limit,
                   query,
-                  scope.name(),
                   from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
                   to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC));
       return new CommunityFeedResponse(
@@ -143,7 +139,6 @@ class CommunityController {
         item.itemType(),
         item.title(),
         item.summary(),
-        item.scope(),
         item.authorId(),
         item.neighborhoodId(),
         item.animalInterestCode(),
@@ -166,7 +161,6 @@ class CommunityController {
       String type,
       String title,
       String body,
-      String scope,
       @Nullable UUID authorId,
       @Nullable UUID neighborhoodId,
       @Nullable String animalCode,

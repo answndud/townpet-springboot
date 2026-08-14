@@ -4,7 +4,7 @@ const baseUrl = process.env.TOWNPET_BASE_URL ?? "http://localhost:5173";
 const repeat = Number(process.env.TOWNPET_PERF_REPEAT ?? 3);
 const routeBudgetMs = 100;
 const apiBudgetMs = 250;
-const routes = ["/", "/feed/guest", "/marketplace", "/lost-found", "/guides?q=%EC%82%B0%EC%B1%85", "/gatherings", "/care"];
+const routes = ["/", "/?view=all", "/marketplace", "/lost-found", "/guides?q=%EC%82%B0%EC%B1%85", "/gatherings", "/care"];
 const apiRequests = [
   "/api/v1/feed?limit=20",
   "/api/v1/marketplace/listings?limit=30",

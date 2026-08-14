@@ -4,7 +4,6 @@ import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.table;
 
-import com.townpet.member.api.MemberDirectory;
 import com.townpet.relationship.api.BlockDirectory;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -30,9 +29,6 @@ public class PublicationFeed {
   private static final Field<UUID> ID = field(name("p", "id"), UUID.class);
   private static final Field<UUID> AUTHOR_ID = field(name("p", "author_member_id"), UUID.class);
   private static final Field<String> TYPE = field(name("p", "type"), String.class);
-  private static final Field<String> SCOPE = field(name("p", "scope"), String.class);
-  private static final Field<UUID> NEIGHBORHOOD_ID =
-      field(name("p", "neighborhood_id"), UUID.class);
   private static final Field<String> ANIMAL_INTEREST_CODE =
       field(name("p", "animal_interest_code"), String.class);
   private static final Field<String> TITLE = field(name("p", "title"), String.class);
@@ -45,22 +41,20 @@ public class PublicationFeed {
   private static final Field<Long> VERSION = field(name("p", "version"), Long.class);
 
   private final DSLContext query;
-  private final MemberDirectory members;
   private final BlockDirectory blocks;
 
-  PublicationFeed(DSLContext query, MemberDirectory members, BlockDirectory blocks) {
+  PublicationFeed(DSLContext query, BlockDirectory blocks) {
     this.query = query;
-    this.members = members;
     this.blocks = blocks;
   }
 
   @Transactional(readOnly = true)
   public Page list(
       @Nullable UUID viewerMemberId,
-      boolean includeViewerNeighborhood,
+      boolean applyViewerPolicy,
       @Nullable String encodedCursor,
       int limit) {
-    return list(viewerMemberId, includeViewerNeighborhood, encodedCursor, limit, null);
+    return list(viewerMemberId, applyViewerPolicy, encodedCursor, limit, null);
   }
 
   @Transactional(readOnly = true)
@@ -143,8 +137,6 @@ public class PublicationFeed {
                 ID,
                 AUTHOR_ID,
                 TYPE,
-                SCOPE,
-                NEIGHBORHOOD_ID,
                 ANIMAL_INTEREST_CODE,
                 TITLE,
                 BODY,
@@ -176,7 +168,7 @@ public class PublicationFeed {
   }
 
   private static Condition popularCondition(@Nullable String searchQuery, String searchField) {
-    Condition condition = LIFECYCLE.eq("ACTIVE").and(SCOPE.eq("GLOBAL"));
+    Condition condition = LIFECYCLE.eq("ACTIVE");
     if (searchQuery != null && !searchQuery.isBlank()) {
       String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
       if (searchField.equalsIgnoreCase("TITLE"))
@@ -194,9 +186,7 @@ public class PublicationFeed {
         record.get(TYPE),
         record.get(TITLE),
         record.get(BODY),
-        record.get(SCOPE),
         record.get(AUTHOR_ID),
-        record.get(NEIGHBORHOOD_ID),
         record.get(ANIMAL_INTEREST_CODE),
         record.get(LIFECYCLE),
         record.get(CREATED_AT).toInstant(),
@@ -211,11 +201,11 @@ public class PublicationFeed {
   @Transactional(readOnly = true)
   public Page list(
       @Nullable UUID viewerMemberId,
-      boolean includeViewerNeighborhood,
+      boolean applyViewerPolicy,
       @Nullable String encodedCursor,
       int limit,
       @Nullable String searchQuery) {
-    return list(viewerMemberId, includeViewerNeighborhood, encodedCursor, limit, searchQuery, null);
+    return list(viewerMemberId, applyViewerPolicy, encodedCursor, limit, searchQuery, null, null, null, null);
   }
 
   public record PopularItem(Item publication, long recommendationCount) {}
@@ -226,55 +216,22 @@ public class PublicationFeed {
   @Transactional(readOnly = true)
   public Page list(
       @Nullable UUID viewerMemberId,
-      boolean includeViewerNeighborhood,
+      boolean applyViewerPolicy,
       @Nullable String encodedCursor,
       int limit,
       @Nullable String searchQuery,
-      @Nullable String scopeFilter) {
-    return list(
-        viewerMemberId,
-        includeViewerNeighborhood,
-        encodedCursor,
-        limit,
-        searchQuery,
-        scopeFilter,
-        null,
-        null,
-        null,
-        null);
-  }
-
-  @Transactional(readOnly = true)
-  public Page list(
-      @Nullable UUID viewerMemberId,
-      boolean includeViewerNeighborhood,
-      @Nullable String encodedCursor,
-      int limit,
-      @Nullable String searchQuery,
-      @Nullable String scopeFilter,
       @Nullable Instant from,
       @Nullable Instant to) {
-    return list(
-        viewerMemberId,
-        includeViewerNeighborhood,
-        encodedCursor,
-        limit,
-        searchQuery,
-        scopeFilter,
-        from,
-        to,
-        null,
-        null);
+    return list(viewerMemberId, applyViewerPolicy, encodedCursor, limit, searchQuery, from, to, null, null);
   }
 
   @Transactional(readOnly = true)
   public Page list(
       @Nullable UUID viewerMemberId,
-      boolean includeViewerNeighborhood,
+      boolean applyViewerPolicy,
       @Nullable String encodedCursor,
       int limit,
       @Nullable String searchQuery,
-      @Nullable String scopeFilter,
       @Nullable Instant from,
       @Nullable Instant to,
       @Nullable Set<String> animalInterestCodes,
@@ -287,22 +244,7 @@ public class PublicationFeed {
       throw new IllegalArgumentException("Invalid feed query");
     }
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
-    UUID viewerNeighborhoodId =
-        viewerMemberId == null || !includeViewerNeighborhood
-            ? null
-            : members
-                .findPublicationContext(viewerMemberId)
-                .map(MemberDirectory.MemberPublicationContext::neighborhoodId)
-                .orElse(null);
-    Condition visible = SCOPE.eq("GLOBAL");
-    if (viewerNeighborhoodId != null)
-      visible = visible.or(SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId)));
-    if (scopeFilter != null && !scopeFilter.isBlank()) {
-      if (scopeFilter.equalsIgnoreCase("LOCAL"))
-        visible = SCOPE.eq("LOCAL").and(NEIGHBORHOOD_ID.eq(viewerNeighborhoodId));
-      else if (scopeFilter.equalsIgnoreCase("GLOBAL")) visible = SCOPE.eq("GLOBAL");
-    }
-    Condition condition = LIFECYCLE.eq("ACTIVE").and(visible);
+    Condition condition = LIFECYCLE.eq("ACTIVE");
     if (from != null) condition = condition.and(CREATED_AT.ge(from.atOffset(ZoneOffset.UTC)));
     if (to != null) condition = condition.and(CREATED_AT.lt(to.atOffset(ZoneOffset.UTC)));
     if (searchQuery != null && !searchQuery.isBlank()) {
@@ -319,7 +261,7 @@ public class PublicationFeed {
               : condition.and(
                   ANIMAL_INTEREST_CODE.isNull().or(ANIMAL_INTEREST_CODE.in(animalInterestCodes)));
     }
-    if (viewerMemberId != null && includeViewerNeighborhood) {
+    if (viewerMemberId != null && applyViewerPolicy) {
       Set<UUID> blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
       if (!blockedAuthorIds.isEmpty()) condition = condition.and(AUTHOR_ID.notIn(blockedAuthorIds));
     }
@@ -339,8 +281,6 @@ public class PublicationFeed {
                 ID,
                 AUTHOR_ID,
                 TYPE,
-                SCOPE,
-                NEIGHBORHOOD_ID,
                 ANIMAL_INTEREST_CODE,
                 TITLE,
                 BODY,
@@ -359,9 +299,7 @@ public class PublicationFeed {
                         record.get(TYPE),
                         record.get(TITLE),
                         record.get(BODY),
-                        record.get(SCOPE),
                         record.get(AUTHOR_ID),
-                        record.get(NEIGHBORHOOD_ID),
                         record.get(ANIMAL_INTEREST_CODE),
                         record.get(LIFECYCLE),
                         record.get(CREATED_AT).toInstant(),
@@ -383,9 +321,7 @@ public class PublicationFeed {
       String type,
       String title,
       String body,
-      String scope,
       UUID authorId,
-      @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
       String lifecycle,
       Instant createdAt,

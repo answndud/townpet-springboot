@@ -51,8 +51,8 @@ class ReleaseCandidateQueryPlanTest {
         PreparedStatement publication =
             connection.prepareStatement(
                 "INSERT INTO publication "
-                    + "(id, author_member_id, type, scope, title, body, lifecycle, created_at, updated_at) "
-                    + "VALUES (?, ?, 'FREE_BOARD', 'GLOBAL', 'performance', 'fixture', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+                    + "(id, author_member_id, type, title, body, lifecycle, created_at, updated_at) "
+                    + "VALUES (?, ?, 'FREE_BOARD', 'performance', 'fixture', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
         PreparedStatement volunteer =
             connection.prepareStatement(
                 "INSERT INTO volunteer_opportunity "

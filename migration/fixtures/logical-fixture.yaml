@@ -18,7 +18,6 @@ records:
   publication:
     id: 00000000-0000-4000-8000-000000000201
     title: 산책하기 좋은 동네 정보
-    scope: LOCAL
     author: member
   careRequest:
     title: 저녁 산책 돌봄
@@ -37,7 +36,7 @@ scenarios:
     expected: [OPEN, MATCHED, IN_PROGRESS, COMPLETED]
   - id: guest-search
     actors: [guest]
-    steps: [search, filter_scope, open_detail]
+    steps: [search, open_detail]
     expected: [200, 200, 200]
   - id: moderator-report-review
     actors: [member, staff]

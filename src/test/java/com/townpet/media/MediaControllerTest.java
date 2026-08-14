@@ -244,7 +244,7 @@ class MediaControllerTest {
                     .cookie(session)
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"title\":\"media\",\"body\":\"body\",\"scope\":\"GLOBAL\"}"))
+                    .content("{\"title\":\"media\",\"body\":\"body\"}"))
             .andExpect(status().isCreated())
             .andReturn();
     return new com.fasterxml.jackson.databind.ObjectMapper()

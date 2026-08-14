@@ -25,12 +25,6 @@ class PublicationEntity {
   @Column(nullable = false, length = 40)
   private PublicationType type;
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 20)
-  private PublicationScope scope;
-
-  @Nullable private UUID neighborhoodId;
-
   @Nullable
   @Column(length = 40)
   private String animalInterestCode;
@@ -57,25 +51,19 @@ class PublicationEntity {
 
   PublicationEntity(
       UUID authorMemberId,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       String title,
       String body) {
-    this(authorMemberId, scope, neighborhoodId, null, title, body);
+    this(authorMemberId, PublicationType.FREE_BOARD, null, title, body);
   }
 
   PublicationEntity(
       UUID authorMemberId,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
       String title,
       String body) {
     this(
         authorMemberId,
         PublicationType.FREE_BOARD,
-        scope,
-        neighborhoodId,
         animalInterestCode,
         title,
         body);
@@ -84,16 +72,12 @@ class PublicationEntity {
   PublicationEntity(
       UUID authorMemberId,
       PublicationType type,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
       String title,
       String body) {
     this.id = UuidV7.randomUuid();
     this.authorMemberId = authorMemberId;
     this.type = type;
-    this.scope = scope;
-    this.neighborhoodId = neighborhoodId;
     this.animalInterestCode = animalInterestCode;
     this.title = title;
     this.body = body;
@@ -107,7 +91,6 @@ class PublicationEntity {
     publication.id = UuidV7.randomUuid();
     publication.guestAuthorId = guestAuthorId;
     publication.type = PublicationType.FREE_BOARD;
-    publication.scope = PublicationScope.GLOBAL;
     publication.title = title.trim();
     publication.body = body.trim();
     publication.lifecycle = PublicationLifecycle.ACTIVE;
@@ -132,15 +115,6 @@ class PublicationEntity {
 
   PublicationType getType() {
     return type;
-  }
-
-  PublicationScope getScope() {
-    return scope;
-  }
-
-  @Nullable
-  UUID getNeighborhoodId() {
-    return neighborhoodId;
   }
 
   @Nullable
@@ -173,35 +147,20 @@ class PublicationEntity {
   }
 
   void edit(
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
-      String title,
-      String body,
-      Instant changedAt) {
-    edit(scope, neighborhoodId, null, title, body, changedAt);
-  }
-
-  void edit(
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
       String title,
       String body,
       Instant changedAt) {
-    edit(type, scope, neighborhoodId, animalInterestCode, title, body, changedAt);
+    edit(type, animalInterestCode, title, body, changedAt);
   }
 
   void edit(
       PublicationType type,
-      PublicationScope scope,
-      @Nullable UUID neighborhoodId,
       @Nullable String animalInterestCode,
       String title,
       String body,
       Instant changedAt) {
     this.type = type;
-    this.scope = scope;
-    this.neighborhoodId = neighborhoodId;
     this.animalInterestCode = animalInterestCode;
     this.title = title;
     this.body = body;
