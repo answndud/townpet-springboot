@@ -143,8 +143,13 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
 
   const resolvedAnimalCode = animalCode ?? "ALL";
   const animalLabel = resolvedAnimalCode === "ALL" ? "전체 동물 게시판" : `${ANIMAL_LABELS.get(resolvedAnimalCode) ?? resolvedAnimalCode} 게시판`;
-  const pageLabel = mode === "common" ? "공통게시판" : animalLabel;
   const boardLabel = boardTabs.find(([code]) => code === boardCode)?.[1] ?? "게시판";
+  const pageLabel = mode === "common"
+    ? boardCode === "all" ? "공통게시판" : `${boardLabel} 게시판`
+    : animalLabel;
+  const heroDescription = mode === "common"
+    ? boardCode === "all" ? "모든 동물 가족이 함께 보는 생활 도메인 게시판입니다." : `${boardLabel} 관련 소식과 정보를 확인하세요.`
+    : "동물별로 필요한 질문과 정보를 한곳에서 찾아보세요.";
   const writeHref = writePath(mode, animalCode ?? "ALL", boardCode ?? "all");
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
@@ -164,9 +169,9 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
     <main className="page community-page">
       <header className="community-hero">
         <div>
-          <p className="eyebrow">{mode === "common" ? "COMMON BOARDS" : "ANIMAL BOARDS"}</p>
-          <h1>{mode === "common" ? pageLabel : animalLabel}</h1>
-          <p>{mode === "common" ? "모든 동물 가족이 함께 보는 생활 도메인 게시판입니다." : "동물별로 필요한 질문과 정보를 한곳에서 찾아보세요."}</p>
+          <p className="eyebrow">{mode === "common" ? boardCode === "all" ? "COMMON BOARDS" : `COMMON BOARD · ${boardCode.toUpperCase()}` : "ANIMAL BOARDS"}</p>
+          <h1>{pageLabel}</h1>
+          <p>{heroDescription}</p>
         </div>
         {writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : <span className="field-help">게시판을 선택해 글을 작성하세요.</span>}
       </header>
