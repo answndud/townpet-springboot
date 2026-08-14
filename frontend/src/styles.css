@@ -711,8 +711,10 @@ h1, h2, p { margin: 0; }
 .marketplace-hero p:not(.eyebrow),
 .lostfound-hero p:not(.eyebrow),
 .localcare-hero p:not(.eyebrow) { margin-top: 5px; line-height: 1.5; }
-.localcare-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.localcare-hero > .button { flex: 0 0 auto; margin-top: 0; }
+.localcare-hero { display: block; }
+.localcare-hero > .button { margin-top: 16px; }
+.localcare-hero:has(> div) { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.localcare-hero:has(> div) > .button { flex: 0 0 auto; margin-top: 0; }
 .marketplace-empty,
 .community-state { padding-block: 22px; }
 .publication-detail-card,
@@ -722,7 +724,7 @@ h1, h2, p { margin: 0; }
 .localcare-detail { padding-block: 20px; }
 
 @media (max-width: 760px) {
-  .localcare-hero { align-items: stretch; flex-direction: column; }
+  .localcare-hero:has(> div) { align-items: stretch; flex-direction: column; }
   .localcare-hero > .button { align-self: flex-start; }
 }
 
