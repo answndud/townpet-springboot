@@ -65,7 +65,7 @@ describe("Animal community journeys", () => {
 
     render(<MemoryRouter initialEntries={["/boards/marketplace"]}><App /></MemoryRouter>);
 
-    expect(await screen.findByRole("heading", { name: "공통게시판" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "거래 게시판" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "강아지 용품 거래" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "봉사" })).toHaveAttribute("href", "/boards/volunteer");
     expect(fetchMock).toHaveBeenCalledWith(

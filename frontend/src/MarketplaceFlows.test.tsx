@@ -64,7 +64,7 @@ describe("Marketplace journeys", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "강아지 이동장" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("link", { name: "글 올리기" }));
+    fireEvent.click(screen.getByRole("link", { name: "물품 등록" }));
     expect(await screen.findByRole("heading", { name: "새 거래 글" })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("거래 유형"), { target: { value: "SELL" } });
     fireEvent.change(screen.getByLabelText("제목"), { target: { value: "새 이동장" } });
