@@ -75,7 +75,7 @@ function writePath(mode: "animal" | "common", animalCode: string, board: string)
   return base;
 }
 
-function FeedCard({ item }: { item: FeedItem }) {
+function FeedCard({ item, popularView }: { item: FeedItem; popularView: boolean }) {
   const href = item.href || `/posts/${item.id}`;
   const authorLabel = item.authorId
     ? "TownPet 회원"
@@ -91,6 +91,7 @@ function FeedCard({ item }: { item: FeedItem }) {
       <div className="feed-item-meta">
         <span>{authorLabel}</span>
         <span aria-hidden="true">·</span>
+        {popularView && item.recommendationCount != null ? <><span>추천 {item.recommendationCount}</span><span aria-hidden="true">·</span></> : null}
         <time dateTime={item.createdAt}>{date(item.createdAt)}</time>
       </div>
     </article>
@@ -114,6 +115,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
   const query = searchParams.get("q") ?? "";
   const searchFieldParam = searchParams.get("searchField");
   const searchField = searchFieldParam === "TITLE" || searchFieldParam === "BODY" ? searchFieldParam : "ALL";
+  const popularView = mode === "animal" && searchParams.get("view") === "popular";
   const [searchDraft, setSearchDraft] = useState(query);
   const [retryVersion, setRetryVersion] = useState(0);
 
@@ -122,7 +124,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
   }, [query]);
 
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const queryKey = `${mode}|${animalCode}|${boardCode}|${query}|${searchField}|${retryVersion}`;
+  const queryKey = `${mode}|${animalCode}|${boardCode}|${query}|${searchField}|${popularView ? "popular" : "latest"}|${retryVersion}`;
   const feed = useCursorPagination<FeedItem>({
     enabled: Boolean(boardCode && (mode === "common" || animalCode)),
     page,
@@ -130,7 +132,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
     queryKey,
     fetchPage: (cursor, signal) => mode === "common"
       ? commonBoardApi.feed(boardCode ?? "all", { query, searchField, cursor, signal })
-      : communityApi.feed((animalCode ?? "ALL").toLowerCase(), boardCode ?? "all", { query, searchField, cursor, signal }),
+      : communityApi.feed((animalCode ?? "ALL").toLowerCase(), boardCode ?? "all", { query, searchField, cursor, signal, sort: popularView ? "POPULAR" : "LATEST" }),
   });
   const items = feed.items;
   const loading = feed.loading;
@@ -157,7 +159,19 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
     const form = new FormData(event.currentTarget);
     const next = String(form.get("q") ?? "").trim();
     const field = String(form.get("searchField") ?? "ALL");
-    setSearchParams({ ...(next ? { q: next } : {}), ...(field !== "ALL" ? { searchField: field } : {}) });
+    setSearchParams({
+      ...(popularView ? { view: "popular" } : {}),
+      ...(next ? { q: next } : {}),
+      ...(field !== "ALL" ? { searchField: field } : {}),
+    });
+  }
+
+  function togglePopular() {
+    const next = new URLSearchParams(searchParams);
+    next.delete("page");
+    if (popularView) next.delete("view");
+    else next.set("view", "popular");
+    setSearchParams(next);
   }
 
   if ((mode === "animal" && !animalCode) || !boardCode) {
@@ -178,7 +192,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
 
       <nav className="community-board-tabs" aria-label={`${pageLabel} 메뉴`}>
         {boardTabs.map(([code, label]) => (
-          <NavLink key={code} to={mode === "common" ? `/boards/${code}` : `/animals/${(animalCode ?? "ALL").toLowerCase()}${code === "all" ? "" : `/${code}`}`} className={({ isActive }) => isActive ? "active" : ""} end={code === "all"}>
+          <NavLink key={code} to={mode === "common" ? `/boards/${code}` : `/animals/${(animalCode ?? "ALL").toLowerCase()}${code === "all" ? "" : `/${code}`}${popularView ? "?view=popular" : ""}`} className={({ isActive }) => isActive ? "active" : ""} end={code === "all"}>
             {label}
           </NavLink>
         ))}
@@ -186,19 +200,22 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
 
       {loading ? <section className="surface-card community-state" role="status">게시글을 불러오는 중...</section> : null}
       {!loading && error ? <section className="surface-card community-state"><h2>{error}</h2><button className="button button-soft" type="button" onClick={() => setRetryVersion((current) => current + 1)}>다시 시도</button></section> : null}
-      {!loading && !error && !items.length ? <section className="surface-card community-state"><h2>{query ? "검색 결과가 없습니다" : `${boardLabel} 게시판이 비어 있습니다`}</h2><p>{query ? "다른 검색어로 다시 시도해 보세요." : `${mode === "common" ? pageLabel : animalLabel}의 첫 번째 글을 남겨 보세요.`}</p>{writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}</section> : null}
+      {!loading && !error && !items.length ? <section className="surface-card community-state"><h2>{query ? "검색 결과가 없습니다" : popularView ? "인기글이 없습니다" : `${boardLabel} 게시판이 비어 있습니다`}</h2><p>{query ? "다른 검색어로 다시 시도해 보세요." : popularView ? "추천 10개 이상인 글이 아직 없습니다." : `${mode === "common" ? pageLabel : animalLabel}의 첫 번째 글을 남겨 보세요.`}</p>{writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}</section> : null}
       {!loading && !error && items.length ? (
         <section className="surface-card feed-list" aria-label={`${pageLabel} ${boardLabel} 게시글 목록`}>
-          {items.map((item) => <FeedCard key={`${item.kind}:${item.id}`} item={item} />)}
+          {items.map((item) => <FeedCard key={`${item.kind}:${item.id}`} item={item} popularView={popularView} />)}
           <CursorPagination page={page} hasNext={feed.hasNext} totalPages={feed.totalPages} disabled={feed.loading} onPageChange={setPage} />
         </section>
       ) : null}
 
+      <div className="marketplace-toolbar">
+        {mode === "animal" ? <button className={`market-filter${popularView ? " active" : ""}`} type="button" aria-pressed={popularView} onClick={togglePopular}>인기글</button> : <span />}
         <form className="search-panel community-bottom-search" onSubmit={submitSearch}>
         <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
         <label><span className="search-label">{mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"}</span><input aria-label={mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"} name="q" value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder="제목이나 내용" /></label>
         <button className="button button-soft" type="submit">검색</button>
-      </form>
+        </form>
+      </div>
     </main>
   );
 }

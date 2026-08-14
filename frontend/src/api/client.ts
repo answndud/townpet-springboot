@@ -111,6 +111,7 @@ export type FeedItem = {
   updatedAt: string;
   version: number;
   href: string;
+  recommendationCount?: number | null;
 };
 
 export type Comment = {
@@ -721,6 +722,7 @@ export const communityApi = {
       signal?: AbortSignal;
       query?: string;
       searchField?: "ALL" | "TITLE" | "BODY";
+      sort?: "LATEST" | "POPULAR";
     } = {},
   ) {
     const search = new URLSearchParams({
@@ -730,6 +732,7 @@ export const communityApi = {
     if (options.cursor) search.set("cursor", options.cursor);
     if (options.query) search.set("query", options.query);
     if (options.searchField && options.searchField !== "ALL") search.set("searchField", options.searchField);
+    if (options.sort === "POPULAR") search.set("sort", options.sort);
     return apiFetch<CommunityFeedPage & FeedPageResponse>(
       `/api/v1/communities/${encodeURIComponent(animalCode)}/feed?${search}`,
       { signal: options.signal },

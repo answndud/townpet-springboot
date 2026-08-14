@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -31,6 +31,13 @@ describe("Animal community journeys", () => {
       "/api/v1/communities/dog/feed?board=questions&limit=20",
       expect.objectContaining({ credentials: "include" }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "인기글" }));
+    expect(await screen.findByRole("heading", { name: "강아지 산책 질문" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/v1/communities/dog/feed?board=questions&limit=20&sort=POPULAR",
+      expect.objectContaining({ credentials: "include" }),
+    );
+    expect(screen.getByRole("button", { name: "인기글" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("does not present an anonymous publication as an operations-team post", async () => {
