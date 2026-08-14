@@ -40,6 +40,7 @@ public class SessionController {
   private final CredentialRepository credentials;
   private final boolean secureCookies;
   private final RequestRateLimiter rateLimiter;
+  private final Duration sessionTimeout;
   private final SecurityContextRepository securityContexts =
       new HttpSessionSecurityContextRepository();
 
@@ -47,11 +48,13 @@ public class SessionController {
       AuthenticationManager authenticationManager,
       CredentialRepository credentials,
       @Value("${townpet.security.secure-cookies:false}") boolean secureCookies,
-      RequestRateLimiter rateLimiter) {
+      RequestRateLimiter rateLimiter,
+      @Value("${spring.session.timeout:30m}") Duration sessionTimeout) {
     this.authenticationManager = authenticationManager;
     this.credentials = credentials;
     this.secureCookies = secureCookies;
     this.rateLimiter = rateLimiter;
+    this.sessionTimeout = sessionTimeout;
   }
 
   @GetMapping("/csrf")
@@ -99,7 +102,7 @@ public class SessionController {
     UUID memberId = credential.getMemberId();
     String role = credential.getRole();
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(new SessionResponse(memberId, Instant.now().plusSeconds(1800), role));
+        .body(new SessionResponse(memberId, Instant.now().plus(sessionTimeout), role));
   }
 
   @DeleteMapping("/sessions/current")

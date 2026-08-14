@@ -1,4 +1,8 @@
 spring:
+  session:
+    # Local showcase sessions should survive a long manual review session.
+    # Production keeps the shorter application default unless configured separately.
+    timeout: 8h
   datasource:
     url: ${TOWNPET_DB_URL:jdbc:postgresql://localhost:54329/townpet}
     username: ${TOWNPET_DB_USERNAME:townpet_app}
