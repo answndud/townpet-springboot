@@ -43,7 +43,7 @@ export type Member = {
 };
 
 export type PublicMember = Omit<Member, "role">;
-export type PublicMemberPublication = { id: string; title: string; body: string; scope: PublicationScope; createdAt: string; updatedAt: string };
+export type PublicMemberPublication = { id: string; title: string; body: string; createdAt: string; updatedAt: string };
 export type PublicMemberComment = { id: string; publicationId: string; body: string; createdAt: string };
 export type PublicMemberReaction = { publicationId: string; type: string; createdAt: string };
 
@@ -81,16 +81,12 @@ export type LostFoundSighting = {
   createdAt: string;
 };
 
-export type PublicationScope = "LOCAL" | "GLOBAL";
-
 export type Publication = {
   id: string;
   type: "FREE_BOARD" | "QA_QUESTION" | "PET_SHOWCASE" | "PRODUCT_REVIEW";
   title: string;
   body: string;
-  scope: PublicationScope;
   authorId: string;
-  neighborhoodId: string | null;
   animalInterestCode?: string | null;
   animalCommunityCodes?: string[];
   lifecycle: "ACTIVE" | "DELETED";
@@ -105,7 +101,6 @@ export type FeedItem = {
   type: string;
   title: string;
   body: string;
-  scope: PublicationScope;
   authorId: string | null;
   neighborhoodId: string | null;
   animalInterestCode?: string | null;
@@ -172,8 +167,6 @@ export type CreatePublicationInput = {
   title: string;
   body: string;
   type?: Publication["type"];
-  scope: PublicationScope;
-  neighborhoodId?: string;
   animalInterestCode?: string | null;
   animalCommunityCodes?: string[];
 };
@@ -673,31 +666,27 @@ export const publicationApi = {
     );
   },
   feed({
-    audience = "VIEWER",
     cursor,
     limit = 20,
     signal,
     query,
     searchField = "ALL",
-    scope = "ALL",
     from,
     to,
     animalInterestCodes,
     type,
   }: {
-    audience?: "GLOBAL" | "VIEWER";
     cursor?: string;
     limit?: number;
     signal?: AbortSignal;
     query?: string;
     searchField?: "ALL" | "TITLE" | "BODY";
-    scope?: "ALL" | "GLOBAL" | "LOCAL";
     from?: string;
     to?: string;
     animalInterestCodes?: string[];
     type?: string;
   } = {}) {
-    const search = new URLSearchParams({ audience, limit: String(limit), scope });
+    const search = new URLSearchParams({ limit: String(limit) });
     if (cursor) search.set("cursor", cursor);
     if (query) search.set("query", query);
     if (searchField !== "ALL") search.set("searchField", searchField);
@@ -727,22 +716,20 @@ export const communityApi = {
     animalCode: string,
     board = "all",
     options: {
-      audience?: "GLOBAL" | "VIEWER";
       cursor?: string;
       limit?: number;
       signal?: AbortSignal;
       query?: string;
-      scope?: "ALL" | "GLOBAL" | "LOCAL";
+      searchField?: "ALL" | "TITLE" | "BODY";
     } = {},
   ) {
     const search = new URLSearchParams({
-      audience: options.audience ?? "VIEWER",
       board,
       limit: String(options.limit ?? 20),
-      scope: options.scope ?? "ALL",
     });
     if (options.cursor) search.set("cursor", options.cursor);
     if (options.query) search.set("query", options.query);
+    if (options.searchField && options.searchField !== "ALL") search.set("searchField", options.searchField);
     return apiFetch<CommunityFeedPage & FeedPageResponse>(
       `/api/v1/communities/${encodeURIComponent(animalCode)}/feed?${search}`,
       { signal: options.signal },
@@ -758,21 +745,19 @@ export const commonBoardApi = {
   feed(
     board = "all",
     options: {
-      audience?: "GLOBAL" | "VIEWER";
       cursor?: string;
       limit?: number;
       signal?: AbortSignal;
       query?: string;
-      scope?: "ALL" | "GLOBAL" | "LOCAL";
+      searchField?: "ALL" | "TITLE" | "BODY";
     } = {},
   ) {
     const search = new URLSearchParams({
-      audience: options.audience ?? "VIEWER",
       limit: String(options.limit ?? 20),
-      scope: options.scope ?? "ALL",
     });
     if (options.cursor) search.set("cursor", options.cursor);
     if (options.query) search.set("query", options.query);
+    if (options.searchField && options.searchField !== "ALL") search.set("searchField", options.searchField);
     return apiFetch<FeedPageResponse>(
       `/api/v1/boards/${encodeURIComponent(board)}/feed?${search}`,
       { signal: options.signal },

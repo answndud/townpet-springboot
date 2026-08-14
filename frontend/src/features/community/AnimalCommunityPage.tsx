@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, NavLink, useParams, useSearchParams } from "react-router-dom";
 import { commonBoardApi, communityApi, type FeedItem } from "../../api/client";
 import { ANIMAL_BOARD_GROUPS } from "../member/AnimalBoardCatalog";
-import { useAuth } from "../../auth/AuthContext";
 import CursorPagination from "../../components/CursorPagination";
 import { useCursorPagination } from "../../hooks/useCursorPagination";
 
@@ -87,7 +86,6 @@ function FeedCard({ item }: { item: FeedItem }) {
     <article className="feed-item">
       <div className="feed-item-chips">
         <span className="publication-chip publication-chip-primary">{TYPE_LABELS[item.type] ?? item.type}</span>
-        {item.scope === "LOCAL" ? <span className="publication-chip">내 동네</span> : <span className="publication-chip">전체</span>}
       </div>
       <Link className="feed-item-title" to={href}><h2>{item.title}</h2></Link>
       <div className="feed-item-meta">
@@ -112,10 +110,10 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
   const animalCode = mode === "animal" ? normalizeAnimalCode(rawAnimalCode) : "ALL";
   const boardTabs = mode === "animal" ? ANIMAL_BOARD_TABS : COMMON_BOARD_TABS;
   const boardCode = boardTabs.some(([code]) => code === rawBoardCode) ? rawBoardCode : null;
-  const { member } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
-  const scope = member && searchParams.get("scope") === "LOCAL" ? "LOCAL" : "ALL";
+  const searchFieldParam = searchParams.get("searchField");
+  const searchField = searchFieldParam === "TITLE" || searchFieldParam === "BODY" ? searchFieldParam : "ALL";
   const [searchDraft, setSearchDraft] = useState(query);
   const [retryVersion, setRetryVersion] = useState(0);
 
@@ -124,15 +122,15 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
   }, [query]);
 
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const queryKey = `${mode}|${animalCode}|${boardCode}|${query}|${scope}|${retryVersion}`;
+  const queryKey = `${mode}|${animalCode}|${boardCode}|${query}|${searchField}|${retryVersion}`;
   const feed = useCursorPagination<FeedItem>({
     enabled: Boolean(boardCode && (mode === "common" || animalCode)),
     page,
     pageSize: 20,
     queryKey,
     fetchPage: (cursor, signal) => mode === "common"
-      ? commonBoardApi.feed(boardCode ?? "all", { query, scope, cursor, signal })
-      : communityApi.feed((animalCode ?? "ALL").toLowerCase(), boardCode ?? "all", { query, scope, cursor, signal }),
+      ? commonBoardApi.feed(boardCode ?? "all", { query, searchField, cursor, signal })
+      : communityApi.feed((animalCode ?? "ALL").toLowerCase(), boardCode ?? "all", { query, searchField, cursor, signal }),
   });
   const items = feed.items;
   const loading = feed.loading;
@@ -151,8 +149,10 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const next = searchDraft.trim();
-    setSearchParams({ ...(next ? { q: next } : {}), ...(scope === "LOCAL" ? { scope: "LOCAL" } : {}) });
+    const form = new FormData(event.currentTarget);
+    const next = String(form.get("q") ?? "").trim();
+    const field = String(form.get("searchField") ?? "ALL");
+    setSearchParams({ ...(next ? { q: next } : {}), ...(field !== "ALL" ? { searchField: field } : {}) });
   }
 
   if ((mode === "animal" && !animalCode) || !boardCode) {
@@ -168,7 +168,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
           <h1>{mode === "common" ? pageLabel : animalLabel}</h1>
           <p>{mode === "common" ? "모든 동물 가족이 함께 보는 생활 도메인 게시판입니다." : "동물별로 필요한 질문과 정보를 한곳에서 찾아보세요."}</p>
         </div>
-        {writeHref ? <Link className="button button-primary" to={writeHref}>글 작성하기</Link> : <span className="field-help">게시판을 선택해 글을 작성하세요.</span>}
+        {writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : <span className="field-help">게시판을 선택해 글을 작성하세요.</span>}
       </header>
 
       <nav className="community-board-tabs" aria-label={`${pageLabel} 메뉴`}>
@@ -179,27 +179,21 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
         ))}
       </nav>
 
-      <form className="search-panel" onSubmit={submitSearch}>
-        <label>{mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"}<input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder="제목이나 내용" /></label>
-        <button className="button button-soft" type="submit">검색</button>
-      </form>
-
-      {member ? (
-        <div className="feed-scope-tabs" role="group" aria-label="게시글 범위">
-          <button className={scope === "ALL" ? "market-filter active" : "market-filter"} type="button" aria-pressed={scope === "ALL"} onClick={() => setSearchParams({ ...(query ? { q: query } : {}) })}>전체</button>
-          <button className={scope === "LOCAL" ? "market-filter active" : "market-filter"} type="button" aria-pressed={scope === "LOCAL"} onClick={() => setSearchParams({ ...(query ? { q: query } : {}), scope: "LOCAL" })}>내 동네</button>
-        </div>
-      ) : null}
-
       {loading ? <section className="surface-card community-state" role="status">게시글을 불러오는 중...</section> : null}
       {!loading && error ? <section className="surface-card community-state"><h2>{error}</h2><button className="button button-soft" type="button" onClick={() => setRetryVersion((current) => current + 1)}>다시 시도</button></section> : null}
-      {!loading && !error && !items.length ? <section className="surface-card community-state"><h2>{query ? "검색 결과가 없습니다" : `${boardLabel} 게시판이 비어 있습니다`}</h2><p>{query ? "다른 검색어로 다시 시도해 보세요." : `${mode === "common" ? pageLabel : animalLabel}의 첫 번째 글을 남겨 보세요.`}</p>{writeHref ? <Link className="button button-soft" to={writeHref}>글 작성하기</Link> : null}</section> : null}
+      {!loading && !error && !items.length ? <section className="surface-card community-state"><h2>{query ? "검색 결과가 없습니다" : `${boardLabel} 게시판이 비어 있습니다`}</h2><p>{query ? "다른 검색어로 다시 시도해 보세요." : `${mode === "common" ? pageLabel : animalLabel}의 첫 번째 글을 남겨 보세요.`}</p>{writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}</section> : null}
       {!loading && !error && items.length ? (
         <section className="surface-card feed-list" aria-label={`${pageLabel} ${boardLabel} 게시글 목록`}>
           {items.map((item) => <FeedCard key={`${item.kind}:${item.id}`} item={item} />)}
           <CursorPagination page={page} hasNext={feed.hasNext} totalPages={feed.totalPages} disabled={feed.loading} onPageChange={setPage} />
         </section>
       ) : null}
+
+        <form className="search-panel community-bottom-search" onSubmit={submitSearch}>
+        <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
+        <label><span className="search-label">{mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"}</span><input aria-label={mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"} name="q" value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder="제목이나 내용" /></label>
+        <button className="button button-soft" type="submit">검색</button>
+      </form>
     </main>
   );
 }

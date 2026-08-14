@@ -15,7 +15,7 @@ export default function BreedLoungePage() {
     const controller = new AbortController();
     Promise.all([
       catalogApi.breed(breedCode, controller.signal),
-      apiFetch<FeedPage>(`/api/lounges/breeds/${encodeURIComponent(breedCode)}/posts?audience=GLOBAL&scope=ALL`, { signal: controller.signal }).then(normalizeFeedPage),
+      apiFetch<FeedPage>(`/api/lounges/breeds/${encodeURIComponent(breedCode)}/posts`, { signal: controller.signal }).then(normalizeFeedPage),
     ]).then(([loadedBreed, loadedFeed]) => { setBreed(loadedBreed); setFeed(loadedFeed); }).catch((requestError: unknown) => {
       if (requestError instanceof DOMException && requestError.name === "AbortError") return;
       if (controller.signal.aborted) return;
@@ -26,5 +26,5 @@ export default function BreedLoungePage() {
   useEffect(() => setViewerRole(member?.role ?? null), [member?.role]);
   if (error) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/?view=all">전체글</Link></section></main>;
   if (!breed || !feed) return <main className="page placeholder-page"><section className="surface-card" role="status">품종 정보를 불러오는 중...</section></main>;
-  return <main className="page feed-page"><section className="feed-hero"><div><p className="eyebrow">{breed.species} LOUNGE</p><h1>{breed.name}</h1><p>{breed.description}</p></div>{viewerRole !== "MODERATOR" ? <Link className="button button-primary" to="/posts/new">글쓰기</Link> : null}</section><section className="surface-card feed-list" aria-label={`${breed.name} 게시글`}>{feed.items.map((item) => <article className="feed-item" key={item.id}><Link className="feed-item-title" to={`/posts/${item.id}`}><h2>{item.title}</h2></Link><small>{formatDateTime(item.createdAt)}</small></article>)}{!feed.items.length ? <p>아직 등록된 게시글이 없습니다.</p> : null}</section></main>;
+  return <main className="page feed-page"><section className="feed-hero"><div><p className="eyebrow">{breed.species} LOUNGE</p><h1>{breed.name}</h1><p>{breed.description}</p></div>{viewerRole !== "MODERATOR" ? <Link className="button button-write" to="/posts/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}</section><section className="surface-card feed-list" aria-label={`${breed.name} 게시글`}>{feed.items.map((item) => <article className="feed-item" key={item.id}><Link className="feed-item-title" to={`/posts/${item.id}`}><h2>{item.title}</h2></Link><small>{formatDateTime(item.createdAt)}</small></article>)}{!feed.items.length ? <p>아직 등록된 게시글이 없습니다.</p> : null}</section></main>;
 }

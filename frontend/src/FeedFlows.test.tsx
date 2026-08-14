@@ -10,16 +10,15 @@ function response(body: unknown, status = 200) {
   });
 }
 
-function publication(id: string, title: string, scope: "GLOBAL" | "LOCAL" = "GLOBAL") {
+function publication(id: string, title: string) {
   return {
     id,
     kind: "PUBLICATION",
     type: "FREE_BOARD",
     title,
     body: `${title} 본문입니다.`,
-    scope,
     authorId: "00000000-0000-4000-8000-000000000201",
-    neighborhoodId: scope === "LOCAL" ? "00000000-0000-4000-8000-000000000101" : null,
+    neighborhoodId: null,
     status: "ACTIVE",
     lifecycle: "ACTIVE",
     createdAt: "2026-08-10T09:00:00Z",
@@ -70,7 +69,7 @@ describe("Publication feed journeys", () => {
     expect(await screen.findByRole("heading", { name: "두 번째 전체 글" })).toBeInTheDocument();
     expect(screen.getAllByRole("article")).toHaveLength(1);
     expect(fetchMock).toHaveBeenLastCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&cursor=next-page",
+      "/api/v1/feed?limit=20&cursor=next-page",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -109,7 +108,7 @@ describe("Publication feed journeys", () => {
     expect(await screen.findByRole("heading", { name: "두 번째 페이지" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "첫 번째 페이지" })).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenLastCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&cursor=page-two",
+      "/api/v1/feed?limit=20&cursor=page-two",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -131,7 +130,7 @@ describe("Publication feed journeys", () => {
     expect(screen.getByDisplayValue("산책")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "검색어 초기화" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&query=%EC%82%B0%EC%B1%85",
+      "/api/v1/feed?limit=20&query=%EC%82%B0%EC%B1%85",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -149,7 +148,7 @@ describe("Publication feed journeys", () => {
 
     expect(await screen.findByRole("heading", { name: "산책 검색 결과" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&query=%EC%82%B0%EC%B1%85",
+      "/api/v1/feed?limit=20&query=%EC%82%B0%EC%B1%85",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -165,7 +164,7 @@ describe("Publication feed journeys", () => {
 
     await screen.findByRole("heading", { name: "전체글" });
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL",
+      "/api/v1/feed?limit=20",
       expect.objectContaining({ credentials: "include" }),
     );
   });
@@ -181,7 +180,7 @@ describe("Publication feed journeys", () => {
 
     await screen.findByRole("heading", { name: "전체글" });
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/feed?audience=GLOBAL&limit=20&scope=ALL&query=%EC%A7%88%EB%AC%B8",
+      "/api/v1/feed?limit=20&query=%EC%A7%88%EB%AC%B8",
       expect.objectContaining({ credentials: "include" }),
     );
   });

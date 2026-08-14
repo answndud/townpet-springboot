@@ -21,7 +21,7 @@ describe("TownPet Vite shell", () => {
         const path = String(input);
         const body = path.endsWith("/api/v1/members/me")
           ? { detail: "Unauthorized" }
-          : { items: [{ id: "00000000-0000-4000-8000-000000000301", kind: "PUBLICATION", type: "FREE_BOARD", title: "이번 주말 산책 코스 추천받아요", body: "저녁에 걷기 좋은 조용한 코스를 찾고 있어요.", scope: "GLOBAL", authorId: "00000000-0000-0000-0000-000000000201", neighborhoodId: null, status: "ACTIVE", lifecycle: "ACTIVE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/posts/00000000-0000-4000-8000-000000000301" }], page: { nextCursor: null, hasNext: false } };
+          : { items: [{ id: "00000000-0000-4000-8000-000000000301", kind: "PUBLICATION", type: "FREE_BOARD", title: "이번 주말 산책 코스 추천받아요", body: "저녁에 걷기 좋은 조용한 코스를 찾고 있어요.", authorId: "00000000-0000-0000-0000-000000000201", neighborhoodId: null, status: "ACTIVE", lifecycle: "ACTIVE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/posts/00000000-0000-4000-8000-000000000301" }], page: { nextCursor: null, hasNext: false } };
         const status = path.endsWith("/api/v1/members/me") ? 401 : 200;
         return Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
       }),
