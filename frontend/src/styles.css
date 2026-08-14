@@ -728,6 +728,17 @@ h1, h2, p { margin: 0; }
 .marketplace-detail-card,
 .gathering-detail,
 .localcare-detail { padding-block: 20px; }
+.marketplace-description,
+.lostfound-description { min-height: 0; padding-block: 18px; }
+.publication-body { min-height: 96px; }
+.localcare-content { margin-block: 1.2rem; }
+.gathering-detail dl { margin-block: 1.2rem; }
+.marketplace-card:hover,
+.lostfound-card:hover,
+.localcare-card:hover,
+.gathering-card:hover,
+.notification-item:hover { transform: none; }
+.notification-item { transition: border-color .16s ease, background-color .16s ease; }
 
 @media (max-width: 760px) {
   .localcare-hero:has(> div) { align-items: stretch; flex-direction: column; }
