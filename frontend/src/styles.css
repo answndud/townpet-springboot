@@ -18,12 +18,12 @@
   --control-border: var(--surface-border-strong);
   --control-background: var(--surface);
   --control-text: var(--text);
-  --control-radius: var(--radius-md);
+  --control-radius: 0;
   --control-height: 44px;
   --layout-max-width: 1320px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
   font-synthesis: none;
   color-scheme: light;
   text-rendering: optimizeLegibility;
@@ -534,6 +534,7 @@ h1, h2, p { margin: 0; }
 }
 
 /* Atlas visual system: quiet surfaces, hairline borders, compact content density. */
+.app-shell-bg * { border-radius: 0 !important; }
 .site-header { border-bottom-color: #d8e4f6; background: #f4f8ff; backdrop-filter: none; }
 .header-menu-panel { border-color: var(--surface-border); border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(16, 24, 40, .08); }
 .header-menu-panel a:hover, .header-menu-panel a:focus-visible { background: var(--brand-soft); color: var(--brand-strong); }
