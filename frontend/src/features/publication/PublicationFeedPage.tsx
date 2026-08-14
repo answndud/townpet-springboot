@@ -91,23 +91,25 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
   const { member, status: authStatus } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
+  const searchFieldParam = searchParams.get("searchField");
+  const searchField = searchFieldParam === "TITLE" || searchFieldParam === "BODY" ? searchFieldParam : "ALL";
   const type = searchParams.get("type") ?? "";
   const popularView = homeView && searchParams.get("view") === "popular";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
-  const queryKey = `${memberView ? "member" : "guest"}|${query}|${type}|${popularView}`;
+  const queryKey = `${memberView ? "member" : "guest"}|${query}|${searchField}|${type}|${popularView}`;
   const feed = useCursorPagination<FeedItem>({
     enabled: !(homeView && popularView) && (!memberView || authStatus === "authenticated"),
     page,
     pageSize: 20,
     queryKey,
-    fetchPage: (cursor, signal) => publicationApi.feed({ cursor, query, type: type || undefined, signal }),
+    fetchPage: (cursor, signal) => publicationApi.feed({ cursor, query, searchField, type: type || undefined, signal }),
   });
   const popularFeed = useCursorPagination<PopularFeedItem>({
     enabled: homeView && popularView,
     page,
     pageSize: 20,
     queryKey,
-    fetchPage: (cursor, signal) => publicationApi.popular({ cursor, query, signal }),
+    fetchPage: (cursor, signal) => publicationApi.popular({ cursor, query, searchField, signal }),
   });
   const items = feed.items;
   const loading = memberView && authStatus !== "authenticated" ? authStatus === "loading" : feed.loading;
@@ -161,20 +163,20 @@ export default function PublicationFeedPage({ memberView, homeView = false }: Pu
 
       {!homeView || !popularView ? (
         <form
-          className="search-panel"
+          className="search-panel feed-search-panel"
           onSubmit={(event) => {
             event.preventDefault();
-            const value = String(new FormData(event.currentTarget).get("q") ?? "").trim();
-            setSearchParams({ ...(value ? { q: value } : {}), ...(type ? { type } : {}), ...(popularView ? { view: "popular" } : {}) });
+            const form = new FormData(event.currentTarget);
+            const value = String(form.get("q") ?? "").trim();
+            const field = String(form.get("searchField") ?? "ALL");
+            setSearchParams({ ...(value ? { q: value } : {}), ...(field !== "ALL" ? { searchField: field } : {}), ...(type ? { type } : {}), ...(popularView ? { view: "popular" } : {}) });
           }}
         >
-          <label>
-            <span>게시글 검색</span>
-            <input name="q" defaultValue={query} placeholder="제목·내용을 검색해 주세요" />
-          </label>
+          <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
+          <label><span className="search-label">게시글 검색</span><input aria-label="검색어" name="q" defaultValue={query} placeholder="제목이나 내용을 검색해 주세요" /></label>
           <button className="button button-soft" type="submit">검색</button>
           {query ? (
-            <button className="button button-soft" type="button" onClick={() => setSearchParams(type ? { type } : {})}>
+            <button className="button button-soft" type="button" onClick={() => setSearchParams({ ...(type ? { type } : {}), ...(popularView ? { view: "popular" } : {}) })}>
               초기화
             </button>
           ) : null}
