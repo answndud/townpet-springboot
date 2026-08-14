@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   publicationApi,
@@ -14,6 +14,7 @@ const BODY_MAX_LENGTH = 20_000;
 
 export default function PublicationCreatePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { member, status: authStatus } = useAuth();
   const [title, setTitle] = useState("");
@@ -28,9 +29,10 @@ export default function PublicationCreatePage() {
   const [partialPublicationId, setPartialPublicationId] = useState<string | null>(null);
 
   const loading = authStatus === "loading";
+  const loginPath = `/login?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`;
   useEffect(() => {
-    if (authStatus === "anonymous") navigate("/login?next=/posts/new", { replace: true });
-  }, [authStatus, navigate]);
+    if (authStatus === "anonymous") navigate(loginPath, { replace: true });
+  }, [authStatus, loginPath, navigate]);
   useEffect(() => {
     if (authStatus === "error") setError("로그인 상태를 확인하지 못했습니다.");
   }, [authStatus]);
@@ -69,7 +71,7 @@ export default function PublicationCreatePage() {
       navigate(`/posts/${publication.id}`);
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) {
-        navigate("/login?next=/posts/new", { replace: true });
+        navigate(loginPath, { replace: true });
         return;
       }
       setError(
