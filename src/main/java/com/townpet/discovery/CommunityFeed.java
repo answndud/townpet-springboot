@@ -22,9 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 class CommunityFeed {
+  private static final long COMMUNITY_POPULAR_MIN_RECOMMENDATIONS = 10L;
   private static final Table<?> ITEMS = DSL.table(DSL.name("townpet_public_feed_item")).as("f");
   private static final Table<?> COMMUNITY_ITEMS =
       DSL.table(DSL.name("townpet_community_feed_item")).as("c");
+  private static final Table<?> REACTION = DSL.table(DSL.name("engagement_reaction")).as("r");
   private static final Field<UUID> SOURCE_ID = DSL.field(DSL.name("f", "source_id"), UUID.class);
   private static final Field<String> ITEM_KIND =
       DSL.field(DSL.name("f", "item_kind"), String.class);
@@ -69,6 +71,9 @@ class CommunityFeed {
       DSL.field(DSL.name("c", "updated_at"), OffsetDateTime.class);
   private static final Field<String> COMMUNITY_TARGET_PATH =
       DSL.field(DSL.name("c", "target_path"), String.class);
+  private static final Field<UUID> REACTION_PUBLICATION_ID =
+      DSL.field(DSL.name("r", "publication_id"), UUID.class);
+  private static final Field<String> REACTION_TYPE = DSL.field(DSL.name("r", "type"), String.class);
 
   private final DSLContext query;
   private final BlockDirectory blocks;
@@ -223,6 +228,7 @@ class CommunityFeed {
       @Nullable String encodedCursor,
       int limit,
       @Nullable String searchQuery,
+      String searchField,
       @Nullable Instant from,
       @Nullable Instant to) {
     if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid feed limit");
@@ -235,6 +241,7 @@ class CommunityFeed {
     if (searchQuery != null && searchQuery.length() > 80) {
       throw new IllegalArgumentException("Invalid feed query");
     }
+    validateSearchField(searchField);
 
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
     Condition condition = COMMUNITY_ANIMAL_CODE.eq(animalCode);
@@ -250,8 +257,7 @@ class CommunityFeed {
     if (searchQuery != null && !searchQuery.isBlank()) {
       String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
       condition =
-          condition.and(
-              COMMUNITY_TITLE.likeIgnoreCase(term).or(COMMUNITY_SUMMARY.likeIgnoreCase(term)));
+          condition.and(searchCondition(COMMUNITY_TITLE, COMMUNITY_SUMMARY, term, searchField));
     }
     if (viewerMemberId != null && includeViewerNeighborhood) {
       Set<UUID> blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
@@ -314,7 +320,8 @@ class CommunityFeed {
                         record.get(COMMUNITY_STATUS),
                         record.get(COMMUNITY_CREATED_AT).toInstant(),
                         record.get(COMMUNITY_UPDATED_AT).toInstant(),
-                        record.get(COMMUNITY_TARGET_PATH)));
+                        record.get(COMMUNITY_TARGET_PATH),
+                        null));
 
     boolean hasNext = fetched.size() > limit;
     List<Item> items = hasNext ? List.copyOf(fetched.subList(0, limit)) : List.copyOf(fetched);
@@ -322,6 +329,279 @@ class CommunityFeed {
         hasNext
             ? Cursor.encode(
                 items.getLast().createdAt(), items.getLast().itemKind(), items.getLast().sourceId())
+            : null;
+    return new Page(items, nextCursor, hasNext, totalPages);
+  }
+
+  @Transactional(readOnly = true)
+  Page listPopular(
+      @Nullable UUID viewerMemberId,
+      boolean includeViewerNeighborhood,
+      @Nullable String encodedCursor,
+      int limit,
+      @Nullable String searchQuery,
+      String searchField,
+      @Nullable Instant from,
+      @Nullable Instant to,
+      @Nullable Set<String> itemTypes) {
+    validatePopularRequest(limit, searchQuery, searchField);
+    validateDateRange(from, to);
+    Table<?> recommendations = recommendationCounts();
+    Field<UUID> recommendationSourceId =
+        DSL.field(DSL.name("recommendation_count", "publication_id"), UUID.class);
+    Field<Long> recommendationTotal =
+        DSL.field(DSL.name("recommendation_count", "recommendation_count"), Long.class);
+    PopularCursor cursor = encodedCursor == null ? null : PopularCursor.decode(encodedCursor);
+    Condition condition =
+        ITEM_KIND
+            .eq("PUBLICATION")
+            .and(recommendationTotal.ge(COMMUNITY_POPULAR_MIN_RECOMMENDATIONS));
+    if (from != null) condition = condition.and(CREATED_AT.ge(from.atOffset(ZoneOffset.UTC)));
+    if (to != null) condition = condition.and(CREATED_AT.lt(to.atOffset(ZoneOffset.UTC)));
+    if (itemTypes != null) {
+      condition =
+          itemTypes.isEmpty()
+              ? condition.and(DSL.falseCondition())
+              : condition.and(ITEM_TYPE.in(itemTypes));
+    }
+    if (searchQuery != null && !searchQuery.isBlank()) {
+      String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
+      condition = condition.and(searchCondition(TITLE, SUMMARY, term, searchField));
+    }
+    if (viewerMemberId != null && includeViewerNeighborhood) {
+      Set<UUID> blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
+      if (!blockedAuthorIds.isEmpty()) {
+        condition = condition.and(AUTHOR_ID.isNull().or(AUTHOR_ID.notIn(blockedAuthorIds)));
+      }
+    }
+    if (cursor != null) condition = afterPopularCursor(condition, CREATED_AT, SOURCE_ID, cursor);
+    long totalCount =
+        query
+            .selectCount()
+            .from(ITEMS)
+            .join(recommendations)
+            .on(recommendationSourceId.eq(SOURCE_ID))
+            .where(condition)
+            .fetchOne(0, Long.class);
+    int totalPages = Math.toIntExact((totalCount + limit - 1) / limit);
+    List<Item> fetched =
+        query
+            .select(
+                SOURCE_ID,
+                ITEM_KIND,
+                ITEM_TYPE,
+                TITLE,
+                SUMMARY,
+                AUTHOR_ID,
+                NEIGHBORHOOD_ID,
+                ANIMAL_INTEREST_CODE,
+                STATUS,
+                CREATED_AT,
+                UPDATED_AT,
+                TARGET_PATH,
+                recommendationTotal)
+            .from(ITEMS)
+            .join(recommendations)
+            .on(recommendationSourceId.eq(SOURCE_ID))
+            .where(condition)
+            .orderBy(CREATED_AT.desc(), SOURCE_ID.desc())
+            .limit(limit + 1)
+            .fetch(
+                record ->
+                    toPopularItem(
+                        record,
+                        SOURCE_ID,
+                        ITEM_KIND,
+                        ITEM_TYPE,
+                        TITLE,
+                        SUMMARY,
+                        AUTHOR_ID,
+                        NEIGHBORHOOD_ID,
+                        ANIMAL_INTEREST_CODE,
+                        STATUS,
+                        CREATED_AT,
+                        UPDATED_AT,
+                        TARGET_PATH,
+                        recommendationTotal));
+    return popularPage(fetched, limit, totalPages);
+  }
+
+  @Transactional(readOnly = true)
+  Page listPopularCommunity(
+      @Nullable UUID viewerMemberId,
+      boolean includeViewerNeighborhood,
+      String animalCode,
+      @Nullable Set<String> boardTypes,
+      @Nullable String encodedCursor,
+      int limit,
+      @Nullable String searchQuery,
+      String searchField,
+      @Nullable Instant from,
+      @Nullable Instant to) {
+    validatePopularRequest(limit, searchQuery, searchField);
+    validateDateRange(from, to);
+    if (animalCode == null || animalCode.isBlank()) {
+      throw new IllegalArgumentException("Animal community is required");
+    }
+    Table<?> recommendations = recommendationCounts();
+    Field<UUID> recommendationSourceId =
+        DSL.field(DSL.name("recommendation_count", "publication_id"), UUID.class);
+    Field<Long> recommendationTotal =
+        DSL.field(DSL.name("recommendation_count", "recommendation_count"), Long.class);
+    PopularCursor cursor = encodedCursor == null ? null : PopularCursor.decode(encodedCursor);
+    Condition condition =
+        COMMUNITY_ANIMAL_CODE
+            .eq(animalCode)
+            .and(COMMUNITY_ITEM_KIND.eq("PUBLICATION"))
+            .and(recommendationTotal.ge(COMMUNITY_POPULAR_MIN_RECOMMENDATIONS));
+    if (from != null)
+      condition = condition.and(COMMUNITY_CREATED_AT.ge(from.atOffset(ZoneOffset.UTC)));
+    if (to != null) condition = condition.and(COMMUNITY_CREATED_AT.lt(to.atOffset(ZoneOffset.UTC)));
+    if (boardTypes != null) {
+      condition =
+          boardTypes.isEmpty()
+              ? condition.and(DSL.falseCondition())
+              : condition.and(COMMUNITY_ITEM_TYPE.in(boardTypes));
+    }
+    if (searchQuery != null && !searchQuery.isBlank()) {
+      String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
+      condition =
+          condition.and(searchCondition(COMMUNITY_TITLE, COMMUNITY_SUMMARY, term, searchField));
+    }
+    if (viewerMemberId != null && includeViewerNeighborhood) {
+      Set<UUID> blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
+      if (!blockedAuthorIds.isEmpty()) {
+        condition =
+            condition.and(
+                COMMUNITY_AUTHOR_ID.isNull().or(COMMUNITY_AUTHOR_ID.notIn(blockedAuthorIds)));
+      }
+    }
+    if (cursor != null)
+      condition = afterPopularCursor(condition, COMMUNITY_CREATED_AT, COMMUNITY_SOURCE_ID, cursor);
+    long totalCount =
+        query
+            .selectCount()
+            .from(COMMUNITY_ITEMS)
+            .join(recommendations)
+            .on(recommendationSourceId.eq(COMMUNITY_SOURCE_ID))
+            .where(condition)
+            .fetchOne(0, Long.class);
+    int totalPages = Math.toIntExact((totalCount + limit - 1) / limit);
+    List<Item> fetched =
+        query
+            .select(
+                COMMUNITY_SOURCE_ID,
+                COMMUNITY_ITEM_KIND,
+                COMMUNITY_ITEM_TYPE,
+                COMMUNITY_TITLE,
+                COMMUNITY_SUMMARY,
+                COMMUNITY_AUTHOR_ID,
+                COMMUNITY_NEIGHBORHOOD_ID,
+                COMMUNITY_ANIMAL_CODE,
+                COMMUNITY_STATUS,
+                COMMUNITY_CREATED_AT,
+                COMMUNITY_UPDATED_AT,
+                COMMUNITY_TARGET_PATH,
+                recommendationTotal)
+            .from(COMMUNITY_ITEMS)
+            .join(recommendations)
+            .on(recommendationSourceId.eq(COMMUNITY_SOURCE_ID))
+            .where(condition)
+            .orderBy(COMMUNITY_CREATED_AT.desc(), COMMUNITY_SOURCE_ID.desc())
+            .limit(limit + 1)
+            .fetch(
+                record ->
+                    toPopularItem(
+                        record,
+                        COMMUNITY_SOURCE_ID,
+                        COMMUNITY_ITEM_KIND,
+                        COMMUNITY_ITEM_TYPE,
+                        COMMUNITY_TITLE,
+                        COMMUNITY_SUMMARY,
+                        COMMUNITY_AUTHOR_ID,
+                        COMMUNITY_NEIGHBORHOOD_ID,
+                        COMMUNITY_ANIMAL_CODE,
+                        COMMUNITY_STATUS,
+                        COMMUNITY_CREATED_AT,
+                        COMMUNITY_UPDATED_AT,
+                        COMMUNITY_TARGET_PATH,
+                        recommendationTotal));
+    return popularPage(fetched, limit, totalPages);
+  }
+
+  private static void validatePopularRequest(
+      int limit, @Nullable String searchQuery, String searchField) {
+    if (limit < 1 || limit > 50) throw new IllegalArgumentException("Invalid feed limit");
+    if (searchQuery != null && searchQuery.length() > 80) {
+      throw new IllegalArgumentException("Invalid feed query");
+    }
+    validateSearchField(searchField);
+  }
+
+  private static void validateDateRange(@Nullable Instant from, @Nullable Instant to) {
+    if (from != null && to != null && !to.isAfter(from)) {
+      throw new IllegalArgumentException("Invalid feed date range");
+    }
+  }
+
+  private Table<?> recommendationCounts() {
+    return query
+        .select(
+            REACTION_PUBLICATION_ID.as("publication_id"),
+            DSL.count().cast(Long.class).as("recommendation_count"))
+        .from(REACTION)
+        .where(REACTION_TYPE.eq("LIKE"))
+        .groupBy(REACTION_PUBLICATION_ID)
+        .asTable("recommendation_count");
+  }
+
+  private static Condition afterPopularCursor(
+      Condition condition,
+      Field<OffsetDateTime> createdAt,
+      Field<UUID> sourceId,
+      PopularCursor cursor) {
+    OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
+    return condition.and(
+        createdAt.lt(cursorTime).or(createdAt.eq(cursorTime).and(sourceId.lt(cursor.sourceId()))));
+  }
+
+  private static Item toPopularItem(
+      Record record,
+      Field<UUID> sourceId,
+      Field<String> itemKind,
+      Field<String> itemType,
+      Field<String> title,
+      Field<String> summary,
+      Field<UUID> authorId,
+      Field<UUID> neighborhoodId,
+      Field<String> animalCode,
+      Field<String> status,
+      Field<OffsetDateTime> createdAt,
+      Field<OffsetDateTime> updatedAt,
+      Field<String> targetPath,
+      Field<Long> recommendationTotal) {
+    return new Item(
+        record.get(sourceId),
+        record.get(itemKind),
+        record.get(itemType),
+        record.get(title),
+        record.get(summary),
+        record.get(authorId),
+        record.get(neighborhoodId),
+        record.get(animalCode),
+        record.get(status),
+        record.get(createdAt).toInstant(),
+        record.get(updatedAt).toInstant(),
+        record.get(targetPath),
+        record.get(recommendationTotal));
+  }
+
+  private static Page popularPage(List<Item> fetched, int limit, int totalPages) {
+    boolean hasNext = fetched.size() > limit;
+    List<Item> items = hasNext ? List.copyOf(fetched.subList(0, limit)) : List.copyOf(fetched);
+    String nextCursor =
+        hasNext
+            ? PopularCursor.encode(items.getLast().createdAt(), items.getLast().sourceId())
             : null;
     return new Page(items, nextCursor, hasNext, totalPages);
   }
@@ -344,7 +624,8 @@ class CommunityFeed {
         record.get(STATUS),
         record.get(CREATED_AT).toInstant(),
         record.get(UPDATED_AT).toInstant(),
-        record.get(TARGET_PATH));
+        record.get(TARGET_PATH),
+        null);
   }
 
   record Page(List<Item> items, @Nullable String nextCursor, boolean hasNext, int totalPages) {}
@@ -361,7 +642,8 @@ class CommunityFeed {
       String status,
       Instant createdAt,
       Instant updatedAt,
-      String targetPath) {}
+      String targetPath,
+      @Nullable Long recommendationCount) {}
 
   private record Cursor(Instant createdAt, String itemKind, UUID sourceId) {
     static String encode(Instant createdAt, String itemKind, UUID sourceId) {
@@ -384,6 +666,28 @@ class CommunityFeed {
         return new Cursor(Instant.parse(parts[0]), parts[1], UUID.fromString(parts[2]));
       } catch (IllegalArgumentException exception) {
         throw new IllegalArgumentException("Invalid feed cursor", exception);
+      }
+    }
+  }
+
+  private record PopularCursor(Instant createdAt, UUID sourceId) {
+    static String encode(Instant createdAt, UUID sourceId) {
+      String value = "v1|" + createdAt + "|" + sourceId;
+      return Base64.getUrlEncoder()
+          .withoutPadding()
+          .encodeToString(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    static PopularCursor decode(String encoded) {
+      try {
+        String value = new String(Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8);
+        String[] parts = value.split("\\|", -1);
+        if (parts.length != 3 || !parts[0].equals("v1")) {
+          throw new IllegalArgumentException("Invalid popular cursor");
+        }
+        return new PopularCursor(Instant.parse(parts[1]), UUID.fromString(parts[2]));
+      } catch (IllegalArgumentException exception) {
+        throw new IllegalArgumentException("Invalid popular cursor", exception);
       }
     }
   }

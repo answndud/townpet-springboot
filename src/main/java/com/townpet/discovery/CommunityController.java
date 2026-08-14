@@ -58,6 +58,8 @@ class CommunityController {
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam(required = false) @Size(max = 80) @Nullable String query,
+      @RequestParam(defaultValue = "ALL") @Size(max = 10) String searchField,
+      @RequestParam(defaultValue = "LATEST") @Size(max = 10) String sort,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
     String normalizedAnimal = normalizeAnimalCode(animalCode);
@@ -69,29 +71,63 @@ class CommunityController {
     if (from != null && to != null && to.isBefore(from)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed date range");
     }
+    boolean popular = normalizeSort(sort);
     try {
-      CommunityFeed.Page page =
-          "all".equals(normalizedAnimal)
-              ? feed.list(
-                  memberId(principal),
-                  principal != null,
-                  cursor,
-                  limit,
-                  query,
-                  from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
-                  to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
-                  null,
-                  boardTypes(normalizedBoard))
-              : feed.listCommunity(
-                  memberId(principal),
-                  principal != null,
-                  normalizedAnimal.toUpperCase(java.util.Locale.ROOT),
-                  boardTypes(normalizedBoard),
-                  cursor,
-                  limit,
-                  query,
-                  from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
-                  to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC));
+      Instant fromInstant = from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC);
+      Instant toInstant =
+          to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+      CommunityFeed.Page page;
+      if ("all".equals(normalizedAnimal)) {
+        page =
+            popular
+                ? feed.listPopular(
+                    memberId(principal),
+                    principal != null,
+                    cursor,
+                    limit,
+                    query,
+                    searchField,
+                    fromInstant,
+                    toInstant,
+                    boardTypes(normalizedBoard))
+                : feed.list(
+                    memberId(principal),
+                    principal != null,
+                    cursor,
+                    limit,
+                    query,
+                    searchField,
+                    fromInstant,
+                    toInstant,
+                    null,
+                    boardTypes(normalizedBoard));
+      } else {
+        String normalizedAnimalCode = normalizedAnimal.toUpperCase(java.util.Locale.ROOT);
+        page =
+            popular
+                ? feed.listPopularCommunity(
+                    memberId(principal),
+                    principal != null,
+                    normalizedAnimalCode,
+                    boardTypes(normalizedBoard),
+                    cursor,
+                    limit,
+                    query,
+                    searchField,
+                    fromInstant,
+                    toInstant)
+                : feed.listCommunity(
+                    memberId(principal),
+                    principal != null,
+                    normalizedAnimalCode,
+                    boardTypes(normalizedBoard),
+                    cursor,
+                    limit,
+                    query,
+                    searchField,
+                    fromInstant,
+                    toInstant);
+      }
       return new CommunityFeedResponse(
           page.items().stream().map(CommunityController::toResponse).toList(),
           new PageInfo(page.nextCursor(), page.hasNext(), page.totalPages()),
@@ -116,6 +152,12 @@ class CommunityController {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown community board");
     }
     return board;
+  }
+
+  private static boolean normalizeSort(String raw) {
+    if (raw.equalsIgnoreCase("LATEST")) return false;
+    if (raw.equalsIgnoreCase("POPULAR")) return true;
+    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown community feed sort");
   }
 
   private static Set<String> boardTypes(String board) {
@@ -147,7 +189,8 @@ class CommunityController {
         item.createdAt(),
         item.updatedAt(),
         0L,
-        item.targetPath());
+        item.targetPath(),
+        item.recommendationCount());
   }
 
   record CommunityFeedResponse(
@@ -169,5 +212,6 @@ class CommunityController {
       Instant createdAt,
       Instant updatedAt,
       long version,
-      @Nullable String href) {}
+      @Nullable String href,
+      @Nullable Long recommendationCount) {}
 }
