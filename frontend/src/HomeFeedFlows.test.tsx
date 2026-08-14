@@ -50,7 +50,7 @@ describe("Home feed journeys", () => {
     expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "추천받은 산책 이야기" })).toBeInTheDocument();
     expect(await screen.findByText("추천 7")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "전체", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /^전체$/ }));
     expect(await screen.findByRole("heading", { name: "최신 전체글" })).toBeInTheDocument();
     fireEvent.change(screen.getByRole("combobox", { name: "검색 위치" }), { target: { value: "TITLE" } });
     fireEvent.change(screen.getByRole("textbox", { name: "검색어" }), { target: { value: "산책" } });
