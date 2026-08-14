@@ -23,10 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Validated
 @RestController
-@RequestMapping({
-  "/api/v1/discovery",
-  "/api/lounges/breeds/{breedCode}/posts"
-})
+@RequestMapping({"/api/v1/discovery", "/api/lounges/breeds/{breedCode}/posts"})
 class FeedController {
   private final CommunityFeed feed;
 
@@ -122,7 +119,8 @@ class FeedController {
         item.createdAt(),
         item.updatedAt(),
         0L,
-        item.targetPath());
+        item.targetPath(),
+        item.recommendationCount());
   }
 
   record FeedResponse(List<FeedItemResponse> items, PageInfo page) {}
@@ -143,7 +141,8 @@ class FeedController {
       Instant createdAt,
       Instant updatedAt,
       long version,
-      @Nullable String href) {
+      @Nullable String href,
+      @Nullable Long recommendationCount) {
     FeedItemResponse(
         UUID id,
         String kind,
@@ -170,6 +169,7 @@ class FeedController {
           createdAt,
           updatedAt,
           version,
+          null,
           null);
     }
   }

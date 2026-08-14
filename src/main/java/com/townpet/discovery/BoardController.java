@@ -50,6 +50,7 @@ class BoardController {
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam(required = false) @Size(max = 80) @Nullable String query,
+      @RequestParam(defaultValue = "ALL") @Size(max = 10) String searchField,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
     String normalizedBoard = normalizeBoardCode(boardCode);
@@ -64,6 +65,7 @@ class BoardController {
               cursor,
               limit,
               query,
+              searchField,
               from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC),
               to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
               null,
@@ -111,6 +113,7 @@ class BoardController {
         item.createdAt(),
         item.updatedAt(),
         0L,
-        item.targetPath());
+        item.targetPath(),
+        item.recommendationCount());
   }
 }

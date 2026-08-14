@@ -114,8 +114,7 @@ class PublicationControllerTest {
                 .cookie(author)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    "{\"title\":\"변경 제목\",\"body\":\"변경 본문\",\"version\":0}"))
+                .content("{\"title\":\"변경 제목\",\"body\":\"변경 본문\",\"version\":0}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.title").value("변경 제목"));
   }
@@ -489,43 +488,34 @@ class PublicationControllerTest {
   }
 
   @Test
-  void popularFeedRanksOnlyActivePostsByRecommendationCount() throws Exception {
-    UUID mostRecommendedId = UUID.fromString("00000000-0000-4000-8000-000000000307");
-    UUID lessRecommendedId = UUID.fromString("00000000-0000-4000-8000-000000000308");
-    UUID noRecommendationId = UUID.fromString("00000000-0000-4000-8000-000000000309");
-    UUID localId = UUID.fromString("00000000-0000-4000-8000-000000000310");
+  void popularFeedRequiresTwentyRecommendationsAndUsesNewestFirstOrder() throws Exception {
+    UUID newerEligibleId = UUID.fromString("00000000-0000-4000-8000-000000000307");
+    UUID olderEligibleId = UUID.fromString("00000000-0000-4000-8000-000000000308");
+    UUID belowThresholdId = UUID.fromString("00000000-0000-4000-8000-000000000309");
+    UUID noRecommendationId = UUID.fromString("00000000-0000-4000-8000-000000000310");
     UUID deletedId = UUID.fromString("00000000-0000-4000-8000-000000000311");
-    insertPublication(mostRecommendedId, "추천이 가장 많은 글", "ACTIVE", "2026-08-10T10:10:00Z");
-    insertPublication(lessRecommendedId, "추천이 적은 글", "ACTIVE", "2026-08-10T10:11:00Z");
-    insertPublication(noRecommendationId, "추천이 없는 글", "ACTIVE", "2026-08-10T10:12:00Z");
-    insertPublication(localId, "추천 공개 글", "ACTIVE", "2026-08-10T10:13:00Z");
-    insertPublication(deletedId, "삭제된 추천 글", "DELETED", "2026-08-10T10:14:00Z");
+    insertPublication(newerEligibleId, "최신 인기 글", "ACTIVE", "2026-08-10T10:12:00Z");
+    insertPublication(olderEligibleId, "이전 인기 글", "ACTIVE", "2026-08-10T10:11:00Z");
+    insertPublication(belowThresholdId, "추천 19개 글", "ACTIVE", "2026-08-10T10:13:00Z");
+    insertPublication(noRecommendationId, "추천이 없는 글", "ACTIVE", "2026-08-10T10:14:00Z");
+    insertPublication(deletedId, "삭제된 인기 글", "DELETED", "2026-08-10T10:15:00Z");
 
-    jdbc.update(
-        "INSERT INTO engagement_reaction (id, publication_id, author_member_id, type, created_at) "
-            + "VALUES (?, ?, ?, 'LIKE', CURRENT_TIMESTAMP), (?, ?, ?, 'LIKE', CURRENT_TIMESTAMP), "
-            + "(?, ?, ?, 'LIKE', CURRENT_TIMESTAMP)",
-        UUID.fromString("00000000-0000-4000-8000-000000000407"),
-        mostRecommendedId,
-        MEMBER_ID,
-        UUID.fromString("00000000-0000-4000-8000-000000000408"),
-        mostRecommendedId,
-        UUID.fromString("00000000-0000-4000-8000-000000000202"),
-        UUID.fromString("00000000-0000-4000-8000-000000000409"),
-        lessRecommendedId,
-        MEMBER_ID);
+    insertReactions(newerEligibleId, 20);
+    insertReactions(olderEligibleId, 21);
+    insertReactions(belowThresholdId, 19);
+    insertReactions(deletedId, 25);
 
     mockMvc
         .perform(get("/api/v1/discovery/popular"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(2))
-        .andExpect(jsonPath("$.items[0].id").value(mostRecommendedId.toString()))
-        .andExpect(jsonPath("$.items[0].recommendationCount").value(2))
+        .andExpect(jsonPath("$.items[0].id").value(newerEligibleId.toString()))
+        .andExpect(jsonPath("$.items[0].recommendationCount").value(20))
         .andExpect(jsonPath("$.items[0].rank").value(1))
         .andExpect(jsonPath("$.page.totalPages").value(1))
         .andExpect(jsonPath("$.items[0].viewCount").doesNotExist())
-        .andExpect(jsonPath("$.items[1].id").value(lessRecommendedId.toString()))
-        .andExpect(jsonPath("$.items[1].recommendationCount").value(1))
+        .andExpect(jsonPath("$.items[1].id").value(olderEligibleId.toString()))
+        .andExpect(jsonPath("$.items[1].recommendationCount").value(21))
         .andExpect(jsonPath("$.items[1].rank").value(2));
 
     MvcResult firstPopularPage =
@@ -533,7 +523,7 @@ class PublicationControllerTest {
             .perform(get("/api/v1/discovery/popular").queryParam("limit", "1"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.items.length()").value(1))
-            .andExpect(jsonPath("$.items[0].id").value(mostRecommendedId.toString()))
+            .andExpect(jsonPath("$.items[0].id").value(newerEligibleId.toString()))
             .andExpect(jsonPath("$.page.hasNext").value(true))
             .andExpect(jsonPath("$.page.totalPages").value(2))
             .andExpect(jsonPath("$.page.nextCursor").isNotEmpty())
@@ -552,8 +542,39 @@ class PublicationControllerTest {
                 .queryParam("cursor", popularCursor))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(1))
-        .andExpect(jsonPath("$.items[0].id").value(lessRecommendedId.toString()))
+        .andExpect(jsonPath("$.items[0].id").value(olderEligibleId.toString()))
         .andExpect(jsonPath("$.page.hasNext").value(false));
+  }
+
+  @Test
+  void animalPopularFeedRequiresTenRecommendationsAndKeepsNewestFirstOrder() throws Exception {
+    UUID newerEligibleId = UUID.fromString("00000000-0000-4000-8000-000000000312");
+    UUID olderEligibleId = UUID.fromString("00000000-0000-4000-8000-000000000313");
+    UUID belowThresholdId = UUID.fromString("00000000-0000-4000-8000-000000000314");
+    insertPublication(newerEligibleId, "강아지 최신 인기글", "ACTIVE", "2026-08-10T10:12:00Z");
+    insertPublication(olderEligibleId, "강아지 이전 인기글", "ACTIVE", "2026-08-10T10:11:00Z");
+    insertPublication(belowThresholdId, "강아지 추천 9개", "ACTIVE", "2026-08-10T10:13:00Z");
+    for (UUID publicationId : new UUID[] {newerEligibleId, olderEligibleId, belowThresholdId}) {
+      jdbc.update(
+          "INSERT INTO content_animal_community (content_kind, content_id, animal_code) VALUES ('PUBLICATION', ?, 'DOG')",
+          publicationId);
+    }
+    insertReactions(newerEligibleId, 10);
+    insertReactions(olderEligibleId, 11);
+    insertReactions(belowThresholdId, 9);
+
+    mockMvc
+        .perform(
+            get("/api/v1/communities/dog/feed")
+                .queryParam("board", "free")
+                .queryParam("sort", "POPULAR"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items[0].id").value(newerEligibleId.toString()))
+        .andExpect(jsonPath("$.items[0].recommendationCount").value(10))
+        .andExpect(jsonPath("$.items[1].id").value(olderEligibleId.toString()))
+        .andExpect(jsonPath("$.items[1].recommendationCount").value(11))
+        .andExpect(jsonPath("$.page.totalPages").value(1));
   }
 
   @Test
@@ -728,6 +749,23 @@ class PublicationControllerTest {
         lifecycle,
         timestamp,
         timestamp);
+  }
+
+  private void insertReactions(UUID publicationId, int count) {
+    for (int index = 0; index < count; index++) {
+      UUID memberId = UUID.randomUUID();
+      jdbc.update(
+          "INSERT INTO member_account (id, email, nickname) VALUES (?, ?, ?)",
+          memberId,
+          "popular-" + memberId + "@townpet.local",
+          "popular" + index + memberId.toString().substring(0, 6));
+      jdbc.update(
+          "INSERT INTO engagement_reaction (id, publication_id, author_member_id, type, created_at) "
+              + "VALUES (?, ?, ?, 'LIKE', CURRENT_TIMESTAMP)",
+          UUID.randomUUID(),
+          publicationId,
+          memberId);
+    }
   }
 
   private void insertPublicationWithAnimal(

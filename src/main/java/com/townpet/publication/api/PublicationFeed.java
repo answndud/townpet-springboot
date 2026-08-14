@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class PublicationFeed {
+  private static final long HOT_MIN_RECOMMENDATIONS = 20L;
   private static final Table<?> PUBLICATION = table(name("publication")).as("p");
   private static final Field<UUID> ID = field(name("p", "id"), UUID.class);
   private static final Field<UUID> AUTHOR_ID = field(name("p", "author_member_id"), UUID.class);
@@ -107,7 +108,9 @@ public class PublicationFeed {
     Field<Long> RECOMMENDATION_TOTAL =
         field(name("recommendation_count", "recommendation_count"), Long.class);
     PopularCursor cursor = encodedCursor == null ? null : PopularCursor.decode(encodedCursor);
-    Condition condition = popularCondition(searchQuery, searchField);
+    Condition condition =
+        popularCondition(searchQuery, searchField)
+            .and(RECOMMENDATION_TOTAL.ge(HOT_MIN_RECOMMENDATIONS));
     long totalCount =
         query
             .selectCount()
@@ -121,15 +124,7 @@ public class PublicationFeed {
       OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
       condition =
           condition.and(
-              RECOMMENDATION_TOTAL
-                  .lt(cursor.recommendationCount())
-                  .or(
-                      RECOMMENDATION_TOTAL
-                          .eq(cursor.recommendationCount())
-                          .and(
-                              CREATED_AT
-                                  .lt(cursorTime)
-                                  .or(CREATED_AT.eq(cursorTime).and(ID.lt(cursor.id()))))));
+              CREATED_AT.lt(cursorTime).or(CREATED_AT.eq(cursorTime).and(ID.lt(cursor.id()))));
     }
     List<PopularItem> fetched =
         query
@@ -149,7 +144,7 @@ public class PublicationFeed {
             .join(RECOMMENDATIONS)
             .on(RECOMMENDATION_PUBLICATION_ID.eq(ID))
             .where(condition)
-            .orderBy(RECOMMENDATION_TOTAL.desc(), CREATED_AT.desc(), ID.desc())
+            .orderBy(CREATED_AT.desc(), ID.desc())
             .limit(limit + 1)
             .fetch(
                 record ->
@@ -160,9 +155,7 @@ public class PublicationFeed {
     String nextCursor =
         hasNext
             ? PopularCursor.encode(
-                items.getLast().recommendationCount(),
-                items.getLast().publication().createdAt(),
-                items.getLast().publication().id())
+                items.getLast().publication().createdAt(), items.getLast().publication().id())
             : null;
     return new PopularPage(items, nextCursor, hasNext, totalPages);
   }
@@ -205,7 +198,16 @@ public class PublicationFeed {
       @Nullable String encodedCursor,
       int limit,
       @Nullable String searchQuery) {
-    return list(viewerMemberId, applyViewerPolicy, encodedCursor, limit, searchQuery, null, null, null, null);
+    return list(
+        viewerMemberId,
+        applyViewerPolicy,
+        encodedCursor,
+        limit,
+        searchQuery,
+        null,
+        null,
+        null,
+        null);
   }
 
   public record PopularItem(Item publication, long recommendationCount) {}
@@ -222,7 +224,8 @@ public class PublicationFeed {
       @Nullable String searchQuery,
       @Nullable Instant from,
       @Nullable Instant to) {
-    return list(viewerMemberId, applyViewerPolicy, encodedCursor, limit, searchQuery, from, to, null, null);
+    return list(
+        viewerMemberId, applyViewerPolicy, encodedCursor, limit, searchQuery, from, to, null, null);
   }
 
   @Transactional(readOnly = true)
@@ -352,9 +355,9 @@ public class PublicationFeed {
     }
   }
 
-  private record PopularCursor(long recommendationCount, Instant createdAt, UUID id) {
-    static String encode(long recommendationCount, Instant createdAt, UUID id) {
-      String value = "v1|" + recommendationCount + "|" + createdAt + "|" + id;
+  private record PopularCursor(Instant createdAt, UUID id) {
+    static String encode(Instant createdAt, UUID id) {
+      String value = "v2|" + createdAt + "|" + id;
       return Base64.getUrlEncoder()
           .withoutPadding()
           .encodeToString(value.getBytes(StandardCharsets.UTF_8));
@@ -364,11 +367,10 @@ public class PublicationFeed {
       try {
         String value = new String(Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8);
         String[] parts = value.split("\\|", -1);
-        if (parts.length != 4 || !parts[0].equals("v1")) {
+        if (parts.length != 3 || !parts[0].equals("v2")) {
           throw new IllegalArgumentException("Invalid popular cursor");
         }
-        return new PopularCursor(
-            Long.parseLong(parts[1]), Instant.parse(parts[2]), UUID.fromString(parts[3]));
+        return new PopularCursor(Instant.parse(parts[1]), UUID.fromString(parts[2]));
       } catch (IllegalArgumentException exception) {
         throw new IllegalArgumentException("Invalid popular cursor", exception);
       }
