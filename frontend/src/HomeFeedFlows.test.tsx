@@ -21,7 +21,7 @@ describe("Home feed journeys", () => {
       if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response({ title: "Unauthorized" }, 401));
       if (path.includes("/api/v1/discovery/popular")) {
         return Promise.resolve(response({
-          items: [{ id: "0198f342-13d7-7000-8000-000000000005", title: "추천받은 산책 이야기", body: "인기글 본문입니다.", createdAt: "2026-08-12T08:00:00Z", recommendationCount: 7, rank: 1 }],
+          items: [{ id: "0198f342-13d7-7000-8000-000000000005", title: "추천받은 산책 이야기", body: "인기글 본문입니다.", createdAt: "2026-08-12T08:00:00Z", recommendationCount: 20, rank: 1 }],
         }));
       }
       return Promise.resolve(response({
@@ -49,7 +49,7 @@ describe("Home feed journeys", () => {
 
     expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "추천받은 산책 이야기" })).toBeInTheDocument();
-    expect(await screen.findByText("추천 7")).toBeInTheDocument();
+    expect(await screen.findByText("추천 20")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^전체$/ }));
     expect(await screen.findByRole("heading", { name: "최신 전체글" })).toBeInTheDocument();
     fireEvent.change(screen.getByRole("combobox", { name: "검색 위치" }), { target: { value: "TITLE" } });
