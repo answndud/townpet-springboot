@@ -672,6 +672,29 @@ h1, h2, p { margin: 0; }
 .localcare-card > .button, .gathering-card > .button, .lostfound-card > .button { justify-self: start; }
 .localcare-page > .publication-fields { width: min(100%, 820px); }
 
+/* Shared navigation and auth hierarchy. */
+.header-inner nav a.active {
+  border-bottom: 2px solid var(--brand);
+  color: var(--brand-strong);
+  text-decoration: none;
+}
+.header-menu-trigger[aria-expanded="true"] {
+  color: var(--brand-strong);
+}
+.auth-card { width: min(100%, 560px); }
+.demo-credential {
+  gap: 5px;
+  margin-top: 16px;
+  border-color: var(--surface-border);
+  background: var(--surface-muted);
+  padding: 10px 12px;
+}
+.demo-credential strong { font-size: 12px; }
+.demo-credential p { margin-top: 2px; font-size: 11px; line-height: 1.45; }
+.demo-credential code { font-size: 11px; line-height: 1.35; }
+.demo-credential .button { min-height: 30px; padding-inline: 10px; font-size: 11px; }
+.auth-links { margin-top: 14px; }
+
 /* Desktop visual rhythm: keep board context and actions in one compact band. */
 .community-hero,
 .marketplace-hero,
