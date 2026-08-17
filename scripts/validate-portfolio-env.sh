@@ -6,12 +6,18 @@ set -eu
 env_file="$1"
 [ -r "$env_file" ] || { echo "env file is not readable" >&2; exit 1; }
 
+backend_image_override="${TOWNPET_BACKEND_IMAGE-}"
+web_image_override="${TOWNPET_WEB_IMAGE-}"
+build_version_override="${TOWNPET_BUILD_VERSION-}"
 # The operator owns this file; source it only from the explicitly supplied path.
 set -a
 . "$env_file"
 set +a
+if [ -n "$backend_image_override" ]; then TOWNPET_BACKEND_IMAGE="$backend_image_override"; fi
+if [ -n "$web_image_override" ]; then TOWNPET_WEB_IMAGE="$web_image_override"; fi
+if [ -n "$build_version_override" ]; then TOWNPET_BUILD_VERSION="$build_version_override"; fi
 
-required="POSTGRES_PASSWORD APP_DB_USER APP_DB_PASSWORD TOWNPET_EMAIL_ENABLED TOWNPET_EMAIL_FROM TOWNPET_PUBLIC_BASE_URL TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY SPRING_MAIL_HOST SPRING_MAIL_USERNAME SPRING_MAIL_PASSWORD TOWNPET_MINIO_PUBLIC_ENDPOINT TOWNPET_MINIO_ROOT_ACCESS_KEY TOWNPET_MINIO_ROOT_SECRET_KEY TOWNPET_MINIO_ACCESS_KEY TOWNPET_MINIO_SECRET_KEY TOWNPET_DOMAIN TOWNPET_MEDIA_DOMAIN"
+required="TOWNPET_BACKEND_IMAGE TOWNPET_WEB_IMAGE TOWNPET_BUILD_VERSION POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD APP_DB_USER APP_DB_PASSWORD TOWNPET_EMAIL_ENABLED TOWNPET_EMAIL_FROM TOWNPET_PUBLIC_BASE_URL TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY SPRING_MAIL_HOST SPRING_MAIL_USERNAME SPRING_MAIL_PASSWORD TOWNPET_MINIO_PUBLIC_ENDPOINT TOWNPET_MINIO_ROOT_ACCESS_KEY TOWNPET_MINIO_ROOT_SECRET_KEY TOWNPET_MINIO_ACCESS_KEY TOWNPET_MINIO_SECRET_KEY TOWNPET_DOMAIN TOWNPET_MEDIA_DOMAIN"
 for name in $required; do
   eval "value=\${$name-}"
   if [ -z "$value" ]; then
@@ -19,7 +25,7 @@ for name in $required; do
     exit 1
   fi
   case "$value" in
-    *replace-with*|*example.com*|*example.test*)
+    *replace-with*|*placeholder*|*example.com*|*example.test*)
       echo "placeholder value is not allowed: $name" >&2
       exit 1
       ;;

@@ -1,0 +1,38 @@
+# Git and local IDE state
+.git
+.github
+.idea
+.vscode
+.DS_Store
+
+# Gradle and generated JVM output
+.gradle
+build
+**/build
+out
+*.log
+
+# Frontend dependencies and generated output
+frontend/node_modules
+frontend/dist
+frontend/.vite
+frontend/coverage
+
+# Test and local runtime artifacts
+test-results
+reports
+tmp
+*.tmp
+
+# Local credentials, databases, backups, and environment files
+.env
+.env.*
+!.env.example
+deploy/.env*
+backup
+backups
+*.dump
+*.sql.gz
+
+# Documentation is not copied by either production image
+docs
