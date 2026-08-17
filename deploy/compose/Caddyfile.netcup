@@ -11,7 +11,7 @@
 }
 
 {$ERP_DOMAIN} {
-    reverse_proxy kindergarten-erp-caddy:80 {
+    reverse_proxy kinderp-caddy:80 {
         header_up Host {http.request.host}
     }
 }
