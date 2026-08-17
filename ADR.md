@@ -1,6 +1,6 @@
 # Architecture Decision Record
 
-이 문서는 현재 `townpet-springboot`의 장기적인 기술 경계만 기록한다. 구현 순서와 미완료 기능은 [`PLAN.md`](PLAN.md), 목표 구조는 [`docs/TRD.md`](docs/TRD.md), 운영 절차는 `docs/runbooks/`에 둔다.
+이 문서는 현재 `townpet-springboot`의 장기적인 기술 경계만 기록한다. 구현 순서와 미완료 기능은 [`PLAN.md`](PLAN.md), 목표 구조는 [`docs/01-기준/기술-요구사항.md`](docs/01-기준/기술-요구사항.md), 운영 절차는 `docs/09-운영-가이드/`에 둔다.
 
 ## 상태 규칙
 
@@ -28,8 +28,8 @@ Legacy TownPet의 핵심 화면·URL·권한·상태·반응형 경험은 기준
 
 ### Evidence
 
-- `docs/PRD.md`: 재작성 범위와 acceptance criteria
-- `docs/parity/matrix.yaml`: 페이지·API 기준선
+- `docs/01-기준/제품-요구사항.md`: 재작성 범위와 acceptance criteria
+- `docs/05-패리티/대조표.yaml`: 페이지·API 기준선
 
 ## ADR-0002 - 도메인별 수직 전환으로 Spring 백엔드를 교체한다
 
@@ -346,19 +346,20 @@ matrix는 누락 방지용 inventory로 사용하고, 완료 주장은 대표 �
 
 ### Evidence
 
-- `docs/parity/matrix.yaml`
+- `docs/05-패리티/대조표.yaml`
 - `src/test/java/com/townpet/parity/ParityInventoryTest.java`
 - `frontend/src/*Flows.test.tsx`
 
 ## ADR-0020B - 운영비 상한을 월 1만 원 이하로 둔다
 
-- 상태: accepted
+- 상태: superseded
 - 날짜: 2026-08-10
 - 근거 유형: explicit
+- 대체: ADR-0024
 
 ### Decision
 
-항상 실행되는 Spring Boot와 PostgreSQL을 저가 단일 VPS에 두고 managed service를 최소화한다. 비용은 실제 계약·환율을 배포 전에 다시 확인한다.
+항상 실행되는 Spring Boot와 PostgreSQL을 저가 단일 VPS에 두고 managed service를 최소화한다. 최초 목표는 월 1만 원 이하였으나, 두 프로젝트를 동시에 실행할 때 필요한 8GB 메모리와 외부 백업을 고려해 후속 ADR에서 현실적인 예산으로 조정했다.
 
 ### Evidence
 
@@ -367,13 +368,14 @@ matrix는 누락 방지용 inventory로 사용하고, 완료 주장은 대표 �
 
 ## ADR-0021 - Hetzner 직접 운영은 배포 시작 시 확정한다
 
-- 상태: deferred
+- 상태: superseded
 - 날짜: 2026-08-11
 - 근거 유형: explicit
+- 대체: ADR-0024
 
 ### Decision
 
-Hetzner CX23 topology를 목표 후보로 유지하되, 실제 계정·도메인·DNS·비용을 준비하기 전에는 production 완료로 주장하지 않는다. 단일 VPS는 Caddy·Spring·PostgreSQL을 격리된 container로 실행한다.
+Hetzner CX23 topology를 목표 후보로 유지하되, 실제 계정·도메인·DNS·비용을 준비하기 전에는 production 완료로 주장하지 않는다. 단일 VPS는 Caddy·Spring·PostgreSQL을 격리된 container로 실행한다. 이후 비용·메모리·x86 호환성을 다시 비교해 ADR-0024로 대체했다.
 
 ### Trigger
 
@@ -382,7 +384,49 @@ Hetzner CX23 topology를 목표 후보로 유지하되, 실제 계정·도메인
 ### Evidence
 
 - `deploy/compose/portfolio.yml`
-- `docs/report/release-readiness.md`: 실제 VPS 미실행 상태
+- `docs/08-면접-복기/릴리스-준비도.md`: 실제 VPS 미실행 상태
+
+## ADR-0024 - 두 포트폴리오 프로젝트를 netcup x86 VPS Lite 2에 함께 배포한다
+
+- 상태: accepted
+- 날짜: 2026-08-16
+- 근거 유형: explicit
+
+### Context
+
+TownPet과 `kindergarten-erp/erp`를 상용 트래픽이 거의 없는 포트폴리오 환경에서 24시간 공개한다. 두 프로젝트는 각각 Spring Boot와 데이터베이스를 필요로 하므로 4GB 단일 VPS보다 8GB 단일 VPS가 안전하지만, 프로젝트별 VPS나 managed DB는 현재 목적과 비용에 비해 과하다.
+
+### Decision
+
+netcup VPS Lite 2 G12s(4 vCore, 8GB RAM, 160GB SSD, x86)를 기본 배포 대상으로 선택한다. 공용 Caddy 하나만 80/443을 사용하고, TownPet은 PostgreSQL/PostGIS·MinIO, ERP는 MySQL·Redis를 각각 별도 Compose·volume·network로 실행한다. 이미지는 GitHub Actions에서 빌드해 GHCR에서 pull하고, VPS에서는 실행만 한다. Cloudflare Free는 DNS·proxy·SSL에, Resend SMTP 무료 구간은 TownPet·ERP 이메일에 사용한다. DB와 MinIO 백업은 암호화해 VPS 외부 failure domain에 보관한다.
+
+### Alternatives
+
+- Hetzner CX33: 관리 편의성과 API는 좋지만 IPv4·VAT를 포함하면 netcup보다 비용 이점이 작다.
+- OVH VPS-2: 일일 백업이 포함되지만 provider backup만으로 외부 백업 요구를 대체하지 않으며, 최종 가격·리전 조건을 별도 확인해야 한다.
+- 4GB VPS: 저트래픽에서는 동작할 수 있으나 두 JVM·PostgreSQL·MySQL·MinIO를 동시에 운영할 메모리 여유가 부족하다.
+- 프로젝트별 VPS·managed DB: failure domain은 좋아지지만 포트폴리오 트래픽과 비용 제약에 비해 과하다.
+
+### Consequences
+
+- x86을 사용하므로 ARM64 이미지 호환성 확인 부담이 줄어든다.
+- 단일 VPS 장애가 두 프로젝트에 동시에 영향을 준다. 외부 encrypted backup과 restore rehearsal로 완화한다.
+- 공용 Caddy가 필요하므로 기존 각 프로젝트의 80/443 공개 설정을 내부 upstream 방식으로 변경해야 한다.
+- 실제 공개 트래픽이 증가하거나 가용성 요구가 생기면 프로젝트 분리·managed DB를 재평가한다.
+
+### Evidence
+
+- `deploy/compose/netcup.yml`, `deploy/compose/edge.yml`, `deploy/compose/Caddyfile.netcup`: TownPet image-pull·공용 edge 구성
+- `deploy/Caddyfile.netcup.web`: edge 뒤 내부 HTTP-only web proxy 구성
+- `docs/09-운영-가이드/두-프로젝트-VPS-배포-워크플로.md`: 실제 실행 순서와 검증 기준
+- `kindergarten-erp/erp/deploy/docker-compose.netcup.yml`: ERP MySQL·Redis·app·내부 Caddy 구성
+- [netcup VPS Lite 공식 가격·사양](https://www.netcup.com/en/server/vps-lite)
+
+### Open Questions
+
+- 실제 가입 시 선택 가능한 netcup 위치와 한국에서의 latency
+- netcup 공인 IPv4의 최종 과금·약정 조건
+- 외부 암호화 백업 저장소의 최종 provider와 retention 비용
 
 ## ADR-0022 - 배포 전 기본 백업·복구를 제공하고 고급 RPO는 운영 후 확정한다
 
@@ -422,7 +466,7 @@ Actuator health/readiness, correlation id가 있는 구조화 log, JVM·HTTP·DB
 - `src/main/resources/application.yml`
 - `src/main/java/com/townpet/operations/WebVitalMetricController.java`
 - `src/main/java/com/townpet/common/web/RequestTraceFilter.java`
-- `docs/runbooks/observability.md`
+- `docs/09-운영-가이드/관측성.md`
 
 ## ADR-0024 - SLO와 error budget은 측정 후 선언한다
 
@@ -440,7 +484,7 @@ Actuator health/readiness, correlation id가 있는 구조화 log, JVM·HTTP·DB
 
 ### Evidence
 
-- `docs/report/release-readiness.md`: 성능 수치 미측정
+- `docs/08-면접-복기/릴리스-준비도.md`: 성능 수치 미측정
 
 ## ADR-0025 - Java 25 LTS와 Spring Boot 4.1을 기준선으로 사용한다
 
@@ -504,7 +548,7 @@ aggregate write는 Spring Data JPA를 우선하고 feed·집계·PostgreSQL 특�
 - `src/main/java/com/townpet/identity/MemberModerationController.java`
 - 관련 controller test
 
-## ADR-0029 - 공개 환경은 demo 계정 없는 Portfolio Sandbox로 운영한다
+## ADR-0029 - 공개 환경은 합성 demo 계정과 콘텐츠를 제공하는 Portfolio Showcase로 운영한다
 
 - 상태: accepted
 - 날짜: 2026-08-10
@@ -512,18 +556,18 @@ aggregate write는 Spring Data JPA를 우선하고 feed·집계·PostgreSQL 특�
 
 ### Decision
 
-실제 개인정보 가입·실제 돌봄·실제 결제를 받지 않는다. 공개 환경에는 demo 계정과 demo 콘텐츠를 노출하지 않고, 필요하면 익명 read-only 또는 curated synthetic content만 별도 정책으로 제공한다. local·CI에서는 기존 synthetic fixture로 전체 흐름을 검증한다. Kakao/Naver는 현재 제공하지 않는다.
+실제 개인정보 가입·실제 돌봄·실제 결제를 받지 않는다. 공개 환경에는 합성 MEMBER 3개와 제한된 MODERATOR 1개를 제공하고, 게시글·댓글·답글·추천·북마크와 주요 게시판의 합성 콘텐츠를 함께 노출한다. 방문자는 공개된 자격으로 일반 사용자 흐름을 직접 확인할 수 있지만 ADMIN·OPERATOR 자격과 실제 개인정보는 공개하지 않는다. Kakao/Naver는 현재 제공하지 않는다.
 
 ### Consequences
 
-- 공개 배포 전 migration seed 제거, private operator bootstrap과 빈 상태 UI 점검이 필요하다.
+- 공개 배포 시 demo fixture seed와 reset 절차를 함께 제공하고, demo 범위를 벗어난 데이터는 만들지 않는다.
 
 ### Evidence
 
 - `ADR.md`의 ADR-0040
 - `deploy/portfolio.env.example`
 
-## ADR-0030 - Demo fixture는 local·CI 전용이고 production은 초기 sanitize한다
+## ADR-0030 - Demo fixture는 공개 showcase에서 재실행 가능한 합성 데이터로 운영한다
 
 - 상태: accepted
 - 날짜: 2026-08-11
@@ -531,11 +575,11 @@ aggregate write는 Spring Data JPA를 우선하고 feed·집계·PostgreSQL 특�
 
 ### Decision
 
-기존 Flyway demo migration은 local·CI 검증 때문에 유지한다. production bootstrap은 web 노출 전에 알려진 demo identity와 그 소유 콘텐츠를 dry-run·scoped confirmation으로 제거하고, 공개 demo reset cron은 사용하지 않는다. local/demo reset script는 개발 환경에만 제공한다.
+기존 Flyway identity migration은 유지하고, 공개 배포 후 `local-demo.sql`과 `local-community-demo.sql`을 scoped fixture로 실행한다. fixture는 고정 ID 범위만 삭제 후 재생성하므로 VPS 재기동·데모 복구 시 재실행할 수 있다. 자동 reset cron은 사용하지 않고 운영자가 명시적으로 seed script를 실행한다.
 
 ### Trigger
 
-- production persistent database를 최초로 web에 노출하기 전
+- 공개 showcase DB를 처음 채우거나 demo 콘텐츠를 갱신할 때
 
 ### Evidence
 
@@ -701,12 +745,12 @@ resolved/closed 전환은 outcome과 close reason을 함께 기록하고 상태 
 ### Evidence
 
 - `src/main/java/com/townpet/identity/SessionController.java`
-- `docs/parity/matrix.yaml`: ADR-0040 제외 항목
-- `docs/PRD.md`: 현재 social login 제외 범위
+- `docs/05-패리티/대조표.yaml`: ADR-0040 제외 항목
+- `docs/01-기준/제품-요구사항.md`: 현재 social login 제외 범위
 
 ## 현재 적용 순서
 
 1. 현재 accepted 결정과 실제 코드가 어긋나는 항목을 먼저 수정한다.
 2. Care·구조화 게시물·검색·media 중 하나를 선택해 큰 vertical slice로 진행한다.
 3. deferred 항목은 trigger가 생기기 전까지 PLAN의 완료 조건에 넣지 않는다.
-4. 실제 VPS 공개 전에는 ADR-0021의 topology·DNS 결정만 남기고, ADR-0022·0023·0030의 최소 운영 구현을 완료한다.
+4. 실제 VPS 공개 전에는 ADR-0024의 netcup topology·DNS 결정을 따르고, ADR-0022·0023·0030의 최소 운영 구현을 완료한다.
