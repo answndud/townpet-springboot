@@ -6,7 +6,7 @@
 
 > 공개 데모는 합성 계정·합성 콘텐츠만 사용하는 포트폴리오 sandbox입니다. 실제 개인정보를 수집하거나 포함하지 않습니다.
 
-[🚀 Live Demo — townpet.cloud](https://townpet.cloud/) · [기술 문서](docs/문서-안내.md) · [개발 기록](docs/08-면접-복기/개발-연대기.md)
+[사이트 링크 — townpet.cloud](https://townpet.cloud/)
 
 ## 한눈에 보기
 
@@ -34,7 +34,7 @@
 | DB 실행 계획 | Parallel Seq Scan + top-N sort | **복합 인덱스 Index Scan** |
 | HTTP 실패 | 0 | **0** |
 
-`(lifecycle, scope, created_at DESC, id DESC)` 복합 인덱스를 적용하고, `EXPLAIN (ANALYZE, BUFFERS)`로 21개 row를 적은 buffer hit로 읽는 경로를 확인했습니다. 이 결과는 로컬 1 VU 비교 실험이며 운영 SLA나 VPS 처리량으로 과장하지 않았습니다. [측정 상세](docs/06-성능/결과/2026-08-12-공개-피드-인덱스.md)
+`(lifecycle, scope, created_at DESC, id DESC)` 복합 인덱스를 적용하고, `EXPLAIN (ANALYZE, BUFFERS)`로 21개 row를 적은 buffer hit로 읽는 경로를 확인했습니다. 이 결과는 로컬 1 VU 비교 실험이며 운영 SLA나 VPS 처리량으로 과장하지 않았습니다.
 
 ### 신뢰성 경계
 
@@ -60,7 +60,7 @@ flowchart LR
 
 하나의 Spring Boot 배포 단위 안에서 도메인별 공개 API와 내부 구현을 분리했습니다. 모듈 간에는 JPA entity·repository를 직접 노출하지 않고 식별자, 공개 application API와 event로 연결합니다. Spring Modulith와 ArchUnit 테스트가 순환 의존과 내부 타입 노출을 검증합니다.
 
-주요 모듈은 `identity`, `member`, `publication`, `engagement`, `discovery`, `notification`, `lostfound`, `marketplace`, `care`, `gathering`, `media`, `trustsafety`, `operations`입니다. [모듈 지도](docs/02-설계/모듈-지도.md)
+주요 모듈은 `identity`, `member`, `publication`, `engagement`, `discovery`, `notification`, `lostfound`, `marketplace`, `care`, `gathering`, `media`, `trustsafety`, `operations`입니다.
 
 ## 기술 스택
 
@@ -71,7 +71,7 @@ flowchart LR
 - **Testing:** JUnit, Spring Boot Test, Testcontainers, ArchUnit, Vitest, Playwright, k6
 - **Delivery:** Docker Compose, Caddy, GitHub Actions, GHCR, Cloudflare DNS, age encrypted backup
 
-Redis, Kafka, Elasticsearch와 Kubernetes는 기술 이름을 늘리기 위해 추가하지 않았습니다. 실행 계획, DB 경합, 이벤트 적체를 먼저 측정하고 현재 단일 PostgreSQL 원장과 모듈형 모놀리스가 요구사항을 충족하는 범위에서는 운영 복잡도를 늘리지 않았습니다. [선택 근거](ADR.md)
+Redis, Kafka, Elasticsearch와 Kubernetes는 기술 이름을 늘리기 위해 추가하지 않았습니다. 실행 계획, DB 경합, 이벤트 적체를 먼저 측정하고 현재 단일 PostgreSQL 원장과 모듈형 모놀리스가 요구사항을 충족하는 범위에서는 운영 복잡도를 늘리지 않았습니다.
 
 ## 구현에서 다룬 문제
 
@@ -89,7 +89,7 @@ offset pagination은 앞 페이지에 새 글이 삽입될 때 중복·누락이
 
 ### 안전한 공개 데모와 운영
 
-공개 환경에는 versioned synthetic fixture만 주입합니다. 배포는 이미지를 GHCR에서 pull하는 방식으로 구성하고, PostgreSQL·MinIO paired backup, age 암호화, disposable restore와 이미지 rollback rehearsal을 운영 절차에 포함했습니다. [운영 검증 기록](docs/09-운영-가이드/운영-검증-기록-2026-08-17.md)
+공개 환경에는 versioned synthetic fixture만 주입합니다. 배포는 이미지를 GHCR에서 pull하는 방식으로 구성하고, PostgreSQL·MinIO paired backup, age 암호화, disposable restore와 이미지 rollback rehearsal을 운영 절차에 포함했습니다.
 
 ## 검증
 
@@ -148,10 +148,10 @@ docs/09-운영-가이드/          deployment and recovery runbooks
 - 정상 흐름뿐 아니라 권한 우회, lost update, 정원 초과, 이벤트 재처리, 백업 복구 같은 실패 조건을 재현한 검증
 - 공개 배포에서 실제 개인정보와 운영 credential을 분리하고, 합성 demo와 복구 절차를 포함한 운영 방식
 
-자세한 설계 의사결정은 [ADR.md](ADR.md), 제품 범위는 [제품 요구사항](docs/01-기준/제품-요구사항.md), 기술 제약은 [기술 요구사항](docs/01-기준/기술-요구사항.md)에서 확인할 수 있습니다.
+설계 의사결정, 제품 범위와 기술 제약은 저장소의 관련 문서에 함께 기록했습니다.
 
 ## 현재 상태와 한계
 
-TownPet은 공개 HTTPS smoke, 애플리케이션·DB·MinIO health check, 백업·복구와 이미지 rollback rehearsal까지 검증된 portfolio sandbox입니다. 다만 현재 운영 기록 기준으로 netcup outbound SMTP 포트의 외부 연결과 실제 메일함 도착은 아직 완료 증거가 없습니다. 따라서 인증·복구 메일의 SMTP 전달을 완전히 검증했다고 주장하지 않습니다. [남은 운영 검증](PLAN.md)
+TownPet은 공개 HTTPS smoke, 애플리케이션·DB·MinIO health check, 백업·복구와 이미지 rollback rehearsal까지 검증된 portfolio sandbox입니다. 다만 현재 운영 기록 기준으로 netcup outbound SMTP 포트의 외부 연결과 실제 메일함 도착은 아직 완료 증거가 없습니다. 따라서 인증·복구 메일의 SMTP 전달을 완전히 검증했다고 주장하지 않습니다.
 
 또한 단일 VPS 구성은 비용과 운영 학습에는 적합하지만, 애플리케이션과 데이터베이스가 같은 failure domain에 있어 고가용성을 제공하지 않습니다. 외부 암호화 백업과 restore 절차로 복구 가능성을 높였지만, 다중 리전·무중단 failover를 해결한 시스템으로 표현하지 않습니다.
