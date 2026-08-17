@@ -124,34 +124,3 @@ Docker daemon과 필요한 환경 변수가 있는 경우 전체 frontend-backen
 ```bash
 ./scripts/frontend-backend-smoke.sh
 ```
-
-## 저장소 둘러보기
-
-```text
-src/main/java/com/townpet/   Spring Boot business modules
-src/main/resources/db/       Flyway migrations
-frontend/                    React/Vite application
-src/test/                    unit, integration, architecture tests
-loadtest/                    k6 workload definitions
-deploy/                      Compose, backup, restore, rollback scripts
-docs/02-설계/                module map and design decisions
-docs/06-성능/                reproducible performance evidence
-docs/08-면접-복기/            development chronology and technical notes
-docs/09-운영-가이드/          deployment and recovery runbooks
-```
-
-## 이 프로젝트에서 확인할 수 있는 것
-
-- 요구사항을 화면 목록이 아니라 **데이터 모델·권한 정책·상태 전이·검증 기준**으로 구체화한 과정
-- 성능 문제를 추측하지 않고 **실행 계획과 동일 fixture 기반 수치**로 판단한 과정
-- 단일 배포 단위의 단순성을 유지하면서도 **모듈 경계·트랜잭션·이벤트·복구 경계**를 명시한 설계
-- 정상 흐름뿐 아니라 권한 우회, lost update, 정원 초과, 이벤트 재처리, 백업 복구 같은 실패 조건을 재현한 검증
-- 공개 배포에서 실제 개인정보와 운영 credential을 분리하고, 합성 demo와 복구 절차를 포함한 운영 방식
-
-설계 의사결정, 제품 범위와 기술 제약은 저장소의 관련 문서에 함께 기록했습니다.
-
-## 현재 상태와 한계
-
-TownPet은 공개 HTTPS smoke, 애플리케이션·DB·MinIO health check, 백업·복구와 이미지 rollback rehearsal까지 검증된 portfolio sandbox입니다. 다만 현재 운영 기록 기준으로 netcup outbound SMTP 포트의 외부 연결과 실제 메일함 도착은 아직 완료 증거가 없습니다. 따라서 인증·복구 메일의 SMTP 전달을 완전히 검증했다고 주장하지 않습니다.
-
-또한 단일 VPS 구성은 비용과 운영 학습에는 적합하지만, 애플리케이션과 데이터베이스가 같은 failure domain에 있어 고가용성을 제공하지 않습니다. 외부 암호화 백업과 restore 절차로 복구 가능성을 높였지만, 다중 리전·무중단 failover를 해결한 시스템으로 표현하지 않습니다.
