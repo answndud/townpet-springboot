@@ -1,0 +1,27 @@
+services:
+  edge:
+    image: caddy:2-alpine
+    container_name: portfolio-edge-caddy
+    restart: unless-stopped
+    mem_limit: 128m
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      TOWNPET_DOMAIN: $TOWNPET_DOMAIN
+      TOWNPET_MEDIA_DOMAIN: $TOWNPET_MEDIA_DOMAIN
+      ERP_DOMAIN: $ERP_DOMAIN
+    volumes:
+      - ./Caddyfile.netcup:/etc/caddy/Caddyfile:ro
+      - edge-caddy-data:/data
+      - edge-caddy-config:/config
+    networks: [edge]
+
+volumes:
+  edge-caddy-data:
+  edge-caddy-config:
+
+networks:
+  edge:
+    external: true

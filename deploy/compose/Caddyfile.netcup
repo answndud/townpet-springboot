@@ -1,0 +1,17 @@
+{$TOWNPET_DOMAIN} {
+    reverse_proxy townpet-web:80 {
+        header_up Host {http.request.host}
+    }
+}
+
+{$TOWNPET_MEDIA_DOMAIN} {
+    reverse_proxy townpet-web:80 {
+        header_up Host {http.request.host}
+    }
+}
+
+{$ERP_DOMAIN} {
+    reverse_proxy kindergarten-erp-caddy:80 {
+        header_up Host {http.request.host}
+    }
+}

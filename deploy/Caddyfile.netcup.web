@@ -1,0 +1,43 @@
+# TLS terminates at the shared edge Caddy. This internal Caddy must stay HTTP-only.
+http://{$TOWNPET_DOMAIN} {
+	root * /srv
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://{$TOWNPET_MEDIA_DOMAIN}; font-src 'self' data:; connect-src 'self' https://{$TOWNPET_MEDIA_DOMAIN}"
+	}
+	handle /api/* {
+		reverse_proxy backend:8080 {
+			header_up Host {http.request.host}
+		}
+	}
+	@hashed path /assets/*
+	handle @hashed {
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+	handle {
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+http://{$TOWNPET_MEDIA_DOMAIN} {
+	@media_preflight method OPTIONS
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Access-Control-Allow-Origin "https://{$TOWNPET_DOMAIN}"
+		Access-Control-Allow-Methods "GET, PUT, OPTIONS"
+		Access-Control-Allow-Headers "Content-Type"
+		Access-Control-Max-Age "600"
+	}
+	respond @media_preflight 204
+	reverse_proxy minio:9000 {
+		header_up Host {http.request.host}
+	}
+}

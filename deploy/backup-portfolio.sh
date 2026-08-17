@@ -16,6 +16,13 @@ mkdir -p "$BACKUP_DIR"
 backup_id="$(date -u +%Y%m%dT%H%M%SZ)"
 backup_root="$BACKUP_DIR/townpet-$backup_id"
 mkdir -p "$backup_root/media"
+backup_complete=0
+cleanup_failed_backup() {
+  if [ "$backup_complete" -ne 1 ] && [ -n "$backup_root" ] && [ -d "$backup_root" ]; then
+    rm -rf -- "$backup_root"
+  fi
+}
+trap cleanup_failed_backup EXIT HUP INT TERM
 
 docker exec "$POSTGRES_CONTAINER" pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB" \
   > "$backup_root/postgres.dump"
@@ -38,4 +45,5 @@ docker exec "$MINIO_CONTAINER" rm -rf "/tmp/townpet-media-$backup_id"
   echo "media_bytes=$(du -sk "$backup_root/media" | awk '{print $1 * 1024}')"
 } > "$backup_root/manifest.txt"
 (cd "$backup_root" && find . -type f ! -name manifest.sha256 -print0 | sort -z | xargs -0 sha256sum > manifest.sha256)
+backup_complete=1
 echo "created paired backup: $backup_root"

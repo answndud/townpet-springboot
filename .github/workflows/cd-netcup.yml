@@ -1,0 +1,72 @@
+name: Deploy TownPet to netcup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: netcup-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate deploy secrets
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+        run: |
+          for name in DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS DEPLOY_HOST DEPLOY_USER DEPLOY_PATH GHCR_USERNAME GHCR_READ_TOKEN; do
+            test -n "${!name}" || { echo "::error::$name is missing"; exit 1; }
+          done
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Sync netcup assets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/deploy/compose'"
+          scp deploy/compose/netcup.yml deploy/compose/edge.yml deploy/compose/Caddyfile.netcup deploy/Caddyfile.netcup.web \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/deploy/compose/"
+          scp deploy/deploy-netcup.sh deploy/edge.env.example scripts/validate-edge-env.sh scripts/validate-portfolio-env.sh \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/deploy/"
+      - name: Pull and deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/townpet-backend:${{ github.sha }}
+          WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/townpet-web:${{ github.sha }}
+        run: |
+          printf '%s' "$GHCR_READ_TOKEN" | ssh "$DEPLOY_USER@$DEPLOY_HOST" \
+            "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin && \
+             cd '$DEPLOY_PATH' && chmod 700 deploy/deploy-netcup.sh deploy/validate-edge-env.sh deploy/validate-portfolio-env.sh && \
+             TOWNPET_BACKEND_IMAGE='$BACKEND_IMAGE' TOWNPET_WEB_IMAGE='$WEB_IMAGE' TOWNPET_BUILD_VERSION='${{ github.sha }}' \
+             COMPOSE_FILE=deploy/compose/netcup.yml EDGE_COMPOSE_FILE=deploy/compose/edge.yml \
+             COMPOSE_ENV_FILE=/opt/townpet/secrets/portfolio.env \
+             EDGE_ENV_FILE=/opt/edge/secrets/edge.env \
+             DEPLOY_LOCK_FILE=/tmp/portfolio-deploy.lock \
+             EDGE_ENV_VALIDATOR=deploy/validate-edge-env.sh \
+             TOWNPET_ENV_VALIDATOR=deploy/validate-portfolio-env.sh deploy/deploy-netcup.sh"

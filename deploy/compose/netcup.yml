@@ -1,0 +1,135 @@
+services:
+  postgres:
+    image: postgis/postgis:18-3.6
+    container_name: townpet-postgres
+    restart: unless-stopped
+    mem_limit: 1024m
+    environment:
+      POSTGRES_DB: $POSTGRES_DB
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      APP_DB_USER: $APP_DB_USER
+      APP_DB_PASSWORD: $APP_DB_PASSWORD
+    volumes:
+      - townpet-postgres-data:/var/lib/postgresql
+      - ./init/portfolio:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [townpet-internal]
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: townpet-minio
+    restart: unless-stopped
+    mem_limit: 512m
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: $TOWNPET_MINIO_ROOT_ACCESS_KEY
+      MINIO_ROOT_PASSWORD: $TOWNPET_MINIO_ROOT_SECRET_KEY
+    volumes:
+      - townpet-minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [townpet-internal]
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    container_name: townpet-minio-init
+    restart: "no"
+    environment:
+      MINIO_ROOT_ACCESS_KEY: $TOWNPET_MINIO_ROOT_ACCESS_KEY
+      MINIO_ROOT_SECRET_KEY: $TOWNPET_MINIO_ROOT_SECRET_KEY
+      MINIO_APP_ACCESS_KEY: $TOWNPET_MINIO_ACCESS_KEY
+      MINIO_APP_SECRET_KEY: $TOWNPET_MINIO_SECRET_KEY
+      MINIO_BUCKET: $TOWNPET_MINIO_BUCKET
+    volumes:
+      - ./minio-policy.json:/config/townpet-media-policy.json:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh"]
+    command:
+      - -c
+      - >-
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_ACCESS_KEY" "$$MINIO_ROOT_SECRET_KEY" &&
+        mc mb --ignore-existing "local/$$MINIO_BUCKET" &&
+        (mc admin policy info local townpet-media-app >/dev/null 2>&1 || mc admin policy create local townpet-media-app /config/townpet-media-policy.json) &&
+        (mc admin user info local "$$MINIO_APP_ACCESS_KEY" >/dev/null 2>&1 || mc admin user add local "$$MINIO_APP_ACCESS_KEY" "$$MINIO_APP_SECRET_KEY") &&
+        mc admin policy attach local townpet-media-app --user "$$MINIO_APP_ACCESS_KEY"
+    networks: [townpet-internal]
+
+  backend:
+    image: $TOWNPET_BACKEND_IMAGE
+    container_name: townpet-backend
+    restart: unless-stopped
+    mem_limit: 1280m
+    init: true
+    security_opt: [no-new-privileges:true]
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      TOWNPET_BUILD_VERSION: $TOWNPET_BUILD_VERSION
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/$POSTGRES_DB
+      SPRING_DATASOURCE_USERNAME: $APP_DB_USER
+      SPRING_DATASOURCE_PASSWORD: $APP_DB_PASSWORD
+      TOWNPET_DEMO_DATA_ENABLED: $TOWNPET_DEMO_DATA_ENABLED
+      TOWNPET_EMAIL_ENABLED: $TOWNPET_EMAIL_ENABLED
+      TOWNPET_EMAIL_FROM: $TOWNPET_EMAIL_FROM
+      TOWNPET_PUBLIC_BASE_URL: $TOWNPET_PUBLIC_BASE_URL
+      TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY: $TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY
+      SPRING_MAIL_HOST: $SPRING_MAIL_HOST
+      SPRING_MAIL_PORT: $SPRING_MAIL_PORT
+      SPRING_MAIL_USERNAME: $SPRING_MAIL_USERNAME
+      SPRING_MAIL_PASSWORD: $SPRING_MAIL_PASSWORD
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: $SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: $SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE
+      TOWNPET_MINIO_ENDPOINT: http://minio:9000
+      TOWNPET_MINIO_PUBLIC_ENDPOINT: $TOWNPET_MINIO_PUBLIC_ENDPOINT
+      TOWNPET_MINIO_ACCESS_KEY: $TOWNPET_MINIO_ACCESS_KEY
+      TOWNPET_MINIO_SECRET_KEY: $TOWNPET_MINIO_SECRET_KEY
+      TOWNPET_MINIO_BUCKET: $TOWNPET_MINIO_BUCKET
+      TOWNPET_MINIO_PRESIGN_EXPIRY_SECONDS: $TOWNPET_MINIO_PRESIGN_EXPIRY_SECONDS
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [townpet-internal]
+
+  web:
+    image: $TOWNPET_WEB_IMAGE
+    container_name: townpet-web
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      TOWNPET_DOMAIN: $TOWNPET_DOMAIN
+      TOWNPET_MEDIA_DOMAIN: $TOWNPET_MEDIA_DOMAIN
+    volumes:
+      - ./../Caddyfile.netcup.web:/etc/caddy/Caddyfile:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - townpet-internal
+      - edge
+
+volumes:
+  townpet-postgres-data:
+  townpet-minio-data:
+
+networks:
+  townpet-internal:
+    name: townpet-internal
+  edge:
+    external: true
