@@ -57,8 +57,8 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
-          BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/townpet-backend:${{ github.sha }}
-          WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/townpet-web:${{ github.sha }}
+          BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/townpet-backend:sha-${{ github.sha }}
+          WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/townpet-web:sha-${{ github.sha }}
         run: |
           printf '%s' "$GHCR_READ_TOKEN" | ssh "$DEPLOY_USER@$DEPLOY_HOST" \
             "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin && \
