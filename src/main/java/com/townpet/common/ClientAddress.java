@@ -67,7 +67,8 @@ public final class ClientAddress {
       String[] parts = value.split("/", 2);
       try {
         InetAddress address = InetAddress.getByName(parts[0]);
-        int prefix = parts.length == 2 ? Integer.parseInt(parts[1]) : address.getAddress().length * 8;
+        int prefix =
+            parts.length == 2 ? Integer.parseInt(parts[1]) : address.getAddress().length * 8;
         if (prefix < 0 || prefix > address.getAddress().length * 8) {
           throw new IllegalArgumentException("Invalid trusted proxy CIDR: " + value);
         }
@@ -83,7 +84,8 @@ public final class ClientAddress {
         if (candidate.length != network.length) return false;
         int fullBytes = prefixLength / 8;
         int remainingBits = prefixLength % 8;
-        if (!Arrays.equals(Arrays.copyOf(candidate, fullBytes), Arrays.copyOf(network, fullBytes))) {
+        if (!Arrays.equals(
+            Arrays.copyOf(candidate, fullBytes), Arrays.copyOf(network, fullBytes))) {
           return false;
         }
         if (remainingBits == 0) return true;
