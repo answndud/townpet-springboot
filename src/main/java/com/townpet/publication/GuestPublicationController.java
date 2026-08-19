@@ -1,12 +1,16 @@
 package com.townpet.publication;
 
+import com.townpet.common.ClientAddress;
 import com.townpet.common.MemberOrAnonymousOnly;
+import com.townpet.common.RequestRateLimiter;
 import com.townpet.identity.GuestStepUpController;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -26,9 +30,16 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/guest/posts")
 class GuestPublicationController {
   private final PublicationService publications;
+  private final RequestRateLimiter rateLimiter;
+  private final ClientAddress clientAddress;
 
-  GuestPublicationController(PublicationService publications) {
+  GuestPublicationController(
+      PublicationService publications,
+      RequestRateLimiter rateLimiter,
+      ClientAddress clientAddress) {
     this.publications = publications;
+    this.rateLimiter = rateLimiter;
+    this.clientAddress = clientAddress;
   }
 
   @PostMapping
@@ -36,7 +47,9 @@ class GuestPublicationController {
   @ResponseStatus(HttpStatus.CREATED)
   Response create(
       @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
-      @Valid @RequestBody CreateRequest request) {
+      @Valid @RequestBody CreateRequest request,
+      HttpServletRequest httpRequest) {
+    requireContentCapacity(guestId, httpRequest, "guest-post-create", 10);
     return response(
         publications.createGuest(guestId, request.password(), request.title(), request.body()));
   }
@@ -46,7 +59,9 @@ class GuestPublicationController {
   Response edit(
       @PathVariable UUID publicationId,
       @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
-      @Valid @RequestBody EditRequest request) {
+      @Valid @RequestBody EditRequest request,
+      HttpServletRequest httpRequest) {
+    requireContentCapacity(guestId, httpRequest, "guest-post-mutation", 120);
     try {
       return response(
           publications.editGuest(
@@ -70,7 +85,9 @@ class GuestPublicationController {
   void delete(
       @PathVariable UUID publicationId,
       @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
-      @Valid @RequestBody DeleteRequest request) {
+      @Valid @RequestBody DeleteRequest request,
+      HttpServletRequest httpRequest) {
+    requireContentCapacity(guestId, httpRequest, "guest-post-mutation", 120);
     try {
       publications.deleteGuest(guestId, request.password(), publicationId, request.version());
     } catch (PublicationNotFoundException exception) {
@@ -80,6 +97,13 @@ class GuestPublicationController {
     } catch (PublicationVersionConflictException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT);
     }
+  }
+
+  private void requireContentCapacity(
+      UUID guestId, HttpServletRequest request, String guestBucket, int guestLimit) {
+    rateLimiter.requireCapacity(
+        "guest-content-ip", clientAddress.resolve(request), 120, Duration.ofHours(1));
+    rateLimiter.requireCapacity(guestBucket, guestId.toString(), guestLimit, Duration.ofHours(1));
   }
 
   private static Response response(PublicationEntity publication) {

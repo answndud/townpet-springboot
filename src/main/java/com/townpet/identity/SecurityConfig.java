@@ -14,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
@@ -43,7 +44,8 @@ public class SecurityConfig {
   SecurityFilterChain securityFilterChain(
       HttpSecurity http,
       @Value("${townpet.e2e-support.enabled:false}") boolean e2eSupportEnabled,
-      StableSecurityProblemHandlers securityProblems)
+      StableSecurityProblemHandlers securityProblems,
+      ModeratorMfaFilter moderatorMfaFilter)
       throws Exception {
     CookieCsrfTokenRepository csrfTokens = CookieCsrfTokenRepository.withHttpOnlyFalse();
     CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
@@ -86,6 +88,8 @@ public class SecurityConfig {
                   .permitAll()
                   .requestMatchers("/api/v1/auth/email-verifications/**")
                   .permitAll()
+                  .requestMatchers("/api/v1/auth/mfa/**")
+                  .hasRole("MODERATOR")
                   .requestMatchers("/api/v1/catalog/**")
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/local-resources/**")
@@ -158,6 +162,7 @@ public class SecurityConfig {
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
         .logout(AbstractHttpConfigurer::disable);
+    http.addFilterAfter(moderatorMfaFilter, AuthorizationFilter.class);
     return http.build();
   }
 }

@@ -1,6 +1,8 @@
 package com.townpet.discovery;
 
 import com.townpet.common.UuidV7;
+import com.townpet.operations.PublicIngressRateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -16,14 +18,17 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 class SearchEventController {
   private final SearchEventRepository events;
+  private final PublicIngressRateLimiter rateLimiter;
 
-  SearchEventController(SearchEventRepository events) {
+  SearchEventController(SearchEventRepository events, PublicIngressRateLimiter rateLimiter) {
     this.events = events;
+    this.rateLimiter = rateLimiter;
   }
 
   @PostMapping("/api/search/log")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  void record(@Valid @RequestBody SearchLogRequest request) {
+  void record(@Valid @RequestBody SearchLogRequest request, HttpServletRequest httpRequest) {
+    rateLimiter.requireSearchCapacity(httpRequest);
     try {
       events.save(
           new SearchEventEntity(
