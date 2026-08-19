@@ -22,7 +22,9 @@ public class EmailVerificationController {
   private final ClientAddress clientAddress;
 
   public EmailVerificationController(
-      EmailVerificationService verifications, RequestRateLimiter rateLimiter, ClientAddress clientAddress) {
+      EmailVerificationService verifications,
+      RequestRateLimiter rateLimiter,
+      ClientAddress clientAddress) {
     this.verifications = verifications;
     this.rateLimiter = rateLimiter;
     this.clientAddress = clientAddress;
