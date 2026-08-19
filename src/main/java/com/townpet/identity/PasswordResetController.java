@@ -22,7 +22,9 @@ public class PasswordResetController {
   private final ClientAddress clientAddress;
 
   public PasswordResetController(
-      PasswordResetService passwordResets, RequestRateLimiter rateLimiter, ClientAddress clientAddress) {
+      PasswordResetService passwordResets,
+      RequestRateLimiter rateLimiter,
+      ClientAddress clientAddress) {
     this.passwordResets = passwordResets;
     this.rateLimiter = rateLimiter;
     this.clientAddress = clientAddress;
