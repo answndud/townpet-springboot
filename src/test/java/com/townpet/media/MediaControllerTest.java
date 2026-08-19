@@ -69,6 +69,27 @@ class MediaControllerTest {
   }
 
   @Test
+  void uploadCreationIsLimitedPerMemberPerUtcDay() throws Exception {
+    Cookie author = login("demo-member-1@townpet.local");
+
+    for (int attempt = 0; attempt < MediaService.MAX_UPLOADS_PER_UTC_DAY; attempt++) {
+      createUpload(author);
+    }
+
+    mockMvc
+        .perform(
+            post("/api/v1/media/uploads")
+                .cookie(author)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"checksumSha256\":\""
+                        + CHECKSUM
+                        + "\",\"contentType\":\"image/jpeg\",\"byteSize\":4}"))
+        .andExpect(status().isTooManyRequests());
+  }
+
+  @Test
   void uploadMustFinalizeBeforeAuthorCanAttachItToAnActivePublication() throws Exception {
     Cookie author = login("demo-member-1@townpet.local");
     Cookie other = login("demo-member-2@townpet.local");

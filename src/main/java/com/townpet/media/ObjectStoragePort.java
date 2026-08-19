@@ -1,10 +1,16 @@
 package com.townpet.media;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 
 interface ObjectStoragePort {
   String createUploadUrl(String objectKey, String contentType, long byteSize, Instant expiresAt);
+
+  default Map<String, String> createUploadFields(
+      String objectKey, String contentType, long byteSize, Instant expiresAt) {
+    return Map.of();
+  }
 
   default String createReadUrl(String objectKey, Instant expiresAt) {
     return createUploadUrl(objectKey, "application/octet-stream", 0, expiresAt);
