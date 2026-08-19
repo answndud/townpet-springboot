@@ -14,6 +14,8 @@ export type Session = {
   memberId: string;
   expiresAt: string;
   role: "MEMBER" | "MODERATOR";
+  mfaRequired: boolean;
+  mfaEnrolled: boolean;
 };
 
 export type Neighborhood = {
@@ -449,6 +451,33 @@ export const authApi = {
       method: "POST",
       headers: jsonHeaders,
       body: JSON.stringify({ token: token.trim() }),
+    });
+  },
+  startMfaEnrollment() {
+    return mutate<{ secret: string; otpauthUri: string; expiresAt: string }>(
+      "/api/v1/auth/mfa/enrollment",
+      { method: "POST" },
+    );
+  },
+  confirmMfaEnrollment(code: string) {
+    return mutate<{ recoveryCodes: string[] }>("/api/v1/auth/mfa/enrollment/confirm", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ code: code.trim() }),
+    });
+  },
+  verifyMfa(code: string) {
+    return mutate<void>("/api/v1/auth/mfa/verify", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ code: code.trim() }),
+    });
+  },
+  useMfaRecoveryCode(code: string) {
+    return mutate<void>("/api/v1/auth/mfa/recovery", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ code: code.trim() }),
     });
   },
 };

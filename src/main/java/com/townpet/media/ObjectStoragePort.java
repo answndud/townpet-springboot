@@ -3,6 +3,7 @@ package com.townpet.media;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.lang.Nullable;
 
 interface ObjectStoragePort {
   String createUploadUrl(String objectKey, String contentType, long byteSize, Instant expiresAt);
@@ -24,4 +25,13 @@ interface ObjectStoragePort {
 }
 
 record StoredObject(
-    String contentType, long byteSize, String checksumSha256, String detectedContentType) {}
+    String contentType,
+    long byteSize,
+    String checksumSha256,
+    String detectedContentType,
+    @Nullable MediaImageDimensions.ImageDimensions imageDimensions) {
+  StoredObject(
+      String contentType, long byteSize, String checksumSha256, String detectedContentType) {
+    this(contentType, byteSize, checksumSha256, detectedContentType, null);
+  }
+}

@@ -29,7 +29,13 @@ export default function LoginPage() {
     setError(null);
     try {
       const session = await authApi.login(email, password);
-      navigate(safeNextPath(searchParams.get("next"), session.role));
+      const nextPath = safeNextPath(searchParams.get("next"), session.role);
+      if (session.role === "MODERATOR" && session.mfaRequired) {
+        const mode = session.mfaEnrolled ? "verify" : "enroll";
+        navigate(`/admin/mfa?mode=${mode}&next=${encodeURIComponent(nextPath)}`);
+      } else {
+        navigate(nextPath);
+      }
     } catch (requestError) {
       setError(
         requestError instanceof ApiError && requestError.status === 401

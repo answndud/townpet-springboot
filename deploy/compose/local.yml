@@ -52,8 +52,8 @@ services:
     container_name: townpet-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: townpet_minio
-      MINIO_ROOT_PASSWORD: townpet_minio_local
+      MINIO_ROOT_USER: ${TOWNPET_MINIO_ROOT_ACCESS_KEY:?set TOWNPET_MINIO_ROOT_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${TOWNPET_MINIO_ROOT_SECRET_KEY:?set TOWNPET_MINIO_ROOT_SECRET_KEY}
     ports:
       - "9000:9000"
       - "9001:9001"

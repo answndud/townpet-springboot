@@ -121,7 +121,11 @@ final class MinioObjectStorage implements ObjectStoragePort {
       String contentType = stat.contentType();
       return Optional.of(
           new StoredObject(
-              contentType, stat.size(), sha256(content), MediaContentSniffer.detect(content)));
+              contentType,
+              stat.size(),
+              sha256(content),
+              MediaContentSniffer.detect(content),
+              MediaImageDimensions.inspect(contentType, content).orElse(null)));
     } catch (io.minio.errors.ErrorResponseException exception) {
       if ("NoSuchKey".equals(exception.errorResponse().code())) return Optional.empty();
       throw new IllegalStateException("Could not inspect MinIO object", exception);

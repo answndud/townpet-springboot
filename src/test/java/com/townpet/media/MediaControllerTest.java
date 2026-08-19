@@ -6,10 +6,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.townpet.identity.MfaTestSupport;
 import jakarta.servlet.http.Cookie;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Objects;
 import java.util.UUID;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +42,8 @@ import org.testcontainers.utility.MountableFile;
 @Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class MediaControllerTest {
-  private static final String CHECKSUM =
-      "32461d5bd1773012acef0ba15636752949bd7c2ce50f9172159d9f56cf0dd9af";
-  private static final byte[] JPEG_BYTES = {(byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xd9};
+  private static final byte[] JPEG_BYTES = createJpegBytes();
+  private static final String CHECKSUM = checksum(JPEG_BYTES);
 
   @Container
   static final PostgreSQLContainer<?> POSTGRES =
@@ -85,7 +91,9 @@ class MediaControllerTest {
                 .content(
                     "{\"checksumSha256\":\""
                         + CHECKSUM
-                        + "\",\"contentType\":\"image/jpeg\",\"byteSize\":4}"))
+                        + "\",\"contentType\":\"image/jpeg\",\"byteSize\":"
+                        + JPEG_BYTES.length
+                        + "}"))
         .andExpect(status().isTooManyRequests());
   }
 
@@ -201,10 +209,12 @@ class MediaControllerTest {
         UUID.fromString(assetId));
 
     jdbc.update(
-        "UPDATE identity_credential SET password_hash = (SELECT password_hash FROM identity_credential WHERE email = ?) WHERE email = ?",
+        "UPDATE identity_credential SET password_hash = (SELECT password_hash FROM"
+            + " identity_credential WHERE email = ?) WHERE email = ?",
         "demo-member-1@townpet.local",
         "demo-moderator@townpet.local");
     Cookie moderator = login("demo-moderator@townpet.local");
+    moderator = MfaTestSupport.completeEnrollment(mockMvc, moderator);
     mockMvc
         .perform(
             post("/api/v1/operations/media/uploads/cleanup")
@@ -239,7 +249,9 @@ class MediaControllerTest {
                     .content(
                         "{\"checksumSha256\":\""
                             + CHECKSUM
-                            + "\",\"contentType\":\"image/jpeg\",\"byteSize\":4}"))
+                            + "\",\"contentType\":\"image/jpeg\",\"byteSize\":"
+                            + JPEG_BYTES.length
+                            + "}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("UPLOADING"))
             .andReturn();
@@ -247,6 +259,24 @@ class MediaControllerTest {
         .readTree(result.getResponse().getContentAsString())
         .path("id")
         .asText();
+  }
+
+  private static byte[] createJpegBytes() {
+    try {
+      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      ImageIO.write(new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB), "jpg", output);
+      return output.toByteArray();
+    } catch (IOException exception) {
+      throw new ExceptionInInitializerError(exception);
+    }
+  }
+
+  private static String checksum(byte[] content) {
+    try {
+      return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content));
+    } catch (java.security.NoSuchAlgorithmException exception) {
+      throw new ExceptionInInitializerError(exception);
+    }
   }
 
   private String objectKey(String assetId) {

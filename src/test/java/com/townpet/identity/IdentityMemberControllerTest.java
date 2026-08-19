@@ -29,11 +29,14 @@ import org.springframework.test.web.servlet.MvcResult;
 
 @SpringBootTest(
     properties = {
-      "spring.datasource.url=jdbc:h2:mem:identity;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=CREATE DOMAIN IF NOT EXISTS CITEXT AS VARCHAR(320)",
+      "spring.datasource.url=jdbc:h2:mem:identity;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;INIT=CREATE"
+          + " DOMAIN IF NOT EXISTS CITEXT AS VARCHAR(320)",
       "spring.datasource.username=sa",
       "spring.datasource.password=",
       "spring.jpa.hibernate.ddl-auto=create-drop",
       "spring.flyway.enabled=false",
+      "spring.sql.init.mode=always",
+      "spring.sql.init.schema-locations=classpath:security-rate-limit-h2.sql",
       "spring.session.jdbc.initialize-schema=always",
       "spring.modulith.events.jdbc.schema-initialization.enabled=true"
     })
@@ -57,12 +60,17 @@ class IdentityMemberControllerTest {
   @Autowired NeighborhoodRepository neighborhoods;
   @Autowired MemberPetRepository pets;
   @Autowired PasswordEncoder passwordEncoder;
+  @Autowired MfaFactorRepository mfaFactors;
+  @Autowired MfaRecoveryCodeRepository mfaRecoveryCodes;
+  @Autowired TotpService totp;
 
   @BeforeEach
   void seedMember() {
     authAudits.deleteAll();
     passwordResetTokens.deleteAll();
     emailVerificationTokens.deleteAll();
+    mfaRecoveryCodes.deleteAll();
+    mfaFactors.deleteAll();
     accountTokens.clear();
     credentials.deleteAll();
     pets.deleteAll();
@@ -189,7 +197,10 @@ class IdentityMemberControllerTest {
                     .content("{\"email\":\"moderator@example.com\",\"password\":\"password123!\"}"))
             .andExpect(status().isCreated())
             .andReturn();
-    Cookie session = sessionCookie(login);
+    mockMvc
+        .perform(get("/api/admin/breeds").cookie(sessionCookie(login)))
+        .andExpect(status().isForbidden());
+    Cookie session = verifyMfa(login);
 
     mockMvc.perform(get("/api/admin/breeds").cookie(session)).andExpect(status().isOk());
     mockMvc
@@ -198,8 +209,7 @@ class IdentityMemberControllerTest {
                 .cookie(session)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    "{\"title\":\"운영자 작성 제한\",\"body\":\"회원 전용 기능\"}"))
+                .content("{\"title\":\"운영자 작성 제한\",\"body\":\"회원 전용 기능\"}"))
         .andExpect(status().isForbidden());
   }
 
@@ -221,7 +231,7 @@ class IdentityMemberControllerTest {
     mockMvc
         .perform(
             post("/api/admin/moderation/users/sanction")
-                .cookie(sessionCookie(login))
+                .cookie(verifyMfa(login))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -701,6 +711,30 @@ class IdentityMemberControllerTest {
 
   private static Cookie sessionCookie(MvcResult login) {
     return Objects.requireNonNull(login.getResponse().getCookie("SESSION"));
+  }
+
+  private Cookie verifyMfa(MvcResult login) throws Exception {
+    Cookie session = sessionCookie(login);
+    MvcResult enrollment =
+        mockMvc
+            .perform(post("/api/v1/auth/mfa/enrollment").cookie(session).with(csrf()))
+            .andExpect(status().isOk())
+            .andReturn();
+    String secret =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(enrollment.getResponse().getContentAsString())
+            .path("secret")
+            .asText();
+    String code = totp.generate(secret, java.time.Instant.now().getEpochSecond() / 30);
+    mockMvc
+        .perform(
+            post("/api/v1/auth/mfa/enrollment/confirm")
+                .cookie(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"code\":\"" + code + "\"}"))
+        .andExpect(status().isOk());
+    return session;
   }
 
   private void verifyCredential() {

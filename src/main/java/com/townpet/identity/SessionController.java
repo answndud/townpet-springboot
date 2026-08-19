@@ -42,6 +42,7 @@ public class SessionController {
   private final RequestRateLimiter rateLimiter;
   private final ClientAddress clientAddress;
   private final Duration sessionTimeout;
+  private final MfaService mfa;
   private final SecurityContextRepository securityContexts =
       new HttpSessionSecurityContextRepository();
 
@@ -51,13 +52,15 @@ public class SessionController {
       @Value("${townpet.security.secure-cookies:false}") boolean secureCookies,
       RequestRateLimiter rateLimiter,
       ClientAddress clientAddress,
-      @Value("${spring.session.timeout:30m}") Duration sessionTimeout) {
+      @Value("${spring.session.timeout:30m}") Duration sessionTimeout,
+      MfaService mfa) {
     this.authenticationManager = authenticationManager;
     this.credentials = credentials;
     this.secureCookies = secureCookies;
     this.rateLimiter = rateLimiter;
     this.clientAddress = clientAddress;
     this.sessionTimeout = sessionTimeout;
+    this.mfa = mfa;
   }
 
   @GetMapping("/csrf")
@@ -91,21 +94,31 @@ public class SessionController {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
     }
 
-    httpRequest.getSession(true);
-    httpRequest.changeSessionId();
-    SecurityContext context = SecurityContextHolder.createEmptyContext();
-    context.setAuthentication(authentication);
-    SecurityContextHolder.setContext(context);
-    securityContexts.saveContext(context, httpRequest, httpResponse);
-
     CredentialEntity credential =
         credentials
             .findByEmailIgnoreCase(email)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     UUID memberId = credential.getMemberId();
     String role = credential.getRole();
+    httpRequest
+        .getSession(true)
+        .setAttribute(
+            MfaService.SESSION_VERIFIED_ATTRIBUTE,
+            "MODERATOR".equals(role) ? Boolean.FALSE : Boolean.TRUE);
+    httpRequest.changeSessionId();
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
+    context.setAuthentication(authentication);
+    SecurityContextHolder.setContext(context);
+    securityContexts.saveContext(context, httpRequest, httpResponse);
+
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(new SessionResponse(memberId, Instant.now().plus(sessionTimeout), role));
+        .body(
+            new SessionResponse(
+                memberId,
+                Instant.now().plus(sessionTimeout),
+                role,
+                "MODERATOR".equals(role),
+                "MODERATOR".equals(role) && mfa.isEnabled(memberId)));
   }
 
   @DeleteMapping("/sessions/current")
@@ -121,7 +134,8 @@ public class SessionController {
       @NotBlank @Email @Size(max = 320) String email,
       @NotBlank @Size(min = 8, max = 72) String password) {}
 
-  record SessionResponse(UUID memberId, Instant expiresAt, String role) {}
+  record SessionResponse(
+      UUID memberId, Instant expiresAt, String role, boolean mfaRequired, boolean mfaEnrolled) {}
 
   record CsrfResponse(String token) {}
 }

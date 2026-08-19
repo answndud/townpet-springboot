@@ -11,6 +11,8 @@ set -eu
 : "${MINIO_BUCKET:=townpet-media}"
 : "${ALLOW_DESTRUCTIVE_RESTORE:?set ALLOW_DESTRUCTIVE_RESTORE=YES}"
 
+command -v docker >/dev/null || { echo "docker is required" >&2; exit 1; }
+
 if [ "$ALLOW_DESTRUCTIVE_RESTORE" != "YES" ]; then
   echo "refusing paired restore: set ALLOW_DESTRUCTIVE_RESTORE=YES" >&2
   exit 1
@@ -33,4 +35,30 @@ docker cp "$BACKUP_ROOT/media/." "$MINIO_CONTAINER:/tmp/townpet-media-restore-$r
 docker exec "$MINIO_CONTAINER" mc mirror --overwrite --remove \
   "/tmp/townpet-media-restore-$restore_id" "townpet-restore/$MINIO_BUCKET"
 docker exec "$MINIO_CONTAINER" rm -rf "/tmp/townpet-media-restore-$restore_id"
+
+expected_media_objects="$(find "$BACKUP_ROOT/media" -type f | wc -l | tr -d ' ')"
+restored_object_listing="$(docker exec "$MINIO_CONTAINER" mc find "townpet-restore/$MINIO_BUCKET" --print '{{.Key}}')"
+restored_media_objects="$(printf '%s\n' "$restored_object_listing" | sed '/^$/d' | wc -l | tr -d ' ')"
+[ "$expected_media_objects" = "$restored_media_objects" ] || {
+  echo "restored media object count mismatch: expected=$expected_media_objects actual=$restored_media_objects" >&2
+  exit 1
+}
+
+manifest_publications="$(sed -n 's/^db_publications=//p' "$BACKUP_ROOT/manifest.txt")"
+if [ -n "$manifest_publications" ]; then
+  restored_publications="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM publication')"
+  [ "$manifest_publications" = "$restored_publications" ] || {
+    echo "restored publication count mismatch: expected=$manifest_publications actual=$restored_publications" >&2
+    exit 1
+  }
+fi
+
+manifest_upload_assets="$(sed -n 's/^db_upload_assets=//p' "$BACKUP_ROOT/manifest.txt")"
+if [ -n "$manifest_upload_assets" ]; then
+  restored_upload_assets="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM upload_asset')"
+  [ "$manifest_upload_assets" = "$restored_upload_assets" ] || {
+    echo "restored upload asset count mismatch: expected=$manifest_upload_assets actual=$restored_upload_assets" >&2
+    exit 1
+  }
+fi
 echo "restored paired backup: $BACKUP_ROOT"
