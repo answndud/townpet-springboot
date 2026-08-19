@@ -135,7 +135,7 @@ export type Bookmark = {
   active: boolean;
 };
 export type PublicationStats = { viewCount: number };
-export type MediaUpload = { id: string; uploadUrl: string; objectKey: string; checksumSha256: string; contentType: string; byteSize: number; status: string; publicationId: string | null; expiresAt: string; version: number };
+export type MediaUpload = { id: string; uploadUrl: string; uploadFields: Record<string, string>; objectKey: string; checksumSha256: string; contentType: string; byteSize: number; status: string; publicationId: string | null; expiresAt: string; version: number };
 export type CareRequest = { id: string; requesterMemberId: string; title: string; description: string; location: string; startsAt: string; endsAt: string; rewardHint: string | null; status: "OPEN" | "MATCHED" | "CANCELLED" | "EXPIRED"; createdAt: string; updatedAt: string; version: number };
 export type CareApplication = { id: string; requestId: string; applicantMemberId: string; message: string; status: "PENDING" | "ACCEPTED" | "DECLINED" | "WITHDRAWN"; createdAt: string; updatedAt: string; version: number };
 export type CareAssignment = { id: string; requestId: string; caregiverMemberId: string; status: "MATCHED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED_BY_REQUESTER" | "CANCELLED_BY_CAREGIVER" | "ABORTED"; createdAt: string; updatedAt: string; version: number };
@@ -777,10 +777,13 @@ export const mediaApi = {
       await this.uploadContent(asset.id, file);
       return;
     }
+    const form = new FormData();
+    Object.entries(asset.uploadFields ?? {}).forEach(([key, value]) => form.append(key, value));
+    form.append("file", file);
     const response = await fetch(asset.uploadUrl, {
-      method: "PUT",
-      headers: { "content-type": file.type },
-      body: file,
+      method: asset.uploadFields && Object.keys(asset.uploadFields).length > 0 ? "POST" : "PUT",
+      headers: asset.uploadFields && Object.keys(asset.uploadFields).length > 0 ? undefined : { "content-type": file.type },
+      body: asset.uploadFields && Object.keys(asset.uploadFields).length > 0 ? form : file,
     });
     if (!response.ok) throw new ApiError(response.status, { detail: "Media upload failed" });
   },

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
@@ -48,6 +49,8 @@ class MediaController {
     } catch (MediaInputNotAllowedException exception) {
       throw new ResponseStatusException(
           HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media metadata");
+    } catch (MediaQuotaExceededException exception) {
+      throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Media quota exceeded");
     }
   }
 
@@ -142,9 +145,11 @@ class MediaController {
   }
 
   private MediaResponse toResponse(UploadAssetEntity asset) {
+    boolean uploadable = asset.getStatus() == MediaAssetStatus.UPLOADING;
     return new MediaResponse(
         asset.getId(),
-        media.uploadUrl(asset),
+        uploadable ? media.uploadUrl(asset) : "",
+        uploadable ? media.uploadFields(asset) : Map.of(),
         asset.getObjectKey(),
         asset.getChecksumSha256(),
         asset.getContentType(),
@@ -166,6 +171,7 @@ class MediaController {
   record MediaResponse(
       UUID id,
       String uploadUrl,
+      Map<String, String> uploadFields,
       String objectKey,
       String checksumSha256,
       String contentType,
