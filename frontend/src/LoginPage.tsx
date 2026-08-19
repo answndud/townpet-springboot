@@ -3,8 +3,9 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AuthPageLayout from "./AuthPageLayout";
 import { ApiError, authApi } from "./api/client";
 
-const DEMO_EMAIL = "demo-member-1@townpet.local";
-const DEMO_PASSWORD = "townpet-demo-123!";
+const DEMO_EMAIL = import.meta.env.VITE_DEMO_EMAIL;
+const DEMO_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD;
+const DEMO_DATA_ENABLED = import.meta.env.VITE_DEMO_DATA_ENABLED === "true";
 
 function safeNextPath(candidate: string | null, role: "MEMBER" | "MODERATOR") {
   const internalPath = candidate?.startsWith("/") && !candidate.startsWith("//") ? candidate : null;
@@ -41,6 +42,7 @@ export default function LoginPage() {
   }
 
   function fillDemoCredential() {
+    if (!DEMO_EMAIL || !DEMO_PASSWORD) return;
     setEmail(DEMO_EMAIL);
     setPassword(DEMO_PASSWORD);
     setError(null);
@@ -116,17 +118,19 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <aside className="demo-credential" aria-label="포트폴리오 데모 계정">
-        <div>
-          <strong>데모 계정</strong>
-          <p>공개 showcase의 합성 계정이며 입력 데이터는 주기적으로 초기화됩니다.</p>
-        </div>
-        <code>{DEMO_EMAIL}</code>
-        <code>{DEMO_PASSWORD}</code>
-        <button type="button" className="button button-soft" onClick={fillDemoCredential}>
-          데모 계정 입력
-        </button>
-      </aside>
+      {DEMO_DATA_ENABLED && DEMO_EMAIL && DEMO_PASSWORD ? (
+        <aside className="demo-credential" aria-label="포트폴리오 데모 계정">
+          <div>
+            <strong>데모 계정</strong>
+            <p>공개 showcase의 합성 계정이며 입력 데이터는 주기적으로 초기화됩니다.</p>
+          </div>
+          <code>{DEMO_EMAIL}</code>
+          <code>{DEMO_PASSWORD}</code>
+          <button type="button" className="button button-soft" onClick={fillDemoCredential}>
+            데모 계정 입력
+          </button>
+        </aside>
+      ) : null}
 
       <nav className="auth-links" aria-label="계정 도움말">
         <Link to="/verify-email">이메일 인증</Link>

@@ -10,13 +10,15 @@ import org.springframework.stereotype.Component;
 @Component
 final class PublicIngressRateLimiter {
   private final RequestRateLimiter limiter;
+  private final ClientAddress clientAddress;
 
-  PublicIngressRateLimiter(RequestRateLimiter limiter) {
+  PublicIngressRateLimiter(RequestRateLimiter limiter, ClientAddress clientAddress) {
     this.limiter = limiter;
+    this.clientAddress = clientAddress;
   }
 
   void requireCapacity(HttpServletRequest request) {
     limiter.requireCapacity(
-        "public-telemetry", ClientAddress.resolve(request), 600, Duration.ofMinutes(1));
+        "public-telemetry", clientAddress.resolve(request), 600, Duration.ofMinutes(1));
   }
 }

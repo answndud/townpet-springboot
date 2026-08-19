@@ -19,18 +19,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class PasswordResetController {
   private final PasswordResetService passwordResets;
   private final RequestRateLimiter rateLimiter;
+  private final ClientAddress clientAddress;
 
   public PasswordResetController(
-      PasswordResetService passwordResets, RequestRateLimiter rateLimiter) {
+      PasswordResetService passwordResets, RequestRateLimiter rateLimiter, ClientAddress clientAddress) {
     this.passwordResets = passwordResets;
     this.rateLimiter = rateLimiter;
+    this.clientAddress = clientAddress;
   }
 
   @PostMapping
   ResponseEntity<Void> request(
       @Valid @RequestBody ResetRequest request, HttpServletRequest httpRequest) {
     rateLimiter.requireCapacity(
-        "password-reset-ip", ClientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
+        "password-reset-ip", clientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
     rateLimiter.requireCapacity("password-reset-global", "all", 300, Duration.ofMinutes(1));
     passwordResets.request(request.email());
     return ResponseEntity.accepted().build();
