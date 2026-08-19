@@ -40,6 +40,7 @@ public class SessionController {
   private final CredentialRepository credentials;
   private final boolean secureCookies;
   private final RequestRateLimiter rateLimiter;
+  private final ClientAddress clientAddress;
   private final Duration sessionTimeout;
   private final SecurityContextRepository securityContexts =
       new HttpSessionSecurityContextRepository();
@@ -49,11 +50,13 @@ public class SessionController {
       CredentialRepository credentials,
       @Value("${townpet.security.secure-cookies:false}") boolean secureCookies,
       RequestRateLimiter rateLimiter,
+      ClientAddress clientAddress,
       @Value("${spring.session.timeout:30m}") Duration sessionTimeout) {
     this.authenticationManager = authenticationManager;
     this.credentials = credentials;
     this.secureCookies = secureCookies;
     this.rateLimiter = rateLimiter;
+    this.clientAddress = clientAddress;
     this.sessionTimeout = sessionTimeout;
   }
 
@@ -77,7 +80,7 @@ public class SessionController {
       HttpServletRequest httpRequest,
       HttpServletResponse httpResponse) {
     rateLimiter.requireCapacity(
-        "login", ClientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
+        "login", clientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
     String email = request.email().trim();
     Authentication authentication;
     try {

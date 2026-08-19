@@ -7,6 +7,10 @@ services:
       POSTGRES_DB: townpet
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_local_admin
+      APP_DB_USER: townpet_app
+      APP_DB_PASSWORD: townpet_local_dev
+      MIGRATION_DB_USER: townpet_migration
+      MIGRATION_DB_PASSWORD: townpet_migration_local_dev
     ports:
       - "54329:5432"
     volumes:
@@ -27,6 +31,8 @@ services:
       TOWNPET_DB_URL: jdbc:postgresql://postgres:5432/townpet
       TOWNPET_DB_USERNAME: townpet_app
       TOWNPET_DB_PASSWORD: townpet_local_dev
+      TOWNPET_MIGRATION_DB_USERNAME: townpet_migration
+      TOWNPET_MIGRATION_DB_PASSWORD: townpet_migration_local_dev
       TOWNPET_DEMO_DATA_ENABLED: true
     depends_on:
       postgres:

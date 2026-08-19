@@ -8,9 +8,18 @@ server:
         same-site: lax
 
 spring:
+  flyway:
+    user: ${TOWNPET_MIGRATION_DB_USERNAME}
+    password: ${TOWNPET_MIGRATION_DB_PASSWORD}
   session:
     jdbc:
       initialize-schema: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
 
 townpet:
   email:
@@ -30,5 +39,6 @@ townpet:
       presign-expiry-seconds: ${TOWNPET_MINIO_PRESIGN_EXPIRY_SECONDS:900}
   security:
     secure-cookies: true
+    trusted-proxy-cidrs: ${TOWNPET_TRUSTED_PROXY_CIDRS}
   demo-data:
     enabled: ${TOWNPET_DEMO_DATA_ENABLED:false}
