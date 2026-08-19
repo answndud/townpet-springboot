@@ -15,6 +15,7 @@ $$;
 GRANT CONNECT ON DATABASE townpet TO townpet_app;
 GRANT CONNECT ON DATABASE townpet TO townpet_migration;
 GRANT USAGE ON SCHEMA public TO townpet_app;
+REVOKE CREATE ON SCHEMA public FROM townpet_app;
 GRANT USAGE, CREATE ON SCHEMA public TO townpet_migration;
 ALTER DEFAULT PRIVILEGES FOR ROLE townpet_migration IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO townpet_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE townpet_migration IN SCHEMA public GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO townpet_app;
