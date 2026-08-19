@@ -28,6 +28,7 @@ psql -v ON_ERROR_STOP=1 \
   -v app_user="$APP_DB_USER" <<'SQL'
 SELECT format('GRANT CONNECT ON DATABASE %I TO %I', current_database(), :'app_user') \gexec
 SELECT format('GRANT USAGE ON SCHEMA public TO %I', :'app_user') \gexec
+SELECT format('REVOKE CREATE ON SCHEMA public FROM %I', :'app_user') \gexec
 SQL
 
 psql -v ON_ERROR_STOP=1 \
