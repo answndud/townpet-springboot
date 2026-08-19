@@ -41,26 +41,13 @@ SELECT format('GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO 
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I', :'migration_user', :'app_user') \gexec
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO %I', :'migration_user', :'app_user') \gexec
 
-DO $do$
-DECLARE
-  object_name text;
-BEGIN
-  FOR object_name IN
-    SELECT format('%I.%I', schemaname, tablename)
-    FROM pg_tables
-    WHERE schemaname = 'public'
-  LOOP
-    EXECUTE format('ALTER TABLE %s OWNER TO %I', object_name, :'migration_user');
-  END LOOP;
-  FOR object_name IN
-    SELECT format('%I.%I', sequence_schema, sequence_name)
-    FROM information_schema.sequences
-    WHERE sequence_schema = 'public'
-  LOOP
-    EXECUTE format('ALTER SEQUENCE %s OWNER TO %I', object_name, :'migration_user');
-  END LOOP;
-END
-$do$;
+SELECT format('ALTER TABLE %I.%I OWNER TO %I', schemaname, tablename, :'migration_user')
+FROM pg_tables
+WHERE schemaname = 'public' \gexec
+
+SELECT format('ALTER SEQUENCE %I.%I OWNER TO %I', sequence_schema, sequence_name, :'migration_user')
+FROM information_schema.sequences
+WHERE sequence_schema = 'public' \gexec
 SQL
 
 echo "runtime database role grants applied"
