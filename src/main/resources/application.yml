@@ -82,4 +82,4 @@ townpet:
   demo-data:
     enabled: ${TOWNPET_DEMO_DATA_ENABLED:false}
   build:
-    version: "0.1.0-SNAPSHOT"
+    version: ${TOWNPET_BUILD_VERSION:0.1.0-SNAPSHOT}

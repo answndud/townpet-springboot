@@ -5,6 +5,9 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,6 +22,16 @@ import org.springframework.web.server.ResponseStatusException;
 public final class RequestRateLimiter {
   private static final int MAX_KEYS = 10_000;
   private final Map<String, Window> windows = new LinkedHashMap<>();
+  private final MeterRegistry metrics;
+
+  public RequestRateLimiter() {
+    this(Metrics.globalRegistry);
+  }
+
+  @Autowired
+  RequestRateLimiter(MeterRegistry metrics) {
+    this.metrics = metrics;
+  }
 
   public synchronized void requireCapacity(
       String bucket, String key, int maxRequests, Duration windowDuration) {
@@ -40,6 +53,7 @@ public final class RequestRateLimiter {
       windows.put(mapKey, current);
     }
     if (current.count() >= maxRequests) {
+      metrics.counter("townpet.security.rate_limit.rejections", "bucket", bucket).increment();
       throw new ResponseStatusException(
           HttpStatus.TOO_MANY_REQUESTS, "request rate limit exceeded");
     }

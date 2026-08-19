@@ -19,18 +19,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class EmailVerificationController {
   private final EmailVerificationService verifications;
   private final RequestRateLimiter rateLimiter;
+  private final ClientAddress clientAddress;
 
   public EmailVerificationController(
-      EmailVerificationService verifications, RequestRateLimiter rateLimiter) {
+      EmailVerificationService verifications, RequestRateLimiter rateLimiter, ClientAddress clientAddress) {
     this.verifications = verifications;
     this.rateLimiter = rateLimiter;
+    this.clientAddress = clientAddress;
   }
 
   @PostMapping
   ResponseEntity<Void> request(
       @Valid @RequestBody VerificationRequest request, HttpServletRequest httpRequest) {
     rateLimiter.requireCapacity(
-        "email-verification-ip", ClientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
+        "email-verification-ip", clientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
     rateLimiter.requireCapacity("email-verification-global", "all", 300, Duration.ofMinutes(1));
     verifications.request(request.email());
     return ResponseEntity.accepted().build();

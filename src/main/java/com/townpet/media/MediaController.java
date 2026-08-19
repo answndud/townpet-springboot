@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,9 +30,11 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping({"/api/v1/media/uploads", "/api/upload", "/api/upload/client"})
 class MediaController {
   private final MediaService media;
+  private final MeterRegistry metrics;
 
-  MediaController(MediaService media) {
+  MediaController(MediaService media, MeterRegistry metrics) {
     this.media = media;
+    this.metrics = metrics;
   }
 
   @PostMapping
@@ -50,6 +53,7 @@ class MediaController {
       throw new ResponseStatusException(
           HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media metadata");
     } catch (MediaQuotaExceededException exception) {
+      metrics.counter("townpet.security.media_quota.rejections").increment();
       throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Media quota exceeded");
     }
   }

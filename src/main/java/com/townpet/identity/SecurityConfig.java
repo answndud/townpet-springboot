@@ -56,8 +56,14 @@ public class SecurityConfig {
                 requests.requestMatchers("/api/_test/**").permitAll();
               }
               requests
-                  .requestMatchers("/actuator/health", "/api/v1/auth/csrf", "/api/v1/auth/sessions")
+                  .requestMatchers(
+                      "/actuator/health",
+                      "/actuator/info",
+                      "/api/v1/auth/csrf",
+                      "/api/v1/auth/sessions")
                   .permitAll()
+                  .requestMatchers("/actuator/metrics/**")
+                  .hasRole("MODERATOR")
                   .requestMatchers("/api/health")
                   .permitAll()
                   .requestMatchers("/api/viewer-shell")

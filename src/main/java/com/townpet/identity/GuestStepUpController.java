@@ -30,14 +30,17 @@ public class GuestStepUpController {
   private final GuestStepUpService steps;
   private final boolean secureCookies;
   private final RequestRateLimiter rateLimiter;
+  private final ClientAddress clientAddress;
 
   GuestStepUpController(
       GuestStepUpService steps,
       @Value("${townpet.security.secure-cookies:false}") boolean secureCookies,
-      RequestRateLimiter rateLimiter) {
+      RequestRateLimiter rateLimiter,
+      ClientAddress clientAddress) {
     this.steps = steps;
     this.secureCookies = secureCookies;
     this.rateLimiter = rateLimiter;
+    this.clientAddress = clientAddress;
   }
 
   @PostMapping("/authors")
@@ -68,7 +71,7 @@ public class GuestStepUpController {
       HttpServletResponse response,
       HttpServletRequest httpRequest) {
     rateLimiter.requireCapacity(
-        "guest-step-up", ClientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
+        "guest-step-up", clientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
     UUID guestId = request.guestId() == null ? parseGuestId(cookieGuestId) : request.guestId();
     GuestStepUpService.Challenge challenge =
         steps.issue(guestId, request.scope(), request.password());
