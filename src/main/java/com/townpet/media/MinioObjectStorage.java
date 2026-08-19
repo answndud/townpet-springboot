@@ -5,6 +5,7 @@ import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
+import io.minio.PostPolicy;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import io.minio.StatObjectArgs;
@@ -13,7 +14,10 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.HexFormat;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Primary;
@@ -26,6 +30,7 @@ import org.springframework.stereotype.Component;
 final class MinioObjectStorage implements ObjectStoragePort {
   private final MinioClient client;
   private final MinioClient presignClient;
+  private final String publicEndpoint;
   private final String bucket;
   private final int expirySeconds;
 
@@ -40,6 +45,7 @@ final class MinioObjectStorage implements ObjectStoragePort {
             .endpoint(properties.publicEndpoint())
             .credentials(properties.accessKey(), properties.secretKey())
             .build();
+    publicEndpoint = properties.publicEndpoint().replaceAll("/$", "");
     bucket = properties.bucket();
     expirySeconds = properties.presignExpirySeconds();
     try {
@@ -54,21 +60,31 @@ final class MinioObjectStorage implements ObjectStoragePort {
   @Override
   public String createUploadUrl(
       String objectKey, String contentType, long byteSize, Instant expiresAt) {
+    return propertiesEndpoint() + "/" + bucket;
+  }
+
+  private String propertiesEndpoint() {
+    return publicEndpoint;
+  }
+
+  @Override
+  public Map<String, String> createUploadFields(
+      String objectKey, String contentType, long byteSize, Instant expiresAt) {
     try {
-      return presignClient.getPresignedObjectUrl(
-          GetPresignedObjectUrlArgs.builder()
-              .method(Method.PUT)
-              .bucket(bucket)
-              .object(objectKey)
-              .expiry(
-                  Math.min(
-                      expirySeconds,
-                      Math.max(
-                          1, (int) (expiresAt.getEpochSecond() - Instant.now().getEpochSecond()))),
-                  TimeUnit.SECONDS)
-              .build());
+      PostPolicy policy =
+          new PostPolicy(
+              bucket,
+              ZonedDateTime.ofInstant(
+                  expiresAt.isBefore(Instant.now().plusSeconds(expirySeconds))
+                      ? expiresAt
+                      : Instant.now().plusSeconds(expirySeconds),
+                  ZoneOffset.UTC));
+      policy.addEqualsCondition("key", objectKey);
+      policy.addEqualsCondition("Content-Type", contentType);
+      policy.addContentLengthRangeCondition(byteSize, byteSize);
+      return client.getPresignedPostFormData(policy);
     } catch (Exception exception) {
-      throw new IllegalStateException("Could not create MinIO upload URL", exception);
+      throw new IllegalStateException("Could not create MinIO upload form", exception);
     }
   }
 
