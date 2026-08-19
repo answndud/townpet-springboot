@@ -10,10 +10,12 @@ umask 077
 : "${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY}"
 : "${MINIO_BUCKET:=townpet-media}"
 : "${BACKUP_DIR:=./backups}"
+: "${BACKUP_ALERT_WEBHOOK_URL:=}"
 
 command -v docker >/dev/null || { echo "docker is required" >&2; exit 1; }
 mkdir -p "$BACKUP_DIR"
 backup_id="$(date -u +%Y%m%dT%H%M%SZ)"
+started_epoch="$(date +%s)"
 backup_root="$BACKUP_DIR/townpet-$backup_id"
 mkdir -p "$backup_root/media"
 backup_complete=0
@@ -22,7 +24,25 @@ cleanup_failed_backup() {
     rm -rf -- "$backup_root"
   fi
 }
-trap cleanup_failed_backup EXIT HUP INT TERM
+notify_backup_failure() {
+  status="$?"
+  if [ "$status" -ne 0 ] && [ "$backup_complete" -ne 1 ]; then
+    cleanup_failed_backup
+    if [ -n "$BACKUP_ALERT_WEBHOOK_URL" ] && command -v curl >/dev/null 2>&1; then
+      curl --fail --silent --show-error --max-time 10 \
+        -X POST \
+        -H 'Content-Type: application/json' \
+        --data "{\"event\":\"townpet_backup_failed\",\"backup_id\":\"$backup_id\"}" \
+        "$BACKUP_ALERT_WEBHOOK_URL" >/dev/null ||
+        echo "backup failure alert could not be delivered: backup_id=$backup_id" >&2
+    else
+      echo "backup failure alert is not configured: backup_id=$backup_id" >&2
+    fi
+  fi
+  exit "$status"
+}
+trap notify_backup_failure EXIT
+trap 'exit 130' HUP INT TERM
 
 docker exec "$POSTGRES_CONTAINER" pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB" \
   > "$backup_root/postgres.dump"
@@ -39,7 +59,10 @@ docker exec "$MINIO_CONTAINER" rm -rf "/tmp/townpet-media-$backup_id"
 {
   echo "backup_id=$backup_id"
   echo "created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "duration_seconds=$(($(date +%s) - started_epoch))"
   echo "postgres_database=$POSTGRES_DB"
+  echo "db_publications=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM publication')"
+  echo "db_upload_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM upload_asset')"
   echo "media_bucket=$MINIO_BUCKET"
   echo "media_objects=$(find "$backup_root/media" -type f | wc -l | tr -d ' ')"
   echo "media_bytes=$(du -sk "$backup_root/media" | awk '{print $1 * 1024}')"

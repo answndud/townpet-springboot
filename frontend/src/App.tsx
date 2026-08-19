@@ -15,6 +15,7 @@ const NotificationPage = lazy(() => import("./NotificationPage"));
 const AdminPoliciesPage = lazy(() => import("./AdminPoliciesPage"));
 const AdminReportsPage = lazy(() => import("./AdminReportsPage"));
 const AdminHomePage = lazy(() => import("./AdminHomePage"));
+const MfaPage = lazy(() => import("./MfaPage"));
 const AdminAuthAuditsPage = lazy(() => import("./AdminAuthAuditsPage"));
 const AdminCorrectionPage = lazy(() => import("./AdminCorrectionPage"));
 const AdminModerationLogsPage = lazy(() => import("./AdminModerationLogsPage"));
@@ -356,6 +357,7 @@ function AppShell() {
       ["/search", "반려생활 정보 검색"],
       ["/best", "인기 게시글"],
       ["/admin", "운영 콘솔"],
+      ["/admin/mfa", "운영자 MFA"],
     ];
     const match = titleByPath.find(([path]) => location.pathname === path || location.pathname.startsWith(`${path}/`));
     document.title = match ? `TownPet | ${match[1]}` : location.pathname === "/" ? "TownPet | 우리 동네 반려생활 정보" : "TownPet | 반려생활 커뮤니티";
@@ -373,6 +375,7 @@ function AppShell() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/password/reset" element={<PasswordResetPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/admin/mfa" element={<ModeratorRoute><MfaPage /></ModeratorRoute>} />
         <Route path="/onboarding" element={<MemberRoute><OnboardingPage /></MemberRoute>} />
         <Route path="/boards" element={<Navigate to="/boards/all" replace />} />
         <Route path="/boards/:boardCode" element={<CommonBoardPage />} />

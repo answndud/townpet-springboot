@@ -2,8 +2,6 @@ package com.townpet.media;
 
 import com.townpet.media.api.MediaOperations;
 import com.townpet.publication.api.PublicationAccess;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -11,7 +9,6 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
-import javax.imageio.ImageIO;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,12 +90,7 @@ class MediaService implements MediaOperations {
       throw new MediaInputNotAllowedException();
     }
     if (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("image/")) {
-      try {
-        BufferedImage image = ImageIO.read(new ByteArrayInputStream(content));
-        if (image == null || image.getWidth() > 8000 || image.getHeight() > 8000) {
-          throw new MediaObjectMismatchException();
-        }
-      } catch (java.io.IOException exception) {
+      if (MediaImageDimensions.inspect(contentType, content).isEmpty()) {
         throw new MediaObjectMismatchException();
       }
     }
@@ -127,6 +119,11 @@ class MediaService implements MediaOperations {
         || !object.checksumSha256().equalsIgnoreCase(asset.getChecksumSha256())
         || !object.checksumSha256().equalsIgnoreCase(checksumSha256)
         || !object.detectedContentType().equals(asset.getContentType())) {
+      storage.delete(asset.getObjectKey());
+      throw new MediaObjectMismatchException();
+    }
+    if (asset.getContentType().startsWith("image/") && object.imageDimensions() == null) {
+      storage.delete(asset.getObjectKey());
       throw new MediaObjectMismatchException();
     }
     asset.finalizeUpload(checksumSha256, Instant.now());
