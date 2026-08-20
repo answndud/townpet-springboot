@@ -43,4 +43,4 @@ FROM engagement_reaction
 WHERE type = 'LIKE';
 SQL
 
-echo "Portfolio demo fixture is ready. The public credentials are documented in docs/04-데모/로컬-데모-계정.md."
+echo "Portfolio demo fixture is ready. Use the deployment secret store for demo credentials."

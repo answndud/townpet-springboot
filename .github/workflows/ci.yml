@@ -1,0 +1,183 @@
+name: Continuous integration
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deep_checks:
+        description: Run browser and container checks (slower)
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+      - name: Validate PR metadata
+        if: github.event_name == 'pull_request'
+        run: sh scripts/validate-pr-metadata.sh
+      - name: Validate release candidate
+        if: github.event_name != 'pull_request'
+        run: ./scripts/validate-release-candidate.sh
+      - name: Compile and run focused backend tests
+        if: github.event_name == 'pull_request'
+        run: >-
+          ./gradlew test --no-daemon
+          --tests com.townpet.architecture.LayerRulesTest
+          --tests com.townpet.architecture.ModularityTest
+          --tests com.townpet.common.BuildInfoContributorTest
+          --tests com.townpet.common.ClientAddressTest
+          --tests com.townpet.common.RequestRateLimiterTest
+          --tests com.townpet.common.UuidV7Test
+          --tests com.townpet.common.web.GlobalProblemHandlerTest
+          --tests com.townpet.common.web.RequestTraceFilterTest
+          --tests com.townpet.discovery.SearchEventCleanupTest
+          --tests com.townpet.engagement.GuestCommentRateLimitTest
+          --tests com.townpet.media.MediaImageDimensionsTest
+          --tests com.townpet.operations.PublicIngressRateLimiterTest
+          --tests com.townpet.publication.GuestPublicationRateLimitTest
+      - name: Run main backend gate
+        if: github.event_name != 'pull_request'
+        run: ./gradlew check --no-daemon
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.12.4
+          run_install: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm typecheck
+      - run: corepack pnpm test
+      - run: corepack pnpm build
+
+  repository-security:
+    name: Repository security policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: bash scripts/security-static-check.sh
+      - run: bash scripts/validate-ci-contract.sh
+      - run: bash -n scripts/*.sh deploy/*.sh
+      - run: git diff --check
+
+  dependency-scan:
+    name: Dependency vulnerability scan
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: '1'
+
+  frontend-sbom:
+    name: Frontend dependency SBOM
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: anchore/sbom-action@d94f46e13c6c62f59525ac9a1e147a99dc0b9bf5 # v0.17.0
+        with:
+          path: frontend
+          artifact-name: townpet-frontend-sbom.spdx.json
+          output-file: townpet-frontend-sbom.spdx.json
+          upload-artifact: true
+
+  browser-smoke:
+    name: Browser smoke (manual)
+    if: github.event_name == 'workflow_dispatch' && inputs.deep_checks == true
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.12.4
+          run_install: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: corepack enable
+      - run: corepack pnpm install --frozen-lockfile
+        working-directory: frontend
+      - run: corepack pnpm exec playwright install --with-deps chromium
+        working-directory: frontend
+      - run: corepack pnpm test:e2e -- --project=chromium
+        working-directory: frontend
+      - run: corepack pnpm -C frontend test:e2e:auth
+
+  container-scan:
+    name: Container scan (manual)
+    if: github.event_name == 'workflow_dispatch' && inputs.deep_checks == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: deploy/Dockerfile.backend
+          tags: townpet-backend:security
+          load: true
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: deploy/Dockerfile.frontend
+          tags: townpet-frontend:security
+          load: true
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: townpet-backend:security
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: '0'
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: townpet-frontend:security
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: '0'
