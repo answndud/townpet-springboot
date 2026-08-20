@@ -45,5 +45,10 @@ class PublicMemberPublicationController {
         publication.getUpdatedAt());
   }
 
-  record Response(UUID id, String title, String body, Instant createdAt, Instant updatedAt) {}
+  record Response(
+      UUID id,
+      String title,
+      String body,
+      Instant createdAt,
+      Instant updatedAt) {}
 }

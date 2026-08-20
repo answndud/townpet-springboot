@@ -235,7 +235,16 @@ class PublicationController {
         Instant updatedAt,
         long version) {
       this(
-          id, type, authorId, null, List.of(), title, body, lifecycle, createdAt, updatedAt,
+          id,
+          type,
+          authorId,
+          null,
+          List.of(),
+          title,
+          body,
+          lifecycle,
+          createdAt,
+          updatedAt,
           version);
     }
   }

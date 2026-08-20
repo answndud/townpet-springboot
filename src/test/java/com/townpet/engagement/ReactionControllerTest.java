@@ -149,7 +149,8 @@ class ReactionControllerTest {
                     .cookie(session)
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"title\":\"reaction 대상\",\"body\":\"좋아요를 눌러 주세요.\"}"))
+                    .content(
+                        "{\"title\":\"reaction 대상\",\"body\":\"좋아요를 눌러 주세요.\"}"))
             .andExpect(status().isCreated())
             .andReturn();
     return new com.fasterxml.jackson.databind.ObjectMapper()
