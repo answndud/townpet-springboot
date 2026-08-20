@@ -1,6 +1,7 @@
 package com.townpet.media;
 
 import com.townpet.common.MemberOnly;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
@@ -28,9 +30,11 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping({"/api/v1/media/uploads", "/api/upload", "/api/upload/client"})
 class MediaController {
   private final MediaService media;
+  private final MeterRegistry metrics;
 
-  MediaController(MediaService media) {
+  MediaController(MediaService media, MeterRegistry metrics) {
     this.media = media;
+    this.metrics = metrics;
   }
 
   @PostMapping
@@ -48,6 +52,9 @@ class MediaController {
     } catch (MediaInputNotAllowedException exception) {
       throw new ResponseStatusException(
           HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media metadata");
+    } catch (MediaQuotaExceededException exception) {
+      metrics.counter("townpet.security.media_quota.rejections").increment();
+      throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Media quota exceeded");
     }
   }
 
@@ -142,9 +149,11 @@ class MediaController {
   }
 
   private MediaResponse toResponse(UploadAssetEntity asset) {
+    boolean uploadable = asset.getStatus() == MediaAssetStatus.UPLOADING;
     return new MediaResponse(
         asset.getId(),
-        media.uploadUrl(asset),
+        uploadable ? media.uploadUrl(asset) : "",
+        uploadable ? media.uploadFields(asset) : Map.of(),
         asset.getObjectKey(),
         asset.getChecksumSha256(),
         asset.getContentType(),
@@ -166,6 +175,7 @@ class MediaController {
   record MediaResponse(
       UUID id,
       String uploadUrl,
+      Map<String, String> uploadFields,
       String objectKey,
       String checksumSha256,
       String contentType,

@@ -40,4 +40,4 @@ fi
 docker compose -f "$COMPOSE_FILE" exec -T postgres \
   psql -v ON_ERROR_STOP=1 -U townpet_app -d townpet < "$FIXTURE_FILE"
 
-echo "Local demo data is ready. See docs/demo/local-demo-accounts.md for credentials."
+echo "Local demo data is ready. See docs/04-데모/로컬-데모-계정.md for credentials."

@@ -32,12 +32,13 @@ http://{$TOWNPET_MEDIA_DOMAIN} {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "no-referrer"
 		Access-Control-Allow-Origin "https://{$TOWNPET_DOMAIN}"
-		Access-Control-Allow-Methods "GET, PUT, OPTIONS"
+		Access-Control-Allow-Methods "GET, POST, PUT, OPTIONS"
 		Access-Control-Allow-Headers "Content-Type"
 		Access-Control-Max-Age "600"
 	}
 	respond @media_preflight 204
 	reverse_proxy minio:9000 {
 		header_up Host {http.request.host}
-	}
+		header_down -Access-Control-Allow-Origin
+}
 }

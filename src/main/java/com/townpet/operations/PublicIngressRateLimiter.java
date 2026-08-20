@@ -6,17 +6,25 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import org.springframework.stereotype.Component;
 
-/** Bounds anonymous telemetry ingress when the portfolio runs as one application instance. */
+/** Bounds anonymous ingress with counters shared through the configured database. */
 @Component
-final class PublicIngressRateLimiter {
+public final class PublicIngressRateLimiter {
   private final RequestRateLimiter limiter;
+  private final ClientAddress clientAddress;
 
-  PublicIngressRateLimiter(RequestRateLimiter limiter) {
+  public PublicIngressRateLimiter(RequestRateLimiter limiter, ClientAddress clientAddress) {
     this.limiter = limiter;
+    this.clientAddress = clientAddress;
   }
 
-  void requireCapacity(HttpServletRequest request) {
+  public void requireCapacity(HttpServletRequest request) {
     limiter.requireCapacity(
-        "public-telemetry", ClientAddress.resolve(request), 600, Duration.ofMinutes(1));
+        "public-telemetry", clientAddress.resolve(request), 600, Duration.ofMinutes(1));
+  }
+
+  public void requireSearchCapacity(HttpServletRequest request) {
+    limiter.requireCapacity(
+        "public-search", clientAddress.resolve(request), 120, Duration.ofMinutes(1));
+    limiter.requireCapacity("public-search-global", "all", 10_000, Duration.ofHours(1));
   }
 }

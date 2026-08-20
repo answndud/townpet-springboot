@@ -394,7 +394,7 @@ Hetzner CX23 topology를 목표 후보로 유지하되, 실제 계정·도메인
 
 ### Context
 
-TownPet과 `kindergarten-erp/erp`를 상용 트래픽이 거의 없는 포트폴리오 환경에서 24시간 공개한다. 두 프로젝트는 각각 Spring Boot와 데이터베이스를 필요로 하므로 4GB 단일 VPS보다 8GB 단일 VPS가 안전하지만, 프로젝트별 VPS나 managed DB는 현재 목적과 비용에 비해 과하다.
+TownPet과 `kinderp`를 상용 트래픽이 거의 없는 포트폴리오 환경에서 24시간 공개한다. 두 프로젝트는 각각 Spring Boot와 데이터베이스를 필요로 하므로 4GB 단일 VPS보다 8GB 단일 VPS가 안전하지만, 프로젝트별 VPS나 managed DB는 현재 목적과 비용에 비해 과하다.
 
 ### Decision
 
@@ -419,7 +419,7 @@ netcup VPS Lite 2 G12s(4 vCore, 8GB RAM, 160GB SSD, x86)를 기본 배포 대상
 - `deploy/compose/netcup.yml`, `deploy/compose/edge.yml`, `deploy/compose/Caddyfile.netcup`: TownPet image-pull·공용 edge 구성
 - `deploy/Caddyfile.netcup.web`: edge 뒤 내부 HTTP-only web proxy 구성
 - `docs/09-운영-가이드/두-프로젝트-VPS-배포-워크플로.md`: 실제 실행 순서와 검증 기준
-- `kindergarten-erp/erp/deploy/docker-compose.netcup.yml`: ERP MySQL·Redis·app·내부 Caddy 구성
+- `/Users/alex/project/kinderp/deploy/docker-compose.netcup.yml` (VPS: `/opt/kinderp/deploy/docker-compose.netcup.yml`): KinderP MySQL·Redis·app·내부 Caddy 구성
 - [netcup VPS Lite 공식 가격·사양](https://www.netcup.com/en/server/vps-lite)
 
 ### Open Questions
@@ -754,3 +754,26 @@ resolved/closed 전환은 outcome과 close reason을 함께 기록하고 상태 
 2. Care·구조화 게시물·검색·media 중 하나를 선택해 큰 vertical slice로 진행한다.
 3. deferred 항목은 trigger가 생기기 전까지 PLAN의 완료 조건에 넣지 않는다.
 4. 실제 VPS 공개 전에는 ADR-0024의 netcup topology·DNS 결정을 따르고, ADR-0022·0023·0030의 최소 운영 구현을 완료한다.
+
+## ADR-0041 - 공개 abuse·업로드·관리자 MFA 경계는 server/database에서 강제한다
+
+- 상태: accepted
+- 날짜: 2026-08-20
+- 근거 유형: explicit
+
+### Decision
+
+비회원 write는 IP·guest별 시간당 제한을 사용하고, search ingress와 인증 관련 제한 counter는 PostgreSQL shared atomic window로 관리한다. Presigned upload는 서버가 선언한 key·MIME·Content-Length 조건과 이미지 header 해상도·총 pixel 한계를 함께 강제한다. Moderator는 암호화된 TOTP secret, one-time recovery code, MFA 완료 session 상태를 사용하며 password-only session으로 관리자 API를 호출할 수 없다.
+
+H2에서는 production PostgreSQL 문법을 흉내 내지 않고 테스트 전용 fallback을 사용한다. 운영 rate limit의 source of truth는 PostgreSQL이다. SMTP deliverability, DNS 인증, 외부 failure-domain backup, 실제 배포 workflow 결과는 코드 결정과 별개의 운영 evidence로 판정한다.
+
+### Evidence
+
+- `src/main/java/com/townpet/common/RequestRateLimiter.java`
+- `src/main/java/com/townpet/media/MediaService.java`
+- `src/main/java/com/townpet/identity/MfaService.java`
+- `src/main/java/com/townpet/identity/ModeratorMfaFilter.java`
+- `src/main/resources/db/migration/V063__security_rate_limit_window.sql`
+- `src/main/resources/db/migration/V064__moderator_mfa.sql`
+- `src/main/resources/db/migration/V065__moderator_mfa_audit_actions.sql`
+- `docs/10-보안/보안-개선-2026-08-20.md`

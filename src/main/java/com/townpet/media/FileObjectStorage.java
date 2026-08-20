@@ -36,7 +36,11 @@ class FileObjectStorage implements ObjectStoragePort {
       String contentType = Files.readString(path.resolveSibling(path.getFileName() + ".type"));
       return Optional.of(
           new StoredObject(
-              contentType, content.length, sha256(content), MediaContentSniffer.detect(content)));
+              contentType,
+              content.length,
+              sha256(content),
+              MediaContentSniffer.detect(content),
+              MediaImageDimensions.inspect(contentType, content).orElse(null)));
     } catch (IOException exception) {
       return Optional.empty();
     }

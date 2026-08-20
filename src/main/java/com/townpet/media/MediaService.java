@@ -2,19 +2,21 @@ package com.townpet.media;
 
 import com.townpet.media.api.MediaOperations;
 import com.townpet.publication.api.PublicationAccess;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
-import javax.imageio.ImageIO;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 class MediaService implements MediaOperations {
+  static final int MAX_UPLOADS_PER_UTC_DAY = 50;
+  static final long MAX_STORED_BYTES_PER_MEMBER = 100L * 1024 * 1024;
   private final UploadAssetRepository assets;
   private final PublicationAccess publications;
   private final ObjectStoragePort storage;
@@ -41,6 +43,7 @@ class MediaService implements MediaOperations {
         || byteSize > 10 * 1024 * 1024) {
       throw new MediaInputNotAllowedException();
     }
+    reserveUploadQuota(ownerMemberId, byteSize, Instant.now());
     Instant now = Instant.now();
     return assets.save(
         new UploadAssetEntity(
@@ -54,6 +57,11 @@ class MediaService implements MediaOperations {
 
   String uploadUrl(UploadAssetEntity asset) {
     return storage.createUploadUrl(
+        asset.getObjectKey(), asset.getContentType(), asset.getByteSize(), asset.getExpiresAt());
+  }
+
+  java.util.Map<String, String> uploadFields(UploadAssetEntity asset) {
+    return storage.createUploadFields(
         asset.getObjectKey(), asset.getContentType(), asset.getByteSize(), asset.getExpiresAt());
   }
 
@@ -82,12 +90,7 @@ class MediaService implements MediaOperations {
       throw new MediaInputNotAllowedException();
     }
     if (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("image/")) {
-      try {
-        BufferedImage image = ImageIO.read(new ByteArrayInputStream(content));
-        if (image == null || image.getWidth() > 8000 || image.getHeight() > 8000) {
-          throw new MediaObjectMismatchException();
-        }
-      } catch (java.io.IOException exception) {
+      if (MediaImageDimensions.inspect(contentType, content).isEmpty()) {
         throw new MediaObjectMismatchException();
       }
     }
@@ -116,6 +119,11 @@ class MediaService implements MediaOperations {
         || !object.checksumSha256().equalsIgnoreCase(asset.getChecksumSha256())
         || !object.checksumSha256().equalsIgnoreCase(checksumSha256)
         || !object.detectedContentType().equals(asset.getContentType())) {
+      storage.delete(asset.getObjectKey());
+      throw new MediaObjectMismatchException();
+    }
+    if (asset.getContentType().startsWith("image/") && object.imageDimensions() == null) {
+      storage.delete(asset.getObjectKey());
       throw new MediaObjectMismatchException();
     }
     asset.finalizeUpload(checksumSha256, Instant.now());
@@ -172,11 +180,38 @@ class MediaService implements MediaOperations {
         .findByIdAndOwnerMemberId(assetId, ownerMemberId)
         .orElseThrow(MediaAssetNotFoundException::new);
   }
+
+  private void reserveUploadQuota(UUID ownerMemberId, long byteSize, Instant now) {
+    jdbc.queryForObject(
+        "SELECT id FROM member_account WHERE id = ? FOR UPDATE", UUID.class, ownerMemberId);
+    Instant dayStart =
+        LocalDate.ofInstant(now, ZoneOffset.UTC).atStartOfDay().toInstant(ZoneOffset.UTC);
+    Integer uploadsToday =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM upload_asset WHERE owner_member_id = ? AND created_at >= ?",
+            Integer.class,
+            ownerMemberId,
+            Timestamp.from(dayStart));
+    Long storedBytes =
+        jdbc.queryForObject(
+            "SELECT COALESCE(SUM(byte_size), 0) FROM upload_asset "
+                + "WHERE owner_member_id = ? AND status <> 'ABANDONED'",
+            Long.class,
+            ownerMemberId);
+    if (uploadsToday != null && uploadsToday >= MAX_UPLOADS_PER_UTC_DAY) {
+      throw new MediaQuotaExceededException();
+    }
+    if (storedBytes != null && storedBytes > MAX_STORED_BYTES_PER_MEMBER - byteSize) {
+      throw new MediaQuotaExceededException();
+    }
+  }
 }
 
 final class MediaAssetNotFoundException extends RuntimeException {}
 
 final class MediaInputNotAllowedException extends RuntimeException {}
+
+final class MediaQuotaExceededException extends RuntimeException {}
 
 final class MediaAttachmentLimitException extends RuntimeException {}
 
