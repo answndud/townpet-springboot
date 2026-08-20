@@ -2,12 +2,9 @@
 set -eu
 
 ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-MATRIX="$ROOT_DIR/docs/05-패리티/대조표.yaml"
+MATRIX="$ROOT_DIR/src/test/resources/parity/matrix.yaml"
 if [ ! -f "$MATRIX" ]; then
-  MATRIX="$ROOT_DIR/docs/parity/matrix.yaml"
-fi
-if [ ! -f "$MATRIX" ]; then
-  echo "parity matrix not found: expected docs/05-패리티/대조표.yaml" >&2
+  echo "parity matrix not found: expected src/test/resources/parity/matrix.yaml" >&2
   exit 1
 fi
 
