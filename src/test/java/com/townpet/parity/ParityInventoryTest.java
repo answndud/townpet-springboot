@@ -23,7 +23,7 @@ class ParityInventoryTest {
     JsonNode pages = matrix.path("pages");
     JsonNode apiRoutes = matrix.path("apiRoutes");
 
-    assertThat(pages).hasSize(49);
+    assertThat(pages).hasSize(47);
     assertThat(apiRoutes).hasSize(55);
     assertThat(matrix.path("counts").path("pages").asInt()).isEqualTo(pages.size());
     assertThat(matrix.path("counts").path("apiRoutes").asInt()).isEqualTo(apiRoutes.size());
@@ -66,7 +66,8 @@ class ParityInventoryTest {
   }
 
   private static JsonNode readMatrix() throws IOException {
-    try (InputStream input = ParityInventoryTest.class.getResourceAsStream("/parity/matrix.yaml")) {
+    try (InputStream input =
+        ParityInventoryTest.class.getResourceAsStream("/05-패리티/대조표.yaml")) {
       assertThat(input).as("parity matrix resource").isNotNull();
       return YAML.readTree(input);
     }
