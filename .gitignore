@@ -66,6 +66,10 @@ tmp/
 data/
 deploy/data/
 **/.cache/
+backups/
+**/backups/
+*.dump
+*.age
 
 # Infrastructure local state
 *.tfstate
