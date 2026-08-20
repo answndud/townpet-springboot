@@ -26,7 +26,25 @@ jobs:
       # PRs check only fast fixture/script metadata. The full parity audit
       # remains for the main/manual release gate.
       - run: sh scripts/validate-pr-metadata.sh
-      - run: ./gradlew check --no-daemon
+      # `check` also runs every SpringBoot/Testcontainers suite, JaCoCo and
+      # coverage verification. Those are retained for main/manual gates.
+      # PRs run compilation plus focused, in-process regression tests instead.
+      - name: Compile and run focused backend tests
+        run: >-
+          ./gradlew test --no-daemon
+          --tests com.townpet.architecture.LayerRulesTest
+          --tests com.townpet.architecture.ModularityTest
+          --tests com.townpet.common.BuildInfoContributorTest
+          --tests com.townpet.common.ClientAddressTest
+          --tests com.townpet.common.RequestRateLimiterTest
+          --tests com.townpet.common.UuidV7Test
+          --tests com.townpet.common.web.GlobalProblemHandlerTest
+          --tests com.townpet.common.web.RequestTraceFilterTest
+          --tests com.townpet.discovery.SearchEventCleanupTest
+          --tests com.townpet.engagement.GuestCommentRateLimitTest
+          --tests com.townpet.media.MediaImageDimensionsTest
+          --tests com.townpet.operations.PublicIngressRateLimiterTest
+          --tests com.townpet.publication.GuestPublicationRateLimitTest
 
   frontend:
     name: Frontend type, unit, build
