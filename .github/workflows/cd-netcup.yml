@@ -50,7 +50,7 @@ jobs:
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/deploy/compose/"
           scp deploy/nginx.conf.template \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/deploy/"
-          scp deploy/deploy-netcup.sh deploy/grant-runtime-db-role.sh deploy/edge.env.example scripts/validate-edge-env.sh scripts/validate-portfolio-env.sh \
+          scp deploy/deploy-netcup.sh deploy/grant-runtime-db-role.sh deploy/backup-portfolio.sh deploy/restore-portfolio.sh deploy/encrypt-backup.sh deploy/edge.env.example scripts/validate-edge-env.sh scripts/validate-portfolio-env.sh \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/deploy/"
       - name: Pull and deploy
         env:
@@ -64,7 +64,7 @@ jobs:
         run: |
           printf '%s' "$GHCR_READ_TOKEN" | ssh "$DEPLOY_USER@$DEPLOY_HOST" \
             "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin && \
-             cd '$DEPLOY_PATH' && chmod 700 deploy/deploy-netcup.sh deploy/grant-runtime-db-role.sh deploy/validate-edge-env.sh deploy/validate-portfolio-env.sh && \
+             cd '$DEPLOY_PATH' && chmod 700 deploy/deploy-netcup.sh deploy/grant-runtime-db-role.sh deploy/backup-portfolio.sh deploy/restore-portfolio.sh deploy/encrypt-backup.sh deploy/validate-edge-env.sh deploy/validate-portfolio-env.sh && \
              TOWNPET_BACKEND_IMAGE='$BACKEND_IMAGE' TOWNPET_WEB_IMAGE='$WEB_IMAGE' TOWNPET_BUILD_VERSION='${{ github.sha }}' \
              COMPOSE_FILE=deploy/compose/netcup.yml EDGE_COMPOSE_FILE=deploy/compose/edge.yml \
              COMPOSE_ENV_FILE=/opt/townpet/secrets/portfolio.env \
