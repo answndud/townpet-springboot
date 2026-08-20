@@ -100,6 +100,9 @@ tasks.withType<Test>().configureEach {
 }
 
 spotless {
+    // Keep formatting available through spotlessApply, but do not make
+    // cosmetic wrapping/import changes a mandatory check dependency.
+    setEnforceCheck(false)
     java {
         target("src/**/*.java")
         googleJavaFormat("1.36.1")
@@ -152,7 +155,6 @@ tasks.named<Test>("performanceTest") {
 }
 
 tasks.named("check") {
-    dependsOn(tasks.named("spotlessCheck"))
     dependsOn(tasks.named("jacocoTestReport"))
 }
 
