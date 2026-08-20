@@ -28,6 +28,10 @@ configurations {
     }
 }
 
+
+dependencyLocking {
+    lockAllConfigurations()
+}
 dependencyManagement {
     imports {
         mavenBom("org.springframework.modulith:spring-modulith-bom:2.1.0")
