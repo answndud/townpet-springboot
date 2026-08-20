@@ -2,23 +2,28 @@
 
 ## Goal
 
-공개 쓰기 abuse와 취약점 스캔 공백을 먼저 닫고, 업로드·rate limit·moderator MFA·계정 전달·복구의 남은 Medium 보안 경계를 실제 운영 증거까지 완성한다. 비회원 콘텐츠 생성은 일일 quota가 아니라 IP·guest별 **시간당** 제한을 사용한다.
+보안 개선의 남은 외부 운영 증거를 실제 값으로 마무리하고, 확인하지 못한 항목은 추측하지 않고 명확한 입력 대기 상태로 남긴다. MFA는 추가 구현하지 않는다.
 
 ## Active
 
 ### P3 - 외부 운영 증거 마무리
 
 1. 실제 계정 메일 전달과 DNS 인증을 검증한다.
-   - 현재: Resend domain `mail.townpet.cloud` verified, DKIM 확인, SMTP STARTTLS PASS. SPF·DMARC와 실제 수신함은 미검증이다.
-   - 다음: DNS에 provider 요구 SPF·DMARC를 등록하고, 별도 테스트 수신함으로 verification/password reset을 보내 링크 host/scheme와 delivery 상태를 기록한다.
-   - 완료: 운영 recovery·verification 메일의 실제 전달과 실패 관측이 재현된다.
+   - 현재: Resend domain/DKIM `verified`, `send.mail.townpet.cloud` SPF 확인, SMTP STARTTLS PASS. DMARC TXT와 실제 수신함은 미완료다.
+   - 다음: 사용자가 DMARC DNS 값과 테스트 수신함을 제공하면 verification/password reset 전달·링크 host/scheme·Outbox 상태를 기록한다.
+   - 완료: 실제 수신함에서 두 메일의 전달과 링크 검증이 재현된다.
 
 2. paired backup 복구와 실패 알림을 운영화한다.
-   - 현재: backup `20260820T024434Z` 생성·암호화·offsite/local checksum·decrypt·disposable DB/MinIO restore PASS. media object는 0개다.
-   - 다음: 실제 failure webhook URL을 구성하고 실패 수신을 재현하며, retention policy·RPO/RTO를 측정하고 non-empty media fixture restore를 추가한다.
-   - 완료: 최신 backup의 외부 failure-domain 보관, 복구 가능성, 실패 감지가 실행 evidence로 남는다.
+   - 현재: non-empty fixture `1→1` restore PASS, backup `2초`, restore `2초`, RPO age 약 18분, 임시 localhost failure webhook script test PASS. production webhook과 자동 retention은 미구성이다.
+   - 다음: 승인된 failure webhook URL을 구성하고, 최근 7일 daily·최근 4주 weekly retention 자동화와 production failure 수신을 검증한다.
+   - 완료: production failure-domain 알림·retention 실행·복구 목표가 실행 evidence로 남는다.
 
 3. MinIO owner isolation을 브라우저에서 검증한다.
-   - 현재: anonymous media root `403`, preflight `204`, 단일 허용 origin PASS. 로그인 owner와 다른 member/guest의 signed URL 경계는 미검증이다.
-   - 다음: 안전한 테스트 계정과 fixture로 owner upload/read/delete, 타 사용자·guest 접근 거부를 브라우저에서 확인한다.
-   - 완료: 실제 브라우저 요청에서도 object ownership과 private bucket 경계가 유지된다.
+   - 현재: anonymous root `403`, preflight `204`, 단일 origin PASS. 최신 배포 후 browser synthetic upload PASS. owner read `200`, 다른 member `404`, guest `401` API 경계 PASS. 게시글 상세에 media viewer가 없고 member delete endpoint도 없다.
+   - 다음: media viewer가 제품 범위에 추가될 때 signed object의 실제 browser read를 검증한다. 현재는 소유권 API 경계를 완료 evidence로 유지한다.
+   - 완료: 현재 제품이 제공하는 upload와 read authorization 경계가 실제 요청에서 유지된다.
+
+4. VPS workload alert를 운영화한다.
+   - 현재: DB `19/100`, backend memory `37.31%`, storage `6%`, threshold `80/90%`, 수동 checker PASS. webhook과 cron/systemd timer는 미구성이다.
+   - 다음: 승인된 alert webhook URL을 구성하고 scheduler에서 WARN/CRITICAL 수신을 검증한다.
+   - 완료: workload 초과를 자동 감지·전달하는 운영 evidence가 남는다.
