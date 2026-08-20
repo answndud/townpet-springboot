@@ -729,7 +729,7 @@ resolved/closed 전환은 outcome과 close reason을 함께 기록하고 상태 
 ### Evidence
 
 - `AGENTS.md`의 검증 규칙
-- `.github/workflows/main.yml`
+- `.github/workflows/ci.yml`
 - `build.gradle.kts`
 
 ## ADR-0040 - 현재 인증 범위를 Credentials로 한정한다
