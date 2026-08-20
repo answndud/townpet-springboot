@@ -76,3 +76,7 @@ deploy/data/
 coverage/
 jacoco.exec
 reports/
+.env.deploy.local
+
+# Private project documentation and portfolio source
+docs/
