@@ -3,7 +3,7 @@ WORKDIR /workspace
 COPY . .
 RUN ./gradlew bootJar --no-daemon
 
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:25-jre-noble
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends wget \

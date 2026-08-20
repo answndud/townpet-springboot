@@ -10,6 +10,8 @@ import org.springframework.boot.test.context.SpringBootTest;
       "spring.datasource.password=",
       "spring.jpa.hibernate.ddl-auto=create-drop",
       "spring.flyway.enabled=false",
+      "spring.sql.init.mode=always",
+      "spring.sql.init.schema-locations=classpath:security-rate-limit-h2.sql",
       "spring.session.jdbc.initialize-schema=always",
       "spring.modulith.events.jdbc.schema-initialization.enabled=true"
     })

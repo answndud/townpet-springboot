@@ -2,24 +2,23 @@
 
 ## Goal
 
-배포를 시작하기 전에 저장소 안에서 완성할 수 있는 기능·보안·복구·관측·성능 검증을 모두 닫아 **production release candidate**를 만든다. 실제 VPS의 DNS/TLS, 외부 SMTP 발송, 외부 백업 보관과 공개 트래픽 측정은 배포 단계에서 수행하되, 그 절차와 실패 시 대응은 이 계획에서 재현 가능하게 준비한다.
+공개 쓰기 abuse와 취약점 스캔 공백을 먼저 닫고, 업로드·rate limit·moderator MFA·계정 전달·복구의 남은 Medium 보안 경계를 실제 운영 증거까지 완성한다. 비회원 콘텐츠 생성은 일일 quota가 아니라 IP·guest별 **시간당** 제한을 사용한다.
 
 ## Active
 
-현재 실행 중인 slice 없음. Publication GLOBAL/LOCAL 제거는 V062 migration, backend/frontend 계약, fixture·문서 정리까지 완료됐다. 다음 작업을 선택하면 이 위치에 새 vertical goal을 추가한다.
+### P3 - 외부 운영 증거 마무리
 
-## Backlog
+1. 실제 계정 메일 전달과 DNS 인증을 검증한다.
+   - 현재: Resend domain `mail.townpet.cloud` verified, DKIM 확인, SMTP STARTTLS PASS. SPF·DMARC와 실제 수신함은 미검증이다.
+   - 다음: DNS에 provider 요구 SPF·DMARC를 등록하고, 별도 테스트 수신함으로 verification/password reset을 보내 링크 host/scheme와 delivery 상태를 기록한다.
+   - 완료: 운영 recovery·verification 메일의 실제 전달과 실패 관측이 재현된다.
 
-- 실제 VPS DNS/TLS·Caddy forwarded-header·secure cookie·edge rate limit 검증
-- 실제 SMTP provider TLS/SPF/DKIM/deliverability 검증
-- 외부 failure domain에 backup 보관 후 restore와 RPO/RTO 측정
-- 실제 VPS에서 동일 workload와 CPU/memory/disk/DB connection을 측정
-- Redis/Kafka는 DB saturation, cache miss 병목, notification/projection backlog가 재현될 때만 별도 실험
+2. paired backup 복구와 실패 알림을 운영화한다.
+   - 현재: backup `20260820T024434Z` 생성·암호화·offsite/local checksum·decrypt·disposable DB/MinIO restore PASS. media object는 0개다.
+   - 다음: 실제 failure webhook URL을 구성하고 실패 수신을 재현하며, retention policy·RPO/RTO를 측정하고 non-empty media fixture restore를 추가한다.
+   - 완료: 최신 backup의 외부 failure-domain 보관, 복구 가능성, 실패 감지가 실행 evidence로 남는다.
 
-## Working rules
-
-- 한 slice는 기능·운영 경계가 연결된 vertical slice로 진행하고, 파일 단위 작업과 반복적인 전체 gate를 만들지 않는다.
-- 구현 중에는 가장 가까운 컴파일·기능 검증만 실행하고, P3.2에서 전체 gate를 한 번 실행한다.
-- report는 새로운 설계 판단·실패 원인·재현 가능한 수치가 생길 때만 갱신한다.
-- 적용된 Flyway migration은 수정하지 않고 새 migration 또는 명시적 운영 스크립트를 추가한다.
-- 실제로 실행하지 않은 외부 배포·백업·SMTP·성능 결과를 완료했다고 기록하지 않는다.
+3. MinIO owner isolation을 브라우저에서 검증한다.
+   - 현재: anonymous media root `403`, preflight `204`, 단일 허용 origin PASS. 로그인 owner와 다른 member/guest의 signed URL 경계는 미검증이다.
+   - 다음: 안전한 테스트 계정과 fixture로 owner upload/read/delete, 타 사용자·guest 접근 거부를 브라우저에서 확인한다.
+   - 완료: 실제 브라우저 요청에서도 object ownership과 private bucket 경계가 유지된다.

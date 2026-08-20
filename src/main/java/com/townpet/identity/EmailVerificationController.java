@@ -1,9 +1,13 @@
 package com.townpet.identity;
 
+import com.townpet.common.ClientAddress;
+import com.townpet.common.RequestRateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Duration;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,13 +18,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth/email-verifications")
 public class EmailVerificationController {
   private final EmailVerificationService verifications;
+  private final RequestRateLimiter rateLimiter;
+  private final ClientAddress clientAddress;
 
-  public EmailVerificationController(EmailVerificationService verifications) {
+  public EmailVerificationController(
+      EmailVerificationService verifications,
+      RequestRateLimiter rateLimiter,
+      ClientAddress clientAddress) {
     this.verifications = verifications;
+    this.rateLimiter = rateLimiter;
+    this.clientAddress = clientAddress;
   }
 
   @PostMapping
-  ResponseEntity<Void> request(@Valid @RequestBody VerificationRequest request) {
+  ResponseEntity<Void> request(
+      @Valid @RequestBody VerificationRequest request, HttpServletRequest httpRequest) {
+    rateLimiter.requireCapacity(
+        "email-verification-ip", clientAddress.resolve(httpRequest), 30, Duration.ofMinutes(1));
+    rateLimiter.requireCapacity("email-verification-global", "all", 300, Duration.ofMinutes(1));
     verifications.request(request.email());
     return ResponseEntity.accepted().build();
   }

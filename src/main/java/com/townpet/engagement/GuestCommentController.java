@@ -1,10 +1,14 @@
 package com.townpet.engagement;
 
+import com.townpet.common.ClientAddress;
 import com.townpet.common.MemberOrAnonymousOnly;
+import com.townpet.common.RequestRateLimiter;
 import com.townpet.identity.GuestStepUpController;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -22,9 +26,14 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/guest/posts/{publicationId}/comments")
 class GuestCommentController {
   private final CommentService comments;
+  private final RequestRateLimiter rateLimiter;
+  private final ClientAddress clientAddress;
 
-  GuestCommentController(CommentService comments) {
+  GuestCommentController(
+      CommentService comments, RequestRateLimiter rateLimiter, ClientAddress clientAddress) {
     this.comments = comments;
+    this.rateLimiter = rateLimiter;
+    this.clientAddress = clientAddress;
   }
 
   @PostMapping
@@ -33,7 +42,12 @@ class GuestCommentController {
   Response create(
       @PathVariable UUID publicationId,
       @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
-      @Valid @RequestBody CreateRequest request) {
+      @Valid @RequestBody CreateRequest request,
+      HttpServletRequest httpRequest) {
+    rateLimiter.requireCapacity(
+        "guest-content-ip", clientAddress.resolve(httpRequest), 120, Duration.ofHours(1));
+    rateLimiter.requireCapacity(
+        "guest-comment-create", guestId.toString(), 30, Duration.ofHours(1));
     try {
       return response(
           comments.createGuest(

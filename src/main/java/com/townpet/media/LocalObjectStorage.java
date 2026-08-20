@@ -31,7 +31,11 @@ class LocalObjectStorage implements ObjectStoragePort {
     objects.put(
         objectKey,
         new StoredObject(
-            contentType, content.length, sha256(content), MediaContentSniffer.detect(content)));
+            contentType,
+            content.length,
+            sha256(content),
+            MediaContentSniffer.detect(content),
+            MediaImageDimensions.inspect(contentType, content).orElse(null)));
   }
 
   void put(String objectKey, String contentType, byte[] content) {

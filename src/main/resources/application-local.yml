@@ -1,4 +1,7 @@
 spring:
+  flyway:
+    user: ${TOWNPET_MIGRATION_DB_USERNAME:townpet_migration}
+    password: ${TOWNPET_MIGRATION_DB_PASSWORD:townpet_migration_local_dev}
   session:
     # Local showcase sessions should survive a long manual review session.
     # Production keeps the shorter application default unless configured separately.

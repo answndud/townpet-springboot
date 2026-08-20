@@ -23,7 +23,7 @@ class ParityInventoryTest {
     JsonNode pages = matrix.path("pages");
     JsonNode apiRoutes = matrix.path("apiRoutes");
 
-    assertThat(pages).hasSize(49);
+    assertThat(pages).hasSize(47);
     assertThat(apiRoutes).hasSize(55);
     assertThat(matrix.path("counts").path("pages").asInt()).isEqualTo(pages.size());
     assertThat(matrix.path("counts").path("apiRoutes").asInt()).isEqualTo(apiRoutes.size());

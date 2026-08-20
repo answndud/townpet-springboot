@@ -7,6 +7,7 @@ COMPOSE_ENV_FILE="${COMPOSE_ENV_FILE:-deploy/netcup.env.example}"
 EDGE_ENV_FILE="${EDGE_ENV_FILE:-deploy/edge.env.example}"
 EDGE_ENV_VALIDATOR="${EDGE_ENV_VALIDATOR:-scripts/validate-edge-env.sh}"
 TOWNPET_ENV_VALIDATOR="${TOWNPET_ENV_VALIDATOR:-scripts/validate-portfolio-env.sh}"
+RUNTIME_ROLE_GRANTER="${RUNTIME_ROLE_GRANTER:-deploy/grant-runtime-db-role.sh}"
 DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE:-/tmp/portfolio-deploy.lock}"
 SMOKE_URL="${SMOKE_URL:-}"
 PREFLIGHT_ONLY="${PREFLIGHT_ONLY:-0}"
@@ -21,7 +22,7 @@ compose() {
   echo "TownPet netcup deployment asset is missing" >&2
   exit 1
 }
-[[ -x "$EDGE_ENV_VALIDATOR" && -x "$TOWNPET_ENV_VALIDATOR" ]] || {
+[[ -x "$EDGE_ENV_VALIDATOR" && -x "$TOWNPET_ENV_VALIDATOR" && -x "$RUNTIME_ROLE_GRANTER" ]] || {
   echo "deployment env validator is missing or not executable" >&2
   exit 1
 }
@@ -48,7 +49,9 @@ fi
 previous_image="$(docker inspect --format '{{.Config.Image}}' townpet-backend 2>/dev/null || true)"
 docker compose --env-file "$EDGE_ENV_FILE" -f "$EDGE_COMPOSE_FILE" up -d
 compose pull
-compose up -d postgres minio minio-init backend web
+compose up -d postgres
+COMPOSE_FILE="$COMPOSE_FILE" COMPOSE_ENV_FILE="$COMPOSE_ENV_FILE" "$RUNTIME_ROLE_GRANTER"
+compose up -d minio minio-init backend web
 
 ready=1
 for _ in $(seq 1 "$MAX_ATTEMPTS"); do

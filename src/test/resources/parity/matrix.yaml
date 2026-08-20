@@ -1,0 +1,411 @@
+version: 1
+source: /Users/alex/project/townpet/app/src/app
+counts:
+  pages: 47
+  apiRoutes: 55
+  verified: 90
+  excluded: 12
+  pending: 0
+audit:
+  date: 2026-08-12
+  method: "route inventory + controller/React route inspection + backend integration, Vitest and Chromium desktop/mobile smoke evidence"
+  verifiedRule: "정상·오류·권한·상태 전이와 대표 browser 또는 integration evidence가 있을 때만 verified"
+  pendingRule: "route가 존재해도 의미 parity 또는 representative evidence가 부족하면 pending"
+  evidence:
+    shell: [frontend/e2e/parity-shell.spec.ts, docs/05-패리티/셸.md]
+    auth: [frontend/e2e/auth-parity.spec.ts, src/test/java/com/townpet/identity/IdentityMemberControllerTest.java]
+    publication: [frontend/e2e/publication-parity.spec.ts, frontend/e2e/publication-management.spec.ts, frontend/e2e/public-search-parity.spec.ts, src/test/java/com/townpet/publication/PublicationControllerTest.java]
+    engagement: [frontend/e2e/comment-management.spec.ts, frontend/e2e/reaction-management.spec.ts, frontend/e2e/bookmark-management.spec.ts]
+    relationship: [frontend/e2e/relationship-management.spec.ts, src/test/java/com/townpet/relationship/RelationshipControllerTest.java]
+    lostfound: [frontend/src/LostFoundFlows.test.tsx, src/test/java/com/townpet/lostfound/LostFoundAlertControllerTest.java]
+    marketplace: [frontend/src/MarketplaceFlows.test.tsx, src/test/java/com/townpet/marketplace/MarketplaceListingControllerTest.java]
+    care: [frontend/src/features/care/CarePages.tsx, src/test/java/com/townpet/care/CareControllerTest.java]
+  uncovered: []
+normalization:
+  ignoredFields: [traceId, requestId, generatedAt]
+  uuid: '<uuid>'
+  timestamp: '<timestamp>'
+  signedUrl: '<signed-url>'
+pages:
+  - path: /
+    legacy: true
+    spring: verified
+  - path: /admin
+    legacy: true
+    spring: verified
+  - path: /admin/auth-audits
+    legacy: true
+    spring: verified
+  - path: /admin/breeds
+    legacy: true
+    spring: verified
+  - path: /admin/care-feedbacks
+    legacy: true
+    spring: verified
+  - path: /admin/corrections
+    legacy: true
+    spring: verified
+  - path: /admin/hospital-review-flags
+    legacy: true
+    spring: verified
+  - path: /admin/moderation-logs
+    legacy: true
+    spring: verified
+  - path: /admin/moderation/direct
+    legacy: true
+    spring: verified
+  - path: /admin/ops
+    legacy: true
+    spring: verified
+  - path: /admin/personalization
+    legacy: true
+    spring: verified
+    evidence: [frontend/src/AdminPersonalizationPage.tsx, src/main/java/com/townpet/discovery/AdminPersonalizationController.java]
+  - path: /admin/policies
+    legacy: true
+    spring: verified
+  - path: /admin/reports
+    legacy: true
+    spring: verified
+  - path: /admin/reports/{id}
+    legacy: true
+    spring: verified
+  - path: /best
+    legacy: true
+    spring: verified
+    evidence: [frontend/src/BestPage.tsx, src/main/java/com/townpet/discovery/BestFeedController.java]
+  - path: /boards/adoption
+    legacy: true
+    spring: verified
+  - path: /bookmarks
+    legacy: true
+    spring: verified
+  - path: /campaigns/neighborhood-map
+    legacy: true
+    spring: verified
+  - path: /commercial
+    legacy: true
+    spring: verified
+    evidence: [frontend/src/App.tsx, frontend/src/features/marketplace/MarketplacePages.tsx, src/test/java/com/townpet/marketplace/MarketplaceListingControllerTest.java]
+  - path: /corrections/new
+    legacy: true
+    spring: verified
+  - path: /guides/{guideSlug}
+    legacy: true
+    spring: verified
+    evidence: [frontend/src/features/localcare/LocalCarePages.tsx, src/main/java/com/townpet/localguide/LocalResourceController.java]
+  - path: /login
+    legacy: true
+    spring: verified
+  - path: /lost-found
+    legacy: true
+    spring: verified
+  - path: /lost/new
+    legacy: true
+    spring: verified
+  - path: /lounges/breeds/{breedCode}
+    legacy: true
+    spring: verified
+  - path: /lounges/breeds/{breedCode}/groupbuys/new
+    legacy: true
+    spring: verified
+  - path: /my-posts
+    legacy: true
+    spring: verified
+  - path: /notifications
+    legacy: true
+    spring: verified
+  - path: /onboarding
+    legacy: true
+    spring: verified
+  - path: /password/reset
+    legacy: true
+    spring: verified
+  - path: /password/setup
+    legacy: true
+    spring: excluded
+    decision: ADR-0040
+  - path: /posts/new
+    legacy: true
+    spring: verified
+  - path: /posts/{id}
+    legacy: true
+    spring: verified
+  - path: /posts/{id}/edit
+    legacy: true
+    spring: verified
+  - path: /posts/{id}/guest
+    legacy: true
+    spring: verified
+  - path: /posts/{id}/sightings
+    legacy: true
+    spring: verified
+  - path: /privacy
+    legacy: true
+    spring: verified
+  - path: /profile
+    legacy: true
+    spring: verified
+  - path: /register
+    legacy: true
+    spring: excluded
+    decision: ADR-0040
+  - path: /saved
+    legacy: true
+    spring: verified
+  - path: /search
+    legacy: true
+    spring: verified
+    evidence: [frontend/src/features/publication/SearchPage.tsx, src/main/java/com/townpet/discovery/FeedController.java, src/main/java/com/townpet/publication/api/PublicationFeed.java]
+  - path: /search/guest
+    legacy: true
+    spring: verified
+    evidence: [frontend/src/features/publication/SearchPage.tsx, src/main/java/com/townpet/discovery/FeedController.java]
+  - path: /terms
+    legacy: true
+    spring: verified
+  - path: /towns/{townSlug}
+    legacy: true
+    spring: verified
+  - path: /towns/{townSlug}/{sectionSlug}
+    legacy: true
+    spring: verified
+  - path: /users/{id}
+    legacy: true
+    spring: verified
+  - path: /verify-email
+    legacy: true
+    spring: verified
+apiRoutes:
+  - path: /api/acquisition/events
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/admin/auth-audits/export
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/admin/auth-audits
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/admin/moderation/posts/{id}/visibility
+    methods: [PATCH]
+    legacy: true
+    spring: verified
+  - path: /api/admin/moderation/users/hide-content
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/admin/moderation/users/restore-content
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/admin/moderation/users/sanction
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/auth/{nextauth}
+    methods: [GET, POST]
+    legacy: true
+    spring: excluded
+    decision: ADR-0040
+  - path: /api/auth/logout
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/auth/password/reset/confirm
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/auth/password/reset/request
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/auth/password/setup
+    methods: [POST]
+    legacy: true
+    spring: excluded
+    decision: ADR-0040
+  - path: /api/auth/register
+    methods: [POST]
+    legacy: true
+    spring: excluded
+    decision: ADR-0040
+  - path: /api/auth/social-accounts/{provider}
+    methods: [DELETE]
+    legacy: true
+    spring: excluded
+    decision: ADR-0040
+  - path: /api/auth/social-dev/link
+    methods: [POST]
+    legacy: true
+    spring: excluded
+    decision: ADR-0040
+  - path: /api/auth/verify/confirm
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/auth/verify/request
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/boards/{board}/posts
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/comments/{id}
+    methods: [PATCH, DELETE]
+    legacy: true
+    spring: verified
+  - path: /api/communities
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/corrections
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/feed/guest
+    methods: [GET]
+    legacy: true
+    spring: excluded
+    decision: "ADR-0019: `/api/v1/discovery`로 통합"
+  - path: /api/feed/personalization
+    methods: [POST]
+    legacy: true
+    spring: excluded
+    decision: ADR-0016
+  - path: /api/guest/step-up
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/health
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/home/feed
+    methods: [GET]
+    legacy: true
+    spring: excluded
+    decision: "ADR-0019: `/api/v1/discovery`로 통합"
+  - path: /api/lounges/breeds/{breedCode}/groupbuys
+    methods: [POST]
+    legacy: true
+    spring: verified
+    evidence: [src/main/java/com/townpet/marketplace/GroupBuyCompatibilityController.java, src/test/java/com/townpet/marketplace/MarketplaceListingControllerTest.java]
+  - path: /api/lounges/breeds/{breedCode}/posts
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/metrics/web-vitals
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/neighborhoods
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/notifications
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/ops/web-vitals/summary
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/posts/{id}/comments
+    methods: [GET, POST]
+    legacy: true
+    spring: verified
+  - path: /api/posts/{id}/content
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/posts/{id}/detail
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/posts/{id}/lost-found-share.svg
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/posts/{id}/reaction
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/posts/{id}
+    methods: [GET, PATCH, DELETE]
+    legacy: true
+    spring: verified
+  - path: /api/posts/{id}/share
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/posts/{id}/stats
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/posts/{id}/view
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/posts
+    methods: [GET, POST]
+    legacy: true
+    spring: verified
+  - path: /api/posts/suggestions
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/profile/audience-segments
+    methods: [GET]
+    legacy: true
+    spring: verified
+    evidence: [src/main/java/com/townpet/discovery/LegacyDiscoveryCompatibilityController.java]
+  - path: /api/reports/{id}
+    methods: [PATCH]
+    legacy: true
+    spring: verified
+  - path: /api/reports/bulk
+    methods: [PATCH]
+    legacy: true
+    spring: verified
+  - path: /api/reports
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/search/guest
+    methods: [GET]
+    legacy: true
+    spring: excluded
+    decision: "ADR-0019: 공개 검색도 `/api/v1/discovery`로 통합"
+  - path: /api/search/log
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/security/csp-report
+    methods: [GET, POST]
+    legacy: true
+    spring: verified
+  - path: /api/upload/client
+    methods: [POST]
+    legacy: true
+    spring: excluded
+    decision: ADR-0014
+  - path: /api/upload
+    methods: [POST]
+    legacy: true
+    spring: verified
+  - path: /api/users/{id}/profile-summary
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/users/{id}/relation
+    methods: [GET]
+    legacy: true
+    spring: verified
+  - path: /api/viewer-shell
+    methods: [GET]
+    legacy: true
+    spring: verified

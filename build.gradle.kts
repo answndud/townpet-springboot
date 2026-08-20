@@ -23,9 +23,13 @@ java {
 }
 
 configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
-    }
+  compileOnly {
+    extendsFrom(configurations.annotationProcessor.get())
+  }
+}
+
+dependencyLocking {
+    lockAllConfigurations()
 }
 
 dependencyManagement {
@@ -35,12 +39,16 @@ dependencyManagement {
 }
 
 dependencies {
+    constraints {
+        implementation("org.bouncycastle:bcprov-jdk18on:1.81.1")
+    }
+
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-mail")
-    implementation("io.minio:minio:8.5.17")
+    implementation("io.minio:minio:8.6.0")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
@@ -51,7 +59,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
 
-    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("org.postgresql:postgresql:42.7.12")
     developmentOnly("com.h2database:h2")
 
     errorprone("com.google.errorprone:error_prone_core:2.50.0")
@@ -83,8 +91,11 @@ tasks.named<JavaCompile>("compileJava") {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // Testcontainers-backed suites must remain single-forked to avoid
+    // starting duplicate PostgreSQL containers and exhausting local Docker RAM.
+    maxParallelForks = 1
     testLogging {
-        events(TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.PASSED)
+        events(TestLogEvent.FAILED, TestLogEvent.SKIPPED)
     }
 }
 
@@ -98,11 +109,6 @@ spotless {
 }
 
 val testSourceSet = sourceSets.named("test")
-sourceSets {
-    test {
-        resources.srcDir(layout.projectDirectory.dir("docs"))
-    }
-}
 fun registerVerificationTestTask(name: String, descriptionText: String) {
     tasks.register<Test>(name) {
         group = "verification"
@@ -119,6 +125,21 @@ registerVerificationTestTask("modulithTest", "Runs Spring Modulith architecture 
 registerVerificationTestTask("migrationTest", "Runs database migration tests.")
 registerVerificationTestTask("performanceTest", "Runs controlled performance tests.")
 registerVerificationTestTask("parityInventoryTest", "Runs legacy page and API inventory tests.")
+tasks.named<Test>("integrationTest") {
+    filter {
+        includeTestsMatching("com.townpet.*.*ControllerTest")
+    }
+}
+tasks.named<Test>("modulithTest") {
+    filter {
+        includeTestsMatching("com.townpet.architecture.*")
+    }
+}
+tasks.named<Test>("migrationTest") {
+    filter {
+        includeTestsMatching("com.townpet.platform.*")
+    }
+}
 tasks.named<Test>("parityInventoryTest") {
     filter {
         includeTestsMatching("com.townpet.parity.*")
@@ -133,7 +154,6 @@ tasks.named<Test>("performanceTest") {
 tasks.named("check") {
     dependsOn(tasks.named("spotlessCheck"))
     dependsOn(tasks.named("jacocoTestReport"))
-    dependsOn("parityInventoryTest")
 }
 
 tasks.named<JacocoReport>("jacocoTestReport") {

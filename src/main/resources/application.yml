@@ -73,13 +73,15 @@ townpet:
     minio:
       endpoint: ${TOWNPET_MINIO_ENDPOINT:http://localhost:9000}
       public-endpoint: ${TOWNPET_MINIO_PUBLIC_ENDPOINT:http://localhost:9000}
-      access-key: ${TOWNPET_MINIO_ACCESS_KEY:minioadmin}
-      secret-key: ${TOWNPET_MINIO_SECRET_KEY:minioadmin}
+      access-key: ${TOWNPET_MINIO_ACCESS_KEY}
+      secret-key: ${TOWNPET_MINIO_SECRET_KEY}
       bucket: ${TOWNPET_MINIO_BUCKET:townpet-media}
       presign-expiry-seconds: ${TOWNPET_MINIO_PRESIGN_EXPIRY_SECONDS:900}
   security:
     secure-cookies: ${TOWNPET_SECURE_COOKIES:false}
+    search-event-retention: ${TOWNPET_SEARCH_EVENT_RETENTION:30d}
+    search-event-cleanup-ms: ${TOWNPET_SEARCH_EVENT_CLEANUP_MS:3600000}
   demo-data:
     enabled: ${TOWNPET_DEMO_DATA_ENABLED:false}
   build:
-    version: "0.1.0-SNAPSHOT"
+    version: ${TOWNPET_BUILD_VERSION:0.1.0-SNAPSHOT}
