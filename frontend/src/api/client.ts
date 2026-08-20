@@ -808,6 +808,9 @@ export const mediaApi = {
     }
     const form = new FormData();
     Object.entries(asset.uploadFields ?? {}).forEach(([key, value]) => form.append(key, value));
+    if (asset.uploadFields && Object.keys(asset.uploadFields).length > 0 && !asset.uploadFields.key) {
+      form.append("key", asset.objectKey);
+    }
     form.append("file", file);
     const response = await fetch(asset.uploadUrl, {
       method: asset.uploadFields && Object.keys(asset.uploadFields).length > 0 ? "POST" : "PUT",
