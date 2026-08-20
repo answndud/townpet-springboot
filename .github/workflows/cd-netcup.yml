@@ -48,7 +48,7 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/deploy/compose'"
           scp deploy/compose/netcup.yml deploy/compose/edge.yml deploy/compose/Caddyfile.netcup \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/deploy/compose/"
-          scp deploy/Caddyfile.netcup.web \
+          scp deploy/nginx.conf.template \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/deploy/"
           scp deploy/deploy-netcup.sh deploy/grant-runtime-db-role.sh deploy/edge.env.example scripts/validate-edge-env.sh scripts/validate-portfolio-env.sh \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/deploy/"
