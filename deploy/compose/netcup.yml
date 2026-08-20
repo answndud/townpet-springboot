@@ -121,8 +121,6 @@ services:
     environment:
       TOWNPET_DOMAIN: $TOWNPET_DOMAIN
       TOWNPET_MEDIA_DOMAIN: $TOWNPET_MEDIA_DOMAIN
-    volumes:
-      - ./../Caddyfile.netcup.web:/etc/caddy/Caddyfile:ro
     depends_on:
       backend:
         condition: service_healthy
