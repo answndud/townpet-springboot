@@ -49,24 +49,13 @@ class PublicationEntity {
 
   protected PublicationEntity() {}
 
-  PublicationEntity(
-      UUID authorMemberId,
-      String title,
-      String body) {
+  PublicationEntity(UUID authorMemberId, String title, String body) {
     this(authorMemberId, PublicationType.FREE_BOARD, null, title, body);
   }
 
   PublicationEntity(
-      UUID authorMemberId,
-      @Nullable String animalInterestCode,
-      String title,
-      String body) {
-    this(
-        authorMemberId,
-        PublicationType.FREE_BOARD,
-        animalInterestCode,
-        title,
-        body);
+      UUID authorMemberId, @Nullable String animalInterestCode, String title, String body) {
+    this(authorMemberId, PublicationType.FREE_BOARD, animalInterestCode, title, body);
   }
 
   PublicationEntity(
@@ -146,11 +135,7 @@ class PublicationEntity {
     return version;
   }
 
-  void edit(
-      @Nullable String animalInterestCode,
-      String title,
-      String body,
-      Instant changedAt) {
+  void edit(@Nullable String animalInterestCode, String title, String body, Instant changedAt) {
     edit(type, animalInterestCode, title, body, changedAt);
   }
 

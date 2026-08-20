@@ -159,8 +159,7 @@ class LegacyPostsController {
       List<PublicationFeed.Item> items, @Nullable String nextCursor, boolean hasNext) {}
 
   record CreateRequest(
-      @NotBlank @Size(max = 120) String title,
-      @NotBlank @Size(max = 20000) String body) {}
+      @NotBlank @Size(max = 120) String title, @NotBlank @Size(max = 20000) String body) {}
 
   record EditRequest(
       @NotBlank @Size(max = 120) String title,
