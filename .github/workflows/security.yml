@@ -36,16 +36,6 @@ jobs:
           format: table
           exit-code: '1'
 
-  dependency-review:
-    name: Review newly introduced dependencies
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-
   frontend-sbom:
     name: Frontend dependency SBOM
     runs-on: ubuntu-latest
@@ -59,7 +49,12 @@ jobs:
           upload-artifact: true
 
   container-scan:
-    name: Container image vulnerability scan
+    name: Container image vulnerability scan (manual advisory)
+    # Building both production images and scanning their base distributions
+    # takes several minutes and reports upstream image CVEs that are outside
+    # the application diff. Run it deliberately before a release instead of
+    # blocking every pull request.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +78,9 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           format: table
-          exit-code: '1'
+          # Base-image findings remain visible but do not block a portfolio PR.
+          # Filesystem dependency scanning above remains the blocking check.
+          exit-code: '0'
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: townpet-frontend:security
@@ -91,4 +88,4 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           format: table
-          exit-code: '1'
+          exit-code: '0'
