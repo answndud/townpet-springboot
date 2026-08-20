@@ -24,6 +24,6 @@
    - 완료: 현재 제품이 제공하는 upload와 read authorization 경계가 실제 요청에서 유지된다.
 
 4. VPS workload alert를 운영화한다.
-   - 현재: DB `19/100`, backend memory `37.31%`, storage `6%`, threshold `80/90%`, 수동 checker PASS. VPS 매시 `17분` cron은 등록됐고 webhook destination만 미구성이다.
+   - 현재: DB `19/100`, backend memory `31.37%`, storage `7%`, threshold `80/90%`, 수동 checker PASS. VPS 매시 `17분` cron은 등록됐고 webhook destination만 미구성이다.
    - 다음: 승인된 alert webhook URL을 구성하고 scheduler에서 WARN/CRITICAL 수신을 검증한다.
    - 완료: workload 초과를 자동 감지·전달하는 운영 evidence가 남는다.
