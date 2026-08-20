@@ -811,6 +811,9 @@ export const mediaApi = {
     if (asset.uploadFields && Object.keys(asset.uploadFields).length > 0 && !asset.uploadFields.key) {
       form.append("key", asset.objectKey);
     }
+    if (asset.uploadFields && Object.keys(asset.uploadFields).length > 0 && !asset.uploadFields["Content-Type"]) {
+      form.append("Content-Type", asset.contentType);
+    }
     form.append("file", file);
     const response = await fetch(asset.uploadUrl, {
       method: asset.uploadFields && Object.keys(asset.uploadFields).length > 0 ? "POST" : "PUT",
