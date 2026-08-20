@@ -66,8 +66,7 @@ class ParityInventoryTest {
   }
 
   private static JsonNode readMatrix() throws IOException {
-    try (InputStream input =
-        ParityInventoryTest.class.getResourceAsStream("/05-패리티/대조표.yaml")) {
+    try (InputStream input = ParityInventoryTest.class.getResourceAsStream("/parity/matrix.yaml")) {
       assertThat(input).as("parity matrix resource").isNotNull();
       return YAML.readTree(input);
     }

@@ -109,11 +109,6 @@ spotless {
 }
 
 val testSourceSet = sourceSets.named("test")
-sourceSets {
-    test {
-        resources.srcDir(layout.projectDirectory.dir("docs"))
-    }
-}
 fun registerVerificationTestTask(name: String, descriptionText: String) {
     tasks.register<Test>(name) {
         group = "verification"
