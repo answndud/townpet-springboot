@@ -22,7 +22,3 @@
    - 현재: anonymous media root `403`, preflight `204`, 단일 허용 origin PASS. 로그인 owner와 다른 member/guest의 signed URL 경계는 미검증이다.
    - 다음: 안전한 테스트 계정과 fixture로 owner upload/read/delete, 타 사용자·guest 접근 거부를 브라우저에서 확인한다.
    - 완료: 실제 브라우저 요청에서도 object ownership과 private bucket 경계가 유지된다.
-
-## Backlog
-
-- VPS workload 측정 후 DB connection·JVM memory·storage 경보 임계값 확정
