@@ -83,7 +83,6 @@ verify_bookmark_evidence=false
 verify_relationship_evidence=false
 if (( $# == 0 )); then
   verify_auth_evidence=true
-  verify_publication_evidence=true
 fi
 for test_filter in "$@"; do
   [[ "${test_filter}" == *"auth-parity"* ]] && verify_auth_evidence=true

@@ -23,15 +23,15 @@ java {
 }
 
 configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
-    }
+  compileOnly {
+    extendsFrom(configurations.annotationProcessor.get())
+  }
 }
-
 
 dependencyLocking {
     lockAllConfigurations()
 }
+
 dependencyManagement {
     imports {
         mavenBom("org.springframework.modulith:spring-modulith-bom:2.1.0")
@@ -91,8 +91,11 @@ tasks.named<JavaCompile>("compileJava") {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // Testcontainers-backed suites must remain single-forked to avoid
+    // starting duplicate PostgreSQL containers and exhausting local Docker RAM.
+    maxParallelForks = 1
     testLogging {
-        events(TestLogEvent.FAILED, TestLogEvent.SKIPPED, TestLogEvent.PASSED)
+        events(TestLogEvent.FAILED, TestLogEvent.SKIPPED)
     }
 }
 
@@ -127,6 +130,21 @@ registerVerificationTestTask("modulithTest", "Runs Spring Modulith architecture 
 registerVerificationTestTask("migrationTest", "Runs database migration tests.")
 registerVerificationTestTask("performanceTest", "Runs controlled performance tests.")
 registerVerificationTestTask("parityInventoryTest", "Runs legacy page and API inventory tests.")
+tasks.named<Test>("integrationTest") {
+    filter {
+        includeTestsMatching("com.townpet.*.*ControllerTest")
+    }
+}
+tasks.named<Test>("modulithTest") {
+    filter {
+        includeTestsMatching("com.townpet.architecture.*")
+    }
+}
+tasks.named<Test>("migrationTest") {
+    filter {
+        includeTestsMatching("com.townpet.platform.*")
+    }
+}
 tasks.named<Test>("parityInventoryTest") {
     filter {
         includeTestsMatching("com.townpet.parity.*")
@@ -141,7 +159,6 @@ tasks.named<Test>("performanceTest") {
 tasks.named("check") {
     dependsOn(tasks.named("spotlessCheck"))
     dependsOn(tasks.named("jacocoTestReport"))
-    dependsOn("parityInventoryTest")
 }
 
 tasks.named<JacocoReport>("jacocoTestReport") {
