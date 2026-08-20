@@ -39,8 +39,7 @@ class LegacyBoardFeedController {
     }
     try {
       PublicationFeed.Page page =
-          publications.list(
-              memberId(principal), principal != null, cursor, limit);
+          publications.list(memberId(principal), principal != null, cursor, limit);
       return new LegacyList(page.items(), page.nextCursor(), page.hasNext());
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed cursor");
