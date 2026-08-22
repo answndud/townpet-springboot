@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.UuidV7;
 import com.townpet.notification.api.NotificationEvent;
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
@@ -56,6 +57,7 @@ class ReactionService {
                     events.publishEvent(
                         new NotificationEvent(
                             recipient,
+                            UuidV7.randomUuid(),
                             memberId,
                             "REACTION",
                             "새 공감이 도착했습니다",
