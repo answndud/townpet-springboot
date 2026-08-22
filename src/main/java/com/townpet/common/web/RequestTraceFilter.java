@@ -29,17 +29,22 @@ public class RequestTraceFilter extends OncePerRequestFilter {
     String traceId = traceId(request.getHeader(HEADER));
     response.setHeader(HEADER, traceId);
     MDC.put(MDC_KEY, traceId);
+    if (request.getQueryString() != null) {
+      MDC.put("query", request.getQueryString());
+    }
     long startedAt = System.nanoTime();
     try {
       filterChain.doFilter(request, response);
     } finally {
       log.info(
-          "http_request method={} path={} status={} duration_ms={}",
+          "http_request method={} path={} query={} status={} duration_ms={}",
           request.getMethod(),
           request.getRequestURI(),
+          request.getQueryString(),
           response.getStatus(),
           (System.nanoTime() - startedAt) / 1_000_000);
       MDC.remove(MDC_KEY);
+      MDC.remove("query");
     }
   }
 
