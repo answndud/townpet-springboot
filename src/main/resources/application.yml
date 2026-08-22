@@ -42,6 +42,8 @@ spring:
 logging:
   pattern:
     level: "%5p [traceId=%X{traceId}]"
+  level:
+    org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
 
 server:
   shutdown: graceful
