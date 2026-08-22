@@ -13,6 +13,9 @@ class NotificationEntity {
   @Column(nullable = false)
   private UUID recipientMemberId;
 
+  @Column(nullable = false, unique = true)
+  private UUID eventId;
+
   @Column(nullable = false, length = 40)
   private String type;
 
@@ -29,8 +32,9 @@ class NotificationEntity {
 
   protected NotificationEntity() {}
 
-  NotificationEntity(UUID id, UUID recipientMemberId, String type, String title, String body) {
+  NotificationEntity(UUID id, UUID eventId, UUID recipientMemberId, String type, String title, String body) {
     this.id = id;
+    this.eventId = eventId;
     this.recipientMemberId = recipientMemberId;
     this.type = type;
     this.title = title;

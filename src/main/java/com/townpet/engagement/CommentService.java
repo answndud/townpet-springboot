@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.UuidV7;
 import com.townpet.notification.api.NotificationEvent;
 import com.townpet.publication.api.GuestDirectory;
 import com.townpet.publication.api.PublicationAccess;
@@ -59,7 +60,10 @@ class CommentService {
             recipient ->
                 events.publishEvent(
                     new NotificationEvent(
-                        recipient, null, "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
+                        recipient,
+                        UuidV7.randomUuid(),
+                        null,
+                        "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
     return comment;
   }
 
@@ -91,7 +95,10 @@ class CommentService {
               recipient ->
                   events.publishEvent(
                       new NotificationEvent(
-                          recipient, memberId, "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
+                          recipient,
+                          UuidV7.randomUuid(),
+                          memberId,
+                          "COMMENT", "새 댓글이 달렸습니다", "게시글에 새로운 댓글이 등록되었습니다.")));
       return comment;
     } catch (DataIntegrityViolationException exception) {
       throw new CommentPublicationNotFoundException();

@@ -72,9 +72,10 @@ export default function VerifyEmailPage() {
             />
           </label>
           {requestSent ? (
-            <p className="form-success" role="status" aria-live="polite">
-              입력한 주소의 계정을 확인한 뒤 필요한 경우 인증 메일을 보냈습니다.
-            </p>
+            <div className="form-success" role="status" aria-live="polite">
+              <p>입력한 주소의 계정을 확인한 뒤 필요한 경우 인증 메일을 보냈습니다.</p>
+              <p>메일이 도착하지 않으면 스팸함을 확인하거나 몇 분 뒤 다시 요청해 주세요.</p>
+            </div>
           ) : null}
           <button
             type="submit"

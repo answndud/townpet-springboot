@@ -23,6 +23,7 @@ spring:
     locations: classpath:db/migration
   modulith:
     events:
+      republish-outstanding-events-on-restart: true
       jdbc:
         schema-initialization:
           enabled: false
