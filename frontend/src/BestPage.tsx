@@ -22,9 +22,15 @@ export default function BestPage() {
     <main className="page feed-page">
       <section className="feed-hero"><div><p className="eyebrow">BEST OF TOWNPET</p><h1>인기 게시글</h1><p>추천 수가 높은 공개 게시글을 모았습니다. 추천 수가 같으면 최신 글이 먼저 보입니다.</p></div></section>
       {feed.error ? <p role="alert">인기 게시글을 불러오지 못했습니다.</p> : null}
-      <section className="surface-card feed-list" aria-label="인기 게시글 목록" aria-busy={feed.loading}>
+      <section className="surface-card feed-list" aria-label="인기 게시글 목록" aria-live="polite" aria-busy={feed.loading}>
         {feed.loading ? <p className="feed-empty" role="status">인기 게시글을 불러오는 중...</p> : null}
-        {!feed.loading && !feed.error && !feed.items.length ? <p>아직 추천을 받은 인기글이 없습니다.</p> : null}
+        {!feed.loading && !feed.error && !feed.items.length ? (
+          <section className="feed-empty">
+            <h2>아직 추천을 받은 인기글이 없습니다</h2>
+            <p>게시글에 추천을 받으면 이곳에 표시됩니다.</p>
+            <Link className="button button-write" to="/posts/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link>
+          </section>
+        ) : null}
         {!feed.loading && !feed.error ? feed.items.map((item, index) => (
           <article className="feed-item best-feed-item" key={item.id}>
             <span className="feed-item-rank" aria-label={`${(page - 1) * 20 + index + 1}위`}>{(page - 1) * 20 + index + 1}</span>

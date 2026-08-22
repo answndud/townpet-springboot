@@ -7,6 +7,7 @@ import LegalPage from "./LegalPage";
 import HomeFeedPage from "./HomeFeedPage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import AnimalBoardMenu from "./features/member/AnimalBoardMenu";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { installPerformanceObservers, recordRouteTiming } from "./utils/performance";
 
 const OnboardingPage = lazy(() => import("./OnboardingPage"));
@@ -368,7 +369,8 @@ function AppShell() {
       <a className="skip-link" href="#main-content">본문으로 바로가기</a>
       <Header />
       <div id="main-content" tabIndex={-1}>
-        <Suspense fallback={<main className="page placeholder-page"><section className="surface-card" role="status">화면을 준비하는 중...</section></main>}>
+      <Suspense fallback={<main className="page placeholder-page"><section className="surface-card" role="status">화면을 준비하는 중...</section></main>}>
+        <ErrorBoundary>
           <RoutePerformanceProbe path={routeKey} startedAt={routeStartRef.current.startedAt} />
           <Routes>
         <Route path="/" element={<RootRoute />} />
@@ -443,8 +445,9 @@ function AppShell() {
         <Route path="/lost-found/:alertId" element={<LostFoundDetailPage />} />
         <Route path="/posts/:publicationId/sightings" element={<MemberRoute><PostSightingsPage /></MemberRoute>} />
         <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
+      </Routes>
+      </ErrorBoundary>
+      </Suspense>
       </div>
       <Footer />
     </div>
