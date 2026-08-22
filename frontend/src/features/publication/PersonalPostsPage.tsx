@@ -39,8 +39,14 @@ export default function PersonalPostsPage({ saved = false }: { saved?: boolean }
       </header>
       {error ? <p role="alert">{error}</p> : null}
       {loading ? <p className="surface-card" role="status">게시글을 불러오는 중...</p> : null}
-      {!loading && !filteredItems.length && !error ? <p className="surface-card feed-empty">{query ? "조건에 맞는 게시글이 없습니다." : "아직 게시글이 없습니다."}</p> : null}
-      {!loading && filteredItems.length ? <section className="surface-card feed-list" aria-label={saved ? "저장한 게시글 목록" : "내 게시글 목록"}>{filteredItems.map((item) => <article className="feed-item" key={item.id}><Link className="feed-item-title" to={`/posts/${item.id}`}><h2>{item.title}</h2></Link><time dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time></article>)}</section> : null}
+      {!loading && !filteredItems.length && !error ? (
+        <section className="surface-card feed-empty">
+          <h2>{query ? "조건에 맞는 게시글이 없습니다" : "아직 게시글이 없습니다"}</h2>
+          <p>{query ? "다른 검색어로 다시 시도해 보세요." : "첫 번째 반려생활 이야기를 나눠 보세요."}</p>
+          <Link className="button button-write" to="/posts/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link>
+        </section>
+      ) : null}
+      {!loading && filteredItems.length ? <section className="surface-card feed-list" aria-label={saved ? "저장한 게시글 목록" : "내 게시글 목록"} aria-live="polite">{filteredItems.map((item) => <article className="feed-item" key={item.id}><Link className="feed-item-title" to={`/posts/${item.id}`}><h2>{item.title}</h2></Link><time dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time></article>)}</section> : null}
       <form aria-label="게시글 검색" className="search-panel community-bottom-search feed-bottom-search" onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
