@@ -1,5 +1,7 @@
 package com.townpet.media;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
@@ -20,6 +22,8 @@ import java.util.HexFormat;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -27,14 +31,15 @@ import org.springframework.stereotype.Component;
 @Component
 @Profile("production")
 @Primary
-final class MinioObjectStorage implements ObjectStoragePort {
+final class MinioObjectStorage implements ObjectStoragePort, HealthIndicator {
   private final MinioClient client;
   private final MinioClient presignClient;
   private final String publicEndpoint;
   private final String bucket;
   private final int expirySeconds;
+  private final MeterRegistry metrics;
 
-  MinioObjectStorage(MinioStorageProperties properties) {
+  MinioObjectStorage(MinioStorageProperties properties, MeterRegistry metrics) {
     client =
         MinioClient.builder()
             .endpoint(properties.endpoint())
@@ -48,6 +53,7 @@ final class MinioObjectStorage implements ObjectStoragePort {
     publicEndpoint = properties.publicEndpoint().replaceAll("/$", "");
     bucket = properties.bucket();
     expirySeconds = properties.presignExpirySeconds();
+    this.metrics = metrics;
     try {
       if (!client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) {
         client.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
@@ -70,6 +76,7 @@ final class MinioObjectStorage implements ObjectStoragePort {
   @Override
   public Map<String, String> createUploadFields(
       String objectKey, String contentType, long byteSize, Instant expiresAt) {
+    Timer.Sample sample = Timer.start(metrics);
     try {
       PostPolicy policy =
           new PostPolicy(
@@ -82,16 +89,20 @@ final class MinioObjectStorage implements ObjectStoragePort {
       policy.addEqualsCondition("key", objectKey);
       policy.addEqualsCondition("Content-Type", contentType);
       policy.addContentLengthRangeCondition(byteSize, byteSize);
-      return client.getPresignedPostFormData(policy);
+      Map<String, String> fields = client.getPresignedPostFormData(policy);
+      sample.stop(operationTimer("create_upload_fields", "success"));
+      return fields;
     } catch (Exception exception) {
+      sample.stop(operationTimer("create_upload_fields", "failure"));
       throw new IllegalStateException("Could not create MinIO upload form", exception);
     }
   }
 
   @Override
   public String createReadUrl(String objectKey, Instant expiresAt) {
+    Timer.Sample sample = Timer.start(metrics);
     try {
-      return presignClient.getPresignedObjectUrl(
+      String url = presignClient.getPresignedObjectUrl(
           GetPresignedObjectUrlArgs.builder()
               .method(Method.GET)
               .bucket(bucket)
@@ -103,13 +114,17 @@ final class MinioObjectStorage implements ObjectStoragePort {
                           1, (int) (expiresAt.getEpochSecond() - Instant.now().getEpochSecond()))),
                   TimeUnit.SECONDS)
               .build());
+      sample.stop(operationTimer("create_read_url", "success"));
+      return url;
     } catch (Exception exception) {
+      sample.stop(operationTimer("create_read_url", "failure"));
       throw new IllegalStateException("Could not create MinIO read URL", exception);
     }
   }
 
   @Override
   public Optional<StoredObject> inspect(String objectKey) {
+    Timer.Sample sample = Timer.start(metrics);
     try {
       var stat =
           client.statObject(StatObjectArgs.builder().bucket(bucket).object(objectKey).build());
@@ -119,40 +134,68 @@ final class MinioObjectStorage implements ObjectStoragePort {
         content = input.readAllBytes();
       }
       String contentType = stat.contentType();
-      return Optional.of(
+      Optional<StoredObject> result = Optional.of(
           new StoredObject(
               contentType,
               stat.size(),
               sha256(content),
               MediaContentSniffer.detect(content),
               MediaImageDimensions.inspect(contentType, content).orElse(null)));
+      sample.stop(operationTimer("inspect", "success"));
+      return result;
     } catch (io.minio.errors.ErrorResponseException exception) {
-      if ("NoSuchKey".equals(exception.errorResponse().code())) return Optional.empty();
+      if ("NoSuchKey".equals(exception.errorResponse().code())) {
+        sample.stop(operationTimer("inspect", "not_found"));
+        return Optional.empty();
+      }
+      sample.stop(operationTimer("inspect", "failure"));
       throw new IllegalStateException("Could not inspect MinIO object", exception);
     } catch (Exception exception) {
+      sample.stop(operationTimer("inspect", "failure"));
       throw new IllegalStateException("Could not inspect MinIO object", exception);
     }
   }
 
   @Override
   public void store(String objectKey, String contentType, byte[] content) {
+    Timer.Sample sample = Timer.start(metrics);
     try {
       client.putObject(
           PutObjectArgs.builder().bucket(bucket).object(objectKey).contentType(contentType).stream(
                   new java.io.ByteArrayInputStream(content), content.length, -1)
               .build());
+      sample.stop(operationTimer("store", "success"));
     } catch (Exception exception) {
+      sample.stop(operationTimer("store", "failure"));
       throw new IllegalStateException("Could not store MinIO object", exception);
     }
   }
 
   @Override
   public void delete(String objectKey) {
+    Timer.Sample sample = Timer.start(metrics);
     try {
       client.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(objectKey).build());
+      sample.stop(operationTimer("delete", "success"));
     } catch (Exception exception) {
+      sample.stop(operationTimer("delete", "failure"));
       throw new IllegalStateException("Could not delete MinIO object", exception);
     }
+  }
+
+  @Override
+  public Health health() {
+    try {
+      client.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+      return Health.up().withDetail("dependency", "minio").build();
+    } catch (Exception exception) {
+      return Health.down(exception).withDetail("dependency", "minio").build();
+    }
+  }
+
+  private Timer operationTimer(String operation, String outcome) {
+    return metrics.timer(
+        "townpet.minio.operation.duration", "operation", operation, "outcome", outcome);
   }
 
   private static String sha256(byte[] content) {
