@@ -94,6 +94,11 @@ public class GlobalProblemHandler {
   })
   ProblemDetail handleConflict(
       Exception exception, HttpServletRequest request, HttpServletResponse response) {
+    log.warn(
+        "event=request_rejected category=state_conflict method={} path={} trace_id={}",
+        request.getMethod(),
+        request.getRequestURI(),
+        traceId(request, response));
     return problem(HttpStatus.CONFLICT, "STATE_CONFLICT", request, response);
   }
 

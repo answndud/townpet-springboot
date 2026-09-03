@@ -12,7 +12,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 class RequestTraceFilterTest {
-  private final RequestTraceFilter filter = new RequestTraceFilter();
+  private final RequestTraceFilter filter = new RequestTraceFilter("test-build");
 
   @Test
   void preservesSafeTraceIdAndClearsMdcAfterRequest() throws ServletException, IOException {
@@ -26,6 +26,20 @@ class RequestTraceFilterTest {
     assertThat(response.getHeader(RequestTraceFilter.HEADER)).isEqualTo("portfolio:health-1");
     assertThat(org.slf4j.MDC.get("traceId")).isNull();
     verify(chain).doFilter(request, response);
+  }
+
+  @Test
+  void doesNotPutQueryStringIntoMdcOrLogContext() throws ServletException, IOException {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/password/reset");
+    request.setQueryString("token=secret-reset-token&signature=secret-signature");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(
+        request,
+        response,
+        (ignoredRequest, ignoredResponse) -> assertThat(org.slf4j.MDC.get("query")).isNull());
+
+    assertThat(org.slf4j.MDC.get("query")).isNull();
   }
 
   @Test

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,6 +22,12 @@ public class RequestTraceFilter extends OncePerRequestFilter {
   static final String HEADER = "X-Trace-Id";
   private static final String MDC_KEY = "traceId";
   private static final Logger log = LoggerFactory.getLogger(RequestTraceFilter.class);
+  private final String buildVersion;
+
+  public RequestTraceFilter(
+      @Value("${townpet.build.version:unknown}") String buildVersion) {
+    this.buildVersion = buildVersion;
+  }
 
   @Override
   protected void doFilterInternal(
@@ -29,22 +36,20 @@ public class RequestTraceFilter extends OncePerRequestFilter {
     String traceId = traceId(request.getHeader(HEADER));
     response.setHeader(HEADER, traceId);
     MDC.put(MDC_KEY, traceId);
-    if (request.getQueryString() != null) {
-      MDC.put("query", request.getQueryString());
-    }
     long startedAt = System.nanoTime();
     try {
       filterChain.doFilter(request, response);
     } finally {
       log.info(
-          "http_request method={} path={} query={} status={} duration_ms={}",
+          "event=http_request method={} path={} query_present={} status={} duration_ms={} build_version={} trace_id={}",
           request.getMethod(),
           request.getRequestURI(),
-          request.getQueryString(),
+          request.getQueryString() != null,
           response.getStatus(),
-          (System.nanoTime() - startedAt) / 1_000_000);
+          (System.nanoTime() - startedAt) / 1_000_000,
+          buildVersion,
+          traceId);
       MDC.remove(MDC_KEY);
-      MDC.remove("query");
     }
   }
 

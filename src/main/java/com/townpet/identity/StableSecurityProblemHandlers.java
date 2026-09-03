@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -16,6 +18,7 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 final class StableSecurityProblemHandlers implements AuthenticationEntryPoint, AccessDeniedHandler {
   private static final String TRACE_HEADER = "X-Trace-Id";
+  private static final Logger log = LoggerFactory.getLogger(StableSecurityProblemHandlers.class);
   private final ObjectMapper objectMapper;
 
   StableSecurityProblemHandlers(ObjectMapper objectMapper) {
@@ -26,6 +29,11 @@ final class StableSecurityProblemHandlers implements AuthenticationEntryPoint, A
   public void commence(
       HttpServletRequest request, HttpServletResponse response, AuthenticationException failure)
       throws IOException {
+    log.info(
+        "event=security_rejected category=authentication_required method={} path={} failure_type={}",
+        request.getMethod(),
+        request.getRequestURI(),
+        failure.getClass().getSimpleName());
     write(response, HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED", "Authentication is required.");
   }
 
@@ -35,6 +43,11 @@ final class StableSecurityProblemHandlers implements AuthenticationEntryPoint, A
       HttpServletResponse response,
       org.springframework.security.access.AccessDeniedException failure)
       throws IOException {
+    log.info(
+        "event=security_rejected category=access_denied method={} path={} failure_type={}",
+        request.getMethod(),
+        request.getRequestURI(),
+        failure.getClass().getSimpleName());
     write(
         response,
         HttpStatus.FORBIDDEN,

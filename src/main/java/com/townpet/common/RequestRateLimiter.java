@@ -8,6 +8,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 /** PostgreSQL-backed fixed-window limiter shared by all application instances. */
 @Component
 public final class RequestRateLimiter {
+  private static final Logger log = LoggerFactory.getLogger(RequestRateLimiter.class);
   private static final long CLEANUP_INTERVAL_MILLIS = 10 * 60 * 1000L;
   @Nullable private final JdbcTemplate jdbc;
   private final boolean sharedDatabaseEnabled;
@@ -131,6 +134,7 @@ public final class RequestRateLimiter {
 
   private void reject(String bucket) {
     metrics.counter("townpet.security.rate_limit.rejections", "bucket", bucket).increment();
+    log.warn("event=rate_limit_rejected bucket={} outcome=client_rejected", bucket);
     throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "request rate limit exceeded");
   }
 
