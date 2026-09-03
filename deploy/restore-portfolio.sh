@@ -10,8 +10,21 @@ set -eu
 : "${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY}"
 : "${MINIO_BUCKET:=townpet-media}"
 : "${ALLOW_DESTRUCTIVE_RESTORE:?set ALLOW_DESTRUCTIVE_RESTORE=YES}"
+: "${RESTORE_EXECUTION_ID:=$(date -u +%Y%m%dT%H%M%SZ)}"
 
 command -v docker >/dev/null || { echo "docker is required" >&2; exit 1; }
+started_epoch="$(date +%s)"
+phase=validate
+on_exit() {
+  status="$?"
+  if [ "$status" -eq 0 ]; then
+    echo "event=restore outcome=success execution_id=$RESTORE_EXECUTION_ID backup_root=$BACKUP_ROOT duration_seconds=$(($(date +%s) - started_epoch))"
+  else
+    echo "event=restore outcome=failure execution_id=$RESTORE_EXECUTION_ID backup_root=$BACKUP_ROOT phase=$phase exit_code=$status" >&2
+  fi
+  exit "$status"
+}
+trap on_exit EXIT
 
 if [ "$ALLOW_DESTRUCTIVE_RESTORE" != "YES" ]; then
   echo "refusing paired restore: set ALLOW_DESTRUCTIVE_RESTORE=YES" >&2
@@ -22,11 +35,13 @@ fi
 [ -f "$BACKUP_ROOT/manifest.sha256" ] || { echo "missing manifest.sha256" >&2; exit 1; }
 (cd "$BACKUP_ROOT" && sha256sum -c manifest.sha256)
 
+phase=postgres_restore
 docker exec -i "$POSTGRES_CONTAINER" pg_restore \
   --clean --if-exists --no-owner --exit-on-error \
   -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$BACKUP_ROOT/postgres.dump"
 
 restore_id="$(date -u +%Y%m%dT%H%M%SZ)"
+phase=minio_restore
 docker exec "$MINIO_CONTAINER" mc alias set townpet-restore http://127.0.0.1:9000 \
   "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" >/dev/null
 docker exec "$MINIO_CONTAINER" mc mb --ignore-existing "townpet-restore/$MINIO_BUCKET" >/dev/null
@@ -37,6 +52,7 @@ docker exec "$MINIO_CONTAINER" mc mirror --overwrite --remove \
 docker exec "$MINIO_CONTAINER" rm -rf "/tmp/townpet-media-restore-$restore_id"
 
 expected_media_objects="$(find "$BACKUP_ROOT/media" -type f | wc -l | tr -d ' ')"
+phase=media_verify
 restored_object_listing="$(docker exec "$MINIO_CONTAINER" mc find "townpet-restore/$MINIO_BUCKET" --print '{{.Key}}')"
 restored_media_objects="$(printf '%s\n' "$restored_object_listing" | sed '/^$/d' | wc -l | tr -d ' ')"
 [ "$expected_media_objects" = "$restored_media_objects" ] || {
@@ -46,6 +62,7 @@ restored_media_objects="$(printf '%s\n' "$restored_object_listing" | sed '/^$/d'
 
 manifest_publications="$(sed -n 's/^db_publications=//p' "$BACKUP_ROOT/manifest.txt")"
 if [ -n "$manifest_publications" ]; then
+  phase=database_verify
   restored_publications="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM publication')"
   [ "$manifest_publications" = "$restored_publications" ] || {
     echo "restored publication count mismatch: expected=$manifest_publications actual=$restored_publications" >&2

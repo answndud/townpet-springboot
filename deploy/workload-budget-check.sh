@@ -12,6 +12,7 @@ umask 077
 : "${STORAGE_WARN_PERCENT:=80}"
 : "${STORAGE_CRITICAL_PERCENT:=90}"
 : "${TOWNPET_WORKLOAD_ALERT_WEBHOOK_URL:=${BACKUP_ALERT_WEBHOOK_URL:-}}"
+: "${WORKLOAD_EXECUTION_ID:=$(date -u +%Y%m%dT%H%M%SZ)}"
 
 command -v docker >/dev/null || { echo "docker is required" >&2; exit 1; }
 
@@ -56,7 +57,7 @@ evaluate_percent db_connections_percent "$db_connection_percent" "$DB_CONNECTION
 evaluate_percent backend_memory_percent "$backend_memory_percent" "$BACKEND_MEMORY_WARN_PERCENT" "$BACKEND_MEMORY_CRITICAL_PERCENT"
 evaluate_percent storage_percent "$storage_percent" "$STORAGE_WARN_PERCENT" "$STORAGE_CRITICAL_PERCENT"
 
-echo "workload_budget status=$status db_connections=$db_connections/$db_max_connections db_connections_percent=$db_connection_percent backend_memory_percent=$backend_memory_percent storage_percent=$storage_percent storage_path=$STORAGE_PATH"
+echo "event=workload_budget outcome=measured execution_id=$WORKLOAD_EXECUTION_ID status=$status db_connections=$db_connections/$db_max_connections db_connections_percent=$db_connection_percent backend_memory_percent=$backend_memory_percent storage_percent=$storage_percent storage_path=$STORAGE_PATH"
 
 if [ "$status" != PASS ]; then
   if [ -n "$TOWNPET_WORKLOAD_ALERT_WEBHOOK_URL" ] && command -v curl >/dev/null 2>&1; then
@@ -66,9 +67,10 @@ if [ "$status" != PASS ]; then
       -H 'Content-Type: application/json' \
       --data "$payload" \
       "$TOWNPET_WORKLOAD_ALERT_WEBHOOK_URL" >/dev/null ||
-      echo "workload alert could not be delivered" >&2
+      echo "event=workload_alert outcome=failure execution_id=$WORKLOAD_EXECUTION_ID status=$status" >&2
+    echo "event=workload_alert outcome=attempted execution_id=$WORKLOAD_EXECUTION_ID status=$status" >&2
   else
-    echo "workload alert is not configured" >&2
+    echo "event=workload_alert outcome=not_configured execution_id=$WORKLOAD_EXECUTION_ID status=$status" >&2
   fi
 fi
 

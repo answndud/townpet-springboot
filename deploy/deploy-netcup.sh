@@ -10,6 +10,7 @@ TOWNPET_ENV_VALIDATOR="${TOWNPET_ENV_VALIDATOR:-scripts/validate-portfolio-env.s
 RUNTIME_ROLE_GRANTER="${RUNTIME_ROLE_GRANTER:-deploy/grant-runtime-db-role.sh}"
 DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE:-/tmp/portfolio-deploy.lock}"
 SMOKE_URL="${SMOKE_URL:-}"
+DEPLOYMENT_ID="${DEPLOYMENT_ID:-$(date -u +%Y%m%dT%H%M%SZ)-${TOWNPET_BUILD_VERSION:-unknown}}"
 PREFLIGHT_ONLY="${PREFLIGHT_ONLY:-0}"
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-30}"
 SLEEP_SECONDS="${SLEEP_SECONDS:-5}"
@@ -17,6 +18,37 @@ SLEEP_SECONDS="${SLEEP_SECONDS:-5}"
 compose() {
   docker compose --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
 }
+
+edge_compose() {
+  docker compose --env-file "$EDGE_ENV_FILE" -f "$EDGE_COMPOSE_FILE" "$@"
+}
+
+phase="preflight"
+log_event() {
+  echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=$phase outcome=$1${2:+ $2}"
+}
+
+diagnostics() {
+  phase="diagnostics"
+  log_event "started"
+  compose ps >&2 || true
+  edge_compose ps >&2 || true
+  for container in townpet-backend townpet-postgres townpet-minio townpet-minio-init townpet-web; do
+    docker inspect --format "event=container_state deployment_id=$DEPLOYMENT_ID container={{.Name}} status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} restart_count={{.RestartCount}} oom_killed={{.State.OOMKilled}}" "$container" >&2 2>/dev/null || true
+  done
+  compose logs --tail=200 postgres minio minio-init backend web >&2 || true
+  edge_compose logs --tail=100 edge >&2 || true
+}
+
+on_exit() {
+  status="$?"
+  if [[ "$status" -ne 0 ]]; then
+    log_event "failed" "exit_code=$status"
+    diagnostics
+  fi
+  exit "$status"
+}
+trap on_exit EXIT
 
 [[ -f "$COMPOSE_FILE" && -f "$EDGE_COMPOSE_FILE" && -f "$COMPOSE_ENV_FILE" && -f "$EDGE_ENV_FILE" ]] || {
   echo "TownPet netcup deployment asset is missing" >&2
@@ -37,52 +69,77 @@ else
 fi
 "$EDGE_ENV_VALIDATOR" "$EDGE_ENV_FILE"
 "$TOWNPET_ENV_VALIDATOR" "$COMPOSE_ENV_FILE"
+log_event "success"
 docker network inspect edge >/dev/null 2>&1 || docker network create edge >/dev/null
 compose config >/dev/null
 docker compose --env-file "$EDGE_ENV_FILE" -f "$EDGE_COMPOSE_FILE" config >/dev/null
 
 if [[ "$PREFLIGHT_ONLY" == "1" ]]; then
-  echo "TownPet netcup deployment preflight passed"
+  log_event "success" "preflight_only=true"
   exit 0
 fi
 
 previous_image="$(docker inspect --format '{{.Config.Image}}' townpet-backend 2>/dev/null || true)"
-docker compose --env-file "$EDGE_ENV_FILE" -f "$EDGE_COMPOSE_FILE" up -d
+previous_web_image="$(docker inspect --format '{{.Config.Image}}' townpet-web 2>/dev/null || true)"
+phase="edge"
+edge_compose up -d
+log_event "success"
+phase="pull"
 compose pull
+log_event "success"
+phase="postgres"
 compose up -d postgres
+log_event "success"
+phase="runtime_role"
 COMPOSE_FILE="$COMPOSE_FILE" COMPOSE_ENV_FILE="$COMPOSE_ENV_FILE" "$RUNTIME_ROLE_GRANTER"
+log_event "success"
+phase="application"
 compose up -d minio minio-init backend web
+log_event "success"
 
 ready=1
+phase="readiness"
 for _ in $(seq 1 "$MAX_ATTEMPTS"); do
   health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
   if [[ "$health" == "healthy" ]]; then
     ready=0
+    log_event "success" "backend_health=$health"
     break
   fi
   sleep "$SLEEP_SECONDS"
 done
 
 if [[ "$ready" -eq 0 && -n "$SMOKE_URL" ]]; then
+  phase="smoke"
   curl --fail --silent --show-error --location --max-time 10 "$SMOKE_URL" >/dev/null || ready=1
+  [[ "$ready" -eq 0 ]] && log_event "success" "smoke_url_configured=true"
 fi
 
 if [[ "$ready" -eq 0 ]]; then
-  echo "TownPet netcup deployment ready"
+  phase="complete"
+  log_event "success"
   exit 0
 fi
 
-echo "TownPet deployment failed; attempting backend image rollback" >&2
+phase="rollback"
+echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=rollback outcome=started" >&2
 if [[ -z "$previous_image" ]]; then
-  compose ps >&2 || true
-  compose logs --tail=200 backend >&2 || true
+  echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=rollback outcome=unavailable reason=no_previous_backend_image" >&2
   exit 1
 fi
-TOWNPET_BACKEND_IMAGE="$previous_image" compose up -d backend web
+if [[ -n "$previous_web_image" ]]; then
+  TOWNPET_BACKEND_IMAGE="$previous_image" TOWNPET_WEB_IMAGE="$previous_web_image" compose up -d backend web
+else
+  TOWNPET_BACKEND_IMAGE="$previous_image" compose up -d backend web
+fi
 for _ in $(seq 1 "$MAX_ATTEMPTS"); do
   health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
   [[ "$health" == "healthy" ]] && {
-    echo "rollback restored $previous_image" >&2
+    if [[ -n "$SMOKE_URL" ]] && ! curl --fail --silent --show-error --location --max-time 10 "$SMOKE_URL" >/dev/null; then
+      echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=rollback outcome=smoke_failed" >&2
+      exit 1
+    fi
+    echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=rollback outcome=success backend_image=$previous_image" >&2
     exit 1
   }
   sleep "$SLEEP_SECONDS"
