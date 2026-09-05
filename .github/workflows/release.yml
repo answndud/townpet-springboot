@@ -3,6 +3,10 @@ name: Release and deploy
 on:
   workflow_dispatch:
     inputs:
+      ci_run_id:
+        description: Successful main CI run that published the promotion manifest
+        required: true
+        type: string
       deploy:
         description: Deploy the published images to netcup
         required: true
@@ -11,7 +15,7 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  actions: read
 
 concurrency:
   group: release-main
@@ -28,21 +32,58 @@ jobs:
             exit 1
           }
 
-  ci:
-    name: Verify and publish tested images
+  source:
+    name: Load tested image manifest
     needs: validate-ref
-    uses: ./.github/workflows/ci.yml
-    with:
-      deep_checks: false
-      publish_images: true
-    permissions:
-      contents: read
-      packages: write
+    runs-on: ubuntu-latest
+    outputs:
+      backend_image: ${{ steps.manifest.outputs.backend_image }}
+      web_image: ${{ steps.manifest.outputs.web_image }}
+      source_sha: ${{ steps.manifest.outputs.source_sha }}
+    steps:
+      - name: Validate source CI run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+        run: |
+          run_json="$(gh run view "$CI_RUN_ID" --repo "$GITHUB_REPOSITORY" --json workflowName,headBranch,headSha,status,conclusion,event)"
+          test "$(jq -r '.workflowName' <<<"$run_json")" = "Continuous integration"
+          test "$(jq -r '.headBranch' <<<"$run_json")" = "main"
+          test "$(jq -r '.status' <<<"$run_json")" = "completed"
+          test "$(jq -r '.conclusion' <<<"$run_json")" = "success"
+          test "$(jq -r '.event' <<<"$run_json")" = "push"
+      - name: Download promotion manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/release-images"
+          gh run download "$CI_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name townpet-release-images --dir "$RUNNER_TEMP/release-images"
+      - name: Validate promotion manifest
+        id: manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+        run: |
+          manifest="$RUNNER_TEMP/release-images/images.env"
+          test -f "$manifest"
+          source_sha="$(sed -n 's/^source_sha=//p' "$manifest")"
+          backend_image="$(sed -n 's/^backend_image=//p' "$manifest")"
+          web_image="$(sed -n 's/^web_image=//p' "$manifest")"
+          test "$source_sha" = "$(gh run view "$CI_RUN_ID" --repo "$GITHUB_REPOSITORY" --json headSha --jq '.headSha')"
+          [[ "$backend_image" =~ ^ghcr\.io/[^/]+/townpet-backend@sha256:[0-9a-f]{64}$ ]]
+          [[ "$web_image" =~ ^ghcr\.io/[^/]+/townpet-web@sha256:[0-9a-f]{64}$ ]]
+          {
+            printf 'backend_image=%s\n' "$backend_image"
+            printf 'web_image=%s\n' "$web_image"
+            printf 'source_sha=%s\n' "$source_sha"
+          } >> "$GITHUB_OUTPUT"
 
   deploy-netcup:
     name: Deploy published images to netcup
     if: inputs.deploy == true
-    needs: ci
+    needs: source
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -90,14 +131,14 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
-          BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/townpet-backend@${{ needs.ci.outputs.backend_digest }}
-          WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/townpet-web@${{ needs.ci.outputs.web_digest }}
+          BACKEND_IMAGE: ${{ needs.source.outputs.backend_image }}
+          WEB_IMAGE: ${{ needs.source.outputs.web_image }}
           SMOKE_URL: ${{ secrets.DEPLOY_SMOKE_URL }}
         run: |
           printf '%s' "$GHCR_READ_TOKEN" | ssh "$DEPLOY_USER@$DEPLOY_HOST" \
             "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin && \
              cd '$DEPLOY_PATH' && chmod 700 deploy/deploy-netcup.sh deploy/grant-runtime-db-role.sh deploy/backup-portfolio.sh deploy/restore-portfolio.sh deploy/encrypt-backup.sh deploy/prune-portfolio-backups.sh deploy/workload-budget-check.sh deploy/validate-edge-env.sh deploy/validate-portfolio-env.sh && \
-             TOWNPET_BACKEND_IMAGE='$BACKEND_IMAGE' TOWNPET_WEB_IMAGE='$WEB_IMAGE' TOWNPET_BUILD_VERSION='${{ github.sha }}' \
+             TOWNPET_BACKEND_IMAGE='$BACKEND_IMAGE' TOWNPET_WEB_IMAGE='$WEB_IMAGE' TOWNPET_BUILD_VERSION='${{ needs.source.outputs.source_sha }}' \
              DEPLOYMENT_ID='github-${{ github.run_id }}-${{ github.sha }}' \
              COMPOSE_FILE=deploy/compose/netcup.yml EDGE_COMPOSE_FILE=deploy/compose/edge.yml \
              COMPOSE_ENV_FILE=/opt/townpet/secrets/portfolio.env \

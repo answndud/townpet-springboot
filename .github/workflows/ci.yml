@@ -57,10 +57,10 @@ jobs:
         run: ./scripts/validate-release-candidate.sh
       - name: Run full backend gate
         if: github.event_name == 'pull_request'
-        run: ./gradlew check --no-daemon
+        run: ./gradlew check --configuration-cache --no-daemon
       - name: Run main backend gate
         if: github.event_name != 'pull_request'
-        run: ./gradlew check --no-daemon
+        run: ./gradlew check --configuration-cache --no-daemon
 
   frontend:
     name: Frontend
@@ -188,7 +188,7 @@ jobs:
 
   publish_images:
     name: Publish tested images
-    if: inputs.publish_images == true
+    if: inputs.publish_images == true || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: [backend, frontend, repository-security, dependency-scan, frontend-sbom]
     runs-on: ubuntu-latest
     permissions:
@@ -237,3 +237,22 @@ jobs:
           labels: ${{ steps.web-meta.outputs.labels }}
           provenance: true
           sbom: true
+      - name: Record promotion manifest
+        env:
+          BACKEND_DIGEST: ${{ steps.backend-build.outputs.digest }}
+          WEB_DIGEST: ${{ steps.web-build.outputs.digest }}
+        run: |
+          test -n "$BACKEND_DIGEST"
+          test -n "$WEB_DIGEST"
+          mkdir -p release-images
+          {
+            printf 'backend_image=ghcr.io/%s/townpet-backend@%s\n' "$GITHUB_REPOSITORY_OWNER" "$BACKEND_DIGEST"
+            printf 'web_image=ghcr.io/%s/townpet-web@%s\n' "$GITHUB_REPOSITORY_OWNER" "$WEB_DIGEST"
+            printf 'source_sha=%s\n' "$GITHUB_SHA"
+          } > release-images/images.env
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: townpet-release-images
+          path: release-images/images.env
+          if-no-files-found: error
+          retention-days: 30

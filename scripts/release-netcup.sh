@@ -12,7 +12,8 @@ Usage:
   ./scripts/release-netcup.sh --deploy
 
 The script verifies the local main branch and origin/main before dispatching
-the self-contained Release and deploy workflow.
+the release workflow. Release promotes images from the successful main CI run
+for this exact commit; it does not rebuild or rerun the backend gate.
 EOF
 }
 
@@ -44,10 +45,27 @@ origin_sha="$(git rev-parse "origin/$BRANCH")"
   exit 1
 }
 
-echo "dispatching release.yml (deploy=$DEPLOY)"
+ci_run_id="$(gh run list \
+  --repo "$REPO" \
+  --workflow ci.yml \
+  --branch "$BRANCH" \
+  --commit "$head_sha" \
+  --event push \
+  --status success \
+  --limit 1 \
+  --json databaseId \
+  --jq '.[0].databaseId // empty')"
+
+[[ "$ci_run_id" =~ ^[0-9]+$ ]] || {
+  echo "no successful main CI run is available for $head_sha; wait for CI before release" >&2
+  exit 1
+}
+
+echo "dispatching release.yml (deploy=$DEPLOY, source_ci_run=$ci_run_id)"
 gh workflow run release.yml \
   --repo "$REPO" \
   --ref "$BRANCH" \
+  -f "ci_run_id=$ci_run_id" \
   -f "deploy=$DEPLOY" >/dev/null
 
 release_run_id=""

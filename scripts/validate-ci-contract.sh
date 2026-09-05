@@ -65,16 +65,20 @@ expected_pnpm = pnpm_match.group(1)
 
 workflow_text = "\n".join(path.read_text() for path in workflow_files)
 release_text = Path(".github/workflows/release.yml").read_text()
-if not re.search(r"^\s+uses:\s+\./\.github/workflows/ci\.yml\s*$", release_text, re.MULTILINE):
-    raise SystemExit("CI contract failed: release does not call the reusable CI workflow")
-if not re.search(r"^\s+needs:\s+ci\s*$", release_text, re.MULTILINE):
-    raise SystemExit("CI contract failed: netcup deploy does not depend on tested image publication")
-if re.search(r"gh run list|ci-gate|needs\.publish", release_text):
-    raise SystemExit("CI contract failed: release must not discover or rebuild outside the reusable CI workflow")
-if "./gradlew check --no-daemon" not in workflow_text:
+if not re.search(r"ci_run_id:", release_text):
+    raise SystemExit("CI contract failed: release must require a source CI run")
+if not re.search(r"^\s+needs:\s+source\s*$", release_text, re.MULTILINE):
+    raise SystemExit("CI contract failed: netcup deploy does not depend on the immutable image manifest")
+if "gh run download" not in release_text or "townpet-release-images" not in release_text:
+    raise SystemExit("CI contract failed: release does not promote the CI image manifest")
+if re.search(r"uses:\s+\./\.github/workflows/ci\.yml|needs\.ci", release_text):
+    raise SystemExit("CI contract failed: release must not rerun the reusable CI workflow")
+if not re.search(r"\.\/gradlew check(?: --configuration-cache)? --no-daemon", workflow_text):
     raise SystemExit("CI contract failed: backend check gate is missing")
 if not re.search(r"publish_images:\n\s+name: Publish tested images", workflow_text):
     raise SystemExit("CI contract failed: tested image publication job is missing")
+if "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" not in workflow_text:
+    raise SystemExit("CI contract failed: promotion manifest artifact is not pinned")
 if "Container scan (manual)" not in workflow_text or "Browser smoke (manual)" not in workflow_text:
     raise SystemExit("CI contract failed: manual deep-check classification is missing")
 if re.search(r"^\s+push:\s*$", release_text, re.MULTILINE):
