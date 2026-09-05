@@ -65,8 +65,12 @@ expected_pnpm = pnpm_match.group(1)
 
 workflow_text = "\n".join(path.read_text() for path in workflow_files)
 release_text = Path(".github/workflows/release.yml").read_text()
-if not re.search(r"^\s+needs:\s+publish\s*$", release_text, re.MULTILINE):
-    raise SystemExit("CI contract failed: netcup deploy does not depend on image publish")
+if not re.search(r"^\s+uses:\s+\./\.github/workflows/ci\.yml\s*$", release_text, re.MULTILINE):
+    raise SystemExit("CI contract failed: release does not call the reusable CI workflow")
+if not re.search(r"^\s+needs:\s+ci\s*$", release_text, re.MULTILINE):
+    raise SystemExit("CI contract failed: netcup deploy does not depend on tested image publication")
+if re.search(r"gh run list|ci-gate|needs\.publish", release_text):
+    raise SystemExit("CI contract failed: release must not discover or rebuild outside the reusable CI workflow")
 if re.search(r"^\s+push:\s*$", release_text, re.MULTILINE):
     raise SystemExit("CI contract failed: release workflow must remain manual")
 configured_pnpm = set(re.findall(r"^\s*version:\s*([0-9]+\.[0-9]+\.[0-9]+)\s*$", workflow_text, re.MULTILINE))

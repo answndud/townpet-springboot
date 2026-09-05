@@ -1,6 +1,23 @@
 name: Continuous integration
 
 on:
+  workflow_call:
+    inputs:
+      deep_checks:
+        required: false
+        type: boolean
+        default: false
+      publish_images:
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      backend_digest:
+        description: Digest of the tested backend image
+        value: ${{ jobs.publish_images.outputs.backend_digest }}
+      web_digest:
+        description: Digest of the tested frontend image
+        value: ${{ jobs.publish_images.outputs.web_digest }}
   pull_request:
     branches: [main]
   push:
@@ -159,6 +176,7 @@ jobs:
           ignore-unfixed: true
           format: table
           exit-code: '0'
+
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: townpet-frontend:security
@@ -167,3 +185,55 @@ jobs:
           ignore-unfixed: true
           format: table
           exit-code: '0'
+
+  publish_images:
+    name: Publish tested images
+    if: inputs.publish_images == true
+    needs: [backend, frontend, repository-security, dependency-scan, frontend-sbom]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      backend_digest: ${{ steps.backend-build.outputs.digest }}
+      web_digest: ${{ steps.web-build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        id: backend-meta
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/townpet-backend
+          tags: type=sha,format=long
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        id: backend-build
+        with:
+          context: .
+          file: deploy/Dockerfile.backend
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
+          provenance: true
+          sbom: true
+      - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        id: web-meta
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/townpet-web
+          tags: type=sha,format=long
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        id: web-build
+        with:
+          context: .
+          file: deploy/Dockerfile.frontend
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.web-meta.outputs.tags }}
+          labels: ${{ steps.web-meta.outputs.labels }}
+          provenance: true
+          sbom: true
