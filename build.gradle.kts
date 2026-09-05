@@ -28,6 +28,19 @@ configurations {
   }
 }
 
+// Spring Boot 4.1.0's BOM selects a Tomcat patch with known CRITICAL fixes
+// available upstream. Force the fixed patch consistently across runtime and
+// test classpaths until the BOM is upgraded.
+configurations.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.apache.tomcat.embed" &&
+            requested.name in setOf("tomcat-embed-core", "tomcat-embed-el", "tomcat-embed-websocket")) {
+            useVersion("11.0.25")
+            because("security fixes for the embedded servlet container")
+        }
+    }
+}
+
 dependencyLocking {
     lockAllConfigurations()
 }
@@ -41,6 +54,11 @@ dependencyManagement {
 dependencies {
     constraints {
         implementation("org.bouncycastle:bcprov-jdk18on:1.81.1")
+        // Keep the embedded servlet container on the security-fixed patch line
+        // until the Spring Boot BOM carries the same Tomcat update.
+        implementation("org.apache.tomcat.embed:tomcat-embed-core:11.0.25")
+        implementation("org.apache.tomcat.embed:tomcat-embed-el:11.0.25")
+        implementation("org.apache.tomcat.embed:tomcat-embed-websocket:11.0.25")
     }
 
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
