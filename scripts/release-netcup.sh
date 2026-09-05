@@ -11,8 +11,8 @@ Usage:
   ./scripts/release-netcup.sh --publish-only
   ./scripts/release-netcup.sh --deploy
 
-The script verifies the local main branch, origin/main, and the matching
-Continuous integration run before dispatching Release and deploy.
+The script verifies the local main branch and origin/main before dispatching
+the self-contained Release and deploy workflow.
 EOF
 }
 
@@ -44,27 +44,11 @@ origin_sha="$(git rev-parse "origin/$BRANCH")"
   exit 1
 }
 
-ci_run_id="$(gh run list \
-  --repo "$REPO" \
-  --workflow ci.yml \
-  --branch "$BRANCH" \
-  --commit "$head_sha" \
-  --limit 1 \
-  --json databaseId \
-  --jq '.[0].databaseId // empty')"
-[[ -n "$ci_run_id" ]] || {
-  echo "no CI run exists for $head_sha; wait for Continuous integration first" >&2
-  exit 1
-}
-
-echo "waiting for CI run $ci_run_id ($head_sha)"
-gh run watch "$ci_run_id" --repo "$REPO" --exit-status
-
 echo "dispatching release.yml (deploy=$DEPLOY)"
 gh workflow run release.yml \
   --repo "$REPO" \
   --ref "$BRANCH" \
-  -f "deploy=$DEPLOY"
+  -f "deploy=$DEPLOY" >/dev/null
 
 release_run_id=""
 for _ in {1..15}; do
@@ -81,8 +65,8 @@ for _ in {1..15}; do
   sleep 2
 done
 
-[[ -n "$release_run_id" ]] || {
-  echo "release workflow was dispatched but its run could not be located" >&2
+[[ "$release_run_id" =~ ^[0-9]+$ ]] || {
+  echo "release workflow was dispatched but its run id was not returned" >&2
   exit 1
 }
 

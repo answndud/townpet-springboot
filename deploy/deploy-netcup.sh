@@ -30,12 +30,19 @@ schema_version() {
 }
 
 phase="preflight"
+phase_started_epoch="$(date +%s)"
+set_phase() {
+  phase="$1"
+  phase_started_epoch="$(date +%s)"
+}
 log_event() {
-  echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=$phase outcome=$1${2:+ $2}"
+  now_epoch="$(date +%s)"
+  duration_seconds="$((now_epoch - phase_started_epoch))"
+  echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=$phase outcome=$1 duration_seconds=$duration_seconds${2:+ $2}"
 }
 
 diagnostics() {
-  phase="diagnostics"
+  set_phase "diagnostics"
   log_event "started"
   compose ps >&2 || true
   edge_compose ps >&2 || true
@@ -87,31 +94,31 @@ fi
 
 previous_image="$(docker inspect --format '{{.Config.Image}}' townpet-backend 2>/dev/null || true)"
 previous_web_image="$(docker inspect --format '{{.Config.Image}}' townpet-web 2>/dev/null || true)"
-phase="edge"
+set_phase "edge"
 edge_compose up -d
 log_event "success"
-phase="pull"
+set_phase "pull"
 compose pull
 log_event "success"
-phase="postgres"
+set_phase "postgres"
 compose up -d postgres
 log_event "success"
-phase="runtime_role"
+set_phase "runtime_role"
 COMPOSE_FILE="$COMPOSE_FILE" COMPOSE_ENV_FILE="$COMPOSE_ENV_FILE" "$RUNTIME_ROLE_GRANTER"
 log_event "success"
-phase="migration_guard"
+set_phase "migration_guard"
 schema_before="$(schema_version)"
 if [[ -z "$schema_before" ]]; then
   log_event "failed" "reason=unable_to_read_flyway_version"
   exit 1
 fi
 log_event "success" "schema_version_present=true"
-phase="application"
+set_phase "application"
 compose up -d minio minio-init backend web
 log_event "success"
 
 ready=1
-phase="readiness"
+set_phase "readiness"
 for _ in $(seq 1 "$MAX_ATTEMPTS"); do
   backend_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
   web_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-web 2>/dev/null || true)"
@@ -124,26 +131,26 @@ for _ in $(seq 1 "$MAX_ATTEMPTS"); do
 done
 
 if [[ "$ready" -eq 0 && -n "$SMOKE_URL" ]]; then
-  phase="smoke"
+  set_phase "smoke"
   curl --fail --silent --show-error --location --max-time 10 "$SMOKE_URL" >/dev/null || ready=1
   [[ "$ready" -eq 0 ]] && log_event "success" "smoke_url_configured=true"
 fi
 
 if [[ "$ready" -eq 0 ]]; then
-  phase="complete"
+  set_phase "complete"
   log_event "success"
   exit 0
 fi
 
 schema_after="$(schema_version)"
 if [[ -z "$schema_after" || "$schema_before" != "$schema_after" ]]; then
-  phase="rollback"
+  set_phase "rollback"
   log_event "unavailable" "reason=schema_changed_or_unreadable automatic_image_rollback=false"
   diagnostics
   exit 1
 fi
 
-phase="rollback"
+set_phase "rollback"
 echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=rollback outcome=started" >&2
 if [[ -z "$previous_image" ]]; then
   echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=rollback outcome=unavailable reason=no_previous_backend_image" >&2

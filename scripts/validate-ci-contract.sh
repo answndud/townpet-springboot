@@ -71,6 +71,12 @@ if not re.search(r"^\s+needs:\s+ci\s*$", release_text, re.MULTILINE):
     raise SystemExit("CI contract failed: netcup deploy does not depend on tested image publication")
 if re.search(r"gh run list|ci-gate|needs\.publish", release_text):
     raise SystemExit("CI contract failed: release must not discover or rebuild outside the reusable CI workflow")
+if "./gradlew check --no-daemon" not in workflow_text:
+    raise SystemExit("CI contract failed: backend check gate is missing")
+if not re.search(r"publish_images:\n\s+name: Publish tested images", workflow_text):
+    raise SystemExit("CI contract failed: tested image publication job is missing")
+if "Container scan (manual)" not in workflow_text or "Browser smoke (manual)" not in workflow_text:
+    raise SystemExit("CI contract failed: manual deep-check classification is missing")
 if re.search(r"^\s+push:\s*$", release_text, re.MULTILINE):
     raise SystemExit("CI contract failed: release workflow must remain manual")
 configured_pnpm = set(re.findall(r"^\s*version:\s*([0-9]+\.[0-9]+\.[0-9]+)\s*$", workflow_text, re.MULTILINE))
