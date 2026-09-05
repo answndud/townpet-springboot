@@ -20,6 +20,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 10s
     networks: [townpet-internal]
 
   minio:
@@ -38,6 +39,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 10s
     networks: [townpet-internal]
 
   minio-init:
@@ -111,6 +113,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+      start_period: 30s
     stop_grace_period: 30s
     networks: [townpet-internal]
 
@@ -130,6 +133,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+      start_period: 10s
     stop_grace_period: 15s
     networks:
       - townpet-internal

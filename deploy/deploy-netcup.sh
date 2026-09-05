@@ -14,6 +14,8 @@ DEPLOYMENT_ID="${DEPLOYMENT_ID:-$(date -u +%Y%m%dT%H%M%SZ)-${TOWNPET_BUILD_VERSI
 PREFLIGHT_ONLY="${PREFLIGHT_ONLY:-0}"
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-30}"
 SLEEP_SECONDS="${SLEEP_SECONDS:-5}"
+PHASE_TIMEOUT_SECONDS="${PHASE_TIMEOUT_SECONDS:-180}"
+PULL_TIMEOUT_SECONDS="${PULL_TIMEOUT_SECONDS:-300}"
 
 compose() {
   docker compose --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
@@ -21,6 +23,25 @@ compose() {
 
 edge_compose() {
   docker compose --env-file "$EDGE_ENV_FILE" -f "$EDGE_COMPOSE_FILE" "$@"
+}
+
+run_bounded() {
+  timeout_seconds="$1"
+  shift
+  if command -v timeout >/dev/null 2>&1; then
+    timeout --signal=TERM --kill-after=10s "${timeout_seconds}s" "$@"
+  else
+    echo "warning: timeout command is unavailable; phase is not hard-bounded" >&2
+    "$@"
+  fi
+}
+
+compose_bounded() {
+  run_bounded "$PHASE_TIMEOUT_SECONDS" docker compose --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
+}
+
+edge_compose_bounded() {
+  run_bounded "$PHASE_TIMEOUT_SECONDS" docker compose --env-file "$EDGE_ENV_FILE" -f "$EDGE_COMPOSE_FILE" "$@"
 }
 
 schema_version() {
@@ -95,13 +116,13 @@ fi
 previous_image="$(docker inspect --format '{{.Config.Image}}' townpet-backend 2>/dev/null || true)"
 previous_web_image="$(docker inspect --format '{{.Config.Image}}' townpet-web 2>/dev/null || true)"
 set_phase "edge"
-edge_compose up -d
+edge_compose_bounded up -d
 log_event "success"
 set_phase "pull"
-compose pull
+run_bounded "$PULL_TIMEOUT_SECONDS" docker compose --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE" pull backend web
 log_event "success"
 set_phase "postgres"
-compose up -d postgres
+compose_bounded up -d postgres
 log_event "success"
 set_phase "runtime_role"
 COMPOSE_FILE="$COMPOSE_FILE" COMPOSE_ENV_FILE="$COMPOSE_ENV_FILE" "$RUNTIME_ROLE_GRANTER"
@@ -114,7 +135,7 @@ if [[ -z "$schema_before" ]]; then
 fi
 log_event "success" "schema_version_present=true"
 set_phase "application"
-compose up -d minio minio-init backend web
+compose_bounded up -d minio minio-init backend web
 log_event "success"
 
 ready=1
@@ -129,6 +150,10 @@ for _ in $(seq 1 "$MAX_ATTEMPTS"); do
   fi
   sleep "$SLEEP_SECONDS"
 done
+
+if [[ "$ready" -ne 0 ]]; then
+  log_event "failed" "reason=readiness_timeout backend_health=${backend_health:-unknown} web_health=${web_health:-unknown} attempts=$MAX_ATTEMPTS"
+fi
 
 if [[ "$ready" -eq 0 && -n "$SMOKE_URL" ]]; then
   set_phase "smoke"
@@ -157,9 +182,9 @@ if [[ -z "$previous_image" ]]; then
   exit 1
 fi
 if [[ -n "$previous_web_image" ]]; then
-  TOWNPET_BACKEND_IMAGE="$previous_image" TOWNPET_WEB_IMAGE="$previous_web_image" compose up -d backend web
+  TOWNPET_BACKEND_IMAGE="$previous_image" TOWNPET_WEB_IMAGE="$previous_web_image" compose_bounded up -d backend web
 else
-  TOWNPET_BACKEND_IMAGE="$previous_image" compose up -d backend web
+  TOWNPET_BACKEND_IMAGE="$previous_image" compose_bounded up -d backend web
 fi
 for _ in $(seq 1 "$MAX_ATTEMPTS"); do
   backend_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
@@ -174,6 +199,7 @@ for _ in $(seq 1 "$MAX_ATTEMPTS"); do
   }
   sleep "$SLEEP_SECONDS"
 done
+log_event "failed" "reason=rollback_readiness_timeout backend_health=${backend_health:-unknown} web_health=${web_health:-unknown} attempts=$MAX_ATTEMPTS"
 compose ps >&2 || true
 compose logs --tail=200 backend >&2 || true
 echo "rollback failed" >&2
