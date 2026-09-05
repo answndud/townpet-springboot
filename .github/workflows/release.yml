@@ -138,7 +138,7 @@ jobs:
           printf '%s' "$GHCR_READ_TOKEN" | ssh "$DEPLOY_USER@$DEPLOY_HOST" \
             "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin && \
              cd '$DEPLOY_PATH' && chmod 700 deploy/deploy-netcup.sh deploy/grant-runtime-db-role.sh deploy/backup-portfolio.sh deploy/restore-portfolio.sh deploy/encrypt-backup.sh deploy/prune-portfolio-backups.sh deploy/workload-budget-check.sh deploy/validate-edge-env.sh deploy/validate-portfolio-env.sh && \
-             TOWNPET_BACKEND_IMAGE='$BACKEND_IMAGE' TOWNPET_WEB_IMAGE='$WEB_IMAGE' TOWNPET_BUILD_VERSION='${{ needs.source.outputs.source_sha }}' \
+             TOWNPET_BACKEND_IMAGE='$BACKEND_IMAGE' TOWNPET_WEB_IMAGE='$WEB_IMAGE' TOWNPET_BUILD_VERSION='${{ needs.source.outputs.source_sha }}' SMOKE_URL='$SMOKE_URL' \
              DEPLOYMENT_ID='github-${{ github.run_id }}-${{ github.sha }}' \
              COMPOSE_FILE=deploy/compose/netcup.yml EDGE_COMPOSE_FILE=deploy/compose/edge.yml \
              COMPOSE_ENV_FILE=/opt/townpet/secrets/portfolio.env \
