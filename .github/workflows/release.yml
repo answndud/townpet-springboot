@@ -28,9 +28,33 @@ jobs:
             exit 1
           }
 
+  ci-gate:
+    name: Require successful CI
+    needs: validate-ref
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find successful CI run for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ci_run_id="$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow ci.yml \
+            --branch main \
+            --commit "$GITHUB_SHA" \
+            --event push \
+            --limit 20 \
+            --json databaseId,status,conclusion \
+            --jq '[.[] | select(.status == "completed" and .conclusion == "success")] | .[0].databaseId // empty')"
+          test -n "$ci_run_id" || {
+            echo "::error::no successful push CI run exists for $GITHUB_SHA"
+            exit 1
+          }
+          echo "CI run $ci_run_id succeeded for $GITHUB_SHA"
+
   publish:
     name: Publish amd64 images
-    needs: validate-ref
+    needs: [validate-ref, ci-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

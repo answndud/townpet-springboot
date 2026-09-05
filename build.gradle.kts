@@ -156,6 +156,13 @@ tasks.named<Test>("performanceTest") {
 
 tasks.named("check") {
     dependsOn(tasks.named("jacocoTestReport"))
+    dependsOn(
+        tasks.named("integrationTest"),
+        tasks.named("modulithTest"),
+        tasks.named("migrationTest"),
+        tasks.named("performanceTest"),
+        tasks.named("parityInventoryTest")
+    )
 }
 
 tasks.named<JacocoReport>("jacocoTestReport") {

@@ -38,23 +38,9 @@ jobs:
       - name: Validate release candidate
         if: github.event_name != 'pull_request'
         run: ./scripts/validate-release-candidate.sh
-      - name: Compile and run focused backend tests
+      - name: Run full backend gate
         if: github.event_name == 'pull_request'
-        run: >-
-          ./gradlew test --no-daemon
-          --tests com.townpet.architecture.LayerRulesTest
-          --tests com.townpet.architecture.ModularityTest
-          --tests com.townpet.common.BuildInfoContributorTest
-          --tests com.townpet.common.ClientAddressTest
-          --tests com.townpet.common.RequestRateLimiterTest
-          --tests com.townpet.common.UuidV7Test
-          --tests com.townpet.common.web.GlobalProblemHandlerTest
-          --tests com.townpet.common.web.RequestTraceFilterTest
-          --tests com.townpet.discovery.SearchEventCleanupTest
-          --tests com.townpet.engagement.GuestCommentRateLimitTest
-          --tests com.townpet.media.MediaImageDimensionsTest
-          --tests com.townpet.operations.PublicIngressRateLimiterTest
-          --tests com.townpet.publication.GuestPublicationRateLimitTest
+        run: ./gradlew check --no-daemon
       - name: Run main backend gate
         if: github.event_name != 'pull_request'
         run: ./gradlew check --no-daemon
