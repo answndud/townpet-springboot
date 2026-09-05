@@ -23,6 +23,12 @@ edge_compose() {
   docker compose --env-file "$EDGE_ENV_FILE" -f "$EDGE_COMPOSE_FILE" "$@"
 }
 
+schema_version() {
+  compose exec -T postgres sh -c \
+    'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atqc "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"' \
+    2>/dev/null | tr -d '\r' || true
+}
+
 phase="preflight"
 log_event() {
   echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=$phase outcome=$1${2:+ $2}"
@@ -93,6 +99,13 @@ log_event "success"
 phase="runtime_role"
 COMPOSE_FILE="$COMPOSE_FILE" COMPOSE_ENV_FILE="$COMPOSE_ENV_FILE" "$RUNTIME_ROLE_GRANTER"
 log_event "success"
+phase="migration_guard"
+schema_before="$(schema_version)"
+if [[ -z "$schema_before" ]]; then
+  log_event "failed" "reason=unable_to_read_flyway_version"
+  exit 1
+fi
+log_event "success" "schema_version_present=true"
 phase="application"
 compose up -d minio minio-init backend web
 log_event "success"
@@ -100,10 +113,11 @@ log_event "success"
 ready=1
 phase="readiness"
 for _ in $(seq 1 "$MAX_ATTEMPTS"); do
-  health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
-  if [[ "$health" == "healthy" ]]; then
+  backend_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
+  web_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-web 2>/dev/null || true)"
+  if [[ "$backend_health" == "healthy" && "$web_health" == "healthy" ]]; then
     ready=0
-    log_event "success" "backend_health=$health"
+    log_event "success" "backend_health=$backend_health web_health=$web_health"
     break
   fi
   sleep "$SLEEP_SECONDS"
@@ -121,6 +135,14 @@ if [[ "$ready" -eq 0 ]]; then
   exit 0
 fi
 
+schema_after="$(schema_version)"
+if [[ -z "$schema_after" || "$schema_before" != "$schema_after" ]]; then
+  phase="rollback"
+  log_event "unavailable" "reason=schema_changed_or_unreadable automatic_image_rollback=false"
+  diagnostics
+  exit 1
+fi
+
 phase="rollback"
 echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=rollback outcome=started" >&2
 if [[ -z "$previous_image" ]]; then
@@ -133,8 +155,9 @@ else
   TOWNPET_BACKEND_IMAGE="$previous_image" compose up -d backend web
 fi
 for _ in $(seq 1 "$MAX_ATTEMPTS"); do
-  health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
-  [[ "$health" == "healthy" ]] && {
+  backend_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
+  web_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-web 2>/dev/null || true)"
+  [[ "$backend_health" == "healthy" && "$web_health" == "healthy" ]] && {
     if [[ -n "$SMOKE_URL" ]] && ! curl --fail --silent --show-error --location --max-time 10 "$SMOKE_URL" >/dev/null; then
       echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=rollback outcome=smoke_failed" >&2
       exit 1
