@@ -61,6 +61,22 @@ describe("TownPet Vite shell", () => {
     expect(document.title).toBe("TownPet | 동네 거래");
   });
 
+  it("uses a stable canonical and noindex signal for filtered public URLs", async () => {
+    render(<MemoryRouter initialEntries={["/best?page=2&sort=recent"]}><App /></MemoryRouter>);
+
+    await waitFor(() => expect(document.querySelector('meta[name="robots"]')).toHaveAttribute("content", "noindex,nofollow"));
+    expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute("href", "https://townpet.cloud/best");
+    expect(document.querySelector('meta[property="og:url"]')).toHaveAttribute("content", "https://townpet.cloud/best");
+  });
+
+  it("provides type-specific metadata for public detail routes", async () => {
+    render(<MemoryRouter initialEntries={["/marketplace/listing-123"]}><App /></MemoryRouter>);
+
+    await waitFor(() => expect(document.title).toBe("TownPet | 동네 거래 정보"));
+    expect(document.querySelector('meta[name="description"]')).toHaveAttribute("content", "우리 동네 반려생활 용품과 나눔 정보를 확인하세요.");
+    expect(document.querySelector('meta[name="twitter:card"]')).toHaveAttribute("content", "summary");
+  });
+
   it("keeps authenticated navigation when visiting public routes", async () => {
     vi.stubGlobal("fetch", vi.fn((input) => {
       const path = String(input);

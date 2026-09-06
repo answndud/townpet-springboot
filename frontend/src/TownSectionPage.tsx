@@ -6,7 +6,7 @@ import { useAbortableRequest } from "./hooks/useAbortableRequest";
 const sections: Record<string, { title: string; description: string; href: string }> = {
   adoption: { title: "입양 정보", description: "새 가족을 기다리는 반려동물 정보를 확인하세요.", href: "/boards/adoption" },
   guides: { title: "지역 가이드", description: "병원·산책·복지 정보를 확인하세요.", href: "/guides" },
-  marketplace: { title: "동네 거래", description: "판매·대여·나눔 정보를 살펴보세요.", href: "/commercial" },
+  marketplace: { title: "동네 거래", description: "판매·대여·나눔 정보를 살펴보세요.", href: "/marketplace" },
   community: { title: "동네 게시판", description: "이웃의 반려생활 이야기를 확인하세요.", href: "/?view=all" },
 };
 

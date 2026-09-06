@@ -357,14 +357,15 @@ function upsertMeta(attribute: "name" | "property", key: string, content: string
   element.content = content;
 }
 
-function applySeo(location: { pathname: string }) {
+function applySeo(location: { pathname: string; search: string }) {
   const rawPath = location.pathname || "/";
-  const canonicalPath = Object.entries(CANONICAL_ALIASES).find(([alias]) => rawPath === alias || rawPath.startsWith(`${alias}/`))?.[1]
+  const canonicalPath = (Object.entries(CANONICAL_ALIASES).find(([alias]) => rawPath === alias || rawPath.startsWith(`${alias}/`))
     ? rawPath.replace(/^\/commercial(?=\/|$)/, "/marketplace").replace(/^\/users(?=\/|$)/, "/members").replace(/^\/lost\/new$/, "/lost-found/new")
-    : rawPath;
+    : rawPath).replace(/\/$/, "") || "/";
   const isPrivate = PRIVATE_ROUTE_PREFIXES.some((prefix) => rawPath === prefix || rawPath.startsWith(`${prefix}/`));
   const isSearch = SEARCH_PATHS.has(rawPath);
-  const noindex = isPrivate || isSearch || rawPath === "/404";
+  const hasQuery = new URLSearchParams(location.search).size > 0;
+  const noindex = isPrivate || isSearch || hasQuery || rawPath === "/404";
   const titleByPath: Array<[string, string, string]> = [
     ["/", "우리 동네 반려생활 정보", "우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하세요."],
     ["/terms", "이용약관", "TownPet 공개 커뮤니티 이용약관입니다."],
@@ -379,15 +380,38 @@ function applySeo(location: { pathname: string }) {
     ["/volunteer", "봉사 기회", "반려동물과 지역을 위한 봉사 기회를 확인하세요."],
     ["/hospital-reviews", "동물병원 후기", "반려생활에 도움이 되는 동물병원 후기를 확인하세요."],
   ];
+  const dynamicTitleByPath: Array<[RegExp, string, string]> = [
+    [/^\/boards(?:\/|$)/, "공개 커뮤니티 게시판", "반려생활에 도움이 되는 TownPet 공개 커뮤니티 게시판입니다."],
+    [/^\/animals(?:\/|$)/, "반려동물 게시판", "반려동물 종류별 TownPet 공개 커뮤니티 게시판입니다."],
+    [/^\/towns(?:\/|$)/, "지역 반려생활", "지역별 입양·거래·가이드 정보를 확인하세요."],
+    [/^\/lounges\/breeds(?:\/|$)/, "품종 커뮤니티", "품종별 반려생활 이야기와 공개 게시글을 확인하세요."],
+    [/^\/posts\/[^/]+$/, "공개 게시글", "TownPet 공개 반려생활 게시글의 내용과 대화를 확인하세요."],
+    [/^\/adoptions\/[^/]+$/, "입양 정보", "새 가족을 기다리는 반려동물의 공개 입양 정보를 확인하세요."],
+    [/^\/marketplace\/[^/]+$/, "동네 거래 정보", "우리 동네 반려생활 용품과 나눔 정보를 확인하세요."],
+    [/^\/lost-found\/[^/]+$/, "분실·목격 정보", "반려동물 분실과 발견에 관한 공개 정보를 확인하세요."],
+    [/^\/gatherings\/[^/]+$/, "동네 모임 정보", "반려생활을 함께하는 공개 동네 모임 정보를 확인하세요."],
+    [/^\/care\/[^/]+$/, "이웃 돌봄 정보", "우리 동네 반려동물 돌봄 요청의 공개 정보를 확인하세요."],
+    [/^\/guides\/[^/]+$/, "지역 가이드", "병원·산책·복지 등 공개 지역 반려생활 정보를 확인하세요."],
+    [/^\/members\/[^/]+$/, "공개 회원 프로필", "TownPet 회원이 공개한 반려생활 활동을 확인하세요."],
+    [/^\/users\/[^/]+$/, "공개 회원 프로필", "TownPet 회원이 공개한 반려생활 활동을 확인하세요."],
+  ];
   const match = titleByPath.find(([path]) => rawPath === path || (path !== "/" && rawPath.startsWith(`${path}/`)));
+  const dynamicMatch = dynamicTitleByPath.find(([path]) => path.test(rawPath));
   const title = match?.[1] ?? (noindex ? "TownPet" : "반려생활 커뮤니티");
-  const description = match?.[2] ?? "TownPet 공개 반려생활 커뮤니티의 정보와 이야기를 확인하세요.";
-  document.title = `TownPet | ${title}`;
+  const resolvedTitle = dynamicMatch?.[1] ?? title;
+  const description = dynamicMatch?.[2] ?? match?.[2] ?? "TownPet 공개 반려생활 커뮤니티의 정보와 이야기를 확인하세요.";
+  document.title = `TownPet | ${resolvedTitle}`;
   upsertMeta("name", "description", description);
   upsertMeta("name", "robots", noindex ? "noindex,nofollow" : "index,follow");
   upsertMeta("property", "og:title", document.title);
   upsertMeta("property", "og:description", description);
   upsertMeta("property", "og:url", `${SEO_BASE_URL}${canonicalPath}`);
+  upsertMeta("property", "og:locale", "ko_KR");
+  upsertMeta("property", "og:image:alt", "TownPet 공개 반려생활 커뮤니티");
+  upsertMeta("name", "twitter:card", "summary");
+  upsertMeta("name", "twitter:title", document.title);
+  upsertMeta("name", "twitter:description", description);
+  upsertMeta("name", "twitter:image", `${SEO_BASE_URL}/townpet-logo.svg`);
   let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
   if (!canonical) {
     canonical = document.createElement("link");
@@ -409,7 +433,7 @@ function AppShell() {
     installPerformanceObservers();
   }, []);
 
-  useEffect(() => applySeo(location), [location.pathname]);
+  useEffect(() => applySeo(location), [location.pathname, location.search]);
 
   return (
     <div className="app-shell-bg">
