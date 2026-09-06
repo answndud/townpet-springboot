@@ -28,9 +28,13 @@ http://{$TOWNPET_DOMAIN} {
 		header Cache-Control "public, max-age=31536000, immutable"
 		file_server
 	}
-	handle {
+	@app path / /login /password/reset /verify-email /admin* /onboarding* /boards* /animals* /profile /notifications /privacy /terms /my-posts /saved /bookmarks /search /corrections/new /best /adoptions* /volunteer /hospital-reviews /towns* /lounges/breeds* /guides* /campaigns/neighborhood-map /commercial /marketplace* /gatherings* /care* /members* /users* /posts* /guest/posts/new /lost-found* /lost/new
+	handle @app {
 		header Cache-Control "no-cache"
 		try_files {path} /index.html
+		file_server
+	}
+	handle {
 		file_server
 	}
 }
