@@ -210,7 +210,10 @@ tasks.named("check") {
 
 tasks.named<JacocoReport>("jacocoTestReport") {
     dependsOn(tasks.named("test"), tasks.named("integrationTest"))
-    executionData(tasks.named<Test>("test"), tasks.named<Test>("integrationTest"))
+    executionData(
+        layout.buildDirectory.file("jacoco/test.exec"),
+        layout.buildDirectory.file("jacoco/integrationTest.exec"),
+    )
     reports {
         xml.required.set(true)
         html.required.set(true)
@@ -220,7 +223,10 @@ tasks.named<JacocoReport>("jacocoTestReport") {
 
 tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
     dependsOn(tasks.named("test"), tasks.named("integrationTest"))
-    executionData(tasks.named<Test>("test"), tasks.named<Test>("integrationTest"))
+    executionData(
+        layout.buildDirectory.file("jacoco/test.exec"),
+        layout.buildDirectory.file("jacoco/integrationTest.exec"),
+    )
     violationRules {
         rule {
             limit {
