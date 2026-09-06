@@ -15,9 +15,9 @@ map $request_uri $townpet_robots_meta {
     ~\? "noindex,nofollow";
 }
 
-map $uri $townpet_canonical_path {
-    default $uri;
-    "" "/";
+map $request_uri $townpet_canonical_path {
+    default "/";
+    ~^([^?]*) $1;
 }
 
 resolver 127.0.0.11 valid=30s ipv6=off;
