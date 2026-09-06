@@ -61,6 +61,17 @@ jobs:
       - name: Run main backend gate
         if: github.event_name != 'pull_request'
         run: ./gradlew check --configuration-cache --no-daemon
+      - name: Package tested backend artifact
+        if: github.event_name != 'pull_request'
+        run: ./gradlew bootJar --configuration-cache --no-daemon
+      - name: Upload tested backend artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: townpet-backend-jar
+          path: build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 1
 
   frontend:
     name: Frontend
@@ -205,6 +216,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: townpet-backend-jar
+          path: release-artifacts
       - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         id: backend-meta
         with:

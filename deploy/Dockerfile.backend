@@ -1,7 +1,12 @@
 FROM eclipse-temurin:25-jdk AS build
 WORKDIR /workspace
 COPY . .
-RUN ./gradlew bootJar --no-daemon
+RUN release_jar="$(find release-artifacts -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' -print -quit 2>/dev/null || true)"; \
+    if [ -n "$release_jar" ]; then \
+      mkdir -p build/libs && cp "$release_jar" build/libs/townpet-backend.jar; \
+    else \
+      ./gradlew bootJar --no-daemon; \
+    fi
 
 FROM eclipse-temurin:25-jre-noble
 WORKDIR /app
