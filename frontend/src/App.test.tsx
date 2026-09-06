@@ -69,6 +69,13 @@ describe("TownPet Vite shell", () => {
     expect(document.querySelector('meta[property="og:url"]')).toHaveAttribute("content", "https://townpet.cloud/best");
   });
 
+  it("keeps utility pages accessible without making them search targets", async () => {
+    render(<MemoryRouter initialEntries={["/privacy"]}><App /></MemoryRouter>);
+
+    await waitFor(() => expect(document.querySelector('meta[name="robots"]')).toHaveAttribute("content", "noindex,nofollow"));
+    expect(document.querySelector('link[rel="canonical"]')).toHaveAttribute("href", "https://townpet.cloud/privacy");
+  });
+
   it("provides type-specific metadata for public detail routes", async () => {
     render(<MemoryRouter initialEntries={["/marketplace/listing-123"]}><App /></MemoryRouter>);
 

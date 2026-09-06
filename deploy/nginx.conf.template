@@ -3,9 +3,10 @@ map $uri $townpet_cache_control {
     ~^/assets/ "public, max-age=31536000, immutable";
 }
 
-map $uri $townpet_robots_tag {
+map $request_uri $townpet_robots_tag {
     default "";
-    ~^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map)(/|$) "noindex, nofollow";
+    ~^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map|search|terms|privacy)(/|\?|$) "noindex, nofollow";
+    ~\? "noindex, nofollow";
 }
 
 resolver 127.0.0.11 valid=30s ipv6=off;

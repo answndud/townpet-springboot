@@ -341,6 +341,7 @@ const PRIVATE_ROUTE_PREFIXES = [
   "/campaigns/neighborhood-map",
 ];
 const SEARCH_PATHS = new Set(["/search", "/search/guest"]);
+const UTILITY_NOINDEX_PATHS = new Set(["/terms", "/privacy"]);
 const CANONICAL_ALIASES: Record<string, string> = {
   "/commercial": "/marketplace",
   "/users": "/members",
@@ -364,8 +365,9 @@ function applySeo(location: { pathname: string; search: string }) {
     : rawPath).replace(/\/$/, "") || "/";
   const isPrivate = PRIVATE_ROUTE_PREFIXES.some((prefix) => rawPath === prefix || rawPath.startsWith(`${prefix}/`));
   const isSearch = SEARCH_PATHS.has(rawPath);
+  const isUtility = UTILITY_NOINDEX_PATHS.has(rawPath);
   const hasQuery = new URLSearchParams(location.search).size > 0;
-  const noindex = isPrivate || isSearch || hasQuery || rawPath === "/404";
+  const noindex = isPrivate || isSearch || isUtility || hasQuery || rawPath === "/404";
   const titleByPath: Array<[string, string, string]> = [
     ["/", "우리 동네 반려생활 정보", "우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하세요."],
     ["/terms", "이용약관", "TownPet 공개 커뮤니티 이용약관입니다."],
