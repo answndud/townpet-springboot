@@ -43,6 +43,14 @@ server {
     location ^~ /assets/ { try_files $uri =404; }
     location = /assets/index.js { add_header Cache-Control "no-cache" always; try_files $uri =404; }
 
+    location ~ ^/(?:posts|adoptions|marketplace|lost-found|gatherings|care|guides)/[0-9a-fA-F-]{36}/?$ {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://$townpet_backend_upstream;
+    }
+
     location ~ ^/(?:|login|password/reset|verify-email|admin|onboarding|boards|animals|profile|notifications|privacy|terms|my-posts|saved|bookmarks|search|corrections/new|best|adoptions|volunteer|hospital-reviews|towns|lounges/breeds|guides|campaigns/neighborhood-map|commercial|marketplace|gatherings|care|members|users|posts|guest/posts/new|lost-found|lost/new)(?:/.*)?$ {
         try_files $uri /index.html;
     }
