@@ -9,6 +9,17 @@ map $request_uri $townpet_robots_tag {
     ~\? "noindex, nofollow";
 }
 
+map $request_uri $townpet_robots_meta {
+    default "index,follow";
+    ~^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map|search|terms|privacy)(/|\?|$) "noindex,nofollow";
+    ~\? "noindex,nofollow";
+}
+
+map $uri $townpet_canonical_path {
+    default $uri;
+    "" "/";
+}
+
 resolver 127.0.0.11 valid=30s ipv6=off;
 
 server {
@@ -53,6 +64,10 @@ server {
     }
 
     location ~ ^/(?:|login|password/reset|verify-email|admin|onboarding|boards|animals|profile|notifications|privacy|terms|my-posts|saved|bookmarks|search|corrections/new|best|adoptions|volunteer|hospital-reviews|towns|lounges/breeds|guides|campaigns/neighborhood-map|commercial|marketplace|gatherings|care|members|users|posts|guest/posts/new|lost-found|lost/new)(?:/.*)?$ {
+        sub_filter_types text/html;
+        sub_filter_once on;
+        sub_filter 'content="index,follow"' 'content="$townpet_robots_meta"';
+        sub_filter 'href="https://townpet.cloud/"' 'href="https://townpet.cloud$townpet_canonical_path"';
         try_files $uri /index.html;
     }
 
