@@ -42,7 +42,7 @@ server {
     location = /sitemap.xml { add_header Cache-Control "public, max-age=14400" always; try_files $uri =404; }
     location ^~ /assets/ { try_files $uri =404; }
 
-    location ~ ^/(|login|password/reset|verify-email|admin(?:/|$)|onboarding(?:/|$)|boards(?:/|$)|animals(?:/|$)|profile|notifications|privacy|terms|my-posts|saved|bookmarks|search|corrections/new|best|adoptions(?:/|$)|volunteer|hospital-reviews|towns(?:/|$)|lounges/breeds(?:/|$)|guides(?:/|$)|campaigns/neighborhood-map|commercial|marketplace(?:/|$)|gatherings(?:/|$)|care(?:/|$)|members(?:/|$)|users(?:/|$)|posts(?:/|$)|guest/posts/new|lost-found(?:/|$)|lost/new)(?:/|$)) {
+    location ~ ^/(|login|password/reset|verify-email|admin(?:/|$)|onboarding(?:/|$)|boards(?:/|$)|animals(?:/|$)|profile|notifications|privacy|terms|my-posts|saved|bookmarks|search|corrections/new|best|adoptions(?:/|$)|volunteer|hospital-reviews|towns(?:/|$)|lounges/breeds(?:/|$)|guides(?:/|$)|campaigns/neighborhood-map|commercial|marketplace(?:/|$)|gatherings(?:/|$)|care(?:/|$)|members(?:/|$)|users(?:/|$)|posts(?:/|$)|guest/posts/new|lost-found(?:/|$)|lost/new)(?:/|$) {
         try_files $uri /index.html;
     }
 
