@@ -8,11 +8,11 @@ const assets = readdirSync(assetsDir).map((name) => ({
   name,
   path: join(assetsDir, name),
 }));
-const entry = assets.find(({ name }) => /^index-[^/]+\.js$/.test(name));
+const entry = assets.find(({ name }) => /^index(?:-[^/]+)?\.js$/.test(name));
 const css = assets.find(({ name }) => /^index-[^/]+\.css$/.test(name));
 
 if (!entry || !css) {
-  throw new Error("Bundle budget could not find the hashed entry JS and CSS assets.");
+  throw new Error("Bundle budget could not find the entry JS and CSS assets.");
 }
 
 const entryBytes = statSync(entry.path).size;
