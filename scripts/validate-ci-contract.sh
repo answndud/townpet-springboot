@@ -73,7 +73,7 @@ if "gh run download" not in release_text or "townpet-release-images" not in rele
     raise SystemExit("CI contract failed: release does not promote the CI image manifest")
 if re.search(r"uses:\s+\./\.github/workflows/ci\.yml|needs\.ci", release_text):
     raise SystemExit("CI contract failed: release must not rerun the reusable CI workflow")
-if not re.search(r"\.\/gradlew check(?: --configuration-cache)? --no-daemon", workflow_text):
+if not re.search(r"\.\/gradlew check(?:\s+bootJar)?(?:\s+--[a-z-]+)+", workflow_text):
     raise SystemExit("CI contract failed: backend check gate is missing")
 if not re.search(r"publish_images:\n\s+name: Publish tested images", workflow_text):
     raise SystemExit("CI contract failed: tested image publication job is missing")

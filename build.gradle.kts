@@ -109,8 +109,9 @@ tasks.named<JavaCompile>("compileJava") {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-    // Testcontainers-backed suites must remain single-forked to avoid
-    // starting duplicate PostgreSQL containers and exhausting local Docker RAM.
+    // Each suite remains single-forked. The fast and integration suites may
+    // run as separate Gradle tasks in parallel, while each Test task owns its
+    // own isolated JVM/container lifecycle.
     maxParallelForks = 1
     testLogging {
         events(TestLogEvent.FAILED, TestLogEvent.SKIPPED)
@@ -130,6 +131,37 @@ spotless {
 }
 
 val testSourceSet = sourceSets.named("test")
+val integrationTestPatterns = listOf(
+    "com.townpet.TownPetApplicationTests",
+    "com.townpet.care.CareControllerTest",
+    "com.townpet.common.RequestRateLimiterPostgresTest",
+    "com.townpet.common.web.GlobalProblemHttpTest",
+    "com.townpet.engagement.BlockedEngagementPolicyTest",
+    "com.townpet.engagement.BookmarkControllerTest",
+    "com.townpet.engagement.CommentControllerTest",
+    "com.townpet.engagement.ReactionControllerTest",
+    "com.townpet.gathering.GatheringControllerTest",
+    "com.townpet.identity.AccountTokenDeliveryUnavailableTest",
+    "com.townpet.identity.IdentityMemberControllerTest",
+    "com.townpet.lostfound.LostFoundAlertControllerTest",
+    "com.townpet.lostfound.LostFoundSightingControllerTest",
+    "com.townpet.marketplace.MarketplaceListingControllerTest",
+    "com.townpet.media.MediaControllerTest",
+    "com.townpet.performance.ReleaseCandidateQueryPlanTest",
+    "com.townpet.platform.DatabaseBaselineTest",
+    "com.townpet.publication.PublicationControllerTest",
+    "com.townpet.relationship.RelationshipControllerTest",
+    "com.townpet.welfare.AdoptionControllerTest",
+)
+
+// Keep the default test task as the fast suite so existing local commands
+// still work, while the database-backed tests move to integrationTest.
+tasks.named<Test>("test") {
+    filter {
+        integrationTestPatterns.forEach { excludeTestsMatching(it) }
+    }
+}
+
 fun registerVerificationTestTask(name: String, descriptionText: String) {
     tasks.register<Test>(name) {
         group = "verification"
@@ -137,7 +169,6 @@ fun registerVerificationTestTask(name: String, descriptionText: String) {
         testClassesDirs = testSourceSet.get().output.classesDirs
         classpath = testSourceSet.get().runtimeClasspath
         useJUnitPlatform()
-        shouldRunAfter(tasks.named("test"))
     }
 }
 
@@ -148,7 +179,7 @@ registerVerificationTestTask("performanceTest", "Runs controlled performance tes
 registerVerificationTestTask("parityInventoryTest", "Runs legacy page and API inventory tests.")
 tasks.named<Test>("integrationTest") {
     filter {
-        includeTestsMatching("com.townpet.*.*ControllerTest")
+        integrationTestPatterns.forEach { includeTestsMatching(it) }
     }
 }
 tasks.named<Test>("modulithTest") {
@@ -174,10 +205,12 @@ tasks.named<Test>("performanceTest") {
 
 tasks.named("check") {
     dependsOn(tasks.named("jacocoTestReport"))
+    dependsOn(tasks.named("integrationTest"))
 }
 
 tasks.named<JacocoReport>("jacocoTestReport") {
-    dependsOn(tasks.named("test"))
+    dependsOn(tasks.named("test"), tasks.named("integrationTest"))
+    executionData(tasks.named<Test>("test"), tasks.named<Test>("integrationTest"))
     reports {
         xml.required.set(true)
         html.required.set(true)
@@ -186,7 +219,8 @@ tasks.named<JacocoReport>("jacocoTestReport") {
 }
 
 tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
-    dependsOn(tasks.named("test"))
+    dependsOn(tasks.named("test"), tasks.named("integrationTest"))
+    executionData(tasks.named<Test>("test"), tasks.named<Test>("integrationTest"))
     violationRules {
         rule {
             limit {
