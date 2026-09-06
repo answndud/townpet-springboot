@@ -87,6 +87,7 @@ reports/
 
 # Private project documentation and portfolio source
 docs/
+PLAN.md
 
 # Local agent instructions and generated/private deliverables
 AGENTS.md
