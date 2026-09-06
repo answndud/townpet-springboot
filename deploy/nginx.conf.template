@@ -29,6 +29,17 @@ server {
         proxy_pass http://$townpet_backend_upstream;
     }
 
+    location = /commercial { return 308 /marketplace; }
+    location ~ ^/users/(.*)$ { return 308 /members/$1; }
+    location = /lost/new { return 308 /lost-found/new; }
+    location ~ ^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map)(/|$) {
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        try_files $uri /index.html;
+    }
+    location = /robots.txt { add_header Cache-Control "public, max-age=14400" always; try_files $uri =404; }
+    location = /sitemap.xml { add_header Cache-Control "public, max-age=14400" always; try_files $uri =404; }
+    location ^~ /assets/ { try_files $uri =404; }
+
     location / {
         try_files $uri /index.html;
     }

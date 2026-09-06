@@ -332,6 +332,71 @@ function RoutePerformanceProbe({ path, startedAt }: { path: string; startedAt: n
   return null;
 }
 
+const SEO_BASE_URL = "https://townpet.cloud";
+const PRIVATE_ROUTE_PREFIXES = [
+  "/admin", "/profile", "/notifications", "/my-posts", "/saved", "/bookmarks",
+  "/login", "/password", "/verify-email", "/onboarding", "/corrections/new",
+  "/adoptions/new", "/marketplace/new", "/gatherings/new", "/care/new",
+  "/lost-found/new", "/lost/new", "/posts/new", "/guest/posts/new",
+  "/campaigns/neighborhood-map",
+];
+const SEARCH_PATHS = new Set(["/search", "/search/guest"]);
+const CANONICAL_ALIASES: Record<string, string> = {
+  "/commercial": "/marketplace",
+  "/users": "/members",
+  "/lost/new": "/lost-found/new",
+};
+
+function upsertMeta(attribute: "name" | "property", key: string, content: string) {
+  let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
+  if (!element) {
+    element = document.createElement("meta");
+    element.setAttribute(attribute, key);
+    document.head.appendChild(element);
+  }
+  element.content = content;
+}
+
+function applySeo(location: { pathname: string }) {
+  const rawPath = location.pathname || "/";
+  const canonicalPath = Object.entries(CANONICAL_ALIASES).find(([alias]) => rawPath === alias || rawPath.startsWith(`${alias}/`))?.[1]
+    ? rawPath.replace(/^\/commercial(?=\/|$)/, "/marketplace").replace(/^\/users(?=\/|$)/, "/members").replace(/^\/lost\/new$/, "/lost-found/new")
+    : rawPath;
+  const isPrivate = PRIVATE_ROUTE_PREFIXES.some((prefix) => rawPath === prefix || rawPath.startsWith(`${prefix}/`));
+  const isSearch = SEARCH_PATHS.has(rawPath);
+  const noindex = isPrivate || isSearch || rawPath === "/404";
+  const titleByPath: Array<[string, string, string]> = [
+    ["/", "우리 동네 반려생활 정보", "우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하세요."],
+    ["/terms", "이용약관", "TownPet 공개 커뮤니티 이용약관입니다."],
+    ["/privacy", "개인정보 처리방침", "TownPet portfolio sandbox의 개인정보 처리방침입니다."],
+    ["/best", "인기 게시글", "TownPet에서 추천 수가 높은 공개 반려생활 게시글을 확인하세요."],
+    ["/boards", "공개 커뮤니티 게시판", "반려생활에 도움이 되는 TownPet 공개 커뮤니티 게시판입니다."],
+    ["/marketplace", "동네 거래", "우리 동네 반려생활 용품과 나눔 정보를 확인하세요."],
+    ["/lost-found", "분실·목격", "반려동물 분실과 발견 정보를 확인하고 공유하세요."],
+    ["/guides", "지역 가이드", "병원·산책·복지 등 지역 반려생활 정보를 확인하세요."],
+    ["/gatherings", "동네 모임", "반려생활을 함께하는 동네 모임 정보를 확인하세요."],
+    ["/care", "이웃 돌봄", "우리 동네 반려동물 돌봄 정보를 확인하세요."],
+    ["/volunteer", "봉사 기회", "반려동물과 지역을 위한 봉사 기회를 확인하세요."],
+    ["/hospital-reviews", "동물병원 후기", "반려생활에 도움이 되는 동물병원 후기를 확인하세요."],
+  ];
+  const match = titleByPath.find(([path]) => rawPath === path || (path !== "/" && rawPath.startsWith(`${path}/`)));
+  const title = match?.[1] ?? (noindex ? "TownPet" : "반려생활 커뮤니티");
+  const description = match?.[2] ?? "TownPet 공개 반려생활 커뮤니티의 정보와 이야기를 확인하세요.";
+  document.title = `TownPet | ${title}`;
+  upsertMeta("name", "description", description);
+  upsertMeta("name", "robots", noindex ? "noindex,nofollow" : "index,follow");
+  upsertMeta("property", "og:title", document.title);
+  upsertMeta("property", "og:description", description);
+  upsertMeta("property", "og:url", `${SEO_BASE_URL}${canonicalPath}`);
+  let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.rel = "canonical";
+    document.head.appendChild(canonical);
+  }
+  canonical.href = `${SEO_BASE_URL}${canonicalPath}`;
+}
+
 function AppShell() {
   const location = useLocation();
   const routeKey = `${location.pathname}${location.search}`;
@@ -344,25 +409,7 @@ function AppShell() {
     installPerformanceObservers();
   }, []);
 
-  useEffect(() => {
-    const titleByPath: Array<[string, string]> = [
-      ["/login", "로그인"],
-      ["/password/reset", "비밀번호 재설정"],
-      ["/verify-email", "이메일 인증"],
-      ["/onboarding", "내 동네 설정"],
-      ["/boards", "공통게시판"],
-      ["/animals", "동물 게시판"],
-      ["/notifications", "알림"],
-      ["/marketplace", "동네 거래"],
-      ["/lost-found", "분실·목격"],
-      ["/search", "반려생활 정보 검색"],
-      ["/best", "인기 게시글"],
-      ["/admin", "운영 콘솔"],
-      ["/admin/mfa", "운영자 MFA"],
-    ];
-    const match = titleByPath.find(([path]) => location.pathname === path || location.pathname.startsWith(`${path}/`));
-    document.title = match ? `TownPet | ${match[1]}` : location.pathname === "/" ? "TownPet | 우리 동네 반려생활 정보" : "TownPet | 반려생활 커뮤니티";
-  }, [location.pathname]);
+  useEffect(() => applySeo(location), [location.pathname]);
 
   return (
     <div className="app-shell-bg">

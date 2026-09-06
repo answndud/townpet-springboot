@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /profile
+Disallow: /notifications
+Disallow: /my-posts
+Disallow: /saved
+Disallow: /bookmarks
+Disallow: /login
+Disallow: /password/
+Disallow: /verify-email
+Disallow: /onboarding
+Disallow: /posts/new
+Disallow: /guest/posts/new
+Disallow: /corrections/new
+Disallow: /adoptions/new
+Disallow: /marketplace/new
+Disallow: /gatherings/new
+Disallow: /care/new
+Disallow: /lost-found/new
+Disallow: /lost/new
+Disallow: /search
+Disallow: /campaigns/neighborhood-map
+
+Sitemap: https://townpet.cloud/sitemap.xml
