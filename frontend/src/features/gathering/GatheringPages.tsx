@@ -1,9 +1,10 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, gatheringApi, type Gathering } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
 import { formatDateMediumTime } from "../../utils/date";
+import { setDynamicSeo } from "../../utils/seo";
 
 function date(value: string) { return formatDateMediumTime(value); }
 
@@ -23,6 +24,10 @@ export function GatheringDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const error = requestError instanceof ApiError && requestError.status === 404 ? "모임을 찾을 수 없습니다." : requestError ? "모임을 불러오지 못했습니다." : actionError;
+  useEffect(() => {
+    if (item) setDynamicSeo({ title: item.title, description: item.description, canonicalPath: `/gatherings/${item.id}` });
+    else if (requestError) setDynamicSeo({ title: "페이지를 찾을 수 없습니다", description: error ?? "모임을 불러오지 못했습니다.", canonicalPath: `/gatherings/${gatheringId}`, indexable: false });
+  }, [error, gatheringId, item, requestError]);
   async function change(action: "join" | "leave" | "cancel") { if (saving) return; setSaving(true); setActionError(null); try { await gatheringApi[action](gatheringId); retry(); } catch (requestError) { if (requestError instanceof ApiError && requestError.status === 401) navigate(`/login?next=/gatherings/${gatheringId}`); else setActionError(requestError instanceof ApiError ? requestError.message : "요청을 처리하지 못했습니다."); } finally { setSaving(false); } }
   if (error && !item) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/gatherings">목록으로</Link></section></main>;
   if (!item || loading) return <main className="page placeholder-page"><section className="surface-card" role="status">모임을 불러오는 중...</section></main>;

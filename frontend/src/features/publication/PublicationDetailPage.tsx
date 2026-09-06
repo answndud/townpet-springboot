@@ -14,6 +14,7 @@ import {
 } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { formatDateTimeLong } from "../../utils/date";
+import { setDynamicSeo } from "../../utils/seo";
 import { PublicationCommentThread } from "./components/PublicationCommentThread";
 
 const PUBLICATION_BOARD_META: Record<Publication["type"], { label: string; path: string }> = {
@@ -78,6 +79,21 @@ export default function PublicationDetailPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState<TrustReportReason>("OTHER");
   const [reportDetail, setReportDetail] = useState("");
+
+  useEffect(() => {
+    if (publication) {
+      setDynamicSeo({
+        title: publication.title,
+        description: publication.body,
+        canonicalPath: `/posts/${publication.id}`,
+        type: "article",
+        datePublished: publication.createdAt,
+        dateModified: publication.updatedAt,
+      });
+    } else if (error) {
+      setDynamicSeo({ title: "페이지를 찾을 수 없습니다", description: error, canonicalPath: `/posts/${publicationId}`, indexable: false });
+    }
+  }, [error, publication, publicationId]);
 
   useEffect(() => {
     const controller = new AbortController();

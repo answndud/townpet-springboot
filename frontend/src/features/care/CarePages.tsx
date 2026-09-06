@@ -1,9 +1,10 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, careApi, type CareApplication, type CareAssignment, type CareRequest } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
 import { formatDateTime } from "../../utils/date";
+import { setDynamicSeo } from "../../utils/seo";
 
 const statusLabel = { OPEN: "모집 중", MATCHED: "매칭됨", CANCELLED: "취소", EXPIRED: "만료" } as const;
 
@@ -36,6 +37,10 @@ export function CareDetailPage() {
   const request = data?.request ?? null;
   const applications = data?.applications ?? [];
   const assignment = data?.assignment ?? null;
+  useEffect(() => {
+    if (request) setDynamicSeo({ title: request.title, description: request.description, canonicalPath: `/care/${request.id}` });
+    else if (requestError) setDynamicSeo({ title: "페이지를 찾을 수 없습니다", description: error ?? "돌봄 요청을 불러오지 못했습니다.", canonicalPath: `/care/${requestId}`, indexable: false });
+  }, [error, request, requestError, requestId]);
 
   async function apply() {
     if (!message.trim() || pendingAction) return;

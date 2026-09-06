@@ -1,8 +1,9 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ApiError, localResourceApi, type LocalResource, type LocalResourceKind } from "../../api/client";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
 import { formatDateOnly } from "../../utils/date";
+import { setDynamicSeo } from "../../utils/seo";
 
 const labels: Record<LocalResourceKind, string> = { LOCAL_GUIDE: "지역 가이드", WELFARE: "복지 안내", CARE: "케어 가이드" };
 
@@ -56,6 +57,10 @@ export function LocalCareDetailPage() {
   const { resourceId = "" } = useParams();
   const { data: item, error: requestError } = useAbortableRequest<LocalResource>((signal) => localResourceApi.detail(resourceId, signal), [resourceId]);
   const error = requestError instanceof ApiError && requestError.status === 404 ? "정보를 찾을 수 없습니다." : requestError ? "정보를 불러오지 못했습니다." : null;
+  useEffect(() => {
+    if (item) setDynamicSeo({ title: item.title, description: item.summary, canonicalPath: `/guides/${item.id}`, type: "article", dateModified: item.updatedAt });
+    else if (requestError) setDynamicSeo({ title: "페이지를 찾을 수 없습니다", description: error ?? "정보를 불러오지 못했습니다.", canonicalPath: `/guides/${resourceId}`, indexable: false });
+  }, [error, item, requestError, resourceId]);
   if (error) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/guides">목록으로</Link></section></main>;
   if (!item) return <main className="page placeholder-page"><section className="surface-card" role="status">정보를 불러오는 중...</section></main>;
   return <main className="page localcare-page"><Link className="publication-text-link" to="/guides">목록으로</Link><article className="surface-card localcare-detail"><span className="publication-chip publication-chip-primary">{labels[item.kind]}</span><h1>{item.title}</h1><p className="localcare-summary">{item.summary}</p><div className="localcare-content">{item.content}</div><footer><span>출처: {item.sourceName}</span><span>최종 확인: {formatDateOnly(item.updatedAt)}</span>{item.sourceUrl ? <a href={item.sourceUrl} rel="noreferrer" target="_blank">원문 보기</a> : null}</footer></article></main>;

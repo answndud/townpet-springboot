@@ -10,6 +10,7 @@ import {
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
 import { formatDateTime } from "../../utils/date";
+import { setDynamicSeo } from "../../utils/seo";
 
 const KIND_LABELS: Record<MarketplaceListingKind, string> = {
   SELL: "판매",
@@ -89,6 +90,10 @@ export function MarketplaceDetailPage() {
   const [changing, setChanging] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const error = requestError instanceof ApiError && requestError.status === 404 ? "거래 정보를 찾을 수 없습니다." : requestError ? "거래 정보를 불러오지 못했습니다." : actionError;
+  useEffect(() => {
+    if (listing) setDynamicSeo({ title: listing.title, description: listing.description, canonicalPath: `/marketplace/${listing.id}` });
+    else if (requestError) setDynamicSeo({ title: "페이지를 찾을 수 없습니다", description: error ?? "거래 정보를 불러오지 못했습니다.", canonicalPath: `/marketplace/${listingId}`, indexable: false });
+  }, [error, listing, listingId, requestError]);
 
   async function changeStatus(status: MarketplaceListingStatus) {
     if (!listing || changing) return;

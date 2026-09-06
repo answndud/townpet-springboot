@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ApiError,
@@ -9,6 +9,7 @@ import {
 } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
+import { setDynamicSeo } from "../../utils/seo";
 
 const kindLabel: Record<LostFoundAlertKind, string> = { LOST: "분실", FOUND: "발견" };
 const statusLabel = { ACTIVE: "진행 중", RESOLVED: "해결", CLOSED: "종료" } as const;
@@ -71,6 +72,10 @@ export function LostFoundDetailPage() {
   const alert = data?.alert ?? null;
   const sightings = data?.sightings ?? [];
   const error = requestError instanceof ApiError && requestError.status === 404 ? "제보를 찾을 수 없습니다." : requestError ? "제보를 불러오지 못했습니다." : actionError;
+  useEffect(() => {
+    if (alert) setDynamicSeo({ title: alert.title, description: alert.description, canonicalPath: `/lost-found/${alert.id}` });
+    else if (requestError) setDynamicSeo({ title: "페이지를 찾을 수 없습니다", description: error ?? "제보를 불러오지 못했습니다.", canonicalPath: `/lost-found/${alertId}`, indexable: false });
+  }, [alert, alertId, error, requestError]);
   async function changeStatus(status: "ACTIVE" | "RESOLVED" | "CLOSED") { if (!alert || pendingStatus) return; setPendingStatus(status); setActionError(null); try { const input = status === "ACTIVE" ? { status, reopenReason: "추가 목격 제보" } : status === "RESOLVED" ? { status, resolutionOutcome: "보호자에게 인계됨" } : { status, closeReason: "제보 종료" }; await lostFoundApi.changeStatus(alert.id, input); retry(); } catch (requestError) { if (requestError instanceof ApiError && requestError.status === 401) { navigate(`/login?next=/lost-found/${alert.id}`); return; } setActionError("상태를 변경하지 못했습니다."); } finally { setPendingStatus(null); } }
   if (loading) return <main className="page lostfound-page"><section className="surface-card" role="status">제보를 불러오는 중...</section></main>;
   if (!alert || error) return <main className="page lostfound-page marketplace-state"><section className="surface-card"><h1>{error ?? "제보를 찾을 수 없습니다"}</h1><Link className="button button-soft" to="/lost-found">목록으로</Link></section></main>;
