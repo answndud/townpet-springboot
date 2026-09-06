@@ -3,6 +3,11 @@ map $uri $townpet_cache_control {
     ~^/assets/ "public, max-age=31536000, immutable";
 }
 
+map $uri $townpet_robots_tag {
+    default "";
+    ~^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map)(/|$) "noindex, nofollow";
+}
+
 resolver 127.0.0.11 valid=30s ipv6=off;
 
 server {
@@ -20,6 +25,7 @@ server {
     add_header Permissions-Policy "camera=(), geolocation=(), microphone=()" always;
     add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://${TOWNPET_MEDIA_DOMAIN}; font-src 'self' data:; connect-src 'self' https://${TOWNPET_MEDIA_DOMAIN}" always;
     add_header Cache-Control $townpet_cache_control always;
+    add_header X-Robots-Tag $townpet_robots_tag always;
 
     location /api/ {
         proxy_set_header Host $host;
@@ -29,13 +35,9 @@ server {
         proxy_pass http://$townpet_backend_upstream;
     }
 
-    location = /commercial { return 308 /marketplace; }
-    location ~ ^/users/(.*)$ { return 308 /members/$1; }
-    location = /lost/new { return 308 /lost-found/new; }
-    location ~ ^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map)(/|$) {
-        add_header X-Robots-Tag "noindex, nofollow" always;
-        try_files $uri /index.html;
-    }
+    location = /commercial { return 308 https://$host/marketplace; }
+    location ~ ^/users/(.*)$ { return 308 https://$host/members/$1; }
+    location = /lost/new { return 308 https://$host/lost-found/new; }
     location = /robots.txt { add_header Cache-Control "public, max-age=14400" always; try_files $uri =404; }
     location = /sitemap.xml { add_header Cache-Control "public, max-age=14400" always; try_files $uri =404; }
     location ^~ /assets/ { try_files $uri =404; }
