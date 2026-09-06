@@ -38,6 +38,10 @@ server {
     add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://${TOWNPET_MEDIA_DOMAIN}; font-src 'self' data:; connect-src 'self' https://${TOWNPET_MEDIA_DOMAIN}" always;
     add_header Cache-Control $townpet_cache_control always;
     add_header X-Robots-Tag $townpet_robots_tag always;
+    sub_filter_types text/html;
+    sub_filter_once on;
+    sub_filter 'content="index,follow"' 'content="$townpet_robots_meta"';
+    sub_filter 'href="https://townpet.cloud/"' 'href="https://townpet.cloud$townpet_canonical_path"';
 
     location /api/ {
         proxy_set_header Host $host;
@@ -64,10 +68,6 @@ server {
     }
 
     location ~ ^/(?:|login|password/reset|verify-email|admin|onboarding|boards|animals|profile|notifications|privacy|terms|my-posts|saved|bookmarks|search|corrections/new|best|adoptions|volunteer|hospital-reviews|towns|lounges/breeds|guides|campaigns/neighborhood-map|commercial|marketplace|gatherings|care|members|users|posts|guest/posts/new|lost-found|lost/new)(?:/.*)?$ {
-        sub_filter_types text/html;
-        sub_filter_once on;
-        sub_filter 'content="index,follow"' 'content="$townpet_robots_meta"';
-        sub_filter 'href="https://townpet.cloud/"' 'href="https://townpet.cloud$townpet_canonical_path"';
         try_files $uri /index.html;
     }
 
