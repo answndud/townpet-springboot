@@ -98,6 +98,17 @@ if ci_node_versions != docker_node_versions:
         f"CI contract failed: Node versions workflow={sorted(ci_node_versions)} docker={sorted(docker_node_versions)}"
     )
 
+caddyfile = Path("deploy/compose/Caddyfile.netcup").read_text()
+if caddyfile.count("resolvers 127.0.0.11") != 2:
+    raise SystemExit(
+        "CI contract failed: both public Caddy web upstreams must use Docker DNS resolution"
+    )
+netcup_compose = Path("deploy/compose/netcup.yml").read_text()
+if "name: townpet-internal" not in netcup_compose or "edge:\n    external: true" not in netcup_compose:
+    raise SystemExit(
+        "CI contract failed: netcup application and external edge networks are not explicit"
+    )
+
 print(
     "CI contract valid: pinned actions, pnpm setup/order, ignored-docs boundary, "
     f"pnpm={expected_pnpm}, node={','.join(sorted(ci_node_versions))}"

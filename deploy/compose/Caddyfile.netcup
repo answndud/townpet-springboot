@@ -1,12 +1,18 @@
 {$TOWNPET_DOMAIN} {
     reverse_proxy townpet-web:80 {
         header_up Host {http.request.host}
+        transport http {
+            resolvers 127.0.0.11
+        }
     }
 }
 
 {$TOWNPET_MEDIA_DOMAIN} {
     reverse_proxy townpet-web:80 {
         header_up Host {http.request.host}
+        transport http {
+            resolvers 127.0.0.11
+        }
     }
 }
 
