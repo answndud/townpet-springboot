@@ -62,26 +62,6 @@ log_event() {
   echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=$phase outcome=$1 duration_seconds=$duration_seconds${2:+ $2}"
 }
 
-web_is_ready() {
-  local web_health web_status
-  web_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-web 2>/dev/null || true)"
-  web_status="$(docker inspect --format '{{.State.Status}}' townpet-web 2>/dev/null || true)"
-
-  if [[ "$web_health" == "healthy" ]]; then
-    return 0
-  fi
-
-  # The edge smoke URL is the authoritative check for the public web path.
-  # Docker health can remain stale during a container/network replacement even
-  # after nginx is serving the expected response.
-  if [[ -n "$SMOKE_URL" && "$web_status" == "running" ]] && \
-    curl --fail --silent --show-error --location --max-time 10 "$SMOKE_URL" >/dev/null; then
-    return 0
-  fi
-
-  return 1
-}
-
 diagnostics() {
   set_phase "diagnostics"
   log_event "started"
@@ -157,22 +137,17 @@ log_event "success" "schema_version_present=true"
 set_phase "application"
 compose_bounded up -d minio minio-init backend web
 log_event "success"
-set_phase "edge_refresh"
-# The edge stack is a separate Compose project. Recreate/restart of web can
-# change its container IP, while Caddy may retain the old DNS result until it
-# is restarted. Refresh the edge after the application stack is up so smoke
-# checks use the current web container.
-edge_compose_bounded restart edge
-log_event "success" "upstream_dns_refreshed=true"
 
 ready=1
-set_phase "readiness"
+set_phase "web_local_readiness"
 for _ in $(seq 1 "$MAX_ATTEMPTS"); do
   backend_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
   web_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-web 2>/dev/null || true)"
-  if [[ "$backend_health" == "healthy" ]] && web_is_ready; then
+  web_status="$(docker inspect --format '{{.State.Status}}' townpet-web 2>/dev/null || true)"
+  if [[ "$backend_health" == "healthy" && "$web_status" == "running" ]] && \
+    docker exec townpet-web wget -qO- http://127.0.0.1/index.html >/dev/null 2>&1; then
     ready=0
-    log_event "success" "backend_health=$backend_health web_health=$web_health web_readiness=verified"
+    log_event "success" "backend_health=$backend_health web_health=$web_health web_readiness=local_http"
     break
   fi
   sleep "$SLEEP_SECONDS"
@@ -180,6 +155,14 @@ done
 
 if [[ "$ready" -ne 0 ]]; then
   log_event "failed" "reason=readiness_timeout backend_health=${backend_health:-unknown} web_health=${web_health:-unknown} attempts=$MAX_ATTEMPTS"
+fi
+
+if [[ "$ready" -eq 0 ]]; then
+  set_phase "edge_refresh"
+  # The edge stack is a separate Compose project. Recreating web changes its
+  # container IP, so force-recreate Caddy only after local web HTTP is ready.
+  edge_compose_bounded up -d --force-recreate edge
+  log_event "success" "upstream_dns_refreshed=true"
 fi
 
 if [[ "$ready" -eq 0 && -n "$SMOKE_URL" ]]; then
