@@ -42,7 +42,7 @@ services:
     volumes:
       - townpet-local-media:/app/.townpet
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness | grep -q UP"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -60,7 +60,7 @@ services:
     volumes:
       - townpet-minio-data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/ready"]
       interval: 5s
       timeout: 5s
       retries: 12

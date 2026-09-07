@@ -10,7 +10,7 @@ LOG_FILE="$RUN_DIR/backend.log"
 
 mkdir -p "$RUN_DIR"
 if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-  if curl -fsS "http://localhost:${PORT}/actuator/health" >/dev/null 2>&1; then
+  if curl -fsS "http://localhost:${PORT}/actuator/health/readiness" >/dev/null 2>&1; then
     echo "Performance backend is already running on port $PORT"
     exit 0
   fi
@@ -32,7 +32,7 @@ nohup env \
 echo $! > "$PID_FILE"
 
 for attempt in $(seq 1 90); do
-  if curl -fsS "http://localhost:${PORT}/actuator/health" >/dev/null 2>&1; then
+  if curl -fsS "http://localhost:${PORT}/actuator/health/readiness" >/dev/null 2>&1; then
     echo "Performance backend ready: http://localhost:${PORT}"
     exit 0
   fi

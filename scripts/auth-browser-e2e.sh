@@ -40,7 +40,7 @@ TOWNPET_DB_PASSWORD="townpet_local_dev" \
 backend_pid=$!
 
 for _ in {1..90}; do
-  if curl --fail --silent http://127.0.0.1:8080/actuator/health >/dev/null; then
+  if curl --fail --silent http://127.0.0.1:8080/actuator/health/readiness >/dev/null; then
     break
   fi
   if ! kill -0 "${backend_pid}" 2>/dev/null; then
@@ -49,7 +49,7 @@ for _ in {1..90}; do
   fi
   sleep 1
 done
-if ! curl --fail --silent http://127.0.0.1:8080/actuator/health >/dev/null; then
+if ! curl --fail --silent http://127.0.0.1:8080/actuator/health/readiness >/dev/null; then
   cat "${BACKEND_LOG}"
   exit 1
 fi

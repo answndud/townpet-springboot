@@ -83,6 +83,8 @@ if "Container scan (manual)" not in workflow_text or "Browser smoke (manual)" no
     raise SystemExit("CI contract failed: manual deep-check classification is missing")
 if "Frontend container runtime smoke" not in workflow_text:
     raise SystemExit("CI contract failed: frontend image runtime smoke is missing")
+if "Validate resolved Compose contracts" not in workflow_text or "-f deploy/compose/edge.yml config" not in workflow_text:
+    raise SystemExit("CI contract failed: resolved Compose contract validation is missing")
 if re.search(r"^\s+push:\s*$", release_text, re.MULTILINE):
     raise SystemExit("CI contract failed: release workflow must remain manual")
 configured_pnpm = set(re.findall(r"^\s*version:\s*([0-9]+\.[0-9]+\.[0-9]+)\s*$", workflow_text, re.MULTILINE))
@@ -122,6 +124,34 @@ if not re.search(r"edge:\n\s+aliases:\n\s+- townpet-web", netcup_compose):
     raise SystemExit(
         "CI contract failed: web must expose a stable townpet-web alias on the external edge network"
     )
+
+local_compose = Path("deploy/compose/local.yml").read_text()
+portfolio_compose = Path("deploy/compose/portfolio.yml").read_text()
+for name, compose_text in {
+    "local": local_compose,
+    "portfolio": portfolio_compose,
+    "netcup": netcup_compose,
+}.items():
+    if "/actuator/health/readiness" not in compose_text:
+        raise SystemExit(
+            f"CI contract failed: {name} compose backend healthcheck must use readiness"
+        )
+    if "TOWNPET_DB_URL" not in compose_text or "TOWNPET_DB_USERNAME" not in compose_text:
+        raise SystemExit(
+            f"CI contract failed: {name} compose backend datasource must use TOWNPET_DB_*"
+        )
+if "healthcheck:" not in portfolio_compose.split("\nvolumes:", 1)[0].split("\n  web:", 1)[1]:
+    raise SystemExit("CI contract failed: portfolio web healthcheck is missing")
+for script_name in (
+    "scripts/frontend-backend-smoke.sh",
+    "scripts/auth-browser-e2e.sh",
+    "scripts/performance/start.sh",
+):
+    script_text = Path(script_name).read_text()
+    if "/actuator/health\"" in script_text or "/actuator/health)" in script_text:
+        raise SystemExit(
+            f"CI contract failed: {script_name} contains a non-readiness health probe"
+        )
 
 print(
     "CI contract valid: pinned actions, pnpm setup/order, ignored-docs boundary, "

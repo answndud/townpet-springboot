@@ -25,10 +25,10 @@ cd "${ROOT_DIR}"
 ./gradlew bootRun --args='--spring.profiles.active=smoke' >"${backend_log}" 2>&1 &
 backend_pid=$!
 for _ in {1..60}; do
-  if curl --fail --silent http://127.0.0.1:8080/actuator/health >/dev/null; then break; fi
+  if curl --fail --silent http://127.0.0.1:8080/actuator/health/readiness >/dev/null; then break; fi
   sleep 1
 done
-curl --fail --silent http://127.0.0.1:8080/actuator/health | grep -q '"status":"UP"'
+curl --fail --silent http://127.0.0.1:8080/actuator/health/readiness | grep -q '"status":"UP"'
 
 cd "${ROOT_DIR}/frontend"
 corepack pnpm install --frozen-lockfile >/dev/null

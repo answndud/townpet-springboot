@@ -68,9 +68,9 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: production
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-townpet}
-      SPRING_DATASOURCE_USERNAME: ${APP_DB_USER:?set APP_DB_USER}
-      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD}
+      TOWNPET_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-townpet}
+      TOWNPET_DB_USERNAME: ${APP_DB_USER:?set APP_DB_USER}
+      TOWNPET_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD}
       TOWNPET_MIGRATION_DB_USERNAME: ${MIGRATION_DB_USER:?set MIGRATION_DB_USER}
       TOWNPET_MIGRATION_DB_PASSWORD: ${MIGRATION_DB_PASSWORD:?set MIGRATION_DB_PASSWORD}
       TOWNPET_DEMO_DATA_ENABLED: ${TOWNPET_DEMO_DATA_ENABLED:-false}
@@ -100,7 +100,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness | grep -q UP"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -118,6 +118,12 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/index.html >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
 volumes:
   postgres-data:

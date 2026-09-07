@@ -132,6 +132,17 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: bash scripts/security-static-check.sh
       - run: bash scripts/validate-ci-contract.sh
+      - name: Validate resolved Compose contracts
+        run: |
+          set -euo pipefail
+          for compose_file in local.yml e2e.yml portfolio.yml; do
+            docker compose --env-file deploy/portfolio.env.example \
+              -f "deploy/compose/${compose_file}" config >/dev/null
+          done
+          docker compose --env-file deploy/netcup.env.example \
+            -f deploy/compose/netcup.yml config >/dev/null
+          docker compose --env-file deploy/edge.env.example \
+            -f deploy/compose/edge.yml config >/dev/null
       - run: bash -n scripts/*.sh deploy/*.sh
       - run: git diff --check
 
