@@ -160,6 +160,10 @@ done
 
 if [[ "$ready" -ne 0 ]]; then
   log_event "failed" "reason=readiness_timeout backend_health=${backend_health:-unknown} web_health=${web_health:-unknown} web_status=${web_status:-unknown} web_local_http=${web_local_http:-unknown} attempts=$MAX_ATTEMPTS"
+  # Preserve the failed image's state and logs before rollback replaces the
+  # container. Otherwise a restart loop is indistinguishable from a healthy
+  # rollback container in the final diagnostics.
+  diagnostics
 fi
 
 if [[ "$ready" -eq 0 ]]; then

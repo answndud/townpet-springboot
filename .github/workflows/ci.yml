@@ -93,6 +93,38 @@ jobs:
       - run: corepack pnpm test
       - run: corepack pnpm build
 
+  web-runtime-smoke:
+    name: Frontend container runtime smoke
+    needs: frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: deploy/Dockerfile.frontend
+          tags: townpet-web:runtime-smoke
+          load: true
+      - name: Start and probe frontend container
+        run: |
+          set -euo pipefail
+          trap 'docker rm -f townpet-web-runtime-smoke >/dev/null 2>&1 || true' EXIT
+          docker run -d --name townpet-web-runtime-smoke \
+            -e TOWNPET_DOMAIN=townpet.example.com \
+            -e TOWNPET_MEDIA_DOMAIN=media.townpet.example.com \
+            townpet-web:runtime-smoke
+          for attempt in $(seq 1 30); do
+            if docker exec townpet-web-runtime-smoke wget -qO- http://127.0.0.1/index.html >/dev/null 2>&1; then
+              test "$(docker inspect --format '{{.State.Status}}' townpet-web-runtime-smoke)" = running
+              exit 0
+            fi
+            sleep 2
+          done
+          docker inspect townpet-web-runtime-smoke
+          docker logs townpet-web-runtime-smoke
+          exit 1
+
   repository-security:
     name: Repository security policy
     runs-on: ubuntu-latest

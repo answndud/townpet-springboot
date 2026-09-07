@@ -81,6 +81,8 @@ if "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02" not in wor
     raise SystemExit("CI contract failed: promotion manifest artifact is not pinned")
 if "Container scan (manual)" not in workflow_text or "Browser smoke (manual)" not in workflow_text:
     raise SystemExit("CI contract failed: manual deep-check classification is missing")
+if "Frontend container runtime smoke" not in workflow_text:
+    raise SystemExit("CI contract failed: frontend image runtime smoke is missing")
 if re.search(r"^\s+push:\s*$", release_text, re.MULTILINE):
     raise SystemExit("CI contract failed: release workflow must remain manual")
 configured_pnpm = set(re.findall(r"^\s*version:\s*([0-9]+\.[0-9]+\.[0-9]+)\s*$", workflow_text, re.MULTILINE))
