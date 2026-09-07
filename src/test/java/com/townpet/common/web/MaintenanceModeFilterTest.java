@@ -49,4 +49,27 @@ class MaintenanceModeFilterTest {
 
     assertThat(mode.activeWrites()).isZero();
   }
+
+  @Test
+  void blocksUploadLifecycleRequestsWhileMarkerExists() throws Exception {
+    Path marker = tempDir.resolve("maintenance");
+    MaintenanceMode mode = new MaintenanceMode(marker.toString());
+    MaintenanceModeFilter filter = new MaintenanceModeFilter(mode);
+    Files.createFile(marker);
+    FilterChain chain = mock(FilterChain.class);
+
+    for (MockHttpServletRequest request :
+        new MockHttpServletRequest[] {
+          new MockHttpServletRequest("POST", "/api/v1/media/uploads"),
+          new MockHttpServletRequest("POST", "/api/v1/media/uploads/asset/finalize"),
+          new MockHttpServletRequest("PUT", "/api/v1/media/uploads/asset/content"),
+          new MockHttpServletRequest("POST", "/api/v1/media/uploads/asset/attachments/publications/post")
+        }) {
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      filter.doFilter(request, response, chain);
+      assertThat(response.getStatus()).isEqualTo(503);
+    }
+
+    org.mockito.Mockito.verifyNoInteractions(chain);
+  }
 }

@@ -16,6 +16,9 @@ umask 077
 : "${MAINTENANCE_FILE:=/tmp/townpet-maintenance}"
 : "${QUIESCE_TIMEOUT_SECONDS:=60}"
 : "${QUIESCE_POLL_SECONDS:=1}"
+: "${MINIO_PRESIGN_EXPIRY_SECONDS:=${TOWNPET_MINIO_PRESIGN_EXPIRY_SECONDS:-900}}"
+: "${UPLOAD_QUIESCE_GRACE_SECONDS:=30}"
+: "${INVENTORY_STABILITY_SECONDS:=1}"
 
 command -v docker >/dev/null || { echo "docker is required" >&2; exit 1; }
 mkdir -p "$BACKUP_DIR"
@@ -26,6 +29,7 @@ phase=initialization
 mkdir -p "$backup_root/media"
 backup_complete=0
 maintenance_enabled=0
+temp_dir="$(mktemp -d)"
 disable_maintenance() {
   if [ "$maintenance_enabled" -eq 1 ]; then
     docker exec "$BACKEND_CONTAINER" rm -f "$MAINTENANCE_FILE" >/dev/null 2>&1 || true
@@ -40,6 +44,7 @@ cleanup_failed_backup() {
 notify_backup_failure() {
   status="$?"
   disable_maintenance
+  rm -rf -- "$temp_dir"
   if [ "$status" -ne 0 ] && [ "$backup_complete" -ne 1 ]; then
     cleanup_failed_backup
     if [ -n "$BACKUP_ALERT_WEBHOOK_URL" ] && command -v curl >/dev/null 2>&1; then
@@ -80,26 +85,71 @@ case "$quiesce_state" in
   *) echo "write quiesce was not confirmed before timeout" >&2; exit 1 ;;
 esac
 
+phase=upload_quiesce
+pending_uploads="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT COUNT(*) FROM upload_asset WHERE status = 'UPLOADING'")"
+if [ "$pending_uploads" -gt 0 ]; then
+  pending_upload_seconds="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+    -c "SELECT COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(expires_at) - CURRENT_TIMESTAMP))), 0)::bigint FROM upload_asset WHERE status = 'UPLOADING'")"
+  upload_wait_seconds="$MINIO_PRESIGN_EXPIRY_SECONDS"
+  if [ "$pending_upload_seconds" -le 0 ]; then
+    upload_wait_seconds=0
+  elif [ "$pending_upload_seconds" -lt "$upload_wait_seconds" ]; then
+    upload_wait_seconds="$pending_upload_seconds"
+  fi
+  upload_quiesce_deadline=$(($(date +%s) + upload_wait_seconds + UPLOAD_QUIESCE_GRACE_SECONDS))
+  while [ "$(date +%s)" -lt "$upload_quiesce_deadline" ]; do
+    sleep "$QUIESCE_POLL_SECONDS"
+  done
+fi
+
+phase=minio_inventory_before
+docker exec "$MINIO_CONTAINER" mc alias set townpet-backup http://127.0.0.1:9000 \
+  "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" >/dev/null
+docker exec "$MINIO_CONTAINER" mc ls --recursive --json "townpet-backup/$MINIO_BUCKET" \
+  | sed -n 's/.*"key":"\([^"]*\)".*/\1/p' | sed '/^$/d' | sort > "$temp_dir/media-before"
+sleep "$INVENTORY_STABILITY_SECONDS"
+docker exec "$MINIO_CONTAINER" mc ls --recursive --json "townpet-backup/$MINIO_BUCKET" \
+  | sed -n 's/.*"key":"\([^"]*\)".*/\1/p' | sed '/^$/d' | sort > "$temp_dir/media-before-stable"
+if ! cmp -s "$temp_dir/media-before" "$temp_dir/media-before-stable"; then
+  echo "media object inventory changed before snapshot" >&2
+  exit 1
+fi
+
 phase=postgres_dump
 docker exec "$POSTGRES_CONTAINER" pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB" \
   > "$backup_root/postgres.dump"
 [ -s "$backup_root/postgres.dump" ] || { echo "postgres dump is empty" >&2; exit 1; }
 
 phase=minio_copy
-docker exec "$MINIO_CONTAINER" mc alias set townpet-backup http://127.0.0.1:9000 \
-  "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" >/dev/null
 docker exec "$MINIO_CONTAINER" sh -c "rm -rf /tmp/townpet-media-$backup_id && mkdir -p /tmp/townpet-media-$backup_id"
 docker exec "$MINIO_CONTAINER" mc mirror --overwrite \
   "townpet-backup/$MINIO_BUCKET" "/tmp/townpet-media-$backup_id"
 docker cp "$MINIO_CONTAINER:/tmp/townpet-media-$backup_id/." "$backup_root/media/"
 docker exec "$MINIO_CONTAINER" rm -rf "/tmp/townpet-media-$backup_id"
 
+phase=minio_inventory_after
+docker exec "$MINIO_CONTAINER" mc ls --recursive --json "townpet-backup/$MINIO_BUCKET" \
+  | sed -n 's/.*"key":"\([^"]*\)".*/\1/p' | sed '/^$/d' | sort > "$temp_dir/media-after"
+if ! cmp -s "$temp_dir/media-before-stable" "$temp_dir/media-after"; then
+  echo "media object inventory changed during snapshot" >&2
+  exit 1
+fi
+
 phase=reference_verify
 db_keys_file="$backup_root/.db-object-keys"
+abandoned_keys_file="$temp_dir/abandoned-object-keys"
 media_keys_file="$backup_root/.media-object-keys"
 docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-  -c 'SELECT object_key FROM upload_asset WHERE publication_id IS NOT NULL ORDER BY object_key' | sed '/^$/d' > "$db_keys_file"
-(cd "$backup_root/media" && find . -type f -printf '%P\n' | sort) > "$media_keys_file"
+  -c "SELECT object_key FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED') ORDER BY object_key" \
+  | sed '/^$/d' > "$db_keys_file"
+docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT object_key FROM upload_asset WHERE status = 'ABANDONED' ORDER BY object_key" \
+  | sed '/^$/d' > "$abandoned_keys_file"
+(cd "$backup_root/media" && find . -type f -print | sed 's#^\./##' | sort) > "$media_keys_file"
+comm -12 "$abandoned_keys_file" "$media_keys_file" | grep -q . && {
+  echo "abandoned upload asset still has a media object" >&2; exit 1;
+} || true
 comm -23 "$db_keys_file" "$media_keys_file" | grep -q . && {
   echo "database references media objects missing from backup" >&2; exit 1;
 } || true
@@ -113,19 +163,25 @@ comm -13 "$db_keys_file" "$media_keys_file" | grep -q . && {
   echo "created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "snapshot_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "duration_seconds=$(($(date +%s) - started_epoch))"
+  echo "minio_presign_expiry_seconds=$MINIO_PRESIGN_EXPIRY_SECONDS"
+  echo "upload_quiesce_grace_seconds=$UPLOAD_QUIESCE_GRACE_SECONDS"
+  echo "uploading_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status = 'UPLOADING'")"
+  echo "ready_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status = 'READY'")"
+  echo "attached_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status = 'ATTACHED'")"
+  echo "abandoned_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status = 'ABANDONED'")"
   echo "flyway_version=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1')"
   echo "source_backend_image=$(docker inspect --format '{{.Config.Image}}' "$BACKEND_CONTAINER" 2>/dev/null || true)"
   echo "source_web_image=$(docker inspect --format '{{.Config.Image}}' townpet-web 2>/dev/null || true)"
   echo "postgres_database=$POSTGRES_DB"
   echo "db_publications=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM publication')"
-  echo "db_upload_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM upload_asset WHERE publication_id IS NOT NULL')"
+  echo "db_upload_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED')")"
   echo "media_bucket=$MINIO_BUCKET"
   echo "media_objects=$(find "$backup_root/media" -type f | wc -l | tr -d ' ')"
   echo "media_bytes=$(du -sk "$backup_root/media" | awk '{print $1 * 1024}')"
   echo "db_object_keys_sha256=$(sha256sum "$db_keys_file" | awk '{print $1}')"
   echo "media_object_keys_sha256=$(sha256sum "$media_keys_file" | awk '{print $1}')"
 } > "$backup_root/manifest.txt"
-rm -f "$db_keys_file" "$media_keys_file"
+rm -f "$db_keys_file" "$media_keys_file" "$abandoned_keys_file"
 phase=checksum
 (cd "$backup_root" && find . -type f ! -name manifest.sha256 -print0 | sort -z | xargs -0 sha256sum > manifest.sha256)
 backup_complete=1

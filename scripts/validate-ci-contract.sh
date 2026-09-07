@@ -170,6 +170,10 @@ for required in (
     "source_backend_image=",
     "db_object_keys_sha256=",
     "media_object_keys_sha256=",
+    "status IN ('UPLOADING', 'READY', 'ATTACHED')",
+    "status = 'ABANDONED'",
+    "MINIO_PRESIGN_EXPIRY_SECONDS",
+    "media object inventory changed during snapshot",
 ):
     if required not in backup_script:
         raise SystemExit(f"CI contract failed: backup is missing {required}")

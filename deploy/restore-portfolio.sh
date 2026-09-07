@@ -60,10 +60,18 @@ SQL
 
 phase=reference_verify
 db_keys_file="$temp_dir/db-object-keys"
+abandoned_keys_file="$temp_dir/abandoned-object-keys"
 backup_keys_file="$temp_dir/backup-object-keys"
 docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-  -c 'SELECT object_key FROM upload_asset WHERE publication_id IS NOT NULL ORDER BY object_key' | sed '/^$/d' > "$db_keys_file"
-(cd "$BACKUP_ROOT/media" && find . -type f -printf '%P\n' | sort) > "$backup_keys_file"
+  -c "SELECT object_key FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED') ORDER BY object_key" \
+  | sed '/^$/d' > "$db_keys_file"
+docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT object_key FROM upload_asset WHERE status = 'ABANDONED' ORDER BY object_key" \
+  | sed '/^$/d' > "$abandoned_keys_file"
+(cd "$BACKUP_ROOT/media" && find . -type f -print | sed 's#^\./##' | sort) > "$backup_keys_file"
+comm -12 "$abandoned_keys_file" "$backup_keys_file" | grep -q . && {
+  echo "abandoned upload asset still has a media object" >&2; exit 1;
+} || true
 comm -23 "$db_keys_file" "$backup_keys_file" | grep -q . && {
   echo "database references media objects missing from backup" >&2; exit 1;
 } || true
@@ -88,7 +96,8 @@ docker exec "$MINIO_CONTAINER" rm -rf "/tmp/townpet-media-restore-$restore_id"
 
 expected_media_objects="$(find "$BACKUP_ROOT/media" -type f | wc -l | tr -d ' ')"
 phase=media_verify
-restored_object_listing="$(docker exec "$MINIO_CONTAINER" mc find "townpet-restore/$MINIO_BUCKET" --print '{{.Key}}')"
+restored_object_listing="$(docker exec "$MINIO_CONTAINER" mc ls --recursive --json "townpet-restore/$MINIO_BUCKET" \
+  | sed -n 's/.*"key":"\([^"]*\)".*/\1/p')"
 restored_media_objects="$(printf '%s\n' "$restored_object_listing" | sed '/^$/d' | wc -l | tr -d ' ')"
 [ "$expected_media_objects" = "$restored_media_objects" ] || {
   echo "restored media object count mismatch: expected=$expected_media_objects actual=$restored_media_objects" >&2
@@ -113,12 +122,23 @@ fi
 
 manifest_upload_assets="$(sed -n 's/^db_upload_assets=//p' "$BACKUP_ROOT/manifest.txt")"
 if [ -n "$manifest_upload_assets" ]; then
-  restored_upload_assets="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM upload_asset WHERE publication_id IS NOT NULL')"
+  restored_upload_assets="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED')")"
   [ "$manifest_upload_assets" = "$restored_upload_assets" ] || {
     echo "restored upload asset count mismatch: expected=$manifest_upload_assets actual=$restored_upload_assets" >&2
     exit 1
   }
 fi
+for asset_status in UPLOADING READY ATTACHED ABANDONED; do
+  manifest_status_key="$(printf '%s' "$asset_status" | tr '[:upper:]' '[:lower:]')_assets"
+  manifest_status_count="$(sed -n "s/^${manifest_status_key}=//p" "$BACKUP_ROOT/manifest.txt")"
+  if [ -n "$manifest_status_count" ]; then
+    restored_status_count="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status = '$asset_status'")"
+    [ "$manifest_status_count" = "$restored_status_count" ] || {
+      echo "restored upload asset status mismatch: status=$asset_status expected=$manifest_status_count actual=$restored_status_count" >&2
+      exit 1
+    }
+  fi
+done
 if [ -n "$RESTORE_HEALTH_URL" ]; then
   phase=application_verify
   curl --fail --silent --show-error --location --max-time 15 "$RESTORE_HEALTH_URL" >/dev/null

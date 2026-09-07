@@ -134,6 +134,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: bash scripts/security-static-check.sh
       - run: bash scripts/validate-ci-contract.sh
+      - run: bash scripts/backup-reference-policy-test.sh
       - name: Validate resolved Compose contracts
         run: |
           set -euo pipefail
