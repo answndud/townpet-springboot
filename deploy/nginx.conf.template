@@ -5,19 +5,43 @@ map $uri $townpet_cache_control {
 
 map $request_uri $townpet_robots_tag {
     default "";
-    ~^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map|search|terms|privacy)(/|\?|$) "noindex, nofollow";
+    ~^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map|search|terms|privacy|members)(/|\?|$) "noindex, nofollow";
     ~\? "noindex, nofollow";
 }
 
 map $request_uri $townpet_robots_meta {
     default "index,follow";
-    ~^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map|search|terms|privacy)(/|\?|$) "noindex,nofollow";
+    ~^/(admin|profile|notifications|my-posts|saved|bookmarks|login|password|verify-email|onboarding|corrections/new|adoptions/new|marketplace/new|gatherings/new|care/new|lost-found/new|lost/new|posts/new|guest/posts/new|campaigns/neighborhood-map|search|terms|privacy|members)(/|\?|$) "noindex,nofollow";
     ~\? "noindex,nofollow";
 }
 
 map $request_uri $townpet_canonical_path {
     default "/";
     ~^([^?]*) $1;
+}
+
+map $uri $townpet_page_title {
+    default "TownPet | 우리 동네 반려생활 정보";
+    ~^/marketplace/?$ "TownPet | 동네 거래";
+    ~^/lost-found/?$ "TownPet | 분실·목격";
+    ~^/guides/?$ "TownPet | 지역 가이드";
+    ~^/gatherings/?$ "TownPet | 동네 모임";
+}
+
+map $uri $townpet_page_description {
+    default "우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하는 TownPet입니다.";
+    ~^/marketplace/?$ "우리 동네 반려생활 용품과 나눔 정보를 확인하세요.";
+    ~^/lost-found/?$ "반려동물 분실과 발견 정보를 확인하고 공유하세요.";
+    ~^/guides/?$ "병원·산책·복지 등 지역 반려생활 정보를 확인하세요.";
+    ~^/gatherings/?$ "반려생활을 함께하는 동네 모임 정보를 확인하세요.";
+}
+
+map $uri $townpet_og_description {
+    default "우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하세요.";
+    ~^/marketplace/?$ "우리 동네 반려생활 용품과 나눔 정보를 확인하세요.";
+    ~^/lost-found/?$ "반려동물 분실과 발견 정보를 확인하고 공유하세요.";
+    ~^/guides/?$ "병원·산책·복지 등 지역 반려생활 정보를 확인하세요.";
+    ~^/gatherings/?$ "반려생활을 함께하는 동네 모임 정보를 확인하세요.";
 }
 
 resolver 127.0.0.11 valid=30s ipv6=off;
@@ -41,7 +65,12 @@ server {
     sub_filter_types text/html;
     sub_filter_once on;
     sub_filter 'content="index,follow"' 'content="$townpet_robots_meta"';
+    sub_filter '<title>TownPet | 우리 동네 반려생활 정보</title>' '<title>$townpet_page_title</title>';
+    sub_filter 'content="우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하는 TownPet입니다."' 'content="$townpet_page_description"';
+    sub_filter 'content="우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하세요."' 'content="$townpet_og_description"';
+    sub_filter_once off;
     sub_filter 'href="https://townpet.cloud/"' 'href="https://townpet.cloud$townpet_canonical_path"';
+    sub_filter 'content="https://townpet.cloud/"' 'content="https://townpet.cloud$townpet_canonical_path"';
 
     location /api/ {
         proxy_set_header Host $host;
