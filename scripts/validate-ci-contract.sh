@@ -116,6 +116,10 @@ if "name: townpet-internal" not in netcup_compose or "edge:\n    external: true"
     raise SystemExit(
         "CI contract failed: netcup application and external edge networks are not explicit"
     )
+if not re.search(r"edge:\n\s+aliases:\n\s+- townpet-web", netcup_compose):
+    raise SystemExit(
+        "CI contract failed: web must expose a stable townpet-web alias on the external edge network"
+    )
 
 print(
     "CI contract valid: pinned actions, pnpm setup/order, ignored-docs boundary, "

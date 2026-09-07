@@ -145,8 +145,12 @@ for _ in $(seq 1 "$MAX_ATTEMPTS"); do
   backend_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
   web_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-web 2>/dev/null || true)"
   web_status="$(docker inspect --format '{{.State.Status}}' townpet-web 2>/dev/null || true)"
+  web_local_http=0
+  if docker exec townpet-web wget -qO- http://127.0.0.1/index.html >/dev/null 2>&1; then
+    web_local_http=1
+  fi
   if [[ "$backend_health" == "healthy" && "$web_status" == "running" ]] && \
-    docker exec townpet-web wget -qO- http://127.0.0.1/index.html >/dev/null 2>&1; then
+    [[ "$web_local_http" == "1" ]]; then
     ready=0
     log_event "success" "backend_health=$backend_health web_health=$web_health web_readiness=local_http"
     break
@@ -155,7 +159,7 @@ for _ in $(seq 1 "$MAX_ATTEMPTS"); do
 done
 
 if [[ "$ready" -ne 0 ]]; then
-  log_event "failed" "reason=readiness_timeout backend_health=${backend_health:-unknown} web_health=${web_health:-unknown} attempts=$MAX_ATTEMPTS"
+  log_event "failed" "reason=readiness_timeout backend_health=${backend_health:-unknown} web_health=${web_health:-unknown} web_status=${web_status:-unknown} web_local_http=${web_local_http:-unknown} attempts=$MAX_ATTEMPTS"
 fi
 
 if [[ "$ready" -eq 0 ]]; then
