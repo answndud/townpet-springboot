@@ -38,10 +38,9 @@
 | HTTP 실패 | 0% |
 
 과거 V054 시점의 인덱스 전후 수치는 현재 publication 모델과 API가 달라
-대표 성과에서 제외했습니다. 과거 실험은
-`docs/성능/결과/공개-피드-인덱스-2026-08-12.md`에 보존되어 있으며, 현재
-baseline의 조건·raw artifact 규칙은
-[`docs/성능/성능-측정-방법론.md`](docs/성능/성능-측정-방법론.md)에 있습니다.
+대표 성과에서 제외했습니다. 현재 baseline의 조건·재현 명령·raw artifact 규칙은
+[`portfolio/evidence/feed-performance.md`](portfolio/evidence/feed-performance.md)에
+공개했습니다.
 현재 측정 원자료는 `build/performance/runs/20260907T063822Z-feed-read-baseline-d9923c0/`
 및 `build/performance/seeds/20260907T063817Z-large/`에 있습니다. calibration은
 backend 종료로 실패하여 대표 수치에 포함하지 않았습니다. 작업 트리는

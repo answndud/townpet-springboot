@@ -24,6 +24,8 @@ if [[ "${1:-}" == "--" ]]; then
   shift
 fi
 
+"${ROOT_DIR}/scripts/docker-runtime-preflight.sh"
+
 pnpm_cmd=(corepack pnpm)
 if [[ -n "${TOWNPET_PNPM_BIN:-}" ]]; then
   read -r -a pnpm_cmd <<< "${TOWNPET_PNPM_BIN}"

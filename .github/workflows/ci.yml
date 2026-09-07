@@ -55,6 +55,8 @@ jobs:
       - name: Validate release candidate
         if: github.event_name != 'pull_request'
         run: ./scripts/validate-release-candidate.sh
+      - name: Validate Docker-backed test runtime
+        run: ./scripts/docker-runtime-preflight.sh
       - name: Run full backend gate
         if: github.event_name == 'pull_request'
         run: ./gradlew check --configuration-cache --no-daemon --parallel
