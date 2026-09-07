@@ -63,7 +63,6 @@ server {
     add_header Cache-Control $townpet_cache_control always;
     add_header X-Robots-Tag $townpet_robots_tag always;
     sub_filter_types text/html;
-    sub_filter_once on;
     sub_filter 'content="index,follow"' 'content="$townpet_robots_meta"';
     sub_filter '<title>TownPet | 우리 동네 반려생활 정보</title>' '<title>$townpet_page_title</title>';
     sub_filter 'content="우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하는 TownPet입니다."' 'content="$townpet_page_description"';
