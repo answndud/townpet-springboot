@@ -62,6 +62,26 @@ log_event() {
   echo "event=deployment deployment_id=$DEPLOYMENT_ID phase=$phase outcome=$1 duration_seconds=$duration_seconds${2:+ $2}"
 }
 
+web_is_ready() {
+  local web_health web_status
+  web_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-web 2>/dev/null || true)"
+  web_status="$(docker inspect --format '{{.State.Status}}' townpet-web 2>/dev/null || true)"
+
+  if [[ "$web_health" == "healthy" ]]; then
+    return 0
+  fi
+
+  # The edge smoke URL is the authoritative check for the public web path.
+  # Docker health can remain stale during a container/network replacement even
+  # after nginx is serving the expected response.
+  if [[ -n "$SMOKE_URL" && "$web_status" == "running" ]] && \
+    curl --fail --silent --show-error --location --max-time 10 "$SMOKE_URL" >/dev/null; then
+    return 0
+  fi
+
+  return 1
+}
+
 diagnostics() {
   set_phase "diagnostics"
   log_event "started"
@@ -143,9 +163,9 @@ set_phase "readiness"
 for _ in $(seq 1 "$MAX_ATTEMPTS"); do
   backend_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-backend 2>/dev/null || true)"
   web_health="$(docker inspect --format '{{.State.Health.Status}}' townpet-web 2>/dev/null || true)"
-  if [[ "$backend_health" == "healthy" && "$web_health" == "healthy" ]]; then
+  if [[ "$backend_health" == "healthy" ]] && web_is_ready; then
     ready=0
-    log_event "success" "backend_health=$backend_health web_health=$web_health"
+    log_event "success" "backend_health=$backend_health web_health=$web_health web_readiness=verified"
     break
   fi
   sleep "$SLEEP_SECONDS"
