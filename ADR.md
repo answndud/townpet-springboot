@@ -1,6 +1,6 @@
 # Architecture Decision Record
 
-이 문서는 현재 `townpet-springboot`의 장기적인 기술 경계만 기록한다. 구현 순서와 미완료 기능은 [`PLAN.md`](PLAN.md), 목표 구조는 [`docs/개발/기술-요구사항.md`](docs/개발/기술-요구사항.md), 운영 절차는 `docs/운영/`에 둔다.
+이 문서는 현재 `townpet-springboot`의 장기적인 기술 경계만 기록한다. 구현 순서와 미완료 기능은 [`PLAN.md`](PLAN.md)에서 관리하고, 결정의 구현 근거는 저장소의 코드·migration·테스트·추적된 portfolio evidence를 사용한다.
 
 ## 상태 규칙
 
@@ -28,7 +28,6 @@ Legacy TownPet의 핵심 화면·URL·권한·상태·반응형 경험은 기준
 
 ### Evidence
 
-- `docs/개발/제품-요구사항.md`: 재작성 범위와 acceptance criteria
 - `src/test/resources/parity/matrix.yaml`: 페이지·API 기준선
 
 ## ADR-0002 - 도메인별 수직 전환으로 Spring 백엔드를 교체한다
@@ -384,7 +383,6 @@ Hetzner CX23 topology를 목표 후보로 유지하되, 실제 계정·도메인
 ### Evidence
 
 - `deploy/compose/portfolio.yml`
-- `docs/면접-복기/릴리스-검증-근거.md`: 실제 VPS 미실행 상태
 
 ## ADR-0024 - 두 포트폴리오 프로젝트를 netcup x86 VPS Lite 2에 함께 배포한다
 
@@ -418,7 +416,6 @@ netcup VPS Lite 2 G12s(4 vCore, 8GB RAM, 160GB SSD, x86)를 기본 배포 대상
 
 - `deploy/compose/netcup.yml`, `deploy/compose/edge.yml`, `deploy/compose/Caddyfile.netcup`: TownPet image-pull·공용 edge 구성
 - `deploy/Caddyfile.netcup.web`: edge 뒤 내부 HTTP-only web proxy 구성
-- `docs/운영/VPS-초기-구성-가이드.md`: 실제 실행 순서와 검증 기준
 - `/Users/alex/project/kinderp/deploy/docker-compose.netcup.yml` (VPS: `/opt/kinderp/deploy/docker-compose.netcup.yml`): KinderP MySQL·Redis·app·내부 Caddy 구성
 - [netcup VPS Lite 공식 가격·사양](https://www.netcup.com/en/server/vps-lite)
 
@@ -466,7 +463,6 @@ Actuator health/readiness, correlation id가 있는 구조화 log, JVM·HTTP·DB
 - `src/main/resources/application.yml`
 - `src/main/java/com/townpet/operations/WebVitalMetricController.java`
 - `src/main/java/com/townpet/common/web/RequestTraceFilter.java`
-- `docs/운영/관측성-가이드.md`
 
 ## ADR-0024 - SLO와 error budget은 측정 후 선언한다
 
@@ -747,7 +743,6 @@ resolved/closed 전환은 outcome과 close reason을 함께 기록하고 상태 
 
 - `src/main/java/com/townpet/identity/SessionController.java`
 - `src/test/resources/parity/matrix.yaml`: ADR-0040 제외 항목
-- `docs/개발/제품-요구사항.md`: 현재 social login 제외 범위
 
 ## 현재 적용 순서
 
@@ -777,7 +772,6 @@ H2에서는 production PostgreSQL 문법을 흉내 내지 않고 테스트 전�
 - `src/main/resources/db/migration/V063__security_rate_limit_window.sql`
 - `src/main/resources/db/migration/V064__moderator_mfa.sql`
 - `src/main/resources/db/migration/V065__moderator_mfa_audit_actions.sql`
-- `docs/보안/보안-개선-기록-2026-08-20.md`
 
 ## ADR-0042 - 알림 후속 처리는 PostgreSQL registry와 event-id dedup으로 bounded replay한다
 
