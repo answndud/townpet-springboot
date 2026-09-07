@@ -99,9 +99,17 @@ if ci_node_versions != docker_node_versions:
     )
 
 caddyfile = Path("deploy/compose/Caddyfile.netcup").read_text()
-if caddyfile.count("resolvers 127.0.0.11") != 2:
+if caddyfile.count("dynamic a townpet-web 80") != 2:
     raise SystemExit(
-        "CI contract failed: both public Caddy web upstreams must use Docker DNS resolution"
+        "CI contract failed: both public Caddy web upstreams must use dynamic Docker DNS discovery"
+    )
+if caddyfile.count("resolvers 127.0.0.11") != 2 or caddyfile.count("versions ipv4") != 2:
+    raise SystemExit(
+        "CI contract failed: both public Caddy dynamic upstreams must pin Docker DNS and IPv4"
+    )
+if re.search(r"reverse_proxy\s+townpet-web:80", caddyfile):
+    raise SystemExit(
+        "CI contract failed: static townpet-web upstream can retain a replaced container IP"
     )
 netcup_compose = Path("deploy/compose/netcup.yml").read_text()
 if "name: townpet-internal" not in netcup_compose or "edge:\n    external: true" not in netcup_compose:

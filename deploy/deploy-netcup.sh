@@ -69,6 +69,7 @@ diagnostics() {
   edge_compose ps >&2 || true
   for container in townpet-backend townpet-postgres townpet-minio townpet-minio-init townpet-web; do
     docker inspect --format "event=container_state deployment_id=$DEPLOYMENT_ID container={{.Name}} status={{.State.Status}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} restart_count={{.RestartCount}} oom_killed={{.State.OOMKilled}}" "$container" >&2 2>/dev/null || true
+    docker inspect --format "event=health_log deployment_id=$DEPLOYMENT_ID container={{.Name}} health_log={{json .State.Health.Log}}" "$container" >&2 2>/dev/null || true
   done
   compose logs --tail=200 postgres minio minio-init backend web >&2 || true
   edge_compose logs --tail=100 edge >&2 || true
