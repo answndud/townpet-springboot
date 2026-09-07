@@ -52,8 +52,8 @@ deploy/restore-portfolio.sh
 ## 검증 상태
 
 - 구현 및 script/unit 검증: 완료. P2 정책 fixture 4개 경계 통과
-- VPS production backup: 현재 정책으로 실행했으나, 만료된 `UPLOADING` 2건의 object가 이미 MinIO에서 사라져 참조 무결성 검증에서 의도적으로 실패. 운영 row/object를 임의 수정하지 않아 성공 paired backup은 아직 없음
-- VPS disposable DB·MinIO fresh restore: 현재 정책으로 historical backup을 복원했으나 같은 누락 `UPLOADING` 참조를 감지해 의도적으로 실패. 이전 정책의 application/signed media GET 성공은 historical 범위로만 유효
+- VPS production backup: stale `UPLOADING` 2건을 공식 cleanup 조건으로 정리한 뒤 현재 정책 backup 성공
+- VPS disposable DB·MinIO fresh restore: restore-capable MinIO credential을 명시해 checksum·DB/media key 대사·status count·media mirror 복구 성공. application/signed media GET은 backend를 포함한 별도 rehearsal에서 추가 확인 범위
 - netcup 서버 손실 복구: provider 전체 재구축이 아닌 disposable fresh-volume rehearsal까지만 검증
 
 | 실행 시각(UTC) | 환경 | 결과 | duration | 원자료 |
@@ -63,13 +63,17 @@ deploy/restore-portfolio.sh
 | 2026-09-07 09:16 UTC | netcup VPS disposable project `townpet-p5` | 성공: 실제 media 2개 포함 backup의 checksum·DB restore·runtime grant·DB/media key 대사·health·discovery API 통과 | 3s | `/opt/townpet/p5-rehearsal/restore-media-20260907.log`, source `/opt/backups/townpet-20260907T091030Z` |
 | 2026-09-07 12:24 UTC | netcup VPS production | 실패(의도된 차단): 현재 non-terminal 정책으로 만료 `UPLOADING` 2건의 DB key가 backup media에 없어 중단, maintenance marker cleanup 확인 | 약 40s | execution `p2-policy-20260907`, phase `reference_verify` |
 | 2026-09-07 12:26 UTC | netcup VPS disposable project `p2-restore-20260907` | 실패(의도된 차단): historical backup restore 후 동일한 누락 `UPLOADING` 참조를 감지, 새 volume/network는 종료·삭제 | 약 10s | execution `p2-disposable-restore-20260907`, phase `reference_verify` |
+| 2026-09-07 13:16 UTC | netcup VPS production | 성공: dry-run 2건·67,282 bytes 확인 후 expired non-attached `UPLOADING` cleanup, 현재 DB/media 정합성 backup 성공 | 4s | `/opt/backups/townpet-20260907T131623Z`, execution `p2-policy-clean-20260907`; 사전 dump `/opt/backups/upload-asset-before-p2-cleanup-20260907T131601Z.dump` |
+| 2026-09-07 13:17 UTC | netcup VPS disposable project `p2-restore-clean-root-20260907` | 성공: fresh volume에 checksum·DB restore·runtime grant·DB/media key 대사·media restore 통과; restore-capable credential 명시 | 3s | execution `p2-disposable-restore-clean-root-20260907`, source `/opt/backups/townpet-20260907T131623Z` |
 
 2026-09-07 09:10 production artifact와 그 fresh restore는 P2 정책 적용 전,
 `publication_id IS NOT NULL` 기준의 historical artifact다. 따라서 연결되지 않은 `READY`·
 `UPLOADING` asset을 보존하는 현재 정책의 성공 evidence로 사용하지 않는다. 12:24 이후의
-실행은 현재 정책이 운영 데이터 불일치를 정확히 차단했다는 실패 evidence다. 성공 paired
-backup을 만들려면 운영자가 만료된 `UPLOADING` row의 보존·정리 정책을 결정하고, 실제 DB와
-MinIO 상태를 정합하게 만든 뒤 backup과 fresh restore를 다시 실행해야 한다.
+실행은 현재 정책이 운영 데이터 불일치를 정확히 차단했다는 실패 evidence다. 13:16 이후
+실행은 기존 media lifecycle cleanup 조건(만료·비연결 `UPLOADING`)으로 stale row를 정리한
+뒤 생성한 현재 정책의 성공 paired backup이다. cleanup 전 row 전체는 별도 data-only dump로
+보관했으며, restore script는 application key가 아닌 restore-capable MinIO credential을
+명시적으로 요구한다.
 
 기존 08:08 UTC artifact는 `media_objects=0`, `db_upload_assets=0`이었다. 따라서 해당 실행의 media 검사는 빈 집합 통과이며 signed media GET evidence로 해석하지 않는다.
 
