@@ -34,8 +34,7 @@ export default function () {
     {
       title: `perf-write-${suffix}`,
       body: "Synthetic write-burst publication",
-      scope: "GLOBAL",
-      neighborhoodId: null,
+      type: "FREE_BOARD",
     },
     "write-publication-create",
     201,

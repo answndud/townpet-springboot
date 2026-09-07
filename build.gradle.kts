@@ -147,6 +147,7 @@ val integrationTestPatterns = listOf(
     "com.townpet.lostfound.LostFoundSightingControllerTest",
     "com.townpet.marketplace.MarketplaceListingControllerTest",
     "com.townpet.media.MediaControllerTest",
+    "com.townpet.notification.NotificationEventHandlerIntegrationTest",
     "com.townpet.performance.ReleaseCandidateQueryPlanTest",
     "com.townpet.platform.DatabaseBaselineTest",
     "com.townpet.publication.PublicationControllerTest",

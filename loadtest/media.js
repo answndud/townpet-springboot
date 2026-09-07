@@ -37,8 +37,7 @@ export default function () {
     {
       title: `perf-publication-media-${suffix}`,
       body: "Synthetic media publication",
-      scope: "GLOBAL",
-      neighborhoodId: null,
+      type: "FREE_BOARD",
     },
     "media-publication-create",
     201,

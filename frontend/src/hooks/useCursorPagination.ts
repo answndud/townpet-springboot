@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 
 export type CursorPage<T> = {
   items: T[];
-  page: { nextCursor: string | null; hasNext: boolean; totalPages?: number };
+  page: { nextCursor: string | null; hasNext: boolean };
 };
 
 type CursorPageResponse<T> = {
   items?: T[];
-  page?: { nextCursor?: string | null; hasNext?: boolean; totalPages?: number };
+  page?: { nextCursor?: string | null; hasNext?: boolean };
 };
 
 type CursorCache<T> = {
@@ -23,7 +23,7 @@ type CursorPaginationOptions<T> = {
   fetchPage: (cursor: string | undefined, signal: AbortSignal) => Promise<CursorPageResponse<T>>;
 };
 
-function normalizePage<T>(response: CursorPageResponse<T>, requestedPage: number): CursorPage<T> {
+function normalizePage<T>(response: CursorPageResponse<T>): CursorPage<T> {
   const page = response.page ?? {};
   const hasNext = page.hasNext === true;
   return {
@@ -31,7 +31,6 @@ function normalizePage<T>(response: CursorPageResponse<T>, requestedPage: number
     page: {
       nextCursor: page.nextCursor ?? null,
       hasNext,
-      totalPages: page.totalPages ?? (hasNext ? requestedPage + 1 : requestedPage),
     },
   };
 }
@@ -45,12 +44,11 @@ export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKe
     loading: boolean;
     error: string | null;
     hasNext: boolean;
-    totalPages: number;
-  }>({ items: [], loading: true, error: null, hasNext: false, totalPages: 1 });
+  }>({ items: [], loading: true, error: null, hasNext: false });
 
   useEffect(() => {
     if (!enabled) {
-      setResult({ items: [], loading: false, error: null, hasNext: false, totalPages: 1 });
+      setResult({ items: [], loading: false, error: null, hasNext: false });
       return;
     }
     const controller = new AbortController();
@@ -62,12 +60,12 @@ export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKe
     const targetPage = Math.max(1, page);
     const cached = cache.pages.get(targetPage);
     if (cached) {
-      setResult({ items: cached.items, loading: false, error: null, hasNext: cached.page.hasNext, totalPages: cached.page.totalPages ?? (cached.page.hasNext ? targetPage + 1 : targetPage) });
+      setResult({ items: cached.items, loading: false, error: null, hasNext: cached.page.hasNext });
       return () => controller.abort();
     }
 
     let active = true;
-    setResult({ items: [], loading: true, error: null, hasNext: false, totalPages: 1 });
+    setResult({ items: [], loading: true, error: null, hasNext: false });
     void (async () => {
       try {
         let startPage = 1;
@@ -83,7 +81,7 @@ export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKe
             continue;
           }
           const response = await fetchPageRef.current(cursor ?? undefined, controller.signal);
-          currentPage = normalizePage(response, requestedPage);
+          currentPage = normalizePage(response);
           cache.pages.set(requestedPage, currentPage);
           cache.cursors.set(requestedPage + 1, currentPage.page.nextCursor);
           cursor = currentPage.page.nextCursor;
@@ -91,10 +89,10 @@ export function useCursorPagination<T>({ enabled = true, page, pageSize, queryKe
         }
         if (!active || controller.signal.aborted) return;
         if (!currentPage || !cache.pages.has(targetPage)) {
-          setResult({ items: [], loading: false, error: "요청한 페이지를 찾을 수 없습니다.", hasNext: false, totalPages: 1 });
+          setResult({ items: [], loading: false, error: "요청한 페이지를 찾을 수 없습니다.", hasNext: false });
           return;
         }
-        setResult({ items: currentPage.items, loading: false, error: null, hasNext: currentPage.page.hasNext, totalPages: currentPage.page.totalPages ?? (currentPage.page.hasNext ? targetPage + 1 : targetPage) });
+        setResult({ items: currentPage.items, loading: false, error: null, hasNext: currentPage.page.hasNext });
       } catch (error) {
         if (!active || controller.signal.aborted) return;
         setResult((current) => ({ ...current, loading: false, error: error instanceof Error ? error.message : "게시글을 불러오지 못했습니다." }));

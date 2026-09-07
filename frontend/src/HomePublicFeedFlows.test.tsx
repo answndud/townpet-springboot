@@ -160,10 +160,10 @@ describe("Publication feed journeys", () => {
     render(<MemoryRouter initialEntries={["/?view=all&q=질문"]}><App /></MemoryRouter>);
 
     await screen.findByRole("heading", { name: "전체글" });
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/discovery?limit=20&query=%EC%A7%88%EB%AC%B8",
-      expect.objectContaining({ credentials: "include" }),
-    );
+    expect(fetchMock.mock.calls.some(([input, init]) =>
+      String(input) === "/api/v1/discovery?limit=20&query=%EC%A7%88%EB%AC%B8" &&
+      (init as RequestInit | undefined)?.credentials === "include",
+    )).toBe(true);
   });
 
 });

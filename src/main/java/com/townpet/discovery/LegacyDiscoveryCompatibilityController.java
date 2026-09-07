@@ -28,7 +28,7 @@ class LegacyDiscoveryCompatibilityController {
         feed.list(memberId, memberId != null, null, 20);
     return new FeedController.FeedResponse(
         page.items().stream().map(LegacyDiscoveryCompatibilityController::response).toList(),
-        new FeedController.PageInfo(page.nextCursor(), page.hasNext(), page.totalPages()));
+        new FeedController.PageInfo(page.nextCursor(), page.hasNext()));
   }
 
   private static FeedController.FeedItemResponse response(

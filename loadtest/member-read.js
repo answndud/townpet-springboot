@@ -20,7 +20,7 @@ export default function () {
     ["/api/v1/notifications", "notifications"],
     ["/api/v1/notifications/unread-count", "notification-count"],
     ["/api/v1/members/me/bookmarks", "bookmarks"],
-    ["/api/v1/feed?audience=VIEWER&limit=20", "member-feed"],
+    ["/api/v1/discovery?limit=20", "member-discovery"],
   ];
   const [path, name] = requests[Math.floor(Math.random() * requests.length)];
   const response = http.get(`${BASE_URL}${path}`, {

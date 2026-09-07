@@ -6,8 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Objects;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +28,8 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.jdbc.core.JdbcTemplate;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -59,6 +64,7 @@ class GatheringControllerTest {
   }
 
   @Autowired MockMvc mockMvc;
+  @Autowired JdbcTemplate jdbc;
 
   @Test
   void anonymousJoinIsRejected() throws Exception {
@@ -81,30 +87,84 @@ class GatheringControllerTest {
   void concurrentJoinsNeverExceedCapacityOrDuplicateParticipant() throws Exception {
     int capacity = 3;
     UUID gatheringId = createGathering(capacity);
-    ExecutorService executor = Executors.newFixedThreadPool(6);
+    List<UUID> members = seedConcurrencyMembers(10);
+    ExecutorService executor = Executors.newFixedThreadPool(members.size());
     CountDownLatch start = new CountDownLatch(1);
     try {
-      var futures = new java.util.ArrayList<Future<Boolean>>();
-      for (int i = 1; i <= 6; i++) {
-        Cookie session = login("demo-member-" + ((i % 3) + 1) + "@townpet.local");
+      var futures = new java.util.ArrayList<Future<Integer>>();
+      for (UUID member : members) {
         futures.add(executor.submit(() -> {
           start.await();
-          return mockMvc
-              .perform(post("/api/v1/gatherings/" + gatheringId + "/participants").cookie(session).with(csrf()))
-              .andReturn()
-              .getResponse()
-              .getStatus() == 200;
+          return joinStatus(gatheringId, member);
         }));
       }
       start.countDown();
-      for (Future<Boolean> future : futures) { future.get(); }
+      List<Integer> statuses = new java.util.ArrayList<>();
+      for (Future<Integer> future : futures) statuses.add(future.get());
+      assertEquals(3, statuses.stream().filter(status -> status == 200).count());
+      assertEquals(7, statuses.stream().filter(status -> status == 409).count());
+      assertEquals(0, statuses.stream().filter(status -> status >= 500).count());
       MvcResult detail = mockMvc.perform(get("/api/v1/gatherings/{id}", gatheringId)).andExpect(status().isOk()).andReturn();
       String body = detail.getResponse().getContentAsString();
       int joinedCount = com.jayway.jsonpath.JsonPath.read(body, "$.participantCount");
-      if (joinedCount > capacity) throw new AssertionError("Capacity exceeded: " + joinedCount);
+      assertEquals(capacity, joinedCount);
+      assertEquals(capacity, jdbc.queryForObject(
+          "select count(*) from gathering_participant where gathering_id = ?", Integer.class, gatheringId));
+      assertEquals(0, jdbc.queryForObject(
+          "select count(*) - count(distinct member_id) from gathering_participant where gathering_id = ?",
+          Integer.class, gatheringId));
     } finally {
       executor.shutdownNow();
     }
+  }
+
+  @Test
+  void concurrentDuplicateJoinsForSameMemberCreateOneParticipant() throws Exception {
+    UUID gatheringId = createGathering(10);
+    UUID member = seedConcurrencyMembers(1).getFirst();
+    ExecutorService executor = Executors.newFixedThreadPool(10);
+    CountDownLatch start = new CountDownLatch(1);
+    try {
+      var futures = new java.util.ArrayList<Future<Integer>>();
+      for (int i = 0; i < 10; i++) {
+        futures.add(executor.submit(() -> {
+          start.await();
+          return joinStatus(gatheringId, member);
+        }));
+      }
+      start.countDown();
+      List<Integer> statuses = new java.util.ArrayList<>();
+      for (Future<Integer> future : futures) statuses.add(future.get());
+      assertTrue(statuses.stream().allMatch(status -> status == 200));
+      assertEquals(1, jdbc.queryForObject(
+          "select count(*) from gathering_participant where gathering_id = ? and member_id = ?",
+          Integer.class, gatheringId, member));
+    } finally {
+      executor.shutdownNow();
+    }
+  }
+
+  private int joinStatus(UUID gatheringId, UUID member) throws Exception {
+    return mockMvc
+        .perform(
+            post("/api/v1/gatherings/{id}/participants", gatheringId)
+                .with(user(member.toString()).roles("MEMBER"))
+                .with(csrf()))
+        .andReturn()
+        .getResponse()
+        .getStatus();
+  }
+
+  private List<UUID> seedConcurrencyMembers(int count) {
+    List<UUID> members = new java.util.ArrayList<>();
+    for (int i = 1; i <= count; i++) {
+      UUID id = UUID.fromString("00000000-0000-4000-8100-000000000" + String.format("%03d", i));
+      jdbc.update(
+          "insert into member_account (id, email, nickname) values (?, ?, ?) on conflict (id) do nothing",
+          id, "concurrency-" + i + "@townpet.local", "concurrency-" + i);
+      members.add(id);
+    }
+    return members;
   }
 
   @Test

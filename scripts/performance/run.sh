@@ -24,13 +24,44 @@ esac
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-${SCENARIO}-${PROFILE}-$(git -C "$ROOT_DIR" rev-parse --short HEAD)"
 OUT_DIR="$ROOT_DIR/build/performance/runs/$RUN_ID"
 mkdir -p "$OUT_DIR"
+LATEST_SEED_METADATA="$(find "$ROOT_DIR/build/performance/seeds" -mindepth 2 -maxdepth 2 -name metadata.txt -print 2>/dev/null | sort | tail -1 || true)"
+WORKING_TREE_STATE="$(test -z "$(git -C "$ROOT_DIR" status --porcelain)" && echo clean || echo dirty)"
+WORKING_TREE_DIFF_SHA256="$({ git -C "$ROOT_DIR" diff --binary; git -C "$ROOT_DIR" diff --cached --binary; } | shasum -a 256 | cut -d ' ' -f1)"
+if [[ -n "$LATEST_SEED_METADATA" ]]; then
+  cp "$LATEST_SEED_METADATA" "$OUT_DIR/seed-metadata.txt"
+fi
+FIXTURE_SCALE="unknown"
+if [[ -n "$LATEST_SEED_METADATA" ]]; then
+  FIXTURE_SCALE="$(sed -n 's/^scale=//p' "$LATEST_SEED_METADATA" | head -1)"
+fi
+case "$PROFILE" in
+  smoke) PROFILE_STAGES='15s@1 warm-up; 30s@1'; WARMUP_SECONDS=15; MAX_VUS=1 ;;
+  baseline) PROFILE_STAGES='15s@1 warm-up; 2m@1'; WARMUP_SECONDS=15; MAX_VUS=1 ;;
+  calibration) PROFILE_STAGES='15s@1 warm-up; 3m@5'; WARMUP_SECONDS=15; MAX_VUS=5 ;;
+  ramp) PROFILE_STAGES='15s@1 warm-up; 5m@10; 5m@20; 5m@40'; WARMUP_SECONDS=15; MAX_VUS=40 ;;
+  soak) PROFILE_STAGES='30s@1 warm-up; 30m@5'; WARMUP_SECONDS=30; MAX_VUS=5 ;;
+  spike) PROFILE_STAGES='15s@1 warm-up; 30s@1; 30s@20; 1m@20; 30s@1'; WARMUP_SECONDS=15; MAX_VUS=20 ;;
+  contention) PROFILE_STAGES='10s@8; 20s@8'; WARMUP_SECONDS=0; MAX_VUS=8 ;;
+  *) PROFILE_STAGES='unknown'; WARMUP_SECONDS=unknown; MAX_VUS=unknown ;;
+esac
 {
   echo "run_id=$RUN_ID"
   echo "commit=$(git -C "$ROOT_DIR" rev-parse HEAD)"
+  echo "working_tree_state=$WORKING_TREE_STATE"
+  echo "working_tree_diff_sha256=$WORKING_TREE_DIFF_SHA256"
   echo "scenario=$SCENARIO"
   echo "profile=$PROFILE"
   echo "base_url=$BASE_URL"
   echo "k6_image=$K6_IMAGE"
+  echo "load_profile=$PROFILE"
+  echo "profile_stages=$PROFILE_STAGES"
+  echo "warmup_stage_seconds=$WARMUP_SECONDS"
+  echo "max_vus=$MAX_VUS"
+  echo "fixture_scale=$FIXTURE_SCALE"
+  echo "os=$(uname -srmo)"
+  echo "cpu=$(sysctl -n hw.ncpu 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo unknown)"
+  echo "memory_bytes=$(sysctl -n hw.memsize 2>/dev/null || awk '/MemTotal/ {print $2 * 1024}' /proc/meminfo 2>/dev/null || echo unknown)"
+  echo "jvm_options=${JAVA_TOOL_OPTIONS:-${JAVA_OPTS:-unset}}"
   echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "host=$(hostname)"
   echo "java=$(java -version 2>&1 | head -1)"
@@ -53,6 +84,9 @@ capture_resources() {
 export ALLOW_EXPECTED_CONFLICTS="${ALLOW_EXPECTED_CONFLICTS:-false}"
 export CONTENTION_CASE="${CONTENTION_CASE:-views}"
 export PERF_MEMBER_COUNT="${PERF_MEMBER_COUNT:-100}"
+
+curl --fail --silent --show-error --max-time 5 "$BASE_URL/actuator/health/readiness" >/dev/null \
+  || { echo "performance backend is not ready at $BASE_URL; refusing to start k6" >&2; exit 1; }
 
 docker run --rm \
   --add-host=host.docker.internal:host-gateway \
@@ -88,6 +122,24 @@ cat "$OUT_DIR/console.log"
 if [[ "$K6_STATUS" -ne 0 ]]; then
   echo "k6 failed with exit code $K6_STATUS; see $OUT_DIR/console.log" >&2
   exit "$K6_STATUS"
+fi
+
+if docker inspect "$PERF_DB_CONTAINER" >/dev/null 2>&1; then
+  docker exec -i "$PERF_DB_CONTAINER" psql -Atq \
+    -U "${TOWNPET_PERF_DB_USERNAME:-townpet_perf}" \
+    -d "${TOWNPET_PERF_DB_NAME:-townpet_perf}" \
+    -v ON_ERROR_STOP=1 > "$OUT_DIR/explain.json" <<'SQL'
+EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
+SELECT id, type, author_member_id, title, body, created_at, updated_at
+FROM publication
+WHERE lifecycle = 'ACTIVE'
+ORDER BY created_at DESC, id DESC
+LIMIT 21;
+SQL
+  test -s "$OUT_DIR/explain.json" || { echo "EXPLAIN output is empty" >&2; exit 1; }
+  echo "explain_status=recorded" >> "$OUT_DIR/metadata.txt"
+else
+  echo "explain_status=unavailable (performance DB container not found)" >> "$OUT_DIR/metadata.txt"
 fi
 
 echo "Performance result: $OUT_DIR"

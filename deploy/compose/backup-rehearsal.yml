@@ -1,0 +1,80 @@
+services:
+  postgres:
+    image: postgis/postgis:18-3.6
+    environment:
+      POSTGRES_DB: p5townpet
+      POSTGRES_USER: p5admin
+      POSTGRES_PASSWORD: p5adminpass
+      APP_DB_USER: p5app
+      APP_DB_PASSWORD: p5apppass
+      MIGRATION_DB_USER: p5migration
+      MIGRATION_DB_PASSWORD: p5migrationpass
+    volumes:
+      - p5-postgres-data:/var/lib/postgresql
+      - ./init/portfolio:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U p5admin -d p5townpet"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: p5root
+      MINIO_ROOT_PASSWORD: p5rootsecret
+    volumes:
+      - p5-minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/ready"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh"]
+    command: ["-c", "mc alias set local http://minio:9000 p5root p5rootsecret && mc mb --ignore-existing local/townpet-media && mc admin user add local p5app p5appsecret"]
+
+  backend:
+    image: townpet-backend:p5-rehearsal
+    volumes:
+      - ../../build/libs/townpet-springboot-0.1.0-SNAPSHOT.jar:/app/townpet.jar:ro
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      TOWNPET_DB_URL: jdbc:postgresql://postgres:5432/p5townpet
+      TOWNPET_DB_USERNAME: p5app
+      TOWNPET_DB_PASSWORD: p5apppass
+      TOWNPET_MIGRATION_DB_USERNAME: p5migration
+      TOWNPET_MIGRATION_DB_PASSWORD: p5migrationpass
+      TOWNPET_DEMO_DATA_ENABLED: "true"
+      TOWNPET_EMAIL_ENABLED: "false"
+      TOWNPET_EMAIL_FROM: no-reply@example.test
+      TOWNPET_PUBLIC_BASE_URL: http://127.0.0.1:18080
+      TOWNPET_EMAIL_TOKEN_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      TOWNPET_TRUSTED_PROXY_CIDRS: 172.16.0.0/12
+      TOWNPET_MINIO_ENDPOINT: http://minio:9000
+      TOWNPET_MINIO_PUBLIC_ENDPOINT: http://127.0.0.1:19000
+      TOWNPET_MINIO_ACCESS_KEY: p5app
+      TOWNPET_MINIO_SECRET_KEY: p5appsecret
+      TOWNPET_MINIO_BUCKET: townpet-media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "18080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness | grep -q UP"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  p5-postgres-data:
+  p5-minio-data:

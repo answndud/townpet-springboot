@@ -86,7 +86,7 @@ class FeedController {
               parseTypes(type));
       return new FeedResponse(
           page.items().stream().map(FeedController::toResponse).toList(),
-          new PageInfo(page.nextCursor(), page.hasNext(), page.totalPages()));
+          new PageInfo(page.nextCursor(), page.hasNext()));
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed cursor");
     }
@@ -125,7 +125,7 @@ class FeedController {
 
   record FeedResponse(List<FeedItemResponse> items, PageInfo page) {}
 
-  record PageInfo(@Nullable String nextCursor, boolean hasNext, int totalPages) {}
+  record PageInfo(@Nullable String nextCursor, boolean hasNext) {}
 
   record FeedItemResponse(
       UUID id,

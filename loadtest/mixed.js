@@ -35,7 +35,7 @@ export default function () {
 
   const choice = Math.random();
   if (choice < 0.55) {
-    get("/api/v1/feed?audience=GLOBAL&limit=20", "mixed-public-feed");
+    get("/api/v1/discovery?limit=20", "mixed-public-discovery");
   } else if (choice < 0.80 && !moderator) {
     get("/api/v1/members/me", "mixed-member-profile");
     get("/api/v1/notifications/unread-count", "mixed-notification-count");
@@ -46,8 +46,7 @@ export default function () {
       JSON.stringify({
         title: `perf-mixed-${suffix}`,
         body: "Synthetic mixed workload publication",
-        scope: "GLOBAL",
-        neighborhoodId: null,
+        type: "FREE_BOARD",
       }),
       { headers: jsonHeaders(), tags: { endpoint: "mixed-publication-create" } },
     );
@@ -56,7 +55,7 @@ export default function () {
     get("/api/admin/reports?status=OPEN", "mixed-moderator-queue");
     get("/api/admin/moderation-logs", "mixed-moderator-log");
   } else {
-    get("/api/v1/feed/popular", "mixed-popular-feed");
+    get("/api/v1/discovery/popular?limit=20", "mixed-popular-discovery");
   }
   sleep(0.1);
 }

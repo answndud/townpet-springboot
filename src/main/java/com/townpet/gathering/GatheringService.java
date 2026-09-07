@@ -21,8 +21,14 @@ class GatheringService {
 
   @Transactional(readOnly = true)
   List<GatheringView> list() {
-    return gatherings.findTop100ByStatusOrderByStartsAtAscIdAsc(GatheringStatus.ACTIVE).stream()
-        .map(this::view)
+    List<GatheringEntity> result = gatherings.findTop100ByStatusOrderByStartsAtAscIdAsc(GatheringStatus.ACTIVE);
+    Map<UUID, Integer> counts = new HashMap<>();
+    if (!result.isEmpty()) {
+      participants.countByGatheringIdIn(result.stream().map(GatheringEntity::getId).toList())
+          .forEach(row -> counts.put(row.getGatheringId(), Math.toIntExact(row.getParticipantCount())));
+    }
+    return result.stream()
+        .map(gathering -> view(gathering, null, counts.getOrDefault(gathering.getId(), 0)))
         .toList();
   }
 
@@ -93,7 +99,10 @@ class GatheringService {
   }
 
   private GatheringView view(GatheringEntity g, @Nullable UUID viewer) {
-    int count = Math.toIntExact(participants.countByGatheringId(g.getId()));
+    return view(g, viewer, Math.toIntExact(participants.countByGatheringId(g.getId())));
+  }
+
+  private GatheringView view(GatheringEntity g, @Nullable UUID viewer, int count) {
     boolean joined =
         viewer != null && participants.findByGatheringIdAndMemberId(g.getId(), viewer).isPresent();
     return new GatheringView(

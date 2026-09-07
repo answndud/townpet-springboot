@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const publication = {
   id: "00000000-0000-4000-8000-000000003901",
+  type: "FREE_BOARD",
   title: "데스크톱 시각 기준선 게시글",
   body: "1280과 1440 데스크톱 화면의 시각 회귀를 확인하는 고정 fixture입니다.",
   authorId: "00000000-0000-4000-8000-000000000202",
@@ -43,9 +44,8 @@ for (const viewport of [
 
     test.beforeEach(async ({ page }) => {
       await page.route("**/api/v1/members/me", (route) => route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ detail: "Unauthorized" }) }));
-      await page.route("**/api/v1/discovery*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [publication], page: { nextCursor: null, hasNext: false, totalPages: 1 } }) }));
-      await page.route("**/api/v1/publications/*/comments", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [] }) }));
-      await page.route("**/api/v1/publications/*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(publication) }));
+      await page.route("**/api/v1/discovery*", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [publication], page: { nextCursor: null, hasNext: false } }) }));
+      await page.route(`**/api/v1/publications/${publication.id}`, (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(publication) }));
     });
 
     test("keeps the home shell visually stable", async ({ page }) => {

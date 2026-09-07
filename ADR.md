@@ -1,6 +1,6 @@
 # Architecture Decision Record
 
-이 문서는 현재 `townpet-springboot`의 장기적인 기술 경계만 기록한다. 구현 순서와 미완료 기능은 [`PLAN.md`](PLAN.md), 목표 구조는 [`docs/01-기준/기술-요구사항.md`](docs/01-기준/기술-요구사항.md), 운영 절차는 `docs/09-운영-가이드/`에 둔다.
+이 문서는 현재 `townpet-springboot`의 장기적인 기술 경계만 기록한다. 구현 순서와 미완료 기능은 [`PLAN.md`](PLAN.md), 목표 구조는 [`docs/개발/기술-요구사항.md`](docs/개발/기술-요구사항.md), 운영 절차는 `docs/운영/`에 둔다.
 
 ## 상태 규칙
 
@@ -28,8 +28,8 @@ Legacy TownPet의 핵심 화면·URL·권한·상태·반응형 경험은 기준
 
 ### Evidence
 
-- `docs/01-기준/제품-요구사항.md`: 재작성 범위와 acceptance criteria
-- `docs/05-패리티/대조표.yaml`: 페이지·API 기준선
+- `docs/개발/제품-요구사항.md`: 재작성 범위와 acceptance criteria
+- `src/test/resources/parity/matrix.yaml`: 페이지·API 기준선
 
 ## ADR-0002 - 도메인별 수직 전환으로 Spring 백엔드를 교체한다
 
@@ -346,7 +346,7 @@ matrix는 누락 방지용 inventory로 사용하고, 완료 주장은 대표 �
 
 ### Evidence
 
-- `docs/05-패리티/대조표.yaml`
+- `src/test/resources/parity/matrix.yaml`
 - `src/test/java/com/townpet/parity/ParityInventoryTest.java`
 - `frontend/src/*Flows.test.tsx`
 
@@ -384,7 +384,7 @@ Hetzner CX23 topology를 목표 후보로 유지하되, 실제 계정·도메인
 ### Evidence
 
 - `deploy/compose/portfolio.yml`
-- `docs/08-면접-복기/릴리스-준비도.md`: 실제 VPS 미실행 상태
+- `docs/면접-복기/릴리스-검증-근거.md`: 실제 VPS 미실행 상태
 
 ## ADR-0024 - 두 포트폴리오 프로젝트를 netcup x86 VPS Lite 2에 함께 배포한다
 
@@ -418,7 +418,7 @@ netcup VPS Lite 2 G12s(4 vCore, 8GB RAM, 160GB SSD, x86)를 기본 배포 대상
 
 - `deploy/compose/netcup.yml`, `deploy/compose/edge.yml`, `deploy/compose/Caddyfile.netcup`: TownPet image-pull·공용 edge 구성
 - `deploy/Caddyfile.netcup.web`: edge 뒤 내부 HTTP-only web proxy 구성
-- `docs/09-운영-가이드/두-프로젝트-VPS-배포-워크플로.md`: 실제 실행 순서와 검증 기준
+- `docs/운영/VPS-초기-구성-가이드.md`: 실제 실행 순서와 검증 기준
 - `/Users/alex/project/kinderp/deploy/docker-compose.netcup.yml` (VPS: `/opt/kinderp/deploy/docker-compose.netcup.yml`): KinderP MySQL·Redis·app·내부 Caddy 구성
 - [netcup VPS Lite 공식 가격·사양](https://www.netcup.com/en/server/vps-lite)
 
@@ -466,7 +466,7 @@ Actuator health/readiness, correlation id가 있는 구조화 log, JVM·HTTP·DB
 - `src/main/resources/application.yml`
 - `src/main/java/com/townpet/operations/WebVitalMetricController.java`
 - `src/main/java/com/townpet/common/web/RequestTraceFilter.java`
-- `docs/09-운영-가이드/관측성.md`
+- `docs/운영/관측성-가이드.md`
 
 ## ADR-0024 - SLO와 error budget은 측정 후 선언한다
 
@@ -484,7 +484,8 @@ Actuator health/readiness, correlation id가 있는 구조화 log, JVM·HTTP·DB
 
 ### Evidence
 
-- `docs/08-면접-복기/릴리스-준비도.md`: 성능 수치 미측정
+- 현재 API 기준 공개 성능 baseline은 아직 재측정하지 않았으며, 측정 후
+  tracked `portfolio/evidence/feed-performance.md`에 commit·fixture·raw artifact와 함께 기록한다.
 
 ## ADR-0025 - Java 25 LTS와 Spring Boot 4.1을 기준선으로 사용한다
 
@@ -745,8 +746,8 @@ resolved/closed 전환은 outcome과 close reason을 함께 기록하고 상태 
 ### Evidence
 
 - `src/main/java/com/townpet/identity/SessionController.java`
-- `docs/05-패리티/대조표.yaml`: ADR-0040 제외 항목
-- `docs/01-기준/제품-요구사항.md`: 현재 social login 제외 범위
+- `src/test/resources/parity/matrix.yaml`: ADR-0040 제외 항목
+- `docs/개발/제품-요구사항.md`: 현재 social login 제외 범위
 
 ## 현재 적용 순서
 
@@ -776,4 +777,41 @@ H2에서는 production PostgreSQL 문법을 흉내 내지 않고 테스트 전�
 - `src/main/resources/db/migration/V063__security_rate_limit_window.sql`
 - `src/main/resources/db/migration/V064__moderator_mfa.sql`
 - `src/main/resources/db/migration/V065__moderator_mfa_audit_actions.sql`
-- `docs/10-보안/보안-개선-2026-08-20.md`
+- `docs/보안/보안-개선-기록-2026-08-20.md`
+
+## ADR-0042 - 알림 후속 처리는 PostgreSQL registry와 event-id dedup으로 bounded replay한다
+
+- 상태: accepted
+- 날짜: 2026-09-07
+- 근거 유형: inferred
+
+### Context
+
+Spring Modulith listener는 비동기로 실행되고 publication이 재전달될 수 있다. 중복
+notification을 허용하면 사용자 화면과 unread count가 틀어지고, 모든 무결성 예외를
+duplicate로 처리하면 실제 schema 오류가 숨겨진다.
+
+### Decision
+
+notification 저장은 `event_id` unique constraint와 PostgreSQL
+`INSERT ... ON CONFLICT (event_id) DO NOTHING`을 사용한다. 영향 행 수 1은 신규 저장,
+0은 중복 재전달로 기록한다. 미완료 publication recovery는 기본 비활성화하고, 활성화된
+경우 minimum age·batch size·max in-flight를 적용하며 `FAILED` publication은 자동 재제출하지
+않는다. backlog count와 oldest age만 metric으로 노출한다.
+
+### Consequences
+
+- at-least-once listener 재실행에도 notification 최종 행이 하나로 수렴한다.
+- database 무결성 오류가 duplicate 성공으로 숨겨지지 않는다.
+- recovery가 영구 실패를 자동 해결하지 않으므로 운영자 조치와 별도 failure runbook이 필요하다.
+- bounded replay로 장애 직후 처리량을 제한하지만, backlog 해소 시간이 길어질 수 있다.
+
+### Evidence
+
+- `src/main/java/com/townpet/notification/NotificationRepository.java`
+- `src/main/java/com/townpet/notification/NotificationEventHandler.java`
+- `src/main/java/com/townpet/operations/EventPublicationRecovery.java`
+- `src/main/resources/db/migration/V066__notification_dedup.sql`
+- `src/test/java/com/townpet/notification/NotificationEventHandlerIntegrationTest.java`
+- `src/test/java/com/townpet/operations/EventPublicationRecoveryTest.java`
+- `portfolio/evidence/notification-delivery.md`

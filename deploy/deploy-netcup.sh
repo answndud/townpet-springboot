@@ -16,6 +16,9 @@ MAX_ATTEMPTS="${MAX_ATTEMPTS:-30}"
 SLEEP_SECONDS="${SLEEP_SECONDS:-5}"
 PHASE_TIMEOUT_SECONDS="${PHASE_TIMEOUT_SECONDS:-180}"
 PULL_TIMEOUT_SECONDS="${PULL_TIMEOUT_SECONDS:-300}"
+BACKUP_BEFORE_DEPLOY="${BACKUP_BEFORE_DEPLOY:-0}"
+BACKUP_SCRIPT="${BACKUP_SCRIPT:-deploy/backup-portfolio.sh}"
+BACKUP_DIR="${BACKUP_DIR:-/opt/backups}"
 
 compose() {
   docker compose --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
@@ -112,6 +115,28 @@ docker compose --env-file "$EDGE_ENV_FILE" -f "$EDGE_COMPOSE_FILE" config >/dev/
 if [[ "$PREFLIGHT_ONLY" == "1" ]]; then
   log_event "success" "preflight_only=true"
   exit 0
+fi
+
+if [[ "$BACKUP_BEFORE_DEPLOY" == "1" ]]; then
+  [[ -x "$BACKUP_SCRIPT" ]] || { echo "backup script is missing or not executable: $BACKUP_SCRIPT" >&2; exit 1; }
+  set -a
+  # The validated secret env file supplies the database and MinIO credentials
+  # to the backup subprocess; values are never printed by this script.
+  source "$COMPOSE_ENV_FILE"
+  set +a
+  set_phase "backup"
+  POSTGRES_CONTAINER=townpet-postgres \
+  MINIO_CONTAINER=townpet-minio \
+  BACKEND_CONTAINER=townpet-backend \
+  POSTGRES_USER="$POSTGRES_USER" \
+  POSTGRES_DB="$POSTGRES_DB" \
+  MINIO_ACCESS_KEY="$TOWNPET_MINIO_ACCESS_KEY" \
+  MINIO_SECRET_KEY="$TOWNPET_MINIO_SECRET_KEY" \
+  MINIO_BUCKET="$TOWNPET_MINIO_BUCKET" \
+  BACKUP_DIR="$BACKUP_DIR" \
+  BACKUP_EXECUTION_ID="$DEPLOYMENT_ID" \
+  "$BACKUP_SCRIPT"
+  log_event "success" "paired_backup=true"
 fi
 
 previous_image="$(docker inspect --format '{{.Config.Image}}' townpet-backend 2>/dev/null || true)"

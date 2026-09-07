@@ -5,10 +5,14 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_PROJECT="townpet-auth-e2e"
 BACKEND_LOG="$(mktemp -t townpet-auth-backend.XXXXXX.log)"
 FRONTEND_LOG="$(mktemp -t townpet-auth-frontend.XXXXXX.log)"
+ARTIFACT_DIR="${TOWNPET_E2E_ARTIFACT_DIR:-${ROOT_DIR}/build/e2e-artifacts}"
 backend_pid=""
 frontend_pid=""
 
 cleanup() {
+  mkdir -p "${ARTIFACT_DIR}"
+  cp "${BACKEND_LOG}" "${ARTIFACT_DIR}/backend.log" 2>/dev/null || true
+  cp "${FRONTEND_LOG}" "${ARTIFACT_DIR}/frontend.log" 2>/dev/null || true
   [[ -n "${frontend_pid}" ]] && kill "${frontend_pid}" 2>/dev/null || true
   [[ -n "${backend_pid}" ]] && kill "${backend_pid}" 2>/dev/null || true
   docker compose -p "${COMPOSE_PROJECT}" -f "${ROOT_DIR}/deploy/compose/e2e.yml" down --volumes >/dev/null 2>&1 || true
@@ -36,6 +40,10 @@ cd "${ROOT_DIR}"
 TOWNPET_DB_URL="jdbc:postgresql://127.0.0.1:54330/townpet" \
 TOWNPET_DB_USERNAME="townpet_app" \
 TOWNPET_DB_PASSWORD="townpet_local_dev" \
+TOWNPET_MIGRATION_DB_USERNAME="townpet_migration" \
+TOWNPET_MIGRATION_DB_PASSWORD="townpet_migration_local_dev" \
+SPRING_FLYWAY_USER="townpet_migration" \
+SPRING_FLYWAY_PASSWORD="townpet_migration_local_dev" \
   ./gradlew "${gradle_args[@]}" >"${BACKEND_LOG}" 2>&1 &
 backend_pid=$!
 
@@ -72,7 +80,7 @@ if ! curl --fail --silent http://127.0.0.1:5173/ >/dev/null; then
   exit 1
 fi
 
-"${pnpm_cmd[@]}" exec playwright test --config e2e/auth.config.ts "$@"
+"${pnpm_cmd[@]}" exec playwright test --config "${TOWNPET_E2E_CONFIG:-e2e/auth.config.ts}" "$@"
 
 verify_auth_evidence=false
 verify_publication_evidence=false
@@ -141,6 +149,11 @@ block_count="$(
     "SELECT COUNT(*) FROM relationship_block"
 )"
 required_session_count=2
+required_publication_count=2
+if printf '%s\n' "$@" | grep -Eq -- '--project=(chromium|mobile)'; then
+  required_session_count=1
+  required_publication_count=1
+fi
 if [[ "${verify_comment_evidence}" == true || "${verify_reaction_evidence}" == true || "${verify_bookmark_evidence}" == true || "${verify_relationship_evidence}" == true ]] \
   && [[ "${verify_publication_evidence}" == false ]] \
   && [[ "${verify_deleted_publication_evidence}" == false ]]; then
@@ -154,11 +167,11 @@ if [[ "${verify_auth_evidence}" == true ]] && (( audit_count < 4 )); then
   echo "Expected JDBC session and auth audit evidence, got sessions=${session_count}, audits=${audit_count}" >&2
   exit 1
 fi
-if [[ "${verify_publication_evidence}" == true ]] && (( publication_count < 2 )); then
+if [[ "${verify_publication_evidence}" == true ]] && (( publication_count < required_publication_count )); then
   echo "Expected PostgreSQL publication evidence, got publications=${publication_count}" >&2
   exit 1
 fi
-if [[ "${verify_deleted_publication_evidence}" == true ]] && (( deleted_publication_count < 2 )); then
+if [[ "${verify_deleted_publication_evidence}" == true ]] && (( deleted_publication_count < required_publication_count )); then
   echo "Expected lifecycle deletion evidence, got deleted_publications=${deleted_publication_count}" >&2
   exit 1
 fi

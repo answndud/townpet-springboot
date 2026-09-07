@@ -6,15 +6,22 @@ set -eu
 : "${MINIO_CONTAINER:?set MINIO_CONTAINER}"
 : "${POSTGRES_USER:?set POSTGRES_USER}"
 : "${POSTGRES_DB:?set POSTGRES_DB}"
+: "${APP_DB_USER:=$POSTGRES_USER}"
 : "${MINIO_ACCESS_KEY:?set MINIO_ACCESS_KEY}"
 : "${MINIO_SECRET_KEY:?set MINIO_SECRET_KEY}"
+: "${MINIO_RESTORE_ACCESS_KEY:=$MINIO_ACCESS_KEY}"
+: "${MINIO_RESTORE_SECRET_KEY:=$MINIO_SECRET_KEY}"
 : "${MINIO_BUCKET:=townpet-media}"
 : "${ALLOW_DESTRUCTIVE_RESTORE:?set ALLOW_DESTRUCTIVE_RESTORE=YES}"
 : "${RESTORE_EXECUTION_ID:=$(date -u +%Y%m%dT%H%M%SZ)}"
+: "${RESTORE_HEALTH_URL:=}"
+: "${RESTORE_API_URL:=}"
+: "${RESTORE_MEDIA_URL:=}"
 
 command -v docker >/dev/null || { echo "docker is required" >&2; exit 1; }
 started_epoch="$(date +%s)"
 phase=validate
+temp_dir="$(mktemp -d)"
 on_exit() {
   status="$?"
   if [ "$status" -eq 0 ]; then
@@ -22,6 +29,7 @@ on_exit() {
   else
     echo "event=restore outcome=failure execution_id=$RESTORE_EXECUTION_ID backup_root=$BACKUP_ROOT phase=$phase exit_code=$status" >&2
   fi
+  rm -rf -- "$temp_dir"
   exit "$status"
 }
 trap on_exit EXIT
@@ -40,10 +48,37 @@ docker exec -i "$POSTGRES_CONTAINER" pg_restore \
   --clean --if-exists --no-owner --exit-on-error \
   -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$BACKUP_ROOT/postgres.dump"
 
+# A dump restored with --no-owner does not reliably preserve the runtime role's
+# grants. Reapply the least required application grants before API verification.
+docker exec -i "$POSTGRES_CONTAINER" psql -v ON_ERROR_STOP=1 \
+  -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -v app_user="$APP_DB_USER" <<'SQL'
+SELECT format('GRANT USAGE ON SCHEMA public TO %I', :'app_user') \gexec
+SELECT format('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %I', :'app_user') \gexec
+SELECT format('GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO %I', :'app_user') \gexec
+SQL
+
+phase=reference_verify
+db_keys_file="$temp_dir/db-object-keys"
+backup_keys_file="$temp_dir/backup-object-keys"
+docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c 'SELECT object_key FROM upload_asset WHERE publication_id IS NOT NULL ORDER BY object_key' | sed '/^$/d' > "$db_keys_file"
+(cd "$BACKUP_ROOT/media" && find . -type f -printf '%P\n' | sort) > "$backup_keys_file"
+comm -23 "$db_keys_file" "$backup_keys_file" | grep -q . && {
+  echo "database references media objects missing from backup" >&2; exit 1;
+} || true
+comm -13 "$db_keys_file" "$backup_keys_file" | grep -q . && {
+  echo "backup contains media objects without a database reference" >&2; exit 1;
+} || true
+expected_keys_hash="$(sed -n 's/^db_object_keys_sha256=//p' "$BACKUP_ROOT/manifest.txt")"
+[ -z "$expected_keys_hash" ] || [ "$expected_keys_hash" = "$(sha256sum "$db_keys_file" | awk '{print $1}')" ] || {
+  echo "database object-key checksum mismatch" >&2; exit 1;
+}
+
 restore_id="$(date -u +%Y%m%dT%H%M%SZ)"
 phase=minio_restore
 docker exec "$MINIO_CONTAINER" mc alias set townpet-restore http://127.0.0.1:9000 \
-  "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" >/dev/null
+  "$MINIO_RESTORE_ACCESS_KEY" "$MINIO_RESTORE_SECRET_KEY" >/dev/null
 docker exec "$MINIO_CONTAINER" mc mb --ignore-existing "townpet-restore/$MINIO_BUCKET" >/dev/null
 docker exec "$MINIO_CONTAINER" mkdir -p "/tmp/townpet-media-restore-$restore_id"
 docker cp "$BACKUP_ROOT/media/." "$MINIO_CONTAINER:/tmp/townpet-media-restore-$restore_id/"
@@ -60,6 +95,12 @@ restored_media_objects="$(printf '%s\n' "$restored_object_listing" | sed '/^$/d'
   exit 1
 }
 
+phase=media_reference_verify
+while IFS= read -r object_key; do
+  [ -z "$object_key" ] && continue
+  docker exec "$MINIO_CONTAINER" mc stat "townpet-restore/$MINIO_BUCKET/$object_key" >/dev/null
+done < "$db_keys_file"
+
 manifest_publications="$(sed -n 's/^db_publications=//p' "$BACKUP_ROOT/manifest.txt")"
 if [ -n "$manifest_publications" ]; then
   phase=database_verify
@@ -72,10 +113,20 @@ fi
 
 manifest_upload_assets="$(sed -n 's/^db_upload_assets=//p' "$BACKUP_ROOT/manifest.txt")"
 if [ -n "$manifest_upload_assets" ]; then
-  restored_upload_assets="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM upload_asset')"
+  restored_upload_assets="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT COUNT(*) FROM upload_asset WHERE publication_id IS NOT NULL')"
   [ "$manifest_upload_assets" = "$restored_upload_assets" ] || {
     echo "restored upload asset count mismatch: expected=$manifest_upload_assets actual=$restored_upload_assets" >&2
     exit 1
   }
+fi
+if [ -n "$RESTORE_HEALTH_URL" ]; then
+  phase=application_verify
+  curl --fail --silent --show-error --location --max-time 15 "$RESTORE_HEALTH_URL" >/dev/null
+fi
+if [ -n "$RESTORE_API_URL" ]; then
+  curl --fail --silent --show-error --location --max-time 15 "$RESTORE_API_URL" >/dev/null
+fi
+if [ -n "$RESTORE_MEDIA_URL" ]; then
+  curl --fail --silent --show-error --location --max-time 15 "$RESTORE_MEDIA_URL" >/dev/null
 fi
 echo "restored paired backup: $BACKUP_ROOT"

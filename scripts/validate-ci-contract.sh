@@ -83,6 +83,14 @@ if "Container scan (manual)" not in workflow_text or "Browser smoke (manual)" no
     raise SystemExit("CI contract failed: manual deep-check classification is missing")
 if "Frontend container runtime smoke" not in workflow_text:
     raise SystemExit("CI contract failed: frontend image runtime smoke is missing")
+if "live-publication-e2e:" not in workflow_text or "name: Live publication E2E" not in workflow_text:
+    raise SystemExit("CI contract failed: live publication E2E job is missing")
+if not re.search(r"live-publication-e2e:\n\s+name: Live publication E2E[\s\S]*?needs: \[backend, frontend, repository-security\]", workflow_text):
+    raise SystemExit("CI contract failed: live publication E2E prerequisites are incomplete")
+if not re.search(r"publish_images:\n[\s\S]*?needs: \[[^\]]*live-publication-e2e", workflow_text):
+    raise SystemExit("CI contract failed: image publication does not depend on live publication E2E")
+if not Path("frontend/e2e/live.config.ts").exists() or not Path("scripts/live-browser-e2e.sh").exists():
+    raise SystemExit("CI contract failed: live E2E config or runner is missing")
 if "Validate resolved Compose contracts" not in workflow_text or "-f deploy/compose/edge.yml config" not in workflow_text:
     raise SystemExit("CI contract failed: resolved Compose contract validation is missing")
 if re.search(r"^\s+push:\s*$", release_text, re.MULTILINE):
@@ -152,6 +160,31 @@ for script_name in (
         raise SystemExit(
             f"CI contract failed: {script_name} contains a non-readiness health probe"
         )
+
+backup_script = Path("deploy/backup-portfolio.sh").read_text()
+restore_script = Path("deploy/restore-portfolio.sh").read_text()
+for required in (
+    "acceptingWrites",
+    "activeWrites",
+    "flyway_version=",
+    "source_backend_image=",
+    "db_object_keys_sha256=",
+    "media_object_keys_sha256=",
+):
+    if required not in backup_script:
+        raise SystemExit(f"CI contract failed: backup is missing {required}")
+for required in (
+    "database references media objects missing from backup",
+    "backup contains media objects without a database reference",
+    "mc stat",
+    "MINIO_RESTORE_ACCESS_KEY",
+    "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES",
+    "RESTORE_MEDIA_URL",
+):
+    if required not in restore_script:
+        raise SystemExit(f"CI contract failed: restore is missing {required}")
+if "BACKUP_BEFORE_DEPLOY" not in Path("deploy/deploy-netcup.sh").read_text():
+    raise SystemExit("CI contract failed: deployment has no opt-in paired backup hook")
 
 print(
     "CI contract valid: pinned actions, pnpm setup/order, ignored-docs boundary, "

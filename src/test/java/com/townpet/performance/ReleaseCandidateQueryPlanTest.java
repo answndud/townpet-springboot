@@ -23,6 +23,8 @@ import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers
 class ReleaseCandidateQueryPlanTest {
+  // This test deliberately disables sequential scans. It proves that the release-candidate
+  // index path is valid; it does not prove that PostgreSQL chooses it with default settings.
   private static final UUID MEMBER_ID = UUID.fromString("00000000-0000-4000-8000-000000000201");
   private static final UUID PUBLICATION_ID = UUID.randomUUID();
 
@@ -94,7 +96,7 @@ class ReleaseCandidateQueryPlanTest {
   }
 
   @Test
-  void representativeQueuesUseStableReleaseCandidateIndexes() throws SQLException {
+  void representativeQueuesExposeIndexCapabilityWhenSeqscanIsDisabled() throws SQLException {
     try (Connection connection = POSTGRES.createConnection("");
         Statement statement = connection.createStatement()) {
       statement.execute("SET enable_seqscan = off");

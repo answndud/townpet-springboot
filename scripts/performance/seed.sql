@@ -62,7 +62,7 @@ DELETE FROM publication
 WHERE id IN (SELECT id FROM perf_publication_ids);
 
 INSERT INTO publication (
-    id, author_member_id, type, scope, neighborhood_id, title, body,
+    id, author_member_id, type, animal_interest_code, title, body,
     lifecycle, created_at, updated_at, version
 )
 SELECT
@@ -70,7 +70,7 @@ SELECT
     CASE WHEN i % 3 = 0
          THEN '00000000-0000-4000-8000-000000000202'::uuid
          ELSE '00000000-0000-4000-8000-000000000201'::uuid END,
-    'FREE_BOARD', 'GLOBAL', NULL,
+    'FREE_BOARD', NULL,
     'perf-publication-' || i,
     'Deterministic performance fixture publication ' || i,
     CASE WHEN i % 29 = 0 THEN 'DELETED' ELSE 'ACTIVE' END,

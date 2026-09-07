@@ -4,7 +4,6 @@ import com.townpet.common.UuidV7;
 import com.townpet.notification.api.NotificationEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
@@ -25,23 +24,23 @@ class NotificationEventHandler {
           event.recipientMemberId());
       return;
     }
-    try {
-      notifications.save(
-          new NotificationEntity(
-              UuidV7.randomUuid(),
-              event.eventId(),
-              event.recipientMemberId(),
-              event.type(),
-              event.title(),
-              event.body()));
+    int inserted =
+        notifications.insertIfAbsent(
+            UuidV7.randomUuid(),
+            event.recipientMemberId(),
+            event.eventId(),
+            event.type(),
+            event.title(),
+            event.body());
+    if (inserted == 1) {
       log.info(
           "event=notification_consumer outcome=success event_id={} type={}",
           event.eventId(),
           event.type());
-    } catch (DataIntegrityViolationException exception) {
+    } else {
       // A replayed publication already produced this notification; keep the consumer idempotent.
       log.info(
-          "event=notification_consumer outcome=duplicate event_id={} type={} reason=data_integrity_violation",
+          "event=notification_consumer outcome=duplicate event_id={} type={} reason=event_id_conflict",
           event.eventId(),
           event.type());
     }

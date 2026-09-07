@@ -512,7 +512,6 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.items[0].id").value(newerEligibleId.toString()))
         .andExpect(jsonPath("$.items[0].recommendationCount").value(20))
         .andExpect(jsonPath("$.items[0].rank").value(1))
-        .andExpect(jsonPath("$.page.totalPages").value(1))
         .andExpect(jsonPath("$.items[0].viewCount").doesNotExist())
         .andExpect(jsonPath("$.items[1].id").value(olderEligibleId.toString()))
         .andExpect(jsonPath("$.items[1].recommendationCount").value(21))
@@ -525,7 +524,6 @@ class PublicationControllerTest {
             .andExpect(jsonPath("$.items.length()").value(1))
             .andExpect(jsonPath("$.items[0].id").value(newerEligibleId.toString()))
             .andExpect(jsonPath("$.page.hasNext").value(true))
-            .andExpect(jsonPath("$.page.totalPages").value(2))
             .andExpect(jsonPath("$.page.nextCursor").isNotEmpty())
             .andReturn();
     String popularCursor =
@@ -574,7 +572,7 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.items[0].recommendationCount").value(10))
         .andExpect(jsonPath("$.items[1].id").value(olderEligibleId.toString()))
         .andExpect(jsonPath("$.items[1].recommendationCount").value(11))
-        .andExpect(jsonPath("$.page.totalPages").value(1));
+        .andExpect(jsonPath("$.page.hasNext").value(false));
   }
 
   @Test

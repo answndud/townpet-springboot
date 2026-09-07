@@ -15,4 +15,9 @@ test -f "$ROOT_DIR/scripts/performance/seed.sql"
 for file in "$ROOT_DIR"/loadtest/{common,smoke,public-read,feed-read,member-read,write,contention,moderator,media,mixed}.js; do
   test -f "$file" || { echo "missing: $file" >&2; exit 1; }
 done
+if rg -n 'api/v1/feed|feed/popular|audience=|"scope"|scope:' \
+  "$ROOT_DIR"/loadtest/{common,smoke,public-read,feed-read,member-read,write,contention,moderator,media,mixed}.js; then
+  echo "loadtest contains a retired HTTP contract" >&2
+  exit 1
+fi
 echo "performance execution scripts are syntactically valid"

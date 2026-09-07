@@ -84,6 +84,14 @@ townpet:
     secure-cookies: ${TOWNPET_SECURE_COOKIES:false}
     search-event-retention: ${TOWNPET_SEARCH_EVENT_RETENTION:30d}
     search-event-cleanup-ms: ${TOWNPET_SEARCH_EVENT_CLEANUP_MS:3600000}
+  events:
+    recovery:
+      enabled: ${TOWNPET_EVENT_RECOVERY_ENABLED:false}
+      fixed-delay-ms: ${TOWNPET_EVENT_RECOVERY_FIXED_DELAY_MS:60000}
+      initial-delay-ms: ${TOWNPET_EVENT_RECOVERY_INITIAL_DELAY_MS:60000}
+      min-age: ${TOWNPET_EVENT_RECOVERY_MIN_AGE:PT5M}
+      max-in-flight: ${TOWNPET_EVENT_RECOVERY_MAX_IN_FLIGHT:10}
+      batch-size: ${TOWNPET_EVENT_RECOVERY_BATCH_SIZE:10}
   demo-data:
     enabled: ${TOWNPET_DEMO_DATA_ENABLED:false}
   build:

@@ -33,6 +33,7 @@ services:
       TOWNPET_DB_PASSWORD: townpet_local_dev
       TOWNPET_MIGRATION_DB_USERNAME: townpet_migration
       TOWNPET_MIGRATION_DB_PASSWORD: townpet_migration_local_dev
+      TOWNPET_MAINTENANCE_FILE: /tmp/townpet-maintenance
       TOWNPET_DEMO_DATA_ENABLED: true
     depends_on:
       postgres:

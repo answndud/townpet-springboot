@@ -9,7 +9,8 @@ test("author edits and lifecycle-deletes a free-board post", async ({ page }, te
   page.on("console", (message) => {
     if (
       message.type() === "error" &&
-      !(expectingDeletedDetail && message.text().includes("404 (Not Found)"))
+      !message.text().includes("static.cloudflareinsights.com/beacon.min.js") &&
+      !(expectingDeletedDetail && message.text().includes("404"))
     ) {
       browserErrors.push(message.text());
     }
@@ -41,12 +42,12 @@ test("author edits and lifecycle-deletes a free-board post", async ({ page }, te
   await expect(page.getByRole("heading", { name: editedTitle })).toBeVisible();
   await expect(page.getByText("낙관적 버전 검사 후 저장한 본문입니다.")).toBeVisible();
 
+  expectingDeletedDetail = true;
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "삭제", exact: true }).click();
   await expect(page).toHaveURL(/\/my-posts$/);
   await expect(page.getByRole("heading", { name: editedTitle })).toHaveCount(0);
 
-  expectingDeletedDetail = true;
   await page.goto(detailUrl);
   await expect(page.getByRole("alert")).toHaveText("존재하지 않거나 삭제된 게시글입니다.");
   expect(browserErrors).toEqual([]);

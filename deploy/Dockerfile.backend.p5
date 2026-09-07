@@ -1,0 +1,5 @@
+# Temporary promotion image for the P5 recovery rollout. It reuses the
+# already-proven production runtime base (including wget and the non-root
+# user) and replaces only the application artifact built from this worktree.
+FROM townpet-backend:security-fix
+COPY --chown=townpet:townpet build/libs/townpet-springboot-0.1.0-SNAPSHOT.jar /app/townpet.jar

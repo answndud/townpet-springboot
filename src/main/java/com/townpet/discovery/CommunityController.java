@@ -130,7 +130,7 @@ class CommunityController {
       }
       return new CommunityFeedResponse(
           page.items().stream().map(CommunityController::toResponse).toList(),
-          new PageInfo(page.nextCursor(), page.hasNext(), page.totalPages()),
+          new PageInfo(page.nextCursor(), page.hasNext()),
           normalizedAnimal,
           normalizedBoard);
     } catch (IllegalArgumentException exception) {
@@ -196,7 +196,7 @@ class CommunityController {
   record CommunityFeedResponse(
       List<FeedItemResponse> items, PageInfo page, String animalCode, String board) {}
 
-  record PageInfo(@Nullable String nextCursor, boolean hasNext, int totalPages) {}
+  record PageInfo(@Nullable String nextCursor, boolean hasNext) {}
 
   record FeedItemResponse(
       UUID id,

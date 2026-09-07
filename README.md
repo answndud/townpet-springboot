@@ -25,16 +25,28 @@
 
 ### 공개 피드 조회 성능
 
-100,000건의 동일한 합성 fixture에서 실행 계획과 HTTP 부하를 비교했습니다.
+현재 API 계약(`/api/v1/discovery`) 기준의 100,000건 합성 fixture를 P3 변경
+후 로컬 Docker 성능 환경에서 측정했습니다. 운영 SLA가 아닙니다.
 
-| 지표 | 인덱스 적용 전 | 인덱스 적용 후 |
-| --- | ---: | ---: |
-| p95 | 67.13ms | **5.01ms** |
-| 처리량 | 19.40 req/s | **420.78 req/s** |
-| DB 실행 계획 | Parallel Seq Scan + top-N sort | **복합 인덱스 Index Scan** |
-| HTTP 실패 | 0 | **0** |
+| 지표 | 현재 baseline |
+| --- | ---: |
+| p50 | 53.63ms |
+| p95 | 80.85ms |
+| p99 | 127.09ms |
+| 처리량 | 17.26 req/s |
+| 요청 수 | 2,330 |
+| HTTP 실패 | 0% |
 
-`(lifecycle, scope, created_at DESC, id DESC)` 복합 인덱스를 적용하고, `EXPLAIN (ANALYZE, BUFFERS)`로 21개 row를 적은 buffer hit로 읽는 경로를 확인했습니다. 이 결과는 로컬 1 VU 비교 실험이며 운영 SLA나 VPS 처리량으로 과장하지 않았습니다.
+과거 V054 시점의 인덱스 전후 수치는 현재 publication 모델과 API가 달라
+대표 성과에서 제외했습니다. 과거 실험은
+`docs/성능/결과/공개-피드-인덱스-2026-08-12.md`에 보존되어 있으며, 현재
+baseline의 조건·raw artifact 규칙은
+[`docs/성능/성능-측정-방법론.md`](docs/성능/성능-측정-방법론.md)에 있습니다.
+현재 측정 원자료는 `build/performance/runs/20260907T063822Z-feed-read-baseline-d9923c0/`
+및 `build/performance/seeds/20260907T063817Z-large/`에 있습니다. calibration은
+backend 종료로 실패하여 대표 수치에 포함하지 않았습니다. 작업 트리는
+dirty 상태였으므로 두 metadata의 `working_tree_diff_sha256`로 실행 소스를
+식별합니다.
 
 ### 신뢰성 경계
 
@@ -44,6 +56,14 @@
 - **정원·첨부 개수 경합:** 공유 불변식이 있는 변경에 row lock과 database constraint를 적용했습니다.
 - **알림 후속 처리:** 핵심 transaction과 부수효과를 분리하고 Spring Modulith Event Publication Registry와 PostgreSQL로 재시도 가능한 publication을 관리했습니다. consumer는 중복 실행에 안전하게 구성했습니다.
 - **민감 정보 보호:** 분실·목격의 정확 위치와 private media는 공개 응답·검색·로그에서 분리했습니다.
+
+모임 정원 경합의 status 분포와 최종 DB 상태, 부모 row lock과 unique constraint의
+역할은 [`portfolio/evidence/gathering-concurrency.md`](portfolio/evidence/gathering-concurrency.md)에
+코드·migration·통합 테스트와 함께 기록했습니다.
+
+알림의 at-least-once 재전달, `event_id` 원자적 dedup, publication 완료와 bounded
+recovery 경계는 [`portfolio/evidence/notification-delivery.md`](portfolio/evidence/notification-delivery.md)에
+코드·migration·통합 테스트와 함께 기록했습니다.
 
 ## 아키텍처
 

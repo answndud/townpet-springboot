@@ -12,7 +12,7 @@ audit:
   verifiedRule: "정상·오류·권한·상태 전이와 대표 browser 또는 integration evidence가 있을 때만 verified"
   pendingRule: "route가 존재해도 의미 parity 또는 representative evidence가 부족하면 pending"
   evidence:
-    shell: [frontend/e2e/parity-shell.spec.ts, docs/05-패리티/셸.md]
+    shell: [frontend/e2e/parity-shell.spec.ts]
     auth: [frontend/e2e/auth-parity.spec.ts, src/test/java/com/townpet/identity/IdentityMemberControllerTest.java]
     publication: [frontend/e2e/publication-parity.spec.ts, frontend/e2e/publication-management.spec.ts, frontend/e2e/public-search-parity.spec.ts, src/test/java/com/townpet/publication/PublicationControllerTest.java]
     engagement: [frontend/e2e/comment-management.spec.ts, frontend/e2e/reaction-management.spec.ts, frontend/e2e/bookmark-management.spec.ts]

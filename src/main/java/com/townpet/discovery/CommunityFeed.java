@@ -154,7 +154,6 @@ class CommunityFeed {
         condition = condition.and(AUTHOR_ID.isNull().or(AUTHOR_ID.notIn(blockedAuthorIds)));
       }
     }
-    int totalPages = totalPages(ITEMS, condition, limit);
     if (cursor != null) {
       OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
       condition =
@@ -201,7 +200,7 @@ class CommunityFeed {
             ? Cursor.encode(
                 items.getLast().createdAt(), items.getLast().itemKind(), items.getLast().sourceId())
             : null;
-    return new Page(items, nextCursor, hasNext, totalPages);
+    return new Page(items, nextCursor, hasNext);
   }
 
   private static void validateSearchField(String searchField) {
@@ -267,7 +266,6 @@ class CommunityFeed {
                 COMMUNITY_AUTHOR_ID.isNull().or(COMMUNITY_AUTHOR_ID.notIn(blockedAuthorIds)));
       }
     }
-    int totalPages = totalPages(COMMUNITY_ITEMS, condition, limit);
     if (cursor != null) {
       OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
       condition =
@@ -330,7 +328,7 @@ class CommunityFeed {
             ? Cursor.encode(
                 items.getLast().createdAt(), items.getLast().itemKind(), items.getLast().sourceId())
             : null;
-    return new Page(items, nextCursor, hasNext, totalPages);
+    return new Page(items, nextCursor, hasNext);
   }
 
   @Transactional(readOnly = true)
@@ -375,15 +373,6 @@ class CommunityFeed {
       }
     }
     if (cursor != null) condition = afterPopularCursor(condition, CREATED_AT, SOURCE_ID, cursor);
-    long totalCount =
-        query
-            .selectCount()
-            .from(ITEMS)
-            .join(recommendations)
-            .on(recommendationSourceId.eq(SOURCE_ID))
-            .where(condition)
-            .fetchOne(0, Long.class);
-    int totalPages = Math.toIntExact((totalCount + limit - 1) / limit);
     List<Item> fetched =
         query
             .select(
@@ -423,7 +412,7 @@ class CommunityFeed {
                         UPDATED_AT,
                         TARGET_PATH,
                         recommendationTotal));
-    return popularPage(fetched, limit, totalPages);
+    return popularPage(fetched, limit);
   }
 
   @Transactional(readOnly = true)
@@ -478,15 +467,6 @@ class CommunityFeed {
     }
     if (cursor != null)
       condition = afterPopularCursor(condition, COMMUNITY_CREATED_AT, COMMUNITY_SOURCE_ID, cursor);
-    long totalCount =
-        query
-            .selectCount()
-            .from(COMMUNITY_ITEMS)
-            .join(recommendations)
-            .on(recommendationSourceId.eq(COMMUNITY_SOURCE_ID))
-            .where(condition)
-            .fetchOne(0, Long.class);
-    int totalPages = Math.toIntExact((totalCount + limit - 1) / limit);
     List<Item> fetched =
         query
             .select(
@@ -526,7 +506,7 @@ class CommunityFeed {
                         COMMUNITY_UPDATED_AT,
                         COMMUNITY_TARGET_PATH,
                         recommendationTotal));
-    return popularPage(fetched, limit, totalPages);
+    return popularPage(fetched, limit);
   }
 
   private static void validatePopularRequest(
@@ -596,19 +576,14 @@ class CommunityFeed {
         record.get(recommendationTotal));
   }
 
-  private static Page popularPage(List<Item> fetched, int limit, int totalPages) {
+  private static Page popularPage(List<Item> fetched, int limit) {
     boolean hasNext = fetched.size() > limit;
     List<Item> items = hasNext ? List.copyOf(fetched.subList(0, limit)) : List.copyOf(fetched);
     String nextCursor =
         hasNext
             ? PopularCursor.encode(items.getLast().createdAt(), items.getLast().sourceId())
             : null;
-    return new Page(items, nextCursor, hasNext, totalPages);
-  }
-
-  private int totalPages(Table<?> table, Condition condition, int limit) {
-    long totalCount = query.selectCount().from(table).where(condition).fetchOne(0, Long.class);
-    return Math.toIntExact((totalCount + limit - 1) / limit);
+    return new Page(items, nextCursor, hasNext);
   }
 
   private static Item toItem(Record record) {
@@ -628,7 +603,7 @@ class CommunityFeed {
         null);
   }
 
-  record Page(List<Item> items, @Nullable String nextCursor, boolean hasNext, int totalPages) {}
+  record Page(List<Item> items, @Nullable String nextCursor, boolean hasNext) {}
 
   record Item(
       UUID sourceId,

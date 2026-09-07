@@ -188,7 +188,6 @@ export type FeedPage = {
   page: {
     nextCursor: string | null;
     hasNext: boolean;
-    totalPages?: number;
   };
 };
 
@@ -196,11 +195,9 @@ type FeedPageResponse = {
   items?: FeedItem[];
   nextCursor?: string | null;
   hasNext?: boolean;
-  totalPages?: number;
   page?: {
     nextCursor?: string | null;
     hasNext?: boolean;
-    totalPages?: number;
   };
 };
 
@@ -212,7 +209,6 @@ export function normalizeFeedPage(response: FeedPageResponse | null | undefined)
     page: {
       nextCursor: page.nextCursor ?? response?.nextCursor ?? null,
       hasNext,
-      totalPages: page.totalPages ?? response?.totalPages ?? (hasNext ? 2 : 1),
     },
   };
 }
@@ -228,7 +224,7 @@ export type PopularFeedItem = {
 
 export type PopularFeedPage = {
   items: PopularFeedItem[];
-  page: { nextCursor: string | null; hasNext: boolean; totalPages?: number };
+  page: { nextCursor: string | null; hasNext: boolean };
 };
 
 type PopularFeedPageResponse = FeedPageResponse & { items?: PopularFeedItem[] };

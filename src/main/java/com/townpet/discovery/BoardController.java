@@ -74,7 +74,7 @@ class BoardController {
                   : Set.of(COMMON_BOARD_TYPES.get(normalizedBoard)));
       return new FeedController.FeedResponse(
           page.items().stream().map(BoardController::toResponse).toList(),
-          new FeedController.PageInfo(page.nextCursor(), page.hasNext(), page.totalPages()));
+          new FeedController.PageInfo(page.nextCursor(), page.hasNext()));
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid common board request");
     }

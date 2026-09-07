@@ -5,8 +5,8 @@ export const options = optionsFor();
 
 export default function () {
   const requests = [
-    ["/api/v1/feed?audience=GLOBAL&limit=20", "public-feed"],
-    ["/api/v1/feed/popular", "popular-feed"],
+    ["/api/v1/discovery?limit=20", "public-discovery"],
+    ["/api/v1/discovery/popular?limit=20", "popular-discovery"],
     ["/api/v1/local-resources", "local-resources"],
   ];
   const [path, name] = requests[Math.floor(Math.random() * requests.length)];

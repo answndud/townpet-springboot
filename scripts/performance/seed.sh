@@ -6,6 +6,10 @@ CONTAINER_NAME="${TOWNPET_PERF_DB_CONTAINER:-townpet-postgres-perf}"
 DB_NAME="${TOWNPET_PERF_DB_NAME:-townpet_perf}"
 DB_USER="${TOWNPET_PERF_DB_USERNAME:-townpet_perf}"
 SCALE="${1:-small}"
+SEED_RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-${SCALE}"
+SEED_DIR="$ROOT_DIR/build/performance/seeds/$SEED_RUN_ID"
+WORKING_TREE_STATE="$(test -z "$(git -C "$ROOT_DIR" status --porcelain)" && echo clean || echo dirty)"
+WORKING_TREE_DIFF_SHA256="$({ git -C "$ROOT_DIR" diff --binary; git -C "$ROOT_DIR" diff --cached --binary; } | shasum -a 256 | cut -d ' ' -f1)"
 
 case "$SCALE" in
   small) ROWS=2000 ;;
@@ -19,7 +23,45 @@ docker exec -i "$CONTAINER_NAME" psql -v ON_ERROR_STOP=1 \
   -v scale="$ROWS" -U "$DB_USER" -d "$DB_NAME" \
   < "$ROOT_DIR/scripts/performance/seed.sql"
 
-docker exec "$CONTAINER_NAME" psql -Atq -U "$DB_USER" -d "$DB_NAME" -c \
-  "SELECT 'publication=' || count(*) FROM publication WHERE title LIKE 'perf-publication-%';
-   SELECT 'volunteer=' || count(*) FROM volunteer_opportunity WHERE title LIKE 'perf-opportunity-%';
-   SELECT 'report=' || count(*) FROM trust_report WHERE detail = 'performance-fixture';"
+mkdir -p "$SEED_DIR"
+{
+  echo "seed_run_id=$SEED_RUN_ID"
+  echo "commit=$(git -C "$ROOT_DIR" rev-parse HEAD)"
+  echo "working_tree_state=$WORKING_TREE_STATE"
+  echo "working_tree_diff_sha256=$WORKING_TREE_DIFF_SHA256"
+  echo "scale=$SCALE"
+  echo "planned_publication_rows=$ROWS"
+  echo "container=$CONTAINER_NAME"
+  echo "database=$DB_NAME"
+  echo "postgres=$(docker exec "$CONTAINER_NAME" psql -Atq -U "$DB_USER" -d "$DB_NAME" -c 'SHOW server_version' | tr -d '\n')"
+  echo "postgis=$(docker exec "$CONTAINER_NAME" psql -Atq -U "$DB_USER" -d "$DB_NAME" -c 'SELECT PostGIS_Full_Version()' | tr -d '\n')"
+  echo "seeded_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} > "$SEED_DIR/metadata.txt"
+
+docker exec -i "$CONTAINER_NAME" psql -Atq -U "$DB_USER" -d "$DB_NAME" > "$SEED_DIR/distribution.tsv" <<'SQL'
+SELECT 'publication_count' AS metric, count(*)::text AS value
+FROM publication WHERE title LIKE 'perf-publication-%'
+UNION ALL
+SELECT 'publication_type_' || type, count(*)::text
+FROM publication WHERE title LIKE 'perf-publication-%' GROUP BY type
+UNION ALL
+SELECT 'publication_lifecycle_' || lifecycle, count(*)::text
+FROM publication WHERE title LIKE 'perf-publication-%' GROUP BY lifecycle
+UNION ALL
+SELECT 'publication_search_hit_perf', count(*)::text
+FROM publication WHERE title LIKE 'perf-publication-%' AND (title ILIKE '%perf%' OR body ILIKE '%perf%')
+UNION ALL
+SELECT 'publication_created_at_min', min(created_at)::text
+FROM publication WHERE title LIKE 'perf-publication-%'
+UNION ALL
+SELECT 'publication_created_at_max', max(created_at)::text
+FROM publication WHERE title LIKE 'perf-publication-%'
+UNION ALL
+SELECT 'volunteer_count', count(*)::text
+FROM volunteer_opportunity WHERE title LIKE 'perf-opportunity-%'
+UNION ALL
+SELECT 'report_count', count(*)::text
+FROM trust_report WHERE detail = 'performance-fixture';
+SQL
+
+echo "Performance seed ready: $SEED_DIR"
