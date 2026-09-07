@@ -157,6 +157,13 @@ log_event "success" "schema_version_present=true"
 set_phase "application"
 compose_bounded up -d minio minio-init backend web
 log_event "success"
+set_phase "edge_refresh"
+# The edge stack is a separate Compose project. Recreate/restart of web can
+# change its container IP, while Caddy may retain the old DNS result until it
+# is restarted. Refresh the edge after the application stack is up so smoke
+# checks use the current web container.
+edge_compose_bounded restart edge
+log_event "success" "upstream_dns_refreshed=true"
 
 ready=1
 set_phase "readiness"
