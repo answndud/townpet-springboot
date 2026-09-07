@@ -92,6 +92,7 @@ townpet:
       min-age: ${TOWNPET_EVENT_RECOVERY_MIN_AGE:PT5M}
       max-in-flight: ${TOWNPET_EVENT_RECOVERY_MAX_IN_FLIGHT:10}
       batch-size: ${TOWNPET_EVENT_RECOVERY_BATCH_SIZE:10}
+      max-attempts: ${TOWNPET_EVENT_RECOVERY_MAX_ATTEMPTS:3}
   demo-data:
     enabled: ${TOWNPET_DEMO_DATA_ENABLED:false}
   build:

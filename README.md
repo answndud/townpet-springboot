@@ -61,7 +61,8 @@ dirty 상태였으므로 두 metadata의 `working_tree_diff_sha256`로 실행 �
 코드·migration·통합 테스트와 함께 기록했습니다.
 
 알림의 at-least-once 재전달, `event_id` 원자적 dedup, publication 완료와 bounded
-recovery 경계는 [`portfolio/evidence/notification-delivery.md`](portfolio/evidence/notification-delivery.md)에
+recovery 경계(기본 최대 3회, netcup recovery 활성화)는
+[`portfolio/evidence/notification-delivery.md`](portfolio/evidence/notification-delivery.md)에
 코드·migration·통합 테스트와 함께 기록했습니다.
 
 ## 아키텍처

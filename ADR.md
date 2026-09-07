@@ -789,15 +789,19 @@ duplicate로 처리하면 실제 schema 오류가 숨겨진다.
 
 notification 저장은 `event_id` unique constraint와 PostgreSQL
 `INSERT ... ON CONFLICT (event_id) DO NOTHING`을 사용한다. 영향 행 수 1은 신규 저장,
-0은 중복 재전달로 기록한다. 미완료 publication recovery는 기본 비활성화하고, 활성화된
-경우 minimum age·batch size·max in-flight를 적용하며 `FAILED` publication은 자동 재제출하지
-않는다. backlog count와 oldest age만 metric으로 노출한다.
+0은 중복 재전달로 기록한다. 미완료 publication recovery는 기본 비활성화하고
+`TOWNPET_EVENT_RECOVERY_ENABLED=true`인 배포에서만 실행한다. 활성화된 경우 minimum age,
+batch size, max in-flight를 적용하고 `event_publication.completion_attempts`가 기본 3회
+미만인 publication만 자동 재제출한다. 따라서 `FAILED` status 자체는 재제출 제외 조건이
+아니지만, 시도 상한을 넘은 publication은 자동 재제출하지 않고 운영자 조치 대상으로 남긴다.
+backlog count와 oldest age metric도 재처리 가능한 incomplete publication만 집계한다.
 
 ### Consequences
 
 - at-least-once listener 재실행에도 notification 최종 행이 하나로 수렴한다.
 - database 무결성 오류가 duplicate 성공으로 숨겨지지 않는다.
-- recovery가 영구 실패를 자동 해결하지 않으므로 운영자 조치와 별도 failure runbook이 필요하다.
+- recovery가 예외 종류를 자동으로 영구/일시 실패로 판정하지 않으므로, 반복 실패는 3회 상한
+  뒤 운영자 조치와 별도 failure runbook이 필요하다.
 - bounded replay로 장애 직후 처리량을 제한하지만, backlog 해소 시간이 길어질 수 있다.
 
 ### Evidence
@@ -805,7 +809,10 @@ notification 저장은 `event_id` unique constraint와 PostgreSQL
 - `src/main/java/com/townpet/notification/NotificationRepository.java`
 - `src/main/java/com/townpet/notification/NotificationEventHandler.java`
 - `src/main/java/com/townpet/operations/EventPublicationRecovery.java`
+- `src/main/resources/application.yml`
+- `deploy/netcup.env.example`
 - `src/main/resources/db/migration/V066__notification_dedup.sql`
 - `src/test/java/com/townpet/notification/NotificationEventHandlerIntegrationTest.java`
 - `src/test/java/com/townpet/operations/EventPublicationRecoveryTest.java`
+- `src/test/java/com/townpet/operations/EventPublicationRecoveryIntegrationTest.java`
 - `portfolio/evidence/notification-delivery.md`
