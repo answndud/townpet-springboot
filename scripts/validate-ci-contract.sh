@@ -91,6 +91,13 @@ if not re.search(r"publish_images:\n[\s\S]*?needs: \[[^\]]*live-publication-e2e"
     raise SystemExit("CI contract failed: image publication does not depend on live publication E2E")
 if not Path("frontend/e2e/live.config.ts").exists() or not Path("scripts/live-browser-e2e.sh").exists():
     raise SystemExit("CI contract failed: live E2E config or runner is missing")
+for live_spec in (
+    "frontend/e2e/publication-management.spec.ts",
+    "frontend/e2e/publication-authorization.spec.ts",
+    "frontend/e2e/gathering-capacity.spec.ts",
+):
+    if live_spec not in workflow_text:
+        raise SystemExit(f"CI contract failed: required live E2E spec is not wired: {live_spec}")
 if "Validate resolved Compose contracts" not in workflow_text or "-f deploy/compose/edge.yml config" not in workflow_text:
     raise SystemExit("CI contract failed: resolved Compose contract validation is missing")
 if re.search(r"^\s+push:\s*$", release_text, re.MULTILINE):

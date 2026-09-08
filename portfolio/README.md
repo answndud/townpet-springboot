@@ -17,7 +17,7 @@ TownPet은 기존 반려동물 커뮤니티의 관찰 가능한 사용자 흐름
 
 ## 검증 범위
 
-- CI: backend 전체 게이트, frontend typecheck/test/build, 보안·dependency 검사, frontend container smoke, live publication E2E.
+- CI: backend 전체 게이트, frontend typecheck/test/build, 보안·dependency 검사, frontend container smoke, ephemeral PostgreSQL 기반 live critical browser E2E(게시글 lifecycle·권한·모임 정원).
 - 배포: CI promotion manifest의 immutable image digest를 netcup VPS에 배포하고 외부 health·discovery·raw HTML·asset 응답을 확인했다.
 - 복구: 실제 운영 backup을 새 PostgreSQL·MinIO 환경에 복원했다. provider 전체 서버 재구축, WAL/PITR과 운영 트래픽 SLA는 검증 범위가 아니다.
 - 성능: 공개된 수치는 로컬 Docker 합성 fixture baseline이며 운영 SLA가 아니다.

@@ -37,4 +37,8 @@ test("non-owner cannot mutate another member's publication", async ({ page, brow
   expect(result).toBe(403);
   await expect(otherPage.getByRole("heading", { name: /권한 경계/ })).toBeVisible();
   await context.close();
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "삭제", exact: true }).click();
+  await expect(page).toHaveURL(/\/my-posts$/);
 });
