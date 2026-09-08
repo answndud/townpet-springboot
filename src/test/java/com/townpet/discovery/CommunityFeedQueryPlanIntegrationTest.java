@@ -141,7 +141,7 @@ class CommunityFeedQueryPlanIntegrationTest {
     Files.writeString(
         directory.resolve("binds.txt"), first.getBindValues() + "\n" + next.getBindValues());
     Files.writeString(
-        directory.resolve("metadata.txt"),
+        directory.resolve("query-plan-metadata.txt"),
         """
         endpoint=/api/v1/discovery?limit=20
         fixture_scale=100000_publications

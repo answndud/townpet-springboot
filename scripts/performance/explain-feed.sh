@@ -22,6 +22,7 @@ export TOWNPET_QUERY_PLAN_ARTIFACT="$OUT_DIR"
 
 test -s "$OUT_DIR/query.sql"
 test -s "$OUT_DIR/binds.txt"
+test -s "$OUT_DIR/query-plan-metadata.txt"
 test -s "$OUT_DIR/explain-first.json"
 test -s "$OUT_DIR/explain-next.json"
 printf 'explain_status=recorded\n' > "$OUT_DIR/status.txt"
