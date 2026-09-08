@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCENARIO="smoke"
 PROFILE="smoke"
 BASE_URL="${TOWNPET_PERF_BASE_URL:-http://host.docker.internal:8081}"
+READINESS_URL="${TOWNPET_PERF_READINESS_URL:-$BASE_URL}"
 K6_IMAGE="${TOWNPET_K6_IMAGE:-grafana/k6:0.52.0}"
 
 while [[ $# -gt 0 ]]; do
@@ -20,6 +21,10 @@ case "$SCENARIO" in
   smoke|public-read|feed-read|member-read|write|contention|moderator|media|mixed) ;;
   *) echo "unsupported scenario: $SCENARIO" >&2; exit 2 ;;
 esac
+
+if [[ "$READINESS_URL" == *host.docker.internal* ]]; then
+  READINESS_URL="${READINESS_URL//host.docker.internal/127.0.0.1}"
+fi
 
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-${SCENARIO}-${PROFILE}-$(git -C "$ROOT_DIR" rev-parse --short HEAD)"
 OUT_DIR="$ROOT_DIR/build/performance/runs/$RUN_ID"
@@ -51,6 +56,7 @@ esac
   echo "scenario=$SCENARIO"
   echo "profile=$PROFILE"
   echo "base_url=$BASE_URL"
+  echo "readiness_url=$READINESS_URL"
   echo "k6_image=$K6_IMAGE"
   echo "k6_image_digest=$(docker image inspect "$K6_IMAGE" --format '{{index .RepoDigests 0}}' 2>/dev/null || echo unknown)"
   echo "backend_jar_sha256=$(shasum -a 256 "$ROOT_DIR"/build/libs/*.jar 2>/dev/null | head -1 | cut -d ' ' -f1 || echo unknown)"
@@ -86,7 +92,7 @@ export ALLOW_EXPECTED_CONFLICTS="${ALLOW_EXPECTED_CONFLICTS:-false}"
 export CONTENTION_CASE="${CONTENTION_CASE:-views}"
 export PERF_MEMBER_COUNT="${PERF_MEMBER_COUNT:-100}"
 
-curl --fail --silent --show-error --max-time 5 "$BASE_URL/actuator/health/readiness" >/dev/null \
+curl --fail --silent --show-error --max-time 5 "$READINESS_URL/actuator/health/readiness" >/dev/null \
   || { echo "performance backend is not ready at $BASE_URL; refusing to start k6" >&2; exit 1; }
 
 docker run --rm \
