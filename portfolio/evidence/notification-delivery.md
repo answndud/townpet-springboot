@@ -21,13 +21,19 @@ FK, not-null 등 다른 무결성 오류는 예외로 남아 publication 실패�
 
 통합 테스트는 다음을 PostgreSQL에서 확인한다.
 
-- 같은 event를 순차 재전달해도 notification 행은 1개
-- 같은 event를 8개 worker에서 동시에 처리해도 notification 행은 1개
+- 실제 `ApplicationEventPublisher` transaction 경로로 같은 `event_id`를 가진
+  publication을 순차 재전달해도 notification 행은 1개이고, 해당 event의
+  publication 2개가 각각 completion 된다.
+- 같은 `event_id`를 8개 transaction에서 동시에 publish해도 notification 행은
+  1개이고, 해당 event의 publication 8개가 각각 completion 된다.
 - transaction 안에서 실제 `ApplicationEventPublisher`로 발행한 event가
-  `event_publication.completion_date` 완료 상태로 수렴
-- listener가 비동기이므로 저장·publication 완료를 bounded polling 후 조회
+  대상 event의 `event_publication.completion_date` 완료 상태로 수렴한다.
+- listener가 비동기이므로 대상 `event_id`의 notification 저장·publication 완료를
+  bounded polling 후 조회하며, 전체 event publication count를 사용하지 않는다.
 - listener 실패로 `FAILED`가 된 publication에 recipient를 복구한 뒤 서버 재시작 없이
-  recovery를 호출해 같은 publication이 완료되고 notification row가 1개로 남음
+  recovery를 호출해 해당 publication이 완료되고 notification row가 1개로 남는다.
+  실패는 존재하지 않는 recipient FK로 재현하고, recipient를 복구한 뒤 같은
+  publication id의 status/completion/attempts를 확인한다.
 
 ## Recovery 경계
 
@@ -42,6 +48,10 @@ FK, not-null 등 다른 무결성 오류는 예외로 남아 publication 실패�
 이 정책은 예외 종류를 자동으로 영구/일시 실패로 판정하지 않는다. 일시적 실패는 다음
 재전달에서 완료될 수 있고, 반복 실패는 3회 상한 뒤 운영자가 원인을 확인하고 별도 조치를
 취해야 한다. 실제 SMTP provider deliverability나 운영자 조치 시간은 이 테스트 범위가 아니다.
+
+`NotificationEventHandlerTest`의 repository 예외 테스트는 listener exception이 duplicate
+결과로 숨겨지지 않는다는 단위 경계를 확인한다. 실제 registry publication의 실패·재처리는
+`EventPublicationRecoveryIntegrationTest`가 PostgreSQL에서 별도로 확인한다.
 
 ## 근거
 

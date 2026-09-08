@@ -37,6 +37,12 @@ idempotent 응답을 만들고, unique constraint는 동시 실행에서도 최�
 
 ## Trade-off와 한계
 
+목록 조회의 SQL statement 수에 대한 별도 수치(`N+1 → N` 등)는 현재 공개하지
+않는다. `GatheringService.list`는 모임 목록 후 participant count를
+`countByGatheringIdIn` 한 번으로 집계한다는 코드 근거만 기록하며, datasource 또는
+Hibernate statement-count 측정 artifact가 없는 상태에서 숫자 개선률을 주장하지
+않는다.
+
 - row lock은 같은 모임에 대한 참가 요청을 직렬화하므로 contention이 높으면
   대기 시간이 늘어난다.
 - 조건부 `UPDATE ... WHERE participant_count < capacity`는 별도 counter 관리와

@@ -78,7 +78,7 @@ class EventPublicationRecoveryIntegrationTest {
                         "재처리 테스트",
                         "의존성 복구 후 재처리됩니다.")));
 
-    UUID publicationId = awaitLatestNotificationPublication();
+    UUID publicationId = awaitPublicationForEvent(eventId);
     assertTrue(awaitPublicationStatus(publicationId, "FAILED"));
 
     insertMember(recipient, "recovery-recipient@townpet.local", "recovery-recipient");
@@ -108,13 +108,17 @@ class EventPublicationRecoveryIntegrationTest {
         nickname);
   }
 
-  private UUID awaitLatestNotificationPublication() {
+  private UUID awaitPublicationForEvent(UUID eventId) {
     for (int attempt = 0; attempt < 400; attempt++) {
       Optional<UUID> id =
           jdbc.query(
-              "select id from event_publication where event_type like '%NotificationEvent%' order by publication_date desc limit 1",
+              "select id from event_publication "
+                  + "where event_type like '%NotificationEvent%' "
+                  + "and serialized_event like ? "
+                  + "order by publication_date desc limit 1",
               result ->
-                  result.next() ? Optional.of(result.getObject(1, UUID.class)) : Optional.empty());
+                  result.next() ? Optional.of(result.getObject(1, UUID.class)) : Optional.empty(),
+              "%" + eventId + "%");
       if (id.isPresent()) return id.get();
       sleep();
     }

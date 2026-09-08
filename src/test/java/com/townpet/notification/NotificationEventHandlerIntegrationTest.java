@@ -52,7 +52,6 @@ class NotificationEventHandlerIntegrationTest {
     registry.add("spring.datasource.password", POSTGRES::getPassword);
   }
 
-  @Autowired NotificationEventHandler handler;
   @Autowired ApplicationEventPublisher events;
   @Autowired org.springframework.transaction.PlatformTransactionManager transactionManager;
   @Autowired JdbcTemplate jdbc;
@@ -72,16 +71,16 @@ class NotificationEventHandlerIntegrationTest {
     UUID eventId = UUID.randomUUID();
     NotificationEvent event = event(eventId);
 
-    handler.handle(event);
-    handler.handle(event);
+    publish(event);
+    publish(event(eventId));
 
     assertEquals(1, awaitNotificationCount(eventId));
+    assertEquals(2, awaitCompletedPublicationCount(eventId, 2));
   }
 
   @Test
   void concurrentlyReplayedEventCreatesOneNotification() throws Exception {
     UUID eventId = UUID.randomUUID();
-    NotificationEvent event = event(eventId);
     ExecutorService executor = Executors.newFixedThreadPool(8);
     CountDownLatch start = new CountDownLatch(1);
     try {
@@ -89,13 +88,14 @@ class NotificationEventHandlerIntegrationTest {
       for (int i = 0; i < 8; i++) {
         futures.add(executor.submit(() -> {
           start.await();
-          handler.handle(event);
+          publish(event(eventId));
           return null;
         }));
       }
       start.countDown();
       for (Future<Void> future : futures) future.get();
       assertEquals(1, awaitNotificationCount(eventId));
+      assertEquals(8, awaitCompletedPublicationCount(eventId, 8));
     } finally {
       executor.shutdownNow();
     }
@@ -104,13 +104,15 @@ class NotificationEventHandlerIntegrationTest {
   @Test
   void publishedEventCompletesInEventPublicationRegistry() {
     UUID eventId = UUID.randomUUID();
-    int completedBefore = completedPublicationCount();
-
-    new TransactionTemplate(transactionManager)
-        .executeWithoutResult(status -> events.publishEvent(event(eventId)));
+    publish(event(eventId));
 
     assertEquals(1, awaitNotificationCount(eventId));
-    assertEquals(1, awaitCompletedPublicationCount(completedBefore));
+    assertEquals(1, awaitCompletedPublicationCount(eventId, 1));
+  }
+
+  private void publish(NotificationEvent event) {
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(status -> events.publishEvent(event));
   }
 
   private NotificationEvent event(UUID eventId) {
@@ -136,15 +138,21 @@ class NotificationEventHandlerIntegrationTest {
     return notificationCount(eventId);
   }
 
-  private int completedPublicationCount() {
+  private int publicationCount(UUID eventId, String completionPredicate) {
     return jdbc.queryForObject(
-        "select count(*) from event_publication where event_type like '%NotificationEvent%' and completion_date is not null",
-        Integer.class);
+        "select count(*) from event_publication "
+            + "where event_type like '%NotificationEvent%' "
+            + "and serialized_event like ? "
+            + completionPredicate,
+        Integer.class,
+        "%" + eventId + "%");
   }
 
-  private int awaitCompletedPublicationCount(int countBefore) {
+  private int awaitCompletedPublicationCount(UUID eventId, int expectedCount) {
     for (int attempt = 0; attempt < 400; attempt++) {
-      if (completedPublicationCount() > countBefore) return 1;
+      if (publicationCount(eventId, "and completion_date is not null") >= expectedCount) {
+        return expectedCount;
+      }
       try {
         Thread.sleep(50);
       } catch (InterruptedException exception) {
@@ -152,6 +160,6 @@ class NotificationEventHandlerIntegrationTest {
         throw new AssertionError("Interrupted while waiting for event publication", exception);
       }
     }
-    return completedPublicationCount() > countBefore ? 1 : 0;
+    return publicationCount(eventId, "and completion_date is not null");
   }
 }
