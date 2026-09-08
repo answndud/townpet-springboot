@@ -18,7 +18,7 @@ export TOWNPET_QUERY_PLAN_DB_PASSWORD="${TOWNPET_QUERY_PLAN_DB_PASSWORD:-$DB_PAS
 export TOWNPET_QUERY_PLAN_ARTIFACT="$OUT_DIR"
 
 (cd "$ROOT_DIR" && ./gradlew integrationTest \
-  --tests '*CommunityFeedQueryPlanIntegrationTest' --no-daemon)
+  --tests '*CommunityFeedQueryPlanIntegrationTest' --rerun-tasks --no-daemon)
 
 test -s "$OUT_DIR/query.sql"
 test -s "$OUT_DIR/binds.txt"
