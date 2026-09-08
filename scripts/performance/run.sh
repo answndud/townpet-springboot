@@ -24,9 +24,9 @@ esac
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-${SCENARIO}-${PROFILE}-$(git -C "$ROOT_DIR" rev-parse --short HEAD)"
 OUT_DIR="$ROOT_DIR/build/performance/runs/$RUN_ID"
 mkdir -p "$OUT_DIR"
+test -z "$(git -C "$ROOT_DIR" status --porcelain)" \
+  || { echo "clean working tree required before performance evidence" >&2; exit 1; }
 LATEST_SEED_METADATA="$(find "$ROOT_DIR/build/performance/seeds" -mindepth 2 -maxdepth 2 -name metadata.txt -print 2>/dev/null | sort | tail -1 || true)"
-WORKING_TREE_STATE="$(test -z "$(git -C "$ROOT_DIR" status --porcelain)" && echo clean || echo dirty)"
-WORKING_TREE_DIFF_SHA256="$({ git -C "$ROOT_DIR" diff --binary; git -C "$ROOT_DIR" diff --cached --binary; } | shasum -a 256 | cut -d ' ' -f1)"
 if [[ -n "$LATEST_SEED_METADATA" ]]; then
   cp "$LATEST_SEED_METADATA" "$OUT_DIR/seed-metadata.txt"
 fi
@@ -47,12 +47,13 @@ esac
 {
   echo "run_id=$RUN_ID"
   echo "commit=$(git -C "$ROOT_DIR" rev-parse HEAD)"
-  echo "working_tree_state=$WORKING_TREE_STATE"
-  echo "working_tree_diff_sha256=$WORKING_TREE_DIFF_SHA256"
+  echo "working_tree_state=clean"
   echo "scenario=$SCENARIO"
   echo "profile=$PROFILE"
   echo "base_url=$BASE_URL"
   echo "k6_image=$K6_IMAGE"
+  echo "k6_image_digest=$(docker image inspect "$K6_IMAGE" --format '{{index .RepoDigests 0}}' 2>/dev/null || echo unknown)"
+  echo "backend_jar_sha256=$(shasum -a 256 "$ROOT_DIR"/build/libs/*.jar 2>/dev/null | head -1 | cut -d ' ' -f1 || echo unknown)"
   echo "load_profile=$PROFILE"
   echo "profile_stages=$PROFILE_STAGES"
   echo "warmup_stage_seconds=$WARMUP_SECONDS"
@@ -124,22 +125,12 @@ if [[ "$K6_STATUS" -ne 0 ]]; then
   exit "$K6_STATUS"
 fi
 
-if docker inspect "$PERF_DB_CONTAINER" >/dev/null 2>&1; then
-  docker exec -i "$PERF_DB_CONTAINER" psql -Atq \
-    -U "${TOWNPET_PERF_DB_USERNAME:-townpet_perf}" \
-    -d "${TOWNPET_PERF_DB_NAME:-townpet_perf}" \
-    -v ON_ERROR_STOP=1 > "$OUT_DIR/explain.json" <<'SQL'
-EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
-SELECT id, type, author_member_id, title, body, created_at, updated_at
-FROM publication
-WHERE lifecycle = 'ACTIVE'
-ORDER BY created_at DESC, id DESC
-LIMIT 21;
-SQL
-  test -s "$OUT_DIR/explain.json" || { echo "EXPLAIN output is empty" >&2; exit 1; }
+if [[ "$SCENARIO" == feed-read ]]; then
+  "$ROOT_DIR/scripts/performance/explain-feed.sh" "$OUT_DIR"
+  cp "$OUT_DIR/explain-first.json" "$OUT_DIR/explain.json"
   echo "explain_status=recorded" >> "$OUT_DIR/metadata.txt"
 else
-  echo "explain_status=unavailable (performance DB container not found)" >> "$OUT_DIR/metadata.txt"
+  echo "explain_status=not_applicable" >> "$OUT_DIR/metadata.txt"
 fi
 
 echo "Performance result: $OUT_DIR"

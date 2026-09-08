@@ -6,6 +6,7 @@ for file in \
   "$ROOT_DIR/scripts/performance/prepare.sh" \
   "$ROOT_DIR/scripts/performance/start.sh" \
   "$ROOT_DIR/scripts/performance/seed.sh" \
+  "$ROOT_DIR/scripts/performance/explain-feed.sh" \
   "$ROOT_DIR/scripts/performance/run.sh" \
   "$ROOT_DIR/scripts/performance/stop.sh"; do
   test -f "$file" || { echo "missing: $file" >&2; exit 1; }

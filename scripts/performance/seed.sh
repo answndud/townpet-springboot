@@ -9,7 +9,8 @@ SCALE="${1:-small}"
 SEED_RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-${SCALE}"
 SEED_DIR="$ROOT_DIR/build/performance/seeds/$SEED_RUN_ID"
 WORKING_TREE_STATE="$(test -z "$(git -C "$ROOT_DIR" status --porcelain)" && echo clean || echo dirty)"
-WORKING_TREE_DIFF_SHA256="$({ git -C "$ROOT_DIR" diff --binary; git -C "$ROOT_DIR" diff --cached --binary; } | shasum -a 256 | cut -d ' ' -f1)"
+test "$WORKING_TREE_STATE" = clean \
+  || { echo "clean working tree required before performance evidence" >&2; exit 1; }
 
 case "$SCALE" in
   small) ROWS=2000 ;;
@@ -26,9 +27,8 @@ docker exec -i "$CONTAINER_NAME" psql -v ON_ERROR_STOP=1 \
 mkdir -p "$SEED_DIR"
 {
   echo "seed_run_id=$SEED_RUN_ID"
-  echo "commit=$(git -C "$ROOT_DIR" rev-parse HEAD)"
-  echo "working_tree_state=$WORKING_TREE_STATE"
-  echo "working_tree_diff_sha256=$WORKING_TREE_DIFF_SHA256"
+echo "commit=$(git -C "$ROOT_DIR" rev-parse HEAD)"
+  echo "working_tree_state=clean"
   echo "scale=$SCALE"
   echo "planned_publication_rows=$ROWS"
   echo "container=$CONTAINER_NAME"

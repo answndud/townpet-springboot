@@ -128,69 +128,27 @@ class CommunityFeed {
     validateSearchField(searchField);
 
     Cursor cursor = encodedCursor == null ? null : Cursor.decode(encodedCursor);
-    Condition condition = DSL.trueCondition();
-    if (from != null) condition = condition.and(CREATED_AT.ge(from.atOffset(ZoneOffset.UTC)));
-    if (to != null) condition = condition.and(CREATED_AT.lt(to.atOffset(ZoneOffset.UTC)));
-    if (searchQuery != null && !searchQuery.isBlank()) {
-      String term = "%" + searchQuery.trim().toLowerCase(Locale.ROOT) + "%";
-      condition = condition.and(searchCondition(TITLE, SUMMARY, term, searchField));
-    }
-    if (itemTypes != null) {
-      condition =
-          itemTypes.isEmpty()
-              ? condition.and(DSL.falseCondition())
-              : condition.and(ITEM_TYPE.in(itemTypes));
-    }
-    if (animalInterestCodes != null) {
-      condition =
-          animalInterestCodes.isEmpty()
-              ? condition.and(ANIMAL_INTEREST_CODE.isNull())
-              : condition.and(
-                  ANIMAL_INTEREST_CODE.isNull().or(ANIMAL_INTEREST_CODE.in(animalInterestCodes)));
-    }
+    Set<UUID> blockedAuthorIds = Set.of();
     if (viewerMemberId != null && includeViewerNeighborhood) {
-      Set<UUID> blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
-      if (!blockedAuthorIds.isEmpty()) {
-        condition = condition.and(AUTHOR_ID.isNull().or(AUTHOR_ID.notIn(blockedAuthorIds)));
-      }
-    }
-    if (cursor != null) {
-      OffsetDateTime cursorTime = cursor.createdAt().atOffset(ZoneOffset.UTC);
-      condition =
-          condition.and(
-              CREATED_AT
-                  .lt(cursorTime)
-                  .or(
-                      CREATED_AT
-                          .eq(cursorTime)
-                          .and(
-                              ITEM_KIND
-                                  .gt(cursor.itemKind())
-                                  .or(
-                                      ITEM_KIND
-                                          .eq(cursor.itemKind())
-                                          .and(SOURCE_ID.lt(cursor.sourceId()))))));
+      blockedAuthorIds = blocks.blockedAuthorIds(viewerMemberId);
     }
 
     List<Item> fetched =
-        query
-            .select(
-                SOURCE_ID,
-                ITEM_KIND,
-                ITEM_TYPE,
-                TITLE,
-                SUMMARY,
-                AUTHOR_ID,
-                NEIGHBORHOOD_ID,
-                ANIMAL_INTEREST_CODE,
-                STATUS,
-                CREATED_AT,
-                UPDATED_AT,
-                TARGET_PATH)
-            .from(ITEMS)
-            .where(condition)
-            .orderBy(CREATED_AT.desc(), ITEM_KIND.asc(), SOURCE_ID.desc())
-            .limit(limit + 1)
+        CommunityFeedQuery.build(
+                query,
+                new CommunityFeedQuery.Params(
+                    from,
+                    to,
+                    searchQuery,
+                    searchField,
+                    animalInterestCodes,
+                    itemTypes,
+                    blockedAuthorIds,
+                    cursor == null
+                        ? null
+                        : new CommunityFeedQuery.Cursor(
+                            cursor.createdAt(), cursor.itemKind(), cursor.sourceId()),
+                    limit))
             .fetch(CommunityFeed::toItem);
 
     boolean hasNext = fetched.size() > limit;
@@ -588,18 +546,18 @@ class CommunityFeed {
 
   private static Item toItem(Record record) {
     return new Item(
-        record.get(SOURCE_ID),
-        record.get(ITEM_KIND),
-        record.get(ITEM_TYPE),
-        record.get(TITLE),
-        record.get(SUMMARY),
-        record.get(AUTHOR_ID),
-        record.get(NEIGHBORHOOD_ID),
-        record.get(ANIMAL_INTEREST_CODE),
-        record.get(STATUS),
-        record.get(CREATED_AT).toInstant(),
-        record.get(UPDATED_AT).toInstant(),
-        record.get(TARGET_PATH),
+        record.get(CommunityFeedQuery.SOURCE_ID),
+        record.get(CommunityFeedQuery.ITEM_KIND),
+        record.get(CommunityFeedQuery.ITEM_TYPE),
+        record.get(CommunityFeedQuery.TITLE),
+        record.get(CommunityFeedQuery.SUMMARY),
+        record.get(CommunityFeedQuery.AUTHOR_ID),
+        record.get(CommunityFeedQuery.NEIGHBORHOOD_ID),
+        record.get(CommunityFeedQuery.ANIMAL_INTEREST_CODE),
+        record.get(CommunityFeedQuery.STATUS),
+        record.get(CommunityFeedQuery.CREATED_AT).toInstant(),
+        record.get(CommunityFeedQuery.UPDATED_AT).toInstant(),
+        record.get(CommunityFeedQuery.TARGET_PATH),
         null);
   }
 

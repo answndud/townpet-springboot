@@ -136,6 +136,7 @@ val integrationTestPatterns = listOf(
     "com.townpet.care.CareControllerTest",
     "com.townpet.common.RequestRateLimiterPostgresTest",
     "com.townpet.common.web.GlobalProblemHttpTest",
+    "com.townpet.discovery.CommunityFeedQueryPlanIntegrationTest",
     "com.townpet.engagement.BlockedEngagementPolicyTest",
     "com.townpet.engagement.BookmarkControllerTest",
     "com.townpet.engagement.CommentControllerTest",

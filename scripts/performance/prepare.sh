@@ -16,6 +16,8 @@ case "${1:-small}" in
 esac
 
 command -v docker >/dev/null 2>&1 || { echo "docker is required" >&2; exit 1; }
+test -z "$(git -C "$ROOT_DIR" status --porcelain)" \
+  || { echo "clean working tree required before performance evidence" >&2; exit 1; }
 mkdir -p "$ROOT_DIR/build/performance/media" "$ROOT_DIR/build/performance/run"
 
 if ! docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
