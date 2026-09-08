@@ -58,13 +58,13 @@ deploy/restore-portfolio.sh
 
 | 실행 시각(UTC) | 환경 | 결과 | duration | 원자료 |
 |---|---|---|---:|---|
-| 2026-09-07 08:08 UTC | netcup VPS disposable project `townpet-p5` | 성공: checksum·DB restore·runtime grant·DB/media key 대사·health·discovery API 통과; media 0개 | 3s | `/opt/townpet/p5-rehearsal/restore-20260907T0810Z.log`, source `/opt/backups/townpet-20260820T024434Z` |
-| 2026-09-07 09:10 UTC | netcup VPS production | 성공: maintenance quiesce 후 PostgreSQL dump·MinIO 2개 mirror·manifest checksum·DB/media key 대사 통과 | 1s | `/opt/backups/townpet-20260907T091030Z`, execution `p5-production-20260907-v2` |
-| 2026-09-07 09:16 UTC | netcup VPS disposable project `townpet-p5` | 성공: 실제 media 2개 포함 backup의 checksum·DB restore·runtime grant·DB/media key 대사·health·discovery API 통과 | 3s | `/opt/townpet/p5-rehearsal/restore-media-20260907.log`, source `/opt/backups/townpet-20260907T091030Z` |
-| 2026-09-07 12:24 UTC | netcup VPS production | 실패(의도된 차단): 현재 non-terminal 정책으로 만료 `UPLOADING` 2건의 DB key가 backup media에 없어 중단, maintenance marker cleanup 확인 | 약 40s | execution `p2-policy-20260907`, phase `reference_verify` |
-| 2026-09-07 12:26 UTC | netcup VPS disposable project `p2-restore-20260907` | 실패(의도된 차단): historical backup restore 후 동일한 누락 `UPLOADING` 참조를 감지, 새 volume/network는 종료·삭제 | 약 10s | execution `p2-disposable-restore-20260907`, phase `reference_verify` |
-| 2026-09-07 13:16 UTC | netcup VPS production | 성공: dry-run 2건·67,282 bytes 확인 후 expired non-attached `UPLOADING` cleanup, 현재 DB/media 정합성 backup 성공 | 4s | `/opt/backups/townpet-20260907T131623Z`, execution `p2-policy-clean-20260907`; 사전 dump `/opt/backups/upload-asset-before-p2-cleanup-20260907T131601Z.dump` |
-| 2026-09-07 13:17 UTC | netcup VPS disposable project `p2-restore-clean-root-20260907` | 성공: fresh volume에 checksum·DB restore·runtime grant·DB/media key 대사·media restore 통과; restore-capable credential 명시 | 3s | execution `p2-disposable-restore-clean-root-20260907`, source `/opt/backups/townpet-20260907T131623Z` |
+| 2026-09-07 08:08 UTC | netcup VPS disposable project | 성공: checksum·DB restore·runtime grant·DB/media key 대사·health·discovery API 통과; media 0개 | 3s | VPS restore log와 backup source는 공개하지 않는 운영 artifact |
+| 2026-09-07 09:10 UTC | netcup VPS production | 성공: maintenance quiesce 후 PostgreSQL dump·MinIO 2개 mirror·manifest checksum·DB/media key 대사 통과 | 1s | VPS backup manifest와 execution log는 공개하지 않는 운영 artifact |
+| 2026-09-07 09:16 UTC | netcup VPS disposable project | 성공: 실제 media 2개 포함 backup의 checksum·DB restore·runtime grant·DB/media key 대사·health·discovery API 통과 | 3s | VPS restore log와 backup source는 공개하지 않는 운영 artifact |
+| 2026-09-07 12:24 UTC | netcup VPS production | 실패(의도된 차단): 현재 non-terminal 정책으로 만료 `UPLOADING` 2건의 DB key가 backup media에 없어 중단, maintenance marker cleanup 확인 | 약 40s | 운영 execution log는 공개하지 않는 artifact |
+| 2026-09-07 12:26 UTC | netcup VPS disposable project | 실패(의도된 차단): historical backup restore 후 동일한 누락 `UPLOADING` 참조를 감지, 새 volume/network는 종료·삭제 | 약 10s | 운영 execution log는 공개하지 않는 artifact |
+| 2026-09-07 13:16 UTC | netcup VPS production | 성공: dry-run 2건·67,282 bytes 확인 후 expired non-attached `UPLOADING` cleanup, 현재 DB/media 정합성 backup 성공 | 4s | VPS backup manifest와 사전 dump는 공개하지 않는 운영 artifact |
+| 2026-09-07 13:17 UTC | netcup VPS disposable project | 성공: fresh volume에 checksum·DB restore·runtime grant·DB/media key 대사·media restore 통과; restore-capable credential 명시 | 3s | 운영 execution log와 backup source는 공개하지 않는 artifact |
 
 2026-09-07 09:10 production artifact와 그 fresh restore는 P2 정책 적용 전,
 `publication_id IS NOT NULL` 기준의 historical artifact다. 따라서 연결되지 않은 `READY`·

@@ -8,6 +8,8 @@
 
 [사이트 링크 — townpet.cloud](https://townpet.cloud/)
 
+공개 데모의 확인 순서와 합성 데이터 경계는 [`portfolio/demo-guide.md`](portfolio/demo-guide.md)를 참고하세요.
+
 ## 한눈에 보기
 
 | 항목 | 내용 |

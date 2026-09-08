@@ -42,7 +42,7 @@ Legacy TownPet의 핵심 화면·URL·권한·상태·반응형 경험은 기준
 
 ### Evidence
 
-- `PLAN.md`: G1~G7 작업 단위
+- `PLAN.md`: 현재 실행 slice와 남은 phase
 - `AGENTS.md`: slice와 검증 원칙
 
 ## ADR-0003 - 실제 Legacy 데이터 migration은 필요할 때 별도 수행한다
@@ -416,7 +416,7 @@ netcup VPS Lite 2 G12s(4 vCore, 8GB RAM, 160GB SSD, x86)를 기본 배포 대상
 
 - `deploy/compose/netcup.yml`, `deploy/compose/edge.yml`, `deploy/compose/Caddyfile.netcup`: TownPet image-pull·공용 edge 구성
 - `deploy/Caddyfile.netcup.web`: edge 뒤 내부 HTTP-only web proxy 구성
-- `/Users/alex/project/kinderp/deploy/docker-compose.netcup.yml` (VPS: `/opt/kinderp/deploy/docker-compose.netcup.yml`): KinderP MySQL·Redis·app·내부 Caddy 구성
+- 공동 VPS의 별도 KinderP Compose project: MySQL·Redis·app·내부 Caddy 구성
 - [netcup VPS Lite 공식 가격·사양](https://www.netcup.com/en/server/vps-lite)
 
 ### Open Questions
@@ -480,8 +480,7 @@ Actuator health/readiness, correlation id가 있는 구조화 log, JVM·HTTP·DB
 
 ### Evidence
 
-- 현재 API 기준 공개 성능 baseline은 아직 재측정하지 않았으며, 측정 후
-  tracked `portfolio/evidence/feed-performance.md`에 commit·fixture·raw artifact와 함께 기록한다.
+- 현재 API 기준 공개 성능 baseline은 tracked `portfolio/evidence/feed-performance.md`에 commit·fixture·raw artifact와 함께 기록한다. 수치는 로컬 Docker 합성 fixture이며 운영 SLA가 아니다.
 
 ## ADR-0025 - Java 25 LTS와 Spring Boot 4.1을 기준선으로 사용한다
 
