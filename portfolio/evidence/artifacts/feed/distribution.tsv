@@ -1,0 +1,9 @@
+report_count|10000
+volunteer_count|10000
+publication_count|100000
+publication_created_at_max|2026-09-08 05:27:53.988554+00
+publication_created_at_min|2026-09-07 01:41:14.988554+00
+publication_type_FREE_BOARD|100000
+publication_lifecycle_DELETED|3448
+publication_lifecycle_ACTIVE|96552
+publication_search_hit_perf|100000

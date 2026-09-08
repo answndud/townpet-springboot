@@ -2,14 +2,19 @@
 
 ## Current status
 
-현재 API와 동일한 jOOQ query builder 및 재현 절차를 고정했다. 수치 baseline은
-깨끗한 commit checkout에서 100,000건 fixture를 seed한 뒤 다시 수집해야 하며,
-실제 실행 전에는 성능 수치나 개선률을 현재 결과로 주장하지 않는다.
+현재 API와 동일한 jOOQ query builder 및 재현 절차를 고정하고, clean commit
+`0546dfbc024708dffc3194e639d6cd75a36556e7`에서 100,000건 fixture baseline을
+수집했다. 결과는 로컬 Docker의 합성 fixture 측정치이며 운영 SLA가 아니다.
 
 | 지표 | 결과 |
 | --- | ---: |
-| p50/p95/p99/처리량/실패율 | 측정 대기 |
-| fixture / commit / image digest | 측정 실행 시 기록 |
+| p50 | 50.65ms |
+| p95 | 55.63ms |
+| p99 | 61.09ms |
+| 처리량 | 19.48 req/s |
+| 요청 수 | 2,630 |
+| HTTP 실패 | 0% |
+| k6 checks | 100% |
 
 ## Reproduction
 
@@ -39,17 +44,20 @@ host/CPU/메모리, JVM 옵션, warm-up, VU, URL, k6 summary를 기록한다.
   seed scale 규칙에 따른 합성 데이터
 - Fixture 분포: publication ACTIVE 96,552건, DELETED 3,448건, `FREE_BOARD`
   100,000건, 검색어 적중 100,000건
-- Query plan: 측정 실행 시 `townpet_public_feed_item` view, filter, stable
-  ordering, limit, row count, sort, buffer를 raw JSON에서 확인한다.
+- Query plan: `townpet_public_feed_item` view를 확장한 Append 뒤 top-N
+  Sort/Limit plan, 21 rows, 2,612 shared hit blocks, actual execution
+  103.475ms를 raw JSON에서 확인했다.
 - 이전 V054 및 이전 local run 수치는 historical reference일 뿐 현재 baseline이나
   개선률 계산에 재사용하지 않는다.
 
 ## Raw artifacts
 
-- run/seed/artifact: 다음 clean checkout 측정 후 `portfolio/evidence/artifacts/feed/`
-  아래에 민감정보를 제거한 `summary.json`, `metadata.txt`, `explain.json`,
-  `distribution.tsv`를 기록한다.
-- 현재 수집되지 않은 raw artifact를 근거로 수치나 개선률을 작성하지 않는다.
+- run: `build/performance/runs/20260908T052759Z-feed-read-baseline-0546dfb/`
+- seed: `build/performance/seeds/20260908T052754Z-large/`
+- 공개 artifact: `portfolio/evidence/artifacts/feed/` 아래의
+  `summary.json`, `metadata.txt`, `explain.json`, `distribution.tsv`와
+  `checksums.sha256`. raw host log·JVM dump·절대 경로·secret은 포함하지 않았다.
+- before/after 동일 조건 측정이 없으므로 개선률은 작성하지 않는다.
 
 ## Limitations
 
