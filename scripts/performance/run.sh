@@ -6,6 +6,7 @@ SCENARIO="smoke"
 PROFILE="smoke"
 BASE_URL="${TOWNPET_PERF_BASE_URL:-http://host.docker.internal:8081}"
 READINESS_URL="${TOWNPET_PERF_READINESS_URL:-$BASE_URL}"
+READINESS_PATH="${TOWNPET_PERF_READINESS_PATH:-/actuator/health/readiness}"
 K6_IMAGE="${TOWNPET_K6_IMAGE:-grafana/k6:0.52.0}"
 
 while [[ $# -gt 0 ]]; do
@@ -57,6 +58,7 @@ esac
   echo "profile=$PROFILE"
   echo "base_url=$BASE_URL"
   echo "readiness_url=$READINESS_URL"
+  echo "readiness_path=$READINESS_PATH"
   echo "k6_image=$K6_IMAGE"
   echo "k6_image_digest=$(docker image inspect "$K6_IMAGE" --format '{{index .RepoDigests 0}}' 2>/dev/null || echo unknown)"
   echo "backend_jar_sha256=$(shasum -a 256 "$ROOT_DIR"/build/libs/*.jar 2>/dev/null | head -1 | cut -d ' ' -f1 || echo unknown)"
@@ -92,7 +94,7 @@ export ALLOW_EXPECTED_CONFLICTS="${ALLOW_EXPECTED_CONFLICTS:-false}"
 export CONTENTION_CASE="${CONTENTION_CASE:-views}"
 export PERF_MEMBER_COUNT="${PERF_MEMBER_COUNT:-100}"
 
-curl --fail --silent --show-error --max-time 5 "$READINESS_URL/actuator/health/readiness" >/dev/null \
+curl --fail --silent --show-error --max-time 5 "$READINESS_URL$READINESS_PATH" >/dev/null \
   || { echo "performance backend is not ready at $BASE_URL; refusing to start k6" >&2; exit 1; }
 
 docker run --rm \
