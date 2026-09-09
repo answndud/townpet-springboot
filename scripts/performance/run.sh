@@ -78,6 +78,8 @@ esac
   echo "readiness_path=$READINESS_PATH"
   echo "k6_image=$K6_IMAGE"
   echo "k6_image_digest=$(docker image inspect "$K6_IMAGE" --format '{{index .RepoDigests 0}}' 2>/dev/null || echo unknown)"
+  echo "backend_revision=${TOWNPET_PERF_BACKEND_REVISION:-unknown}"
+  echo "web_revision=${TOWNPET_PERF_WEB_REVISION:-unknown}"
   echo "backend_jar_sha256=$(shasum -a 256 "$ROOT_DIR"/build/libs/*.jar 2>/dev/null | head -1 | cut -d ' ' -f1 || echo unknown)"
   echo "load_profile=$PROFILE"
   echo "profile_stages=$PROFILE_STAGES"

@@ -118,6 +118,25 @@ raw artifact는
 `297209b65e10487fcbd13c8ff5c187d96e29f974`이며 공개 base URL은
 `https://townpet.cloud`였다.
 
+## VPS synthetic capacity gate (proposed)
+
+다음 기준은 현재 VPS와 `public-read` endpoint 조합을 비교하기 위한 임시 capacity
+gate다. 운영 SLA나 전체 서비스의 최대 용량으로 해석하지 않는다.
+
+| 항목 | 제안 기준 | 5 VU soak 관측값 |
+| --- | ---: | ---: |
+| HTTP failure | < 1% | 0% |
+| p95 | < 100ms | 49.35ms |
+| p99 | < 200ms | 53.83ms |
+| PostgreSQL connections | < 80% | 19% (19/100) |
+| backend memory | < 80% | 37.26% (종료 시) |
+| container restart | 0 | 0 |
+| critical stop conditions | connection/memory/storage >= 90%, readiness failure, restart | 발생 없음 |
+
+이 기준은 ramp에서 단계별 중단 여부를 판단하는 데만 사용한다. workload가
+read-only이고 VU가 제한되어 있으며, 인증·write·메일·fault injection을 포함하지
+않으므로 실제 사용자 capacity나 write path SLO를 증명하지 않는다.
+
 ## Limitations
 
 측정 전에는 p50/p95/p99, 처리량, 실패율, query plan 선택을 주장하지 않는다.
