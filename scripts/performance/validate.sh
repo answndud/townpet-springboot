@@ -32,8 +32,24 @@ test -f "$ROOT_DIR/scripts/performance/seed.sql"
 for file in "$ROOT_DIR"/loadtest/{common,smoke,public-read,feed-read,member-read,write,contention,moderator,media,mixed}.js; do
   test -f "$file" || { echo "missing: $file" >&2; exit 1; }
 done
-if rg -n 'api/v1/feed|feed/popular|audience=|"scope"|scope:' \
-  "$ROOT_DIR"/loadtest/{common,smoke,public-read,feed-read,member-read,write,contention,moderator,media,mixed}.js; then
+loadtest_files=(
+  "$ROOT_DIR"/loadtest/common.js
+  "$ROOT_DIR"/loadtest/smoke.js
+  "$ROOT_DIR"/loadtest/public-read.js
+  "$ROOT_DIR"/loadtest/feed-read.js
+  "$ROOT_DIR"/loadtest/member-read.js
+  "$ROOT_DIR"/loadtest/write.js
+  "$ROOT_DIR"/loadtest/contention.js
+  "$ROOT_DIR"/loadtest/moderator.js
+  "$ROOT_DIR"/loadtest/media.js
+  "$ROOT_DIR"/loadtest/mixed.js
+)
+if command -v rg >/dev/null 2>&1; then
+  retired_contract_search=(rg -n 'api/v1/feed|feed/popular|audience=|"scope"|scope:' "${loadtest_files[@]}")
+else
+  retired_contract_search=(grep -E -n 'api/v1/feed|feed/popular|audience=|"scope"|scope:' "${loadtest_files[@]}")
+fi
+if "${retired_contract_search[@]}"; then
   echo "loadtest contains a retired HTTP contract" >&2
   exit 1
 fi

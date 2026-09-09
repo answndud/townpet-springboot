@@ -84,9 +84,44 @@ PostgreSQL은 약 68MiB에서 74MiB 범위였다. 이 실행은 read-only synthe
 확인했지만 bind mount 권한 문제로 summary JSON raw artifact는 생성되지 않았으므로,
 summary 파일이 있는 것처럼 주장하지 않는다.
 
+## VPS public-read soak evidence
+
+2026-09-09에 현재 배포된 VPS를 대상으로 `public-read` read-only synthetic workload를
+실행했다. `mixed` 시나리오처럼 publication을 생성하거나 인증·메일 경로를 호출하지
+않았고, 30초 warm-up 뒤 30분 동안 최대 5 VU로 다음 세 endpoint만 호출했다.
+
+- `GET /api/v1/discovery?limit=20`
+- `GET /api/v1/discovery/popular?limit=20`
+- `GET /api/v1/local-resources`
+
+| 지표 | 결과 |
+| --- | ---: |
+| 실행 구간 | 2026-09-09T06:06:05Z–06:36:35Z (30분 30초) |
+| requests / throughput | 18,850 / 10.30 req/s |
+| p50 / p95 / p99 | 37.33ms / 49.35ms / 53.83ms |
+| HTTP failure | 0% |
+| checks | 100% (18,850/18,850) |
+| 최대 VU | 5 |
+| PostgreSQL CPU | 0.01–8.25% |
+| PostgreSQL memory | 67.24–73.34MiB |
+
+실행 전후 workload budget은 모두 PASS였다. 시작 시 DB connections 19/100(19%),
+backend memory 34.06%, storage 10%였고, 종료 시 DB connections 19/100(19%),
+backend memory 37.26%, storage 10%였다. 실행 중 backend/web는 healthy였고 restart는
+0이었다. 이 결과는 해당 commit·VPS·5 VU read-only workload의 관측값이며,
+사전에 정의된 SLO가 없으므로 성능 pass/fail이나 운영 SLA로 해석하지 않는다.
+
+raw artifact는
+`portfolio/evidence/artifacts/vps-public-read-soak/20260909T060605Z-public-read-soak-297209b/`
+아래 `summary.json`, `console.log`, `resources.tsv`, `metadata.txt`,
+`checksums.sha256`에 보관했고, 로컬에서 JSON·checksum을 재검증했다. 실행 commit은
+`297209b65e10487fcbd13c8ff5c187d96e29f974`이며 공개 base URL은
+`https://townpet.cloud`였다.
+
 ## Limitations
 
 측정 전에는 p50/p95/p99, 처리량, 실패율, query plan 선택을 주장하지 않는다.
 실행 후에는 동일 commit·fixture·profile의 raw artifact와 checksum을 근거로
 수치를 갱신한다. 현재 구현과 동일 조건의 before/after가 없으면 개선률을
-작성하지 않는다.
+작성하지 않는다. raw summary가 생성되지 않았던 이전 VPS ramp 기록은 이 soak
+evidence와 합산하지 않는다.
