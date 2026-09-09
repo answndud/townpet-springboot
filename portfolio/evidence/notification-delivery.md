@@ -53,6 +53,11 @@ FK, not-null 등 다른 무결성 오류는 예외로 남아 publication 실패�
 결과로 숨겨지지 않는다는 단위 경계를 확인한다. 실제 registry publication의 실패·재처리는
 `EventPublicationRecoveryIntegrationTest`가 PostgreSQL에서 별도로 확인한다.
 
+2026-09-09 targeted gate는 Testcontainers PostgreSQL에서 `EventPublicationRecoveryIntegrationTest`
+의 recipient 누락→`FAILED`→recipient 복구→동일 publication completion 흐름을 통과했다.
+`EventPublicationRecoveryTest`는 max-attempts 초과 publication 제외와 recovery 중복 실행 skip도
+확인한다. 두 경로 모두 application restart 없이 같은 JVM/test context에서 completion을 확인한다.
+
 2026-09-09 release `e6f7233`에서 netcup Compose와 운영 env에 bounded recovery 설정 7개를
 주입했고, VPS `townpet-backend` container가 이를 수신한 상태로 healthy/readiness healthcheck를
 통과했다. 이는 recovery worker가 운영 환경에서 활성화된 evidence다. 실제 외부 SMTP 장애를
