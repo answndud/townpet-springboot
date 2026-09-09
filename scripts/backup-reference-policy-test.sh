@@ -19,6 +19,12 @@ run_case() {
   local fixture_uploading_count="${8:-1}"
   local fixture_active_seconds="${9:-0}"
   local fixture_presign_expiry="${10:-0}"
+  local fixture_media_etag="${11:-fixture-etag}"
+  local fixture_media_etag_second="${12:-}"
+  local fixture_media_size="${13:-8}"
+  local fixture_media_size_second="${14:-}"
+  local fixture_expected_checksum="${15:-e80b71cd14d3cbd65f4173abcbfcf01a545dbca32a72d575108b553a648cc96f}"
+  local fixture_expected_size="${16:-8}"
   local fixture_uploading_keys=""
   local fixture_non_terminal_count=2
   local temp_dir fake_bin backup_dir output exit_code
@@ -65,6 +71,16 @@ if [ "$1" = "exec" ]; then
         *"SELECT object_key FROM upload_asset WHERE status = 'ABANDONED'"*) printf '%s\n' "${FIXTURE_ABANDONED_KEYS:-}" | sort ;;
         *"SELECT object_key FROM upload_asset WHERE status = 'UPLOADING'"*) printf '%s\n' "${FIXTURE_UPLOADING_KEYS:-}" | sort ;;
         *"SELECT object_key FROM upload_asset WHERE status IN ('READY', 'ATTACHED')"*) printf '%s\n' "${FIXTURE_REQUIRED_KEYS:-}" | sort ;;
+        *"checksum_sha256"*)
+          while IFS= read -r key; do
+            [ -z "$key" ] && continue
+            status=READY
+            case "$key" in
+              */uploading) status=UPLOADING ;;
+            esac
+            printf '%s\t%s\t%s\t%s\n' "$key" "${FIXTURE_EXPECTED_CHECKSUM:-e80b71cd14d3cbd65f4173abcbfcf01a545dbca32a72d575108b553a648cc96f}" "${FIXTURE_EXPECTED_SIZE:-8}" "$status"
+          done <<< "${FIXTURE_DB_KEYS:-}"
+          ;;
         *"SELECT object_key FROM upload_asset WHERE status IN"*) printf '%s\n' "${FIXTURE_DB_KEYS:-}" | sort ;;
         *"COUNT(*) FROM publication"*) echo 0 ;;
         *"version FROM flyway_schema_history"*) echo V066 ;;
@@ -89,12 +105,23 @@ if [ "$1" = "exec" ]; then
           if [ -z "$change_call" ] && [ -n "${FIXTURE_MEDIA_KEYS_SECOND:-}" ]; then
             change_call=2
           fi
+          etag="${FIXTURE_MEDIA_ETAG:-fixture-etag}"
+          size="${FIXTURE_MEDIA_SIZE:-8}"
           if [ -n "$change_call" ] && [ "$inventory_call" -ge "$change_call" ]; then
             keys="${FIXTURE_MEDIA_KEYS_SECOND:-}"
+            if [ -n "${FIXTURE_MEDIA_ETAG_SECOND:-}" ]; then
+              etag="$FIXTURE_MEDIA_ETAG_SECOND"
+            fi
+            if [ -n "${FIXTURE_MEDIA_SIZE_SECOND:-}" ]; then
+              size="$FIXTURE_MEDIA_SIZE_SECOND"
+            fi
+          else
+            etag="${FIXTURE_MEDIA_ETAG:-fixture-etag}"
+            size="${FIXTURE_MEDIA_SIZE:-8}"
           fi
           while IFS= read -r key; do
             [ -z "$key" ] && continue
-            printf '{"key":"%s"}\n' "$key"
+            printf '{"key":"%s","size":%s,"etag":"%s"}\n' "$key" "$size" "$etag"
           done <<< "$keys"
           ;;
         *) ;;
@@ -146,6 +173,12 @@ FAKE_DOCKER
     FIXTURE_UPLOADING_KEYS="$fixture_uploading_keys" \
     FIXTURE_REQUIRED_KEYS=$'uploads/ready\nuploads/attached' \
     FIXTURE_MEDIA_KEYS_SECOND="$media_keys_second" \
+    FIXTURE_MEDIA_ETAG="$fixture_media_etag" \
+    FIXTURE_MEDIA_ETAG_SECOND="$fixture_media_etag_second" \
+    FIXTURE_MEDIA_SIZE="$fixture_media_size" \
+    FIXTURE_MEDIA_SIZE_SECOND="$fixture_media_size_second" \
+    FIXTURE_EXPECTED_CHECKSUM="$fixture_expected_checksum" \
+    FIXTURE_EXPECTED_SIZE="$fixture_expected_size" \
     FIXTURE_INVENTORY_CHANGE_CALL="$inventory_change_call" \
     FIXTURE_INVENTORY_STATE_FILE="$temp_dir/inventory-state" \
     "$BACKUP_SCRIPT"
@@ -256,3 +289,80 @@ run_case \
   0 \
   100 \
   1
+
+run_case \
+  inventory-etag-changed-for-same-key \
+  failure \
+  uploads/ready \
+  uploads/ready \
+  abandoned/object \
+  uploads/ready \
+  "" \
+  0 \
+  0 \
+  0 \
+  fixture-etag \
+  changed-etag
+
+run_case \
+  inventory-size-changed-during-snapshot \
+  failure \
+  uploads/ready \
+  uploads/ready \
+  abandoned/object \
+  uploads/ready \
+  3 \
+  0 \
+  0 \
+  0 \
+  fixture-etag \
+  fixture-etag \
+  8 \
+  9
+
+run_case \
+  inventory-order-only-change-is-allowed \
+  success \
+  $'uploads/ready\nuploads/attached' \
+  $'uploads/ready\nuploads/attached' \
+  abandoned/object \
+  $'uploads/attached\nuploads/ready' \
+  "" \
+  0 \
+  0 \
+  0
+
+run_case \
+  media-checksum-mismatch-is-rejected \
+  failure \
+  uploads/ready \
+  uploads/ready \
+  abandoned/object \
+  "" \
+  "" \
+  0 \
+  0 \
+  0 \
+  fixture-etag \
+  "" \
+  8 \
+  "" \
+  deadbeef
+
+run_case \
+  media-size-mismatch-is-rejected \
+  failure \
+  uploads/ready \
+  uploads/ready \
+  abandoned/object \
+  "" \
+  "" \
+  0 \
+  0 \
+  0 \
+  fixture-etag \
+  "" \
+  8 \
+  "" \
+  e80b71cd14d3cbd65f4173abcbfcf01a545dbca32a72d575108b553a648cc96f \
+  9

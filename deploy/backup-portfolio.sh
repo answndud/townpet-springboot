@@ -64,6 +64,18 @@ notify_backup_failure() {
 trap notify_backup_failure EXIT
 trap 'exit 130' HUP INT TERM
 
+inventory_fingerprint() {
+  docker exec "$MINIO_CONTAINER" mc ls --recursive --json "townpet-backup/$MINIO_BUCKET" \
+    | while IFS= read -r inventory_line; do
+        object_key="$(printf '%s\n' "$inventory_line" | sed -n 's/.*"key":"\([^"]*\)".*/\1/p')"
+        [ -n "$object_key" ] || continue
+        object_size="$(printf '%s\n' "$inventory_line" | sed -n 's/.*"size":\([0-9][0-9]*\).*/\1/p')"
+        object_etag="$(printf '%s\n' "$inventory_line" | sed -n 's/.*"etag":"\([^"]*\)".*/\1/p')"
+        object_version="$(printf '%s\n' "$inventory_line" | sed -n 's/.*"versionId":"\([^"]*\)".*/\1/p')"
+        printf '%s\t%s\t%s\t%s\n' "$object_key" "${object_size:-unknown}" "${object_etag:-unknown}" "${object_version:-none}"
+      done | sort
+}
+
 phase=quiesce
 docker exec "$BACKEND_CONTAINER" touch "$MAINTENANCE_FILE"
 maintenance_enabled=1
@@ -107,11 +119,9 @@ fi
 phase=minio_inventory_before
 docker exec "$MINIO_CONTAINER" mc alias set townpet-backup http://127.0.0.1:9000 \
   "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" >/dev/null
-docker exec "$MINIO_CONTAINER" mc ls --recursive --json "townpet-backup/$MINIO_BUCKET" \
-  | sed -n 's/.*"key":"\([^"]*\)".*/\1/p' | sed '/^$/d' | sort > "$temp_dir/media-before"
+inventory_fingerprint > "$temp_dir/media-before"
 sleep "$INVENTORY_STABILITY_SECONDS"
-docker exec "$MINIO_CONTAINER" mc ls --recursive --json "townpet-backup/$MINIO_BUCKET" \
-  | sed -n 's/.*"key":"\([^"]*\)".*/\1/p' | sed '/^$/d' | sort > "$temp_dir/media-before-stable"
+inventory_fingerprint > "$temp_dir/media-before-stable"
 if ! cmp -s "$temp_dir/media-before" "$temp_dir/media-before-stable"; then
   echo "media object inventory changed before snapshot" >&2
   exit 1
@@ -130,8 +140,7 @@ docker cp "$MINIO_CONTAINER:/tmp/townpet-media-$backup_id/." "$backup_root/media
 docker exec "$MINIO_CONTAINER" rm -rf "/tmp/townpet-media-$backup_id"
 
 phase=minio_inventory_after
-docker exec "$MINIO_CONTAINER" mc ls --recursive --json "townpet-backup/$MINIO_BUCKET" \
-  | sed -n 's/.*"key":"\([^"]*\)".*/\1/p' | sed '/^$/d' | sort > "$temp_dir/media-after"
+inventory_fingerprint > "$temp_dir/media-after"
 if ! cmp -s "$temp_dir/media-before-stable" "$temp_dir/media-after"; then
   echo "media object inventory changed during snapshot" >&2
   exit 1
@@ -139,6 +148,7 @@ fi
 
 phase=reference_verify
 db_keys_file="$backup_root/.db-object-keys"
+db_asset_metadata_file="$temp_dir/.db-asset-metadata"
 required_db_keys_file="$temp_dir/.required-db-object-keys"
 uploading_db_keys_file="$temp_dir/.uploading-db-object-keys"
 abandoned_keys_file="$temp_dir/abandoned-object-keys"
@@ -153,6 +163,9 @@ docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB"
   -c "SELECT object_key FROM upload_asset WHERE status = 'UPLOADING' ORDER BY object_key" \
   | sed '/^$/d' > "$uploading_db_keys_file"
 docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT concat_ws(E'\\t', object_key, checksum_sha256, byte_size, status) FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED') ORDER BY object_key" \
+  | sed '/^$/d' > "$db_asset_metadata_file"
+docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   -c "SELECT object_key FROM upload_asset WHERE status = 'ABANDONED' ORDER BY object_key" \
   | sed '/^$/d' > "$abandoned_keys_file"
 (cd "$backup_root/media" && find . -type f -print | sed 's#^\./##' | sort) > "$media_keys_file"
@@ -165,6 +178,28 @@ comm -23 "$required_db_keys_file" "$media_keys_file" | grep -q . && {
 comm -13 "$db_keys_file" "$media_keys_file" | grep -q . && {
   echo "backup contains media objects without a database reference" >&2; exit 1;
 } || true
+
+media_content_checked=0
+missing_uploading_objects=0
+while IFS="$(printf '\t')" read -r object_key expected_checksum expected_size asset_status; do
+  [ -n "$object_key" ] || continue
+  media_path="$backup_root/media/$object_key"
+  if [ ! -f "$media_path" ]; then
+    if [ "$asset_status" = "UPLOADING" ]; then
+      missing_uploading_objects=$((missing_uploading_objects + 1))
+      continue
+    fi
+    echo "required media file missing during content verification: $object_key" >&2
+    exit 1
+  fi
+  actual_size="$(wc -c < "$media_path" | tr -d ' ')"
+  actual_checksum="$(sha256sum "$media_path" | awk '{print $1}')"
+  if [ "$actual_size" != "$expected_size" ] || [ "$actual_checksum" != "$expected_checksum" ]; then
+    echo "media content metadata mismatch: $object_key" >&2
+    exit 1
+  fi
+  media_content_checked=$((media_content_checked + 1))
+done < "$db_asset_metadata_file"
 
 {
   echo "execution_id=$BACKUP_EXECUTION_ID"
@@ -193,9 +228,11 @@ comm -13 "$db_keys_file" "$media_keys_file" | grep -q . && {
   echo "media_object_keys_sha256=$(sha256sum "$media_keys_file" | awk '{print $1}')"
   echo "required_media_assets=$(wc -l < "$required_db_keys_file" | tr -d ' ')"
   echo "optional_uploading_assets=$(wc -l < "$uploading_db_keys_file" | tr -d ' ')"
-  echo "missing_uploading_objects=$(comm -23 "$uploading_db_keys_file" "$media_keys_file" | wc -l | tr -d ' ')"
+  echo "missing_uploading_objects=$missing_uploading_objects"
+  echo "media_content_checked=$media_content_checked"
+  echo "db_asset_metadata_sha256=$(sha256sum "$db_asset_metadata_file" | awk '{print $1}')"
 } > "$backup_root/manifest.txt"
-rm -f "$db_keys_file" "$required_db_keys_file" "$uploading_db_keys_file" "$media_keys_file" "$abandoned_keys_file"
+rm -f "$db_keys_file" "$db_asset_metadata_file" "$required_db_keys_file" "$uploading_db_keys_file" "$media_keys_file" "$abandoned_keys_file"
 phase=checksum
 (cd "$backup_root" && find . -type f ! -name manifest.sha256 -print0 | sort -z | xargs -0 sha256sum > manifest.sha256)
 backup_complete=1

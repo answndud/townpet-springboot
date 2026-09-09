@@ -58,12 +58,16 @@ SQL
 
 phase=reference_verify
 db_keys_file="$temp_dir/db-object-keys"
+db_asset_metadata_file="$temp_dir/db-asset-metadata"
 required_db_keys_file="$temp_dir/required-db-object-keys"
 abandoned_keys_file="$temp_dir/abandoned-object-keys"
 backup_keys_file="$temp_dir/backup-object-keys"
 docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   -c "SELECT object_key FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED') ORDER BY object_key" \
   | sed '/^$/d' > "$db_keys_file"
+docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT concat_ws(E'\\t', object_key, checksum_sha256, byte_size, status) FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED') ORDER BY object_key" \
+  | sed '/^$/d' > "$db_asset_metadata_file"
 docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   -c "SELECT object_key FROM upload_asset WHERE status IN ('READY', 'ATTACHED') ORDER BY object_key" \
   | sed '/^$/d' > "$required_db_keys_file"
@@ -83,6 +87,10 @@ comm -13 "$db_keys_file" "$backup_keys_file" | grep -q . && {
 expected_keys_hash="$(sed -n 's/^db_object_keys_sha256=//p' "$BACKUP_ROOT/manifest.txt")"
 [ -z "$expected_keys_hash" ] || [ "$expected_keys_hash" = "$(sha256sum "$db_keys_file" | awk '{print $1}')" ] || {
   echo "database object-key checksum mismatch" >&2; exit 1;
+}
+expected_metadata_hash="$(sed -n 's/^db_asset_metadata_sha256=//p' "$BACKUP_ROOT/manifest.txt")"
+[ -z "$expected_metadata_hash" ] || [ "$expected_metadata_hash" = "$(sha256sum "$db_asset_metadata_file" | awk '{print $1}')" ] || {
+  echo "database asset metadata checksum mismatch" >&2; exit 1;
 }
 
 restore_id="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -107,6 +115,25 @@ restored_media_objects="$(printf '%s\n' "$restored_object_listing" | sed '/^$/d'
 }
 
 phase=media_reference_verify
+media_content_checked=0
+while IFS="$(printf '\t')" read -r object_key expected_checksum expected_size asset_status; do
+  [ -n "$object_key" ] || continue
+  media_path="$BACKUP_ROOT/media/$object_key"
+  if [ ! -f "$media_path" ]; then
+    [ "$asset_status" = "UPLOADING" ] || {
+      echo "required media file missing during restore content verification: $object_key" >&2
+      exit 1
+    }
+    continue
+  fi
+  actual_size="$(wc -c < "$media_path" | tr -d ' ')"
+  actual_checksum="$(sha256sum "$media_path" | awk '{print $1}')"
+  if [ "$actual_size" != "$expected_size" ] || [ "$actual_checksum" != "$expected_checksum" ]; then
+    echo "restore media content metadata mismatch: $object_key" >&2
+    exit 1
+  fi
+  media_content_checked=$((media_content_checked + 1))
+done < "$db_asset_metadata_file"
 while IFS= read -r object_key; do
   [ -z "$object_key" ] && continue
   docker exec "$MINIO_CONTAINER" mc stat "townpet-restore/$MINIO_BUCKET/$object_key" >/dev/null

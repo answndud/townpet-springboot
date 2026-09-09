@@ -27,7 +27,7 @@ media cleanup command로 제거할 수 있는 의도된 incomplete 상태다.
 선택적으로 `RESTORE_HEALTH_URL`, `RESTORE_API_URL`, `RESTORE_MEDIA_URL`을 지정하면
 application readiness, 대표 API, signed media GET도 검증한다.
 
-P1 정책 fixture는 다음 아홉 경계를 확인한다.
+P1·P2 정책 fixture는 다음 열네 경계를 확인한다.
 
 - `READY`·`ATTACHED`·`UPLOADING` object가 모두 있으면 성공
 - DB key 누락, DB에 없는 object, `ABANDONED` object 잔존은 실패
@@ -35,6 +35,10 @@ P1 정책 fixture는 다음 아홉 경계를 확인한다.
 - snapshot 직전 안정성 확인을 통과한 뒤 media copy 중 inventory가 바뀌어도 실패
 - object 없는 `UPLOADING`은 성공하고 `READY` object 누락은 실패
 - `UPLOADING` row가 없어도 active `READY` row가 있으면 presigned form 대기 정책을 적용
+- 같은 key의 ETag 변경은 실패
+- snapshot 중 같은 key의 size 변경은 실패
+- inventory 순서만 바뀌는 경우는 성공
+- backup media의 SHA-256 또는 byte size가 DB metadata와 다르면 실패
 - `scripts/backup-reference-policy-test.sh`는 실제 volume을 건드리지 않는 disposable fake PostgreSQL/MinIO 경계 테스트다.
 
 ## 실행 경로
@@ -60,12 +64,22 @@ deploy/restore-portfolio.sh
 
 ## 검증 상태
 
-- 구현 및 script/unit 검증: P1 정책 fixture 9개 경계 통과
+- 구현 및 script/unit 검증: P1·P2 정책 fixture 14개 경계 통과
 - P1 direct-upload/backup race fixture: 완료. `bash scripts/backup-reference-policy-test.sh`가
   `ready-is-preserved`, `missing-object`, `orphan-object`, `abandoned-object`,
   `inventory-changed`, `inventory-changed-during-snapshot`,
   `uploading-object-missing-is-allowed`, `ready-object-missing-is-rejected`,
-  `presigned-form-wait-applies-without-uploading-row` 9개 case를 통과한다.
+  `presigned-form-wait-applies-without-uploading-row`,
+  `inventory-etag-changed-for-same-key`, `inventory-size-changed-during-snapshot`,
+  `inventory-order-only-change-is-allowed`, `media-checksum-mismatch-is-rejected`,
+  `media-size-mismatch-is-rejected` 14개 case를 통과한다.
+- P2 local disposable backup→restore: `townpet-p2`와 `townpet-p2-restore`의 fresh
+  PostgreSQL·MinIO volume에서 합성 `READY` object 1개를 backup하고 restore했다.
+  manifest checksum, DB asset metadata SHA-256·size, media file SHA-256, MinIO mirror,
+  object count와 DB reference 대사가 통과했다.
+- P2 local rehearsal parity: backup script가 사용하는 `/tmp/townpet-maintenance`와
+  MinIO app policy를 local rehearsal Compose에도 명시해 backend readiness와 backup
+  quiesce가 같은 계약을 사용하도록 맞췄다.
 - VPS production backup: stale `UPLOADING` 2건을 공식 cleanup 조건으로 정리한 뒤 현재 정책 backup 성공
 - VPS disposable DB·MinIO fresh restore: restore-capable MinIO credential을 명시해 checksum·DB/media key 대사·status count·media mirror 복구 성공. application/signed media GET은 backend를 포함한 별도 rehearsal에서 추가 확인 범위
 - netcup 서버 손실 복구: provider 전체 재구축이 아닌 disposable fresh-volume rehearsal까지만 검증

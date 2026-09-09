@@ -34,11 +34,25 @@ services:
 
   minio-init:
     image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    environment:
+      MINIO_ROOT_ACCESS_KEY: p5root
+      MINIO_ROOT_SECRET_KEY: p5rootsecret
+      MINIO_APP_ACCESS_KEY: p5app
+      MINIO_APP_SECRET_KEY: p5appsecret
+    volumes:
+      - ./minio-policy.json:/config/townpet-media-policy.json:ro
     depends_on:
       minio:
         condition: service_healthy
     entrypoint: ["/bin/sh"]
-    command: ["-c", "mc alias set local http://minio:9000 p5root p5rootsecret && mc mb --ignore-existing local/townpet-media && mc admin user add local p5app p5appsecret"]
+    command:
+      - -c
+      - >-
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_ACCESS_KEY" "$$MINIO_ROOT_SECRET_KEY" &&
+        mc mb --ignore-existing local/townpet-media &&
+        (mc admin policy info local townpet-media-app >/dev/null 2>&1 || mc admin policy create local townpet-media-app /config/townpet-media-policy.json) &&
+        (mc admin user info local "$$MINIO_APP_ACCESS_KEY" >/dev/null 2>&1 || mc admin user add local "$$MINIO_APP_ACCESS_KEY" "$$MINIO_APP_SECRET_KEY") &&
+        mc admin policy attach local townpet-media-app --user "$$MINIO_APP_ACCESS_KEY"
 
   backend:
     image: townpet-backend:p5-rehearsal
@@ -46,6 +60,7 @@ services:
       - ../../build/libs/townpet-springboot-0.1.0-SNAPSHOT.jar:/app/townpet.jar:ro
     environment:
       SPRING_PROFILES_ACTIVE: production
+      TOWNPET_MAINTENANCE_FILE: /tmp/townpet-maintenance
       TOWNPET_DB_URL: jdbc:postgresql://postgres:5432/p5townpet
       TOWNPET_DB_USERNAME: p5app
       TOWNPET_DB_PASSWORD: p5apppass
