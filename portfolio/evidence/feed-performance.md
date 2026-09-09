@@ -62,6 +62,28 @@ host/CPU/메모리, JVM 옵션, warm-up, VU, URL, k6 summary를 기록한다.
   `checksums.sha256`. raw host log·JVM dump·절대 경로·secret은 포함하지 않았다.
 - before/after 동일 조건 측정이 없으므로 개선률은 작성하지 않는다.
 
+## VPS public-read workload (separate evidence)
+
+2026-09-09 netcup VPS에서 production public read endpoint만 대상으로 별도 ramp를
+실행했다. local synthetic Feed fixture/query-plan baseline과 섞지 않는다.
+
+| 조건 | 결과 |
+| --- | ---: |
+| profile | 15s@1 → 5m@10 → 5m@20 → 5m@40 |
+| duration | 15m15s |
+| maximum VU | 40 |
+| requests | 62,346 |
+| throughput | 68.12 req/s |
+| p95 / p99 | 44.26ms / 48.91ms |
+| HTTP failure | 0% |
+| checks | 100% |
+
+측정 중 backend는 healthy/restart 0을 유지했고 메모리는 약 397MiB에서 468MiB,
+PostgreSQL은 약 68MiB에서 74MiB 범위였다. 이 실행은 read-only synthetic workload이며
+고동시성 최대치·장기 soak·SLA·DB saturation을 증명하지 않는다. VPS k6 console 결과는
+확인했지만 bind mount 권한 문제로 summary JSON raw artifact는 생성되지 않았으므로,
+summary 파일이 있는 것처럼 주장하지 않는다.
+
 ## Limitations
 
 측정 전에는 p50/p95/p99, 처리량, 실패율, query plan 선택을 주장하지 않는다.
