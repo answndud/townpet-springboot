@@ -27,27 +27,26 @@
 
 ### 공개 피드 조회 성능
 
-현재 API 계약(`/api/v1/discovery`) 기준의 100,000건 합성 fixture를 P3 변경
-후 로컬 Docker 성능 환경에서 측정했습니다. 운영 SLA가 아닙니다.
+현재 API 계약(`/api/v1/discovery`) 기준의 100,000건 합성 fixture를 clean
+commit `2a9d3b8`에서 측정했습니다. 운영 SLA가 아닙니다.
 
 | 지표 | 현재 baseline |
 | --- | ---: |
-| p50 | 53.63ms |
-| p95 | 80.85ms |
-| p99 | 127.09ms |
-| 처리량 | 17.26 req/s |
-| 요청 수 | 2,330 |
+| p50 | 75.73ms |
+| p95 | 102.20ms |
+| p99 | 183.19ms |
+| 처리량 | 12.28 req/s |
+| 요청 수 | 1,658 |
 | HTTP 실패 | 0% |
 
 과거 V054 시점의 인덱스 전후 수치는 현재 publication 모델과 API가 달라
 대표 성과에서 제외했습니다. 현재 baseline의 조건·재현 명령·raw artifact 규칙은
 [`portfolio/evidence/feed-performance.md`](portfolio/evidence/feed-performance.md)에
 공개했습니다.
-현재 측정 원자료는 `build/performance/runs/20260907T063822Z-feed-read-baseline-d9923c0/`
-및 `build/performance/seeds/20260907T063817Z-large/`에 있습니다. calibration은
-backend 종료로 실패하여 대표 수치에 포함하지 않았습니다. 작업 트리는
-dirty 상태였으므로 두 metadata의 `working_tree_diff_sha256`로 실행 소스를
-식별합니다.
+현재 측정 원자료는 `build/performance/runs/20260909T014104Z-feed-read-baseline-2a9d3b8/`
+및 `build/performance/seeds/20260909T014056Z-large/`에 있습니다. 공개용
+sanitized artifact는 `portfolio/evidence/artifacts/feed/`에 있으며, 실행 작업
+트리는 clean 상태였습니다.
 
 ### 신뢰성 경계
 

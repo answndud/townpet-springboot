@@ -3,16 +3,16 @@
 ## Current status
 
 현재 API와 동일한 jOOQ query builder 및 재현 절차를 고정하고, clean commit
-`0546dfbc024708dffc3194e639d6cd75a36556e7`에서 100,000건 fixture baseline을
-수집했다. 결과는 로컬 Docker의 합성 fixture 측정치이며 운영 SLA가 아니다.
+`2a9d3b8cddfc7333aa508c8b2dc148d29769b4b2`에서 100,000건 fixture baseline을
+재수집했다. 결과는 합성 fixture 측정치이며 운영 SLA가 아니다.
 
 | 지표 | 결과 |
 | --- | ---: |
-| p50 | 50.65ms |
-| p95 | 55.63ms |
-| p99 | 61.09ms |
-| 처리량 | 19.48 req/s |
-| 요청 수 | 2,630 |
+| p50 | 75.73ms |
+| p95 | 102.20ms |
+| p99 | 183.19ms |
+| 처리량 | 12.28 req/s |
+| 요청 수 | 1,658 |
 | HTTP 실패 | 0% |
 | k6 checks | 100% |
 
@@ -34,7 +34,8 @@
 host/CPU/메모리, JVM 옵션, warm-up, VU, URL, k6 summary를 기록한다.
 `feed-read`에서는 `explain-feed.sh`가 `CommunityFeedQuery`가 렌더링한
 첫 페이지와 next cursor SQL/bind를 PostgreSQL에 그대로 실행해
-`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)`을 저장한다.
+`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)`을 저장한다. 이번 first-page
+계획은 `Limit`, 21 rows, 2,612 shared hit blocks, 103.815ms actual total time이다.
 
 ## Contract under test
 
@@ -46,16 +47,18 @@ host/CPU/메모리, JVM 옵션, warm-up, VU, URL, k6 summary를 기록한다.
   100,000건, 검색어 적중 100,000건
 - Query plan: `townpet_public_feed_item` view를 확장한 Append 뒤 top-N
   Sort/Limit plan, 21 rows, 2,612 shared hit blocks, actual execution
-  103.475ms를 raw JSON에서 확인했다.
+  103.815ms를 raw JSON에서 확인했다. first/next cursor 계획은 각각
+  `explain-first.json`, `explain-next.json`에 보관한다.
 - 이전 V054 및 이전 local run 수치는 historical reference일 뿐 현재 baseline이나
   개선률 계산에 재사용하지 않는다.
 
 ## Raw artifacts
 
-- run: `build/performance/runs/20260908T052759Z-feed-read-baseline-0546dfb/`
-- seed: `build/performance/seeds/20260908T052754Z-large/`
+- run: `build/performance/runs/20260909T014104Z-feed-read-baseline-2a9d3b8/`
+- seed: `build/performance/seeds/20260909T014056Z-large/`
 - 공개 artifact: `portfolio/evidence/artifacts/feed/` 아래의
-  `summary.json`, `metadata.txt`, `explain.json`, `distribution.tsv`와
+  `summary.json`, `metadata.txt`, `query.sql`, `binds.txt`,
+  `query-plan-metadata.txt`, `explain-first.json`, `explain-next.json`, `distribution.tsv`와
   `checksums.sha256`. raw host log·JVM dump·절대 경로·secret은 포함하지 않았다.
 - before/after 동일 조건 측정이 없으므로 개선률은 작성하지 않는다.
 

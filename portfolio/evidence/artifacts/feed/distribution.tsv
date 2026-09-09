@@ -1,8 +1,8 @@
 report_count|10000
 volunteer_count|10000
 publication_count|100000
-publication_created_at_max|2026-09-08 05:27:53.988554+00
-publication_created_at_min|2026-09-07 01:41:14.988554+00
+publication_created_at_max|2026-09-09 01:40:55.693603+00
+publication_created_at_min|2026-09-07 21:54:16.693603+00
 publication_type_FREE_BOARD|100000
 publication_lifecycle_DELETED|3448
 publication_lifecycle_ACTIVE|96552

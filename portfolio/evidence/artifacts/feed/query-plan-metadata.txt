@@ -1,0 +1,6 @@
+endpoint=/api/v1/discovery?limit=20
+fixture_scale=100000_publications
+first_cursor=none
+next_cursor=last_row_of_first_page
+query_source=CommunityFeedQuery
+explain_status=recorded
