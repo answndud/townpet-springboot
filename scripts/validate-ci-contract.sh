@@ -157,6 +157,19 @@ for name, compose_text in {
         )
 if "healthcheck:" not in portfolio_compose.split("\nvolumes:", 1)[0].split("\n  web:", 1)[1]:
     raise SystemExit("CI contract failed: portfolio web healthcheck is missing")
+for recovery_name in (
+    "TOWNPET_EVENT_RECOVERY_ENABLED",
+    "TOWNPET_EVENT_RECOVERY_FIXED_DELAY_MS",
+    "TOWNPET_EVENT_RECOVERY_INITIAL_DELAY_MS",
+    "TOWNPET_EVENT_RECOVERY_MIN_AGE",
+    "TOWNPET_EVENT_RECOVERY_MAX_IN_FLIGHT",
+    "TOWNPET_EVENT_RECOVERY_BATCH_SIZE",
+    "TOWNPET_EVENT_RECOVERY_MAX_ATTEMPTS",
+):
+    if recovery_name not in netcup_compose:
+        raise SystemExit(
+            f"CI contract failed: netcup backend does not pass {recovery_name}"
+        )
 for script_name in (
     "scripts/frontend-backend-smoke.sh",
     "scripts/auth-browser-e2e.sh",
