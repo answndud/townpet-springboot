@@ -97,6 +97,7 @@ curl --fail --silent --show-error --max-time 5 "$READINESS_URL/actuator/health/r
 
 docker run --rm \
   --add-host=host.docker.internal:host-gateway \
+  --user "$(id -u):$(id -g)" \
   -v "$ROOT_DIR/loadtest:/scripts:ro" \
   -v "$OUT_DIR:/results" \
   -e BASE_URL="$BASE_URL" \
@@ -131,12 +132,29 @@ if [[ "$K6_STATUS" -ne 0 ]]; then
   exit "$K6_STATUS"
 fi
 
+test -s "$OUT_DIR/summary.json" \
+  || { echo "k6 summary is missing or empty: $OUT_DIR/summary.json" >&2; exit 1; }
+command -v jq >/dev/null 2>&1 \
+  || { echo "jq is required to validate the k6 summary" >&2; exit 1; }
+jq empty "$OUT_DIR/summary.json" \
+  || { echo "k6 summary is not valid JSON: $OUT_DIR/summary.json" >&2; exit 1; }
+test -s "$OUT_DIR/console.log" \
+  || { echo "k6 console log is missing or empty: $OUT_DIR/console.log" >&2; exit 1; }
+test -s "$OUT_DIR/resources.tsv" \
+  || { echo "resource log is missing or empty: $OUT_DIR/resources.tsv" >&2; exit 1; }
+
 if [[ "$SCENARIO" == feed-read ]]; then
   "$ROOT_DIR/scripts/performance/explain-feed.sh" "$OUT_DIR"
   cp "$OUT_DIR/explain-first.json" "$OUT_DIR/explain.json"
   echo "explain_status=recorded" >> "$OUT_DIR/metadata.txt"
 else
   echo "explain_status=not_applicable" >> "$OUT_DIR/metadata.txt"
+fi
+
+if command -v sha256sum >/dev/null 2>&1; then
+  sha256sum "$OUT_DIR"/{summary.json,console.log,resources.tsv,metadata.txt} > "$OUT_DIR/checksums.sha256"
+else
+  shasum -a 256 "$OUT_DIR"/{summary.json,console.log,resources.tsv,metadata.txt} > "$OUT_DIR/checksums.sha256"
 fi
 
 echo "Performance result: $OUT_DIR"

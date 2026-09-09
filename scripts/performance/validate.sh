@@ -22,3 +22,19 @@ if rg -n 'api/v1/feed|feed/popular|audience=|"scope"|scope:' \
   exit 1
 fi
 echo "performance execution scripts are syntactically valid"
+
+if [[ $# -gt 0 ]]; then
+  RUN_DIR="$1"
+  test -d "$RUN_DIR" || { echo "run directory does not exist: $RUN_DIR" >&2; exit 1; }
+  for artifact in summary.json console.log resources.tsv metadata.txt checksums.sha256; do
+    test -s "$RUN_DIR/$artifact" || { echo "missing or empty artifact: $RUN_DIR/$artifact" >&2; exit 1; }
+  done
+  command -v jq >/dev/null 2>&1 || { echo "jq is required to validate summary.json" >&2; exit 1; }
+  jq empty "$RUN_DIR/summary.json" || { echo "invalid JSON: $RUN_DIR/summary.json" >&2; exit 1; }
+  if command -v sha256sum >/dev/null 2>&1; then
+    (cd "$RUN_DIR" && sha256sum -c checksums.sha256)
+  else
+    (cd "$RUN_DIR" && shasum -a 256 -c checksums.sha256)
+  fi
+  echo "performance run artifacts are valid: $RUN_DIR"
+fi
