@@ -14,6 +14,7 @@ run_case() {
   local media_keys="$3"
   local db_keys="$4"
   local abandoned_keys="$5"
+  local media_keys_second="${6:-}"
   local temp_dir fake_bin backup_dir output exit_code
 
   temp_dir="$(mktemp -d)"
@@ -62,10 +63,19 @@ if [ "$1" = "exec" ]; then
     townpet-minio:mc)
       case "$*" in
         *"ls --recursive --json"*)
+          keys="${FIXTURE_MEDIA_KEYS:-}"
+          if [ -n "${FIXTURE_MEDIA_KEYS_SECOND:-}" ]; then
+            state_file="${FIXTURE_INVENTORY_STATE_FILE:?}"
+            if [ -f "$state_file" ]; then
+              keys="$FIXTURE_MEDIA_KEYS_SECOND"
+            else
+              : > "$state_file"
+            fi
+          fi
           while IFS= read -r key; do
             [ -z "$key" ] && continue
             printf '{"key":"%s"}\n' "$key"
-          done <<< "${FIXTURE_MEDIA_KEYS:-}"
+          done <<< "$keys"
           ;;
         *) ;;
       esac
@@ -111,6 +121,8 @@ FAKE_DOCKER
     FIXTURE_ATTACHED_COUNT=1 \
     FIXTURE_ABANDONED_COUNT=1 \
     FIXTURE_NON_TERMINAL_COUNT=3 \
+    FIXTURE_MEDIA_KEYS_SECOND="$media_keys_second" \
+    FIXTURE_INVENTORY_STATE_FILE="$temp_dir/inventory-state" \
     "$BACKUP_SCRIPT"
   } 2>&1)"
   exit_code=$?
@@ -162,3 +174,10 @@ run_case \
   $'uploads/ready\nuploads/attached\nuploads/uploading\nabandoned/object' \
   $'uploads/ready\nuploads/attached\nuploads/uploading' \
   abandoned/object
+run_case \
+  inventory-changed \
+  failure \
+  $'uploads/ready\nuploads/attached\nuploads/uploading' \
+  $'uploads/ready\nuploads/attached\nuploads/uploading' \
+  abandoned/object \
+  $'uploads/ready\nuploads/attached\nuploads/uploading\nlate/object'
