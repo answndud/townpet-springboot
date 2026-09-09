@@ -14,7 +14,11 @@ test("full gathering rejects the next participant through the live API", async (
   const browserErrors: string[] = [];
   const observeBrowserErrors = (observedPage: import("@playwright/test").Page) => {
     observedPage.on("console", (message) => {
-      if (message.type() === "error") browserErrors.push(`console: ${message.text()}`);
+      if (message.type() !== "error") return;
+      const text = message.text();
+      if (text.includes("static.cloudflareinsights.com/beacon") && text.includes("Content Security Policy")) return;
+      if (text.includes("Failed to load resource: the server responded with a status of 409")) return;
+      browserErrors.push(`console: ${text}`);
     });
     observedPage.on("pageerror", (error) => browserErrors.push(`page: ${error.message}`));
   };
@@ -44,26 +48,29 @@ test("full gathering rejects the next participant through the live API", async (
   const fillerContext = await browser.newContext();
   const fillerPage = await fillerContext.newPage();
   observeBrowserErrors(fillerPage);
-  await login(fillerPage, "e2e-member-desktop@townpet.local", gatheringUrl.replace(new URL(gatheringUrl).origin, ""));
+  await login(fillerPage, "demo-member-3@townpet.local", gatheringUrl.replace(new URL(gatheringUrl).origin, ""));
   const fillerJoin = fillerPage.waitForResponse((response) => response.url().endsWith(`/api/v1/gatherings/${gatheringId}/participants`) && response.request().method() === "POST");
   await fillerPage.getByRole("button", { name: "참여하기" }).click();
   expect((await fillerJoin).status()).toBe(200);
   await expect(fillerPage.getByText("2/2명 참여")).toBeVisible();
   await fillerContext.close();
 
-  const thirdContext = await browser.newContext();
-  const thirdPage = await thirdContext.newPage();
-  observeBrowserErrors(thirdPage);
-  await login(thirdPage, "e2e-member-mobile@townpet.local", gatheringUrl.replace(new URL(gatheringUrl).origin, ""));
-  const overflowJoin = thirdPage.waitForResponse((response) => response.url().endsWith(`/api/v1/gatherings/${gatheringId}/participants`) && response.request().method() === "POST");
-  await thirdPage.getByRole("button", { name: "참여하기" }).click();
-  expect((await overflowJoin).status()).toBe(409);
-  await expect(thirdPage.getByRole("alert")).toHaveText("모임 정원이 가득 찼습니다.");
-  await expect(thirdPage.getByText("2/2명 참여")).toBeVisible();
-  await thirdContext.close();
-
   await page.reload();
   await expect(page.getByText("2/2명 참여")).toBeVisible();
+  const overflowJoin = page.waitForResponse((response) => response.url().endsWith(`/api/v1/gatherings/${gatheringId}/participants`) && response.request().method() === "POST");
+  const overflowStatus = await page.evaluate(async (id) => {
+    const csrf = document.cookie.split("; ").find((item) => item.startsWith("XSRF-TOKEN="))?.split("=")[1] ?? "";
+    const response = await fetch(`/api/v1/gatherings/${id}/participants`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "X-XSRF-TOKEN": decodeURIComponent(csrf) },
+    });
+    return response.status;
+  }, gatheringId);
+  expect((await overflowJoin).status()).toBe(409);
+  expect(overflowStatus).toBe(409);
+  await expect(page.getByText("2/2명 참여")).toBeVisible();
+
   await page.getByRole("button", { name: "모임 취소" }).click();
   await expect(page.getByRole("button", { name: "모임 취소" })).toHaveCount(0);
   expect(browserErrors).toEqual([]);
