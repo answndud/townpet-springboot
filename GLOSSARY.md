@@ -206,7 +206,10 @@ event가 유실되지 않도록 한 번 이상 전달할 수 있지만 장애·�
 
 ## Event Backlog
 
-아직 완료되지 않은 event publication의 수와 대기 시간이다. 처리 장애와 용량 부족을 판단하는 운영 지표다.
+자동 재처리 대상인 미완료 event publication의 수와 대기 시간이다. TownPet에서는
+`completion_attempts < maxAttempts`인 publication만 Event Backlog에 포함한다. 시도 상한에
+도달한 미완료 publication은 backlog에서 숨기지 않고 `exhausted` count와 oldest age로
+별도 관측하며 운영자 조치 대상이다.
 
 ## UploadAsset
 

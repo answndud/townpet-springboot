@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.townpet.notification.api.NotificationEvent;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,6 +60,7 @@ class EventPublicationRecoveryIntegrationTest {
   @Autowired ApplicationEventPublisher events;
   @Autowired org.springframework.transaction.PlatformTransactionManager transactionManager;
   @Autowired JdbcTemplate jdbc;
+  @Autowired MeterRegistry metrics;
 
   @Test
   void failedPublicationCompletesAfterDependencyRecoversWithoutRestart() {
@@ -98,6 +100,47 @@ class EventPublicationRecoveryIntegrationTest {
                 Integer.class,
                 publicationId));
     assertTrue(completionAttempts >= 1);
+  }
+
+  @Test
+  void exhaustedPublicationIsVisibleSeparatelyFromRetryableBacklog() {
+    UUID recipient = UUID.randomUUID();
+    UUID eventId = UUID.randomUUID();
+    insertMember(ACTOR, "exhausted-actor@townpet.local", "exhausted-actor");
+
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(
+            status ->
+                events.publishEvent(
+                    new NotificationEvent(
+                        recipient,
+                        eventId,
+                        ACTOR,
+                        "EXHAUSTED_TEST",
+                        "재시도 소진 테스트",
+                        "재시도 상한에 도달한 이벤트입니다.")));
+
+    UUID publicationId = awaitPublicationForEvent(eventId);
+    assertTrue(awaitPublicationStatus(publicationId, "FAILED"));
+    jdbc.update(
+        "update event_publication set completion_attempts = 3 where id = ?",
+        publicationId);
+
+    recovery.recover();
+
+    assertEquals(0.0, metrics.get("townpet.events.backlog").gauge().value());
+    assertEquals(1.0, metrics.get("townpet.events.exhausted").gauge().value());
+    assertTrue(metrics.get("townpet.events.exhausted_oldest_age_seconds").gauge().value() >= 0);
+    assertEquals(
+        0,
+        jdbc.queryForObject(
+            "select count(*) from notification where event_id = ?", Integer.class, eventId));
+    assertEquals(
+        0,
+        jdbc.queryForObject(
+            "select count(*) from event_publication where id = ? and completion_date is not null",
+            Integer.class,
+            publicationId));
   }
 
   private void insertMember(UUID id, String email, String nickname) {

@@ -26,6 +26,8 @@ class EventPublicationRecovery {
   private final AtomicBoolean running = new AtomicBoolean();
   private final AtomicInteger backlog = new AtomicInteger();
   private final AtomicLong oldestAgeSeconds = new AtomicLong();
+  private final AtomicInteger exhausted = new AtomicInteger();
+  private final AtomicLong exhaustedOldestAgeSeconds = new AtomicLong();
 
   EventPublicationRecovery(
       IncompleteEventPublications publications,
@@ -46,6 +48,15 @@ class EventPublicationRecovery {
         .register(metrics);
     Gauge.builder("townpet.events.oldest_age_seconds", oldestAgeSeconds, AtomicLong::get)
         .description("Age of the oldest incomplete event publication")
+        .register(metrics);
+    Gauge.builder("townpet.events.exhausted", exhausted, AtomicInteger::get)
+        .description("Incomplete event publications that reached the recovery attempt limit")
+        .register(metrics);
+    Gauge.builder(
+            "townpet.events.exhausted_oldest_age_seconds",
+            exhaustedOldestAgeSeconds,
+            AtomicLong::get)
+        .description("Age of the oldest incomplete event publication at the recovery attempt limit")
         .register(metrics);
   }
 
@@ -84,7 +95,25 @@ class EventPublicationRecovery {
             """,
             Long.class,
             maxAttempts);
+    Integer exhaustedCount =
+        jdbc.queryForObject(
+            "select count(*) from event_publication where completion_date is null and completion_attempts >= ?",
+            Integer.class,
+            maxAttempts);
+    Long exhaustedAgeSeconds =
+        jdbc.queryForObject(
+            """
+            select coalesce(extract(epoch from (current_timestamp - min(publication_date))), 0)::bigint
+            from event_publication
+            where completion_date is null
+              and completion_attempts >= ?
+            """,
+            Long.class,
+            maxAttempts);
     backlog.set(count == null ? 0 : count);
     oldestAgeSeconds.set(ageSeconds == null ? 0 : Math.max(0, ageSeconds));
+    exhausted.set(exhaustedCount == null ? 0 : exhaustedCount);
+    exhaustedOldestAgeSeconds.set(
+        exhaustedAgeSeconds == null ? 0 : Math.max(0, exhaustedAgeSeconds));
   }
 }

@@ -27,9 +27,17 @@ class EventPublicationRecoveryTest {
     JdbcTemplate jdbc = org.mockito.Mockito.mock(JdbcTemplate.class);
     SimpleMeterRegistry metrics = new SimpleMeterRegistry();
     when(jdbc.queryForObject(any(String.class), eq(Integer.class), any(Object[].class)))
-        .thenReturn(3);
+        .thenAnswer(
+            invocation ->
+                invocation.getArgument(0, String.class).contains("completion_attempts <")
+                    ? 3
+                    : 2);
     when(jdbc.queryForObject(any(String.class), eq(Long.class), any(Object[].class)))
-        .thenReturn(900L);
+        .thenAnswer(
+            invocation ->
+                invocation.getArgument(0, String.class).contains("completion_attempts <")
+                    ? 900L
+                    : 1800L);
     EventPublicationRecovery recovery =
         new EventPublicationRecovery(publications, jdbc, metrics, Duration.ofMinutes(5), 4, 2, 3);
 
@@ -41,6 +49,10 @@ class EventPublicationRecoveryTest {
     assertEquals(4, options.getValue().getMaxInFlight());
     assertEquals(2, options.getValue().getBatchSize());
     assertEquals(3, metrics.get("townpet.events.backlog").gauge().value(), 0.0);
+    assertEquals(900.0, metrics.get("townpet.events.oldest_age_seconds").gauge().value());
+    assertEquals(2.0, metrics.get("townpet.events.exhausted").gauge().value());
+    assertEquals(
+        1800.0, metrics.get("townpet.events.exhausted_oldest_age_seconds").gauge().value());
 
     EventPublication retryable = org.mockito.Mockito.mock(EventPublication.class);
     when(retryable.getCompletionAttempts()).thenReturn(2);

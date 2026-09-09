@@ -793,6 +793,8 @@ batch size, max in-flight를 적용하고 `event_publication.completion_attempts
 미만인 publication만 자동 재제출한다. 따라서 `FAILED` status 자체는 재제출 제외 조건이
 아니지만, 시도 상한을 넘은 publication은 자동 재제출하지 않고 운영자 조치 대상으로 남긴다.
 backlog count와 oldest age metric도 재처리 가능한 incomplete publication만 집계한다.
+시도 상한에 도달한 미완료 publication은 `townpet.events.exhausted`와
+`townpet.events.exhausted_oldest_age_seconds`로 별도 집계하며 자동 재제출하지 않는다.
 
 ### Consequences
 

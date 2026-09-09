@@ -42,8 +42,10 @@ FK, not-null 등 다른 무결성 오류는 예외로 남아 publication 실패�
 적용하고 `event_publication.completion_attempts`가 기본 3회 미만인 incomplete publication만
 재전달한다. 따라서 `FAILED`라는 status만으로 자동 재전달을 제외하지 않지만, 시도 상한을
 넘은 publication은 자동 재전달하지 않는다. backlog count와 oldest age metric도 상한을
-넘은 publication을 제외한다. event payload·recipient·credential은 metric/log에 노출하지
-않는다.
+넘은 publication을 제외하며, `townpet.events.exhausted`와
+`townpet.events.exhausted_oldest_age_seconds`로 별도 관측한다. exhausted publication은
+원인 확인과 운영자 조치 대상이다. event payload·recipient·credential은 metric/log에
+노출하지 않는다.
 
 이 정책은 예외 종류를 자동으로 영구/일시 실패로 판정하지 않는다. 일시적 실패는 다음
 재전달에서 완료될 수 있고, 반복 실패는 3회 상한 뒤 운영자가 원인을 확인하고 별도 조치를
@@ -53,8 +55,13 @@ FK, not-null 등 다른 무결성 오류는 예외로 남아 publication 실패�
 결과로 숨겨지지 않는다는 단위 경계를 확인한다. 실제 registry publication의 실패·재처리는
 `EventPublicationRecoveryIntegrationTest`가 PostgreSQL에서 별도로 확인한다.
 
+재시도 소진 경계는 별도 publication을 `completion_attempts >= maxAttempts`로 만든 뒤
+recovery를 호출해 검증한다. 해당 publication은 retryable backlog에 포함되지 않고
+exhausted count·oldest age에만 나타나며 자동 완료·notification 저장 없이 남는다.
+
 2026-09-09 targeted gate는 Testcontainers PostgreSQL에서 `EventPublicationRecoveryIntegrationTest`
-의 recipient 누락→`FAILED`→recipient 복구→동일 publication completion 흐름을 통과했다.
+의 recipient 누락→`FAILED`→recipient 복구→동일 publication completion 흐름과
+`completion_attempts` 상한 도달 publication의 exhausted metric 분리 흐름을 통과했다.
 `EventPublicationRecoveryTest`는 max-attempts 초과 publication 제외와 recovery 중복 실행 skip도
 확인한다. 두 경로 모두 application restart 없이 같은 JVM/test context에서 completion을 확인한다.
 
