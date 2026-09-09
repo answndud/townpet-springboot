@@ -1,0 +1,282 @@
+2026-09-09T09:58:17Z db_cpu=0.01% db_mem=66.28MiB / 1GiB db_net=48.2MB / 449MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:58:23Z db_cpu=0.57% db_mem=67.36MiB / 1GiB db_net=48.2MB / 449MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:58:30Z db_cpu=0.63% db_mem=67.66MiB / 1GiB db_net=48.2MB / 449MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:58:36Z db_cpu=5.73% db_mem=67.67MiB / 1GiB db_net=48.2MB / 449MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:58:43Z db_cpu=0.22% db_mem=67.66MiB / 1GiB db_net=48.2MB / 449MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:58:49Z db_cpu=0.17% db_mem=67.66MiB / 1GiB db_net=48.2MB / 450MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:58:56Z db_cpu=0.20% db_mem=67.66MiB / 1GiB db_net=48.2MB / 450MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:59:02Z db_cpu=0.32% db_mem=67.67MiB / 1GiB db_net=48.3MB / 450MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:59:09Z db_cpu=0.70% db_mem=67.66MiB / 1GiB db_net=48.3MB / 450MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:59:16Z db_cpu=0.64% db_mem=67.67MiB / 1GiB db_net=48.3MB / 450MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:59:22Z db_cpu=7.42% db_mem=69.38MiB / 1GiB db_net=48.3MB / 451MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:59:29Z db_cpu=0.62% db_mem=69.27MiB / 1GiB db_net=48.3MB / 451MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:59:35Z db_cpu=0.55% db_mem=69.45MiB / 1GiB db_net=48.3MB / 451MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:59:42Z db_cpu=0.54% db_mem=69.45MiB / 1GiB db_net=48.4MB / 452MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:59:48Z db_cpu=6.59% db_mem=69.45MiB / 1GiB db_net=48.4MB / 452MB db_block=25.9MB / 36.2MB
+
+2026-09-09T09:59:55Z db_cpu=0.66% db_mem=69.46MiB / 1GiB db_net=48.4MB / 453MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:00:01Z db_cpu=1.65% db_mem=69.46MiB / 1GiB db_net=48.4MB / 453MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:00:08Z db_cpu=8.23% db_mem=69.45MiB / 1GiB db_net=48.5MB / 453MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:00:14Z db_cpu=1.07% db_mem=69.45MiB / 1GiB db_net=48.5MB / 454MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:00:21Z db_cpu=0.90% db_mem=69.46MiB / 1GiB db_net=48.5MB / 454MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:00:28Z db_cpu=1.40% db_mem=69.46MiB / 1GiB db_net=48.6MB / 455MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:00:34Z db_cpu=8.31% db_mem=69.46MiB / 1GiB db_net=48.6MB / 456MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:00:41Z db_cpu=1.00% db_mem=69.45MiB / 1GiB db_net=48.6MB / 456MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:00:47Z db_cpu=1.11% db_mem=69.46MiB / 1GiB db_net=48.7MB / 457MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:00:54Z db_cpu=0.96% db_mem=69.45MiB / 1GiB db_net=48.7MB / 457MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:00Z db_cpu=1.03% db_mem=69.45MiB / 1GiB db_net=48.7MB / 458MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:07Z db_cpu=1.21% db_mem=69.45MiB / 1GiB db_net=48.8MB / 459MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:13Z db_cpu=1.18% db_mem=69.45MiB / 1GiB db_net=48.8MB / 459MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:20Z db_cpu=6.68% db_mem=69.45MiB / 1GiB db_net=48.9MB / 460MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:26Z db_cpu=1.72% db_mem=69.45MiB / 1GiB db_net=48.9MB / 461MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:33Z db_cpu=1.57% db_mem=69.46MiB / 1GiB db_net=49MB / 462MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:39Z db_cpu=1.28% db_mem=69.46MiB / 1GiB db_net=49MB / 463MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:46Z db_cpu=1.70% db_mem=69.47MiB / 1GiB db_net=49.1MB / 464MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:52Z db_cpu=1.45% db_mem=69.47MiB / 1GiB db_net=49.1MB / 464MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:01:59Z db_cpu=2.45% db_mem=69.47MiB / 1GiB db_net=49.2MB / 465MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:02:06Z db_cpu=8.97% db_mem=69.47MiB / 1GiB db_net=49.2MB / 466MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:02:12Z db_cpu=1.94% db_mem=69.46MiB / 1GiB db_net=49.3MB / 467MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:02:19Z db_cpu=1.78% db_mem=69.46MiB / 1GiB db_net=49.3MB / 468MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:02:25Z db_cpu=1.54% db_mem=69.47MiB / 1GiB db_net=49.4MB / 469MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:02:32Z db_cpu=8.50% db_mem=70.95MiB / 1GiB db_net=49.5MB / 470MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:02:38Z db_cpu=2.18% db_mem=70.99MiB / 1GiB db_net=49.5MB / 472MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:02:45Z db_cpu=1.61% db_mem=70.99MiB / 1GiB db_net=49.6MB / 473MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:02:51Z db_cpu=7.42% db_mem=70.99MiB / 1GiB db_net=49.7MB / 474MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:02:58Z db_cpu=2.26% db_mem=70.99MiB / 1GiB db_net=49.7MB / 475MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:03:05Z db_cpu=2.31% db_mem=70.99MiB / 1GiB db_net=49.8MB / 476MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:03:12Z db_cpu=2.72% db_mem=72.05MiB / 1GiB db_net=49.9MB / 478MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:03:18Z db_cpu=1.87% db_mem=71MiB / 1GiB db_net=49.9MB / 479MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:03:25Z db_cpu=2.70% db_mem=71.24MiB / 1GiB db_net=50MB / 480MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:03:31Z db_cpu=2.95% db_mem=70.99MiB / 1GiB db_net=50.1MB / 481MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:03:38Z db_cpu=7.99% db_mem=70.99MiB / 1GiB db_net=50.2MB / 483MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:03:44Z db_cpu=1.98% db_mem=70.99MiB / 1GiB db_net=50.3MB / 484MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:03:51Z db_cpu=2.57% db_mem=70.99MiB / 1GiB db_net=50.3MB / 486MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:03:57Z db_cpu=2.11% db_mem=70.99MiB / 1GiB db_net=50.4MB / 487MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:04:04Z db_cpu=3.25% db_mem=70.99MiB / 1GiB db_net=50.5MB / 488MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:04:10Z db_cpu=2.69% db_mem=70.99MiB / 1GiB db_net=50.6MB / 490MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:04:17Z db_cpu=3.19% db_mem=69.26MiB / 1GiB db_net=50.7MB / 491MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:04:23Z db_cpu=8.63% db_mem=69.01MiB / 1GiB db_net=50.8MB / 493MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:04:30Z db_cpu=2.33% db_mem=70.5MiB / 1GiB db_net=50.9MB / 494MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:04:37Z db_cpu=2.62% db_mem=70.57MiB / 1GiB db_net=51MB / 496MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:04:43Z db_cpu=3.33% db_mem=70.57MiB / 1GiB db_net=51MB / 498MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:04:50Z db_cpu=11.50% db_mem=70.57MiB / 1GiB db_net=51.1MB / 499MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:04:56Z db_cpu=2.27% db_mem=70.57MiB / 1GiB db_net=51.2MB / 501MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:05:03Z db_cpu=4.68% db_mem=70.59MiB / 1GiB db_net=51.3MB / 502MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:05:09Z db_cpu=5.80% db_mem=72.8MiB / 1GiB db_net=51.4MB / 504MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:05:16Z db_cpu=2.80% db_mem=70.59MiB / 1GiB db_net=51.5MB / 506MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:05:22Z db_cpu=3.13% db_mem=70.59MiB / 1GiB db_net=51.6MB / 508MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:05:29Z db_cpu=2.65% db_mem=70.59MiB / 1GiB db_net=51.7MB / 510MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:05:35Z db_cpu=8.35% db_mem=70.59MiB / 1GiB db_net=51.8MB / 512MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:05:42Z db_cpu=3.05% db_mem=70MiB / 1GiB db_net=52MB / 513MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:05:48Z db_cpu=2.38% db_mem=70.49MiB / 1GiB db_net=52.1MB / 515MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:05:55Z db_cpu=2.57% db_mem=70.49MiB / 1GiB db_net=52.2MB / 517MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:06:01Z db_cpu=2.75% db_mem=70.53MiB / 1GiB db_net=52.3MB / 519MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:06:08Z db_cpu=2.79% db_mem=68.96MiB / 1GiB db_net=52.4MB / 521MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:06:14Z db_cpu=3.23% db_mem=70.48MiB / 1GiB db_net=52.5MB / 523MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:06:21Z db_cpu=8.07% db_mem=70.49MiB / 1GiB db_net=52.6MB / 525MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:06:28Z db_cpu=2.57% db_mem=70.49MiB / 1GiB db_net=52.8MB / 527MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:06:34Z db_cpu=3.25% db_mem=70.49MiB / 1GiB db_net=52.9MB / 529MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:06:41Z db_cpu=3.32% db_mem=70.56MiB / 1GiB db_net=53MB / 532MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:06:47Z db_cpu=3.23% db_mem=70.55MiB / 1GiB db_net=53.1MB / 534MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:06:54Z db_cpu=3.28% db_mem=70.56MiB / 1GiB db_net=53.2MB / 536MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:00Z db_cpu=3.18% db_mem=70.57MiB / 1GiB db_net=53.4MB / 538MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:07Z db_cpu=8.92% db_mem=70.58MiB / 1GiB db_net=53.5MB / 541MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:13Z db_cpu=4.45% db_mem=72.19MiB / 1GiB db_net=53.7MB / 543MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:20Z db_cpu=3.96% db_mem=72.36MiB / 1GiB db_net=53.8MB / 545MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:26Z db_cpu=3.49% db_mem=72.36MiB / 1GiB db_net=53.9MB / 548MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:33Z db_cpu=9.67% db_mem=72.36MiB / 1GiB db_net=54.1MB / 550MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:39Z db_cpu=3.63% db_mem=72.36MiB / 1GiB db_net=54.2MB / 553MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:46Z db_cpu=3.53% db_mem=72.36MiB / 1GiB db_net=54.3MB / 555MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:52Z db_cpu=3.79% db_mem=72.36MiB / 1GiB db_net=54.5MB / 558MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:07:59Z db_cpu=4.22% db_mem=70.78MiB / 1GiB db_net=54.6MB / 560MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:08:06Z db_cpu=4.45% db_mem=72.38MiB / 1GiB db_net=54.8MB / 563MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:08:12Z db_cpu=4.19% db_mem=72.57MiB / 1GiB db_net=54.9MB / 565MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:08:19Z db_cpu=9.61% db_mem=72.58MiB / 1GiB db_net=55.1MB / 568MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:08:25Z db_cpu=5.40% db_mem=72.57MiB / 1GiB db_net=55.2MB / 570MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:08:32Z db_cpu=3.53% db_mem=72.57MiB / 1GiB db_net=55.4MB / 573MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:08:38Z db_cpu=4.46% db_mem=72.61MiB / 1GiB db_net=55.5MB / 576MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:08:45Z db_cpu=3.83% db_mem=72.61MiB / 1GiB db_net=55.7MB / 579MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:08:51Z db_cpu=3.79% db_mem=71.08MiB / 1GiB db_net=55.8MB / 581MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:08:58Z db_cpu=4.53% db_mem=71.09MiB / 1GiB db_net=56MB / 584MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:09:04Z db_cpu=10.15% db_mem=71.09MiB / 1GiB db_net=56.1MB / 587MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:09:11Z db_cpu=4.62% db_mem=72.53MiB / 1GiB db_net=56.3MB / 590MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:09:17Z db_cpu=4.71% db_mem=72.87MiB / 1GiB db_net=56.5MB / 593MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:09:24Z db_cpu=4.44% db_mem=72.87MiB / 1GiB db_net=56.7MB / 596MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:09:30Z db_cpu=9.00% db_mem=72.87MiB / 1GiB db_net=56.8MB / 599MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:09:37Z db_cpu=4.36% db_mem=72.87MiB / 1GiB db_net=57MB / 603MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:09:43Z db_cpu=4.50% db_mem=72.87MiB / 1GiB db_net=57.2MB / 606MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:09:50Z db_cpu=9.59% db_mem=72.88MiB / 1GiB db_net=57.4MB / 609MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:09:57Z db_cpu=3.87% db_mem=72.87MiB / 1GiB db_net=57.6MB / 613MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:10:03Z db_cpu=6.37% db_mem=72.87MiB / 1GiB db_net=57.8MB / 616MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:10:10Z db_cpu=5.99% db_mem=72.88MiB / 1GiB db_net=58MB / 620MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:10:16Z db_cpu=10.35% db_mem=72.87MiB / 1GiB db_net=58.2MB / 623MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:10:23Z db_cpu=6.63% db_mem=72.87MiB / 1GiB db_net=58.4MB / 627MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:10:29Z db_cpu=5.01% db_mem=72.87MiB / 1GiB db_net=58.6MB / 631MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:10:36Z db_cpu=5.06% db_mem=73.12MiB / 1GiB db_net=58.8MB / 634MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:10:42Z db_cpu=5.53% db_mem=72.88MiB / 1GiB db_net=59MB / 638MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:10:49Z db_cpu=6.18% db_mem=72.88MiB / 1GiB db_net=59.2MB / 642MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:10:55Z db_cpu=5.63% db_mem=72.87MiB / 1GiB db_net=59.4MB / 646MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:11:02Z db_cpu=11.20% db_mem=72.87MiB / 1GiB db_net=59.7MB / 650MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:11:08Z db_cpu=5.89% db_mem=72.87MiB / 1GiB db_net=59.9MB / 655MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:11:15Z db_cpu=5.00% db_mem=72.87MiB / 1GiB db_net=60.1MB / 659MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:11:21Z db_cpu=6.02% db_mem=72.87MiB / 1GiB db_net=60.4MB / 663MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:11:28Z db_cpu=6.05% db_mem=72.88MiB / 1GiB db_net=60.6MB / 667MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:11:34Z db_cpu=5.87% db_mem=72.91MiB / 1GiB db_net=60.8MB / 672MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:11:41Z db_cpu=5.71% db_mem=72.91MiB / 1GiB db_net=61.1MB / 676MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:11:48Z db_cpu=10.50% db_mem=72.92MiB / 1GiB db_net=61.3MB / 680MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:11:54Z db_cpu=6.78% db_mem=72.92MiB / 1GiB db_net=61.6MB / 685MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:01Z db_cpu=6.38% db_mem=72.92MiB / 1GiB db_net=61.8MB / 690MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:07Z db_cpu=8.33% db_mem=72.92MiB / 1GiB db_net=62.1MB / 694MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:14Z db_cpu=11.52% db_mem=72.92MiB / 1GiB db_net=62.3MB / 699MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:20Z db_cpu=6.08% db_mem=72.92MiB / 1GiB db_net=62.6MB / 704MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:27Z db_cpu=7.04% db_mem=72.92MiB / 1GiB db_net=62.9MB / 709MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:33Z db_cpu=12.52% db_mem=74.56MiB / 1GiB db_net=63.2MB / 713MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:40Z db_cpu=6.43% db_mem=72.74MiB / 1GiB db_net=63.4MB / 719MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:46Z db_cpu=6.18% db_mem=72.74MiB / 1GiB db_net=63.7MB / 723MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:53Z db_cpu=7.45% db_mem=72.74MiB / 1GiB db_net=64MB / 729MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:12:59Z db_cpu=14.47% db_mem=71.12MiB / 1GiB db_net=64.3MB / 734MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:13:06Z db_cpu=8.34% db_mem=72.62MiB / 1GiB db_net=64.6MB / 739MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:13:12Z db_cpu=7.15% db_mem=72.65MiB / 1GiB db_net=64.8MB / 744MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:13:19Z db_cpu=7.52% db_mem=72.64MiB / 1GiB db_net=65.1MB / 749MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:13:25Z db_cpu=8.45% db_mem=72.57MiB / 1GiB db_net=65.4MB / 755MB db_block=25.9MB / 36.2MB
+
+2026-09-09T10:13:32Z db_cpu=7.45% db_mem=73.9MiB / 1GiB db_net=65.7MB / 760MB db_block=25.9MB / 36.2MB
+

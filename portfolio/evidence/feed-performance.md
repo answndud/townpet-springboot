@@ -137,6 +137,37 @@ gate다. 운영 SLA나 전체 서비스의 최대 용량으로 해석하지 않�
 read-only이고 VU가 제한되어 있으며, 인증·write·메일·fault injection을 포함하지
 않으므로 실제 사용자 capacity나 write path SLO를 증명하지 않는다.
 
+## VPS public-read ramp against proposed gate
+
+같은 VPS와 endpoint에서 `15s@1 warm-up → 5m@10 → 5m@20 → 5m@40` profile을
+실행했다. 실행 commit은 `757436a3ef1a9d8c89ba1b4025fd3eb5db9fc2ab`이고, 실제
+backend/web image revision은 `2e9d3f79a0bf2e48595321a75cab1c812d5720fe`였다.
+
+| 지표 | 결과 | proposed gate | 판정 |
+| --- | ---: | ---: | --- |
+| requests / throughput | 59,667 / 65.19 req/s | 관측 | 관측값 |
+| p95 | 68.06ms | < 100ms | 충족 |
+| p99 | 82.73ms | < 200ms | 충족 |
+| HTTP failure | 0% | < 1% | 충족 |
+| checks | 100% (59,667/59,667) | 99% 이상 | 충족 |
+| PostgreSQL CPU | 0.01–14.47% | 별도 SLO 없음 | 관측값 |
+| PostgreSQL memory | 66.28–74.56MiB | 별도 SLO 없음 | 관측값 |
+| 종료 DB connections | 19/100 (19%) | < 80% | 충족 |
+| 종료 backend memory | 37.68% | < 80% | 충족 |
+| container restart | 0 | 0 | 충족 |
+
+실행 전후 workload budget은 PASS였고 readiness·backend/web health도 유지됐다. 따라서
+이번 조건에서는 40 VU 단계까지 제안 gate를 위반하지 않았다. 이것은 `public-read`
+세 endpoint와 현재 VPS resource에 대한 관측 가능한 결과이며, 40 VU를 최대 용량으로
+단정하거나 write·인증·메일 경로의 SLO로 확장하지 않는다.
+
+raw artifact는
+`portfolio/evidence/artifacts/vps-public-read-ramp/20260909T095816Z-public-read-ramp-757436a/`
+아래에 보관했다. 실행 중 SSH session이 종료됐지만 원격 k6와 결과 파일은 유지됐고,
+summary·console·resources·metadata를 독립 SSH에서 checksum 생성·validate했다. 이
+transport 사건은 workload 실패가 아니며, 장시간 실행 시 detached runner를 사용해야
+한다는 운영 한계로 기록한다.
+
 ## Limitations
 
 측정 전에는 p50/p95/p99, 처리량, 실패율, query plan 선택을 주장하지 않는다.
