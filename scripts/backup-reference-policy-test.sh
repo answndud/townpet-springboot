@@ -15,6 +15,7 @@ run_case() {
   local db_keys="$4"
   local abandoned_keys="$5"
   local media_keys_second="${6:-}"
+  local inventory_change_call="${7:-}"
   local temp_dir fake_bin backup_dir output exit_code
 
   temp_dir="$(mktemp -d)"
@@ -64,13 +65,19 @@ if [ "$1" = "exec" ]; then
       case "$*" in
         *"ls --recursive --json"*)
           keys="${FIXTURE_MEDIA_KEYS:-}"
-          if [ -n "${FIXTURE_MEDIA_KEYS_SECOND:-}" ]; then
-            state_file="${FIXTURE_INVENTORY_STATE_FILE:?}"
-            if [ -f "$state_file" ]; then
-              keys="$FIXTURE_MEDIA_KEYS_SECOND"
-            else
-              : > "$state_file"
-            fi
+          state_file="${FIXTURE_INVENTORY_STATE_FILE:?}"
+          inventory_call=0
+          if [ -f "$state_file" ]; then
+            inventory_call="$(cat "$state_file")"
+          fi
+          inventory_call=$((inventory_call + 1))
+          printf '%s\n' "$inventory_call" > "$state_file"
+          change_call="${FIXTURE_INVENTORY_CHANGE_CALL:-}"
+          if [ -z "$change_call" ] && [ -n "${FIXTURE_MEDIA_KEYS_SECOND:-}" ]; then
+            change_call=2
+          fi
+          if [ -n "$change_call" ] && [ "$inventory_call" -ge "$change_call" ]; then
+            keys="${FIXTURE_MEDIA_KEYS_SECOND:-}"
           fi
           while IFS= read -r key; do
             [ -z "$key" ] && continue
@@ -122,6 +129,7 @@ FAKE_DOCKER
     FIXTURE_ABANDONED_COUNT=1 \
     FIXTURE_NON_TERMINAL_COUNT=3 \
     FIXTURE_MEDIA_KEYS_SECOND="$media_keys_second" \
+    FIXTURE_INVENTORY_CHANGE_CALL="$inventory_change_call" \
     FIXTURE_INVENTORY_STATE_FILE="$temp_dir/inventory-state" \
     "$BACKUP_SCRIPT"
   } 2>&1)"
@@ -181,3 +189,12 @@ run_case \
   $'uploads/ready\nuploads/attached\nuploads/uploading' \
   abandoned/object \
   $'uploads/ready\nuploads/attached\nuploads/uploading\nlate/object'
+
+run_case \
+  inventory-changed-during-snapshot \
+  failure \
+  $'uploads/ready\nuploads/attached\nuploads/uploading' \
+  $'uploads/ready\nuploads/attached\nuploads/uploading' \
+  abandoned/object \
+  $'uploads/ready\nuploads/attached\nuploads/uploading\nlate/object' \
+  3

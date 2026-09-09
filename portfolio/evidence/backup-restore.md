@@ -22,11 +22,12 @@ marker는 trap으로 제거된다.
 선택적으로 `RESTORE_HEALTH_URL`, `RESTORE_API_URL`, `RESTORE_MEDIA_URL`을 지정하면
 application readiness, 대표 API, signed media GET도 검증한다.
 
-P2 정책 fixture는 다음 다섯 경계를 확인한다.
+P2 정책 fixture는 다음 여섯 경계를 확인한다.
 
 - `READY`·`ATTACHED`·`UPLOADING` object가 모두 있으면 성공
 - DB key 누락, DB에 없는 object, `ABANDONED` object 잔존은 실패
 - backup 중 bucket inventory가 바뀌면 실패
+- snapshot 직전 안정성 확인을 통과한 뒤 media copy 중 inventory가 바뀌어도 실패
 - `scripts/backup-reference-policy-test.sh`는 실제 volume을 건드리지 않는 disposable fake PostgreSQL/MinIO 경계 테스트다.
 
 ## 실행 경로
@@ -52,14 +53,19 @@ deploy/restore-portfolio.sh
 
 ## 검증 상태
 
-- 구현 및 script/unit 검증: 완료. P2 정책 fixture 5개 경계 통과
+- 구현 및 script/unit 검증: 완료. P2 정책 fixture 6개 경계 통과
+- P2 direct-upload/backup race fixture: 완료. `bash scripts/backup-reference-policy-test.sh`가
+  `ready-is-preserved`, `missing-object`, `orphan-object`, `abandoned-object`,
+  `inventory-changed`, `inventory-changed-during-snapshot` 6개 case를 통과한다.
 - VPS production backup: stale `UPLOADING` 2건을 공식 cleanup 조건으로 정리한 뒤 현재 정책 backup 성공
 - VPS disposable DB·MinIO fresh restore: restore-capable MinIO credential을 명시해 checksum·DB/media key 대사·status count·media mirror 복구 성공. application/signed media GET은 backend를 포함한 별도 rehearsal에서 추가 확인 범위
 - netcup 서버 손실 복구: provider 전체 재구축이 아닌 disposable fresh-volume rehearsal까지만 검증
 
 직접 presigned upload가 진행 중인 production volume에 backup을 실행하지 않았다. 해당 race는
-expiry+grace 이후의 inventory 안정성 정책과 `inventory-changed` fake boundary test로 안전하게
-검증하며, 실제 운영 upload를 의도적으로 중단시키는 실험은 하지 않는다.
+expiry+grace 이후의 inventory 안정성 정책과 두 시점의 fake boundary test로 안전하게 검증한다.
+`inventory-changed-during-snapshot`은 첫 두 inventory가 같아 안정성 확인을 통과한 뒤 세 번째
+inventory에서 늦게 도착한 object를 발견하는 경우를 재현한다. 실제 운영 upload를 의도적으로
+중단시키는 실험은 하지 않는다.
 
 | 실행 시각(UTC) | 환경 | 결과 | duration | 원자료 |
 |---|---|---|---:|---|
