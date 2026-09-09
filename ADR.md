@@ -1,6 +1,6 @@
 # Architecture Decision Record
 
-이 문서는 현재 `townpet-springboot`의 장기적인 기술 경계만 기록한다. 구현 순서와 미완료 기능은 [`PLAN.md`](PLAN.md)에서 관리하고, 결정의 구현 근거는 저장소의 코드·migration·테스트·추적된 portfolio evidence를 사용한다.
+이 문서는 현재 `townpet-springboot`의 장기적인 기술 경계만 기록한다. 구현 순서와 미완료 기능은 작업 상태 문서에서 관리하고, 결정의 구현 근거는 저장소의 코드·migration·테스트·추적된 portfolio evidence를 사용한다.
 
 ## 상태 규칙
 
@@ -42,7 +42,6 @@ Legacy TownPet의 핵심 화면·URL·권한·상태·반응형 경험은 기준
 
 ### Evidence
 
-- `PLAN.md`: 현재 실행 slice와 남은 phase
 - `AGENTS.md`: slice와 검증 원칙
 
 ## ADR-0003 - 실제 Legacy 데이터 migration은 필요할 때 별도 수행한다
@@ -480,7 +479,7 @@ Actuator health/readiness, correlation id가 있는 구조화 log, JVM·HTTP·DB
 
 ### Evidence
 
-- 현재 API 기준 공개 성능 baseline은 tracked `portfolio/evidence/feed-performance.md`에 commit·fixture·raw artifact와 함께 기록한다. 수치는 로컬 Docker 합성 fixture이며 운영 SLA가 아니다.
+- 현재 API 기준 공개 성능 baseline은 tracked `portfolio/evidence/feed-performance.md`에 commit·fixture·raw artifact와 함께 기록한다. 2026-09-09 기준 p95는 102.20ms이며, 수치는 합성 fixture 측정치이고 운영 SLA가 아니다.
 
 ## ADR-0025 - Java 25 LTS와 Spring Boot 4.1을 기준선으로 사용한다
 
