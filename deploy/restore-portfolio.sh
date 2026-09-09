@@ -58,11 +58,15 @@ SQL
 
 phase=reference_verify
 db_keys_file="$temp_dir/db-object-keys"
+required_db_keys_file="$temp_dir/required-db-object-keys"
 abandoned_keys_file="$temp_dir/abandoned-object-keys"
 backup_keys_file="$temp_dir/backup-object-keys"
 docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   -c "SELECT object_key FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED') ORDER BY object_key" \
   | sed '/^$/d' > "$db_keys_file"
+docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT object_key FROM upload_asset WHERE status IN ('READY', 'ATTACHED') ORDER BY object_key" \
+  | sed '/^$/d' > "$required_db_keys_file"
 docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   -c "SELECT object_key FROM upload_asset WHERE status = 'ABANDONED' ORDER BY object_key" \
   | sed '/^$/d' > "$abandoned_keys_file"
@@ -70,7 +74,7 @@ docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 comm -12 "$abandoned_keys_file" "$backup_keys_file" | grep -q . && {
   echo "abandoned upload asset still has a media object" >&2; exit 1;
 } || true
-comm -23 "$db_keys_file" "$backup_keys_file" | grep -q . && {
+comm -23 "$required_db_keys_file" "$backup_keys_file" | grep -q . && {
   echo "database references media objects missing from backup" >&2; exit 1;
 } || true
 comm -13 "$db_keys_file" "$backup_keys_file" | grep -q . && {

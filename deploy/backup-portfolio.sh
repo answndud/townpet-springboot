@@ -86,16 +86,17 @@ case "$quiesce_state" in
 esac
 
 phase=upload_quiesce
-pending_uploads="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-  -c "SELECT COUNT(*) FROM upload_asset WHERE status = 'UPLOADING'")"
-if [ "$pending_uploads" -gt 0 ]; then
-  pending_upload_seconds="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
-    -c "SELECT COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(expires_at) - CURRENT_TIMESTAMP))), 0)::bigint FROM upload_asset WHERE status = 'UPLOADING'")"
+upload_wait_seconds=0
+active_assets="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT COUNT(*) FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED')")"
+if [ "$active_assets" -gt 0 ]; then
+  active_asset_seconds="$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+    -c "SELECT COALESCE(CEIL(EXTRACT(EPOCH FROM (MAX(expires_at) - CURRENT_TIMESTAMP))), 0)::bigint FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED')")"
   upload_wait_seconds="$MINIO_PRESIGN_EXPIRY_SECONDS"
-  if [ "$pending_upload_seconds" -le 0 ]; then
+  if [ "$active_asset_seconds" -le 0 ]; then
     upload_wait_seconds=0
-  elif [ "$pending_upload_seconds" -lt "$upload_wait_seconds" ]; then
-    upload_wait_seconds="$pending_upload_seconds"
+  elif [ "$active_asset_seconds" -lt "$upload_wait_seconds" ]; then
+    upload_wait_seconds="$active_asset_seconds"
   fi
   upload_quiesce_deadline=$(($(date +%s) + upload_wait_seconds + UPLOAD_QUIESCE_GRACE_SECONDS))
   while [ "$(date +%s)" -lt "$upload_quiesce_deadline" ]; do
@@ -138,11 +139,19 @@ fi
 
 phase=reference_verify
 db_keys_file="$backup_root/.db-object-keys"
+required_db_keys_file="$temp_dir/.required-db-object-keys"
+uploading_db_keys_file="$temp_dir/.uploading-db-object-keys"
 abandoned_keys_file="$temp_dir/abandoned-object-keys"
 media_keys_file="$backup_root/.media-object-keys"
 docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   -c "SELECT object_key FROM upload_asset WHERE status IN ('UPLOADING', 'READY', 'ATTACHED') ORDER BY object_key" \
   | sed '/^$/d' > "$db_keys_file"
+docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT object_key FROM upload_asset WHERE status IN ('READY', 'ATTACHED') ORDER BY object_key" \
+  | sed '/^$/d' > "$required_db_keys_file"
+docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+  -c "SELECT object_key FROM upload_asset WHERE status = 'UPLOADING' ORDER BY object_key" \
+  | sed '/^$/d' > "$uploading_db_keys_file"
 docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
   -c "SELECT object_key FROM upload_asset WHERE status = 'ABANDONED' ORDER BY object_key" \
   | sed '/^$/d' > "$abandoned_keys_file"
@@ -150,7 +159,7 @@ docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 comm -12 "$abandoned_keys_file" "$media_keys_file" | grep -q . && {
   echo "abandoned upload asset still has a media object" >&2; exit 1;
 } || true
-comm -23 "$db_keys_file" "$media_keys_file" | grep -q . && {
+comm -23 "$required_db_keys_file" "$media_keys_file" | grep -q . && {
   echo "database references media objects missing from backup" >&2; exit 1;
 } || true
 comm -13 "$db_keys_file" "$media_keys_file" | grep -q . && {
@@ -165,6 +174,8 @@ comm -13 "$db_keys_file" "$media_keys_file" | grep -q . && {
   echo "duration_seconds=$(($(date +%s) - started_epoch))"
   echo "minio_presign_expiry_seconds=$MINIO_PRESIGN_EXPIRY_SECONDS"
   echo "upload_quiesce_grace_seconds=$UPLOAD_QUIESCE_GRACE_SECONDS"
+  echo "upload_quiesce_active_assets=$active_assets"
+  echo "upload_quiesce_wait_seconds=$upload_wait_seconds"
   echo "uploading_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status = 'UPLOADING'")"
   echo "ready_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status = 'READY'")"
   echo "attached_assets=$(docker exec "$POSTGRES_CONTAINER" psql -At -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT COUNT(*) FROM upload_asset WHERE status = 'ATTACHED'")"
@@ -180,8 +191,11 @@ comm -13 "$db_keys_file" "$media_keys_file" | grep -q . && {
   echo "media_bytes=$(du -sk "$backup_root/media" | awk '{print $1 * 1024}')"
   echo "db_object_keys_sha256=$(sha256sum "$db_keys_file" | awk '{print $1}')"
   echo "media_object_keys_sha256=$(sha256sum "$media_keys_file" | awk '{print $1}')"
+  echo "required_media_assets=$(wc -l < "$required_db_keys_file" | tr -d ' ')"
+  echo "optional_uploading_assets=$(wc -l < "$uploading_db_keys_file" | tr -d ' ')"
+  echo "missing_uploading_objects=$(comm -23 "$uploading_db_keys_file" "$media_keys_file" | wc -l | tr -d ' ')"
 } > "$backup_root/manifest.txt"
-rm -f "$db_keys_file" "$media_keys_file" "$abandoned_keys_file"
+rm -f "$db_keys_file" "$required_db_keys_file" "$uploading_db_keys_file" "$media_keys_file" "$abandoned_keys_file"
 phase=checksum
 (cd "$backup_root" && find . -type f ! -name manifest.sha256 -print0 | sort -z | xargs -0 sha256sum > manifest.sha256)
 backup_complete=1
