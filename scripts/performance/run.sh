@@ -9,6 +9,23 @@ READINESS_URL="${TOWNPET_PERF_READINESS_URL:-$BASE_URL}"
 READINESS_PATH="${TOWNPET_PERF_READINESS_PATH:-/actuator/health/readiness}"
 K6_IMAGE="${TOWNPET_K6_IMAGE:-grafana/k6:0.52.0}"
 
+validate_json() {
+  if command -v jq >/dev/null 2>&1; then
+    jq empty "$1"
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 - "$1" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as stream:
+    json.load(stream)
+PY
+  else
+    echo "jq or python3 is required to validate JSON" >&2
+    return 1
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --scenario) SCENARIO="$2"; shift 2 ;;
@@ -136,9 +153,7 @@ fi
 
 test -s "$OUT_DIR/summary.json" \
   || { echo "k6 summary is missing or empty: $OUT_DIR/summary.json" >&2; exit 1; }
-command -v jq >/dev/null 2>&1 \
-  || { echo "jq is required to validate the k6 summary" >&2; exit 1; }
-jq empty "$OUT_DIR/summary.json" \
+validate_json "$OUT_DIR/summary.json" \
   || { echo "k6 summary is not valid JSON: $OUT_DIR/summary.json" >&2; exit 1; }
 test -s "$OUT_DIR/console.log" \
   || { echo "k6 console log is missing or empty: $OUT_DIR/console.log" >&2; exit 1; }

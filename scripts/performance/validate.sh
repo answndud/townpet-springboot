@@ -2,6 +2,22 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+validate_json() {
+  if command -v jq >/dev/null 2>&1; then
+    jq empty "$1"
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 - "$1" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as stream:
+    json.load(stream)
+PY
+  else
+    echo "jq or python3 is required to validate JSON" >&2
+    return 1
+  fi
+}
 for file in \
   "$ROOT_DIR/scripts/performance/prepare.sh" \
   "$ROOT_DIR/scripts/performance/start.sh" \
@@ -29,8 +45,7 @@ if [[ $# -gt 0 ]]; then
   for artifact in summary.json console.log resources.tsv metadata.txt checksums.sha256; do
     test -s "$RUN_DIR/$artifact" || { echo "missing or empty artifact: $RUN_DIR/$artifact" >&2; exit 1; }
   done
-  command -v jq >/dev/null 2>&1 || { echo "jq is required to validate summary.json" >&2; exit 1; }
-  jq empty "$RUN_DIR/summary.json" || { echo "invalid JSON: $RUN_DIR/summary.json" >&2; exit 1; }
+  validate_json "$RUN_DIR/summary.json" || { echo "invalid JSON: $RUN_DIR/summary.json" >&2; exit 1; }
   if command -v sha256sum >/dev/null 2>&1; then
     (cd "$RUN_DIR" && sha256sum -c checksums.sha256)
   else
