@@ -27,6 +27,8 @@ class PublicSeoRendererTest {
         .contains("<h1>A &lt;title&gt;</h1>")
         .contains("본문 &lt;script&gt;alert(1)&lt;/script&gt;")
         .contains("https://townpet.cloud/posts/0198f342-13d7-7000-8000-000000000005")
+        .contains("property=\"og:image\" content=\"https://townpet.cloud/townpet-logo.svg\"")
+        .contains("name=\"twitter:card\" content=\"summary\"")
         .doesNotContain("test@example.com")
         .doesNotContain("010-1234-5678");
   }

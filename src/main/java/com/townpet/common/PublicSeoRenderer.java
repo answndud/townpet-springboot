@@ -58,13 +58,22 @@ public class PublicSeoRenderer {
             + escape(title)
             + "</title>"
             + "<meta property=\"og:type\" content=\"article\"><meta property=\"og:site_name\" content=\"TownPet\">"
+            + "<meta property=\"og:locale\" content=\"ko_KR\"><meta property=\"og:image\" content=\""
+            + ORIGIN
+            + "/townpet-logo.svg\"><meta property=\"og:image:alt\" content=\"TownPet 공개 반려생활 커뮤니티\">"
             + "<meta property=\"og:title\" content=\""
             + escape(title)
             + "\"><meta property=\"og:description\" content=\""
             + escape(description)
             + "\"><meta property=\"og:url\" content=\""
             + escape(canonical)
-            + "\">"
+            + "\"><meta name=\"twitter:card\" content=\"summary\"><meta name=\"twitter:title\" content=\""
+            + escape(title)
+            + "\"><meta name=\"twitter:description\" content=\""
+            + escape(description)
+            + "\"><meta name=\"twitter:image\" content=\""
+            + ORIGIN
+            + "/townpet-logo.svg\">"
             + (schema.isEmpty()
                 ? ""
                 : "<script type=\"application/ld+json\">" + schema + "</script>")
