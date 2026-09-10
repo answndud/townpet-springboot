@@ -19,7 +19,6 @@ Disallow: /gatherings/new
 Disallow: /care/new
 Disallow: /lost-found/new
 Disallow: /lost/new
-Disallow: /search
 Disallow: /campaigns/neighborhood-map
 
 Sitemap: https://townpet.cloud/sitemap.xml
