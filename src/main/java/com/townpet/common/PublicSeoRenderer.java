@@ -100,7 +100,7 @@ public class PublicSeoRenderer {
             .append(escapeJson(description))
             .append("\",\"mainEntityOfPage\":\"")
             .append(escapeJson(canonical))
-            .append("\"");
+            .append("\",\"inLanguage\":\"ko-KR\",\"isPartOf\":{\"@id\":\"https://townpet.cloud/#website\"}");
     appendDate(json, "datePublished", page.publishedAt());
     appendDate(json, "dateModified", page.modifiedAt());
     return json.append("}").toString();

@@ -29,6 +29,8 @@ class PublicSeoRendererTest {
         .contains("https://townpet.cloud/posts/0198f342-13d7-7000-8000-000000000005")
         .contains("property=\"og:image\" content=\"https://townpet.cloud/townpet-logo.svg\"")
         .contains("name=\"twitter:card\" content=\"summary\"")
+        .contains("\"inLanguage\":\"ko-KR\"")
+        .contains("\"isPartOf\":{\"@id\":\"https://townpet.cloud/#website\"}")
         .doesNotContain("test@example.com")
         .doesNotContain("010-1234-5678");
   }
