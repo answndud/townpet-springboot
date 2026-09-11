@@ -6,6 +6,8 @@ export default defineConfig({
   testIgnore: ["desktop-visual.spec.ts"],
   fullyParallel: false,
   workers: 1,
+  timeout: 120_000,
+  globalTimeout: 10 * 60 * 1000,
   reporter: [["list"], ["html", { outputFolder: "../build/e2e-report", open: "never" }]],
   use: {
     baseURL: process.env.TOWNPET_E2E_BASE_URL ?? "http://127.0.0.1:5173",
