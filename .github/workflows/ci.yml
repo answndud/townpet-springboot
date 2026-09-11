@@ -291,6 +291,7 @@ jobs:
     if: inputs.publish_images == true || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: [backend, frontend, repository-security, dependency-scan, frontend-sbom, live-publication-e2e]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
       packages: write
