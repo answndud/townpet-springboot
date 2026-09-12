@@ -9,6 +9,7 @@ export type DynamicSeoInput = {
   type?: "website" | "article";
   datePublished?: string;
   dateModified?: string;
+  citationUrl?: string | null;
 };
 
 function setMeta(attribute: "name" | "property", key: string, content: string) {
@@ -62,9 +63,21 @@ export function setDynamicSeo(input: DynamicSeoInput) {
   };
   if (input.datePublished) schema.datePublished = input.datePublished;
   if (input.dateModified) schema.dateModified = input.dateModified;
+  const citationUrl = safeCitationUrl(input.citationUrl);
+  if (citationUrl) schema.citation = citationUrl;
   const script = document.createElement("script");
   script.id = DYNAMIC_SCHEMA_ID;
   script.type = "application/ld+json";
   script.textContent = JSON.stringify(schema);
   document.head.appendChild(script);
+}
+
+function safeCitationUrl(value?: string | null) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }

@@ -11,6 +11,7 @@ describe("dynamic SEO metadata", () => {
       canonicalPath: "/posts/post-1/?utm_source=search",
       type: "article",
       datePublished: "2026-09-01T00:00:00Z",
+      citationUrl: "https://animal.seoul.go.kr",
     });
 
     expect(document.title).toBe("TownPet | 산책 친구를 찾았어요");
@@ -19,8 +20,16 @@ describe("dynamic SEO metadata", () => {
     const schema = JSON.parse(document.getElementById("townpet-dynamic-schema")?.textContent ?? "{}");
     expect(schema["@type"]).toBe("Article");
     expect(schema.mainEntityOfPage).toBe("https://townpet.cloud/posts/post-1");
+    expect(schema.citation).toBe("https://animal.seoul.go.kr/");
     expect(schema).not.toHaveProperty("author");
     expect(schema).not.toHaveProperty("location");
+  });
+
+  it("does not publish non-http citation URLs", () => {
+    setDynamicSeo({ title: "가이드", description: "설명", canonicalPath: "/guides/guide-1", type: "article", citationUrl: "javascript:alert(1)" });
+
+    const schema = JSON.parse(document.getElementById("townpet-dynamic-schema")?.textContent ?? "{}");
+    expect(schema).not.toHaveProperty("citation");
   });
 
   it("removes structured data and excludes failed detail pages", () => {

@@ -58,7 +58,7 @@ export function LocalCareDetailPage() {
   const { data: item, error: requestError } = useAbortableRequest<LocalResource>((signal) => localResourceApi.detail(resourceId, signal), [resourceId]);
   const error = requestError instanceof ApiError && requestError.status === 404 ? "정보를 찾을 수 없습니다." : requestError ? "정보를 불러오지 못했습니다." : null;
   useEffect(() => {
-    if (item) setDynamicSeo({ title: item.title, description: item.summary, canonicalPath: `/guides/${item.id}`, type: "article", dateModified: item.updatedAt });
+    if (item) setDynamicSeo({ title: item.title, description: item.summary, canonicalPath: `/guides/${item.id}`, type: "article", dateModified: item.updatedAt, citationUrl: item.sourceUrl });
     else if (requestError) setDynamicSeo({ title: "페이지를 찾을 수 없습니다", description: error ?? "정보를 불러오지 못했습니다.", canonicalPath: `/guides/${resourceId}`, indexable: false });
   }, [error, item, requestError, resourceId]);
   if (error) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/guides">목록으로</Link></section></main>;

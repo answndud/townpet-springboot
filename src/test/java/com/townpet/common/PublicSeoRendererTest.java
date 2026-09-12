@@ -19,7 +19,9 @@ class PublicSeoRendererTest {
                 "연락처 test@example.com 010-1234-5678",
                 "본문 <script>alert(1)</script>",
                 Instant.parse("2026-09-01T00:00:00Z"),
-                Instant.parse("2026-09-02T00:00:00Z")));
+                Instant.parse("2026-09-02T00:00:00Z"),
+                "서울특별시",
+                "https://animal.seoul.go.kr"));
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getHeaders().getFirst("X-Robots-Tag")).isEqualTo("index,follow");
@@ -31,6 +33,9 @@ class PublicSeoRendererTest {
         .contains("name=\"twitter:card\" content=\"summary\"")
         .contains("\"inLanguage\":\"ko-KR\"")
         .contains("\"isPartOf\":{\"@id\":\"https://townpet.cloud/#website\"}")
+        .contains("출처: 서울특별시")
+        .contains("https://animal.seoul.go.kr")
+        .contains("\"citation\":\"https://animal.seoul.go.kr\"")
         .doesNotContain("test@example.com")
         .doesNotContain("010-1234-5678");
   }
@@ -44,5 +49,16 @@ class PublicSeoRendererTest {
     assertThat(response.getBody())
         .contains("<meta name=\"robots\" content=\"noindex,follow\">")
         .doesNotContain("application/ld+json");
+  }
+
+  @Test
+  void ignoresNonHttpCitationUrls() {
+    var response =
+        renderer.page(
+            "/guides/0198f342-13d7-7000-8000-000000000101",
+            new PublicSeoProvider.SeoPage(
+                "가이드", "설명", "본문", null, Instant.parse("2026-09-02T00:00:00Z"), "출처", "javascript:alert(1)"));
+
+    assertThat(response.getBody()).doesNotContain("javascript:").doesNotContain("citation");
   }
 }

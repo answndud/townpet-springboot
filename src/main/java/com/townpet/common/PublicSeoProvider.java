@@ -16,5 +16,16 @@ public interface PublicSeoProvider {
       String description,
       String body,
       @Nullable Instant publishedAt,
-      @Nullable Instant modifiedAt) {}
+      @Nullable Instant modifiedAt,
+      @Nullable String sourceName,
+      @Nullable String sourceUrl) {
+    public SeoPage(
+        String title,
+        String description,
+        String body,
+        @Nullable Instant publishedAt,
+        @Nullable Instant modifiedAt) {
+      this(title, description, body, publishedAt, modifiedAt, null, null);
+    }
+  }
 }

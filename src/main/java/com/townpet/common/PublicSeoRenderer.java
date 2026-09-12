@@ -1,5 +1,7 @@
 package com.townpet.common;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpHeaders;
@@ -42,6 +44,7 @@ public class PublicSeoRenderer {
     String title = "TownPet | " + page.title();
     String description = safeDescription(page.description());
     String body = paragraphs(page.body());
+    String source = sourceMarkup(page);
     String robots = indexable ? "index,follow" : "noindex,follow";
     String schema = indexable ? articleSchema(page, canonical, description) : "";
     String html =
@@ -81,6 +84,7 @@ public class PublicSeoRenderer {
             + escape(page.title())
             + "</h1>"
             + body
+            + source
             + "</article><p><a href=\"/\">TownPet 홈으로 이동</a></p></main></div>"
             + "<script type=\"module\" src=\"/assets/index.js\"></script></body></html>";
     HttpHeaders headers = new HttpHeaders();
@@ -103,7 +107,39 @@ public class PublicSeoRenderer {
             .append("\",\"inLanguage\":\"ko-KR\",\"isPartOf\":{\"@id\":\"https://townpet.cloud/#website\"}");
     appendDate(json, "datePublished", page.publishedAt());
     appendDate(json, "dateModified", page.modifiedAt());
+    String sourceUrl = httpSourceUrl(page.sourceUrl());
+    if (sourceUrl != null) {
+      json.append(",\"citation\":\"").append(escapeJson(sourceUrl)).append("\"");
+    }
     return json.append("}").toString();
+  }
+
+  private static String sourceMarkup(PublicSeoProvider.SeoPage page) {
+    String sourceName = page.sourceName();
+    String sourceUrl = httpSourceUrl(page.sourceUrl());
+    if ((sourceName == null || sourceName.isBlank()) && sourceUrl == null && page.modifiedAt() == null) return "";
+    StringBuilder markup = new StringBuilder("<footer>");
+    if (sourceName != null && !sourceName.isBlank()) {
+      markup.append("<p>출처: ").append(escape(sourceName)).append("</p>");
+    }
+    if (page.modifiedAt() != null) {
+      markup.append("<p>최종 확인: ").append(escape(page.modifiedAt().toString())).append("</p>");
+    }
+    if (sourceUrl != null) {
+      markup.append("<p><a href=\"").append(escape(sourceUrl)).append("\" rel=\"nofollow noreferrer\">원문 보기</a></p>");
+    }
+    return markup.append("</footer>").toString();
+  }
+
+  private static @Nullable String httpSourceUrl(@Nullable String value) {
+    if (value == null || value.isBlank()) return null;
+    try {
+      URI uri = new URI(value.trim());
+      String scheme = uri.getScheme();
+      return ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) ? uri.toString() : null;
+    } catch (URISyntaxException exception) {
+      return null;
+    }
   }
 
   private static void appendDate(StringBuilder json, String name, @Nullable Instant value) {

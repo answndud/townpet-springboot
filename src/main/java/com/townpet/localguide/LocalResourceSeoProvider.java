@@ -29,6 +29,8 @@ class LocalResourceSeoProvider implements PublicSeoProvider {
                     resource.getSummary(),
                     resource.getContent(),
                     null,
-                    resource.getUpdatedAt()));
+                    resource.getUpdatedAt(),
+                    resource.getSourceName(),
+                    resource.getSourceUrl()));
   }
 }
