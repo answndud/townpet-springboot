@@ -106,9 +106,9 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/best"]}><App /></MemoryRouter>);
 
-    const profileLinks = await screen.findAllByRole("link", { name: "내 프로필" });
-    expect(profileLinks.some((link) => link.getAttribute("href") === "/profile")).toBe(true);
     await waitFor(() => expect(screen.queryByTestId("header-login-link-home")).not.toBeInTheDocument());
+    const primaryNavigation = screen.getByRole("navigation", { name: "주요 이동" });
+    expect(primaryNavigation.querySelector('a[href="/profile"]')).not.toBeNull();
     expect(screen.queryByRole("button", { name: "이웃 활동" })).not.toBeInTheDocument();
     expect(screen.getByRole("menu", { name: "공통게시판 바로가기" })).toBeInTheDocument();
     const boardMenu = screen.getByRole("button", { name: "공통게시판" });
