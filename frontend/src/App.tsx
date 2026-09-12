@@ -194,6 +194,7 @@ function Header() {
               <NavLink to="/admin">운영 콘솔</NavLink>
               <AnimalBoardMenu />
               <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
+              <NavLink className="desktop-nav-secondary" to="/guides">지역 가이드</NavLink>
               <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
             </nav>
           ) : (
@@ -209,6 +210,7 @@ function Header() {
           <nav aria-label="공개 안내 페이지 주요 이동" className="desktop-nav">
             <AnimalBoardMenu />
             <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
+            <NavLink className="desktop-nav-secondary" to="/guides">지역 가이드</NavLink>
             <NavLink to="/profile">내 프로필</NavLink>
             <NavLink to="/login" data-testid="header-login-link-home">
               로그인

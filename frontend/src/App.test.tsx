@@ -106,7 +106,8 @@ describe("TownPet Vite shell", () => {
 
     render(<MemoryRouter initialEntries={["/best"]}><App /></MemoryRouter>);
 
-    expect(await screen.findByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
+    const profileLinks = await screen.findAllByRole("link", { name: "내 프로필" });
+    expect(profileLinks.some((link) => link.getAttribute("href") === "/profile")).toBe(true);
     await waitFor(() => expect(screen.queryByTestId("header-login-link-home")).not.toBeInTheDocument());
     expect(screen.queryByRole("button", { name: "이웃 활동" })).not.toBeInTheDocument();
     expect(screen.getByRole("menu", { name: "공통게시판 바로가기" })).toBeInTheDocument();
@@ -197,6 +198,7 @@ describe("TownPet Vite shell", () => {
 
     expect(screen.getByRole("button", { name: "공통게시판" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "동물 게시판" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "지역 가이드" })).toHaveAttribute("href", "/guides");
     expect(screen.getByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
     fireEvent.click(screen.getByRole("button", { name: "공통게시판" }));
     expect(screen.getByRole("menuitem", { name: "전체 공통게시판" })).toHaveAttribute("href", "/boards/all");
