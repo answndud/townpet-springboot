@@ -184,4 +184,65 @@ describe("Publication journeys", () => {
     const deleteCall = fetchMock.mock.calls.find(([, init]) => init?.method === "DELETE");
     expect(deleteCall?.[1]?.body).toBe(JSON.stringify({ version: 1 }));
   });
+
+  it("lets a non-member comment on a public post and labels the author clearly", async () => {
+    const fetchMock = vi.fn<typeof fetch>((input, init) => {
+      const path = String(input);
+      if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response(undefined, 401));
+      if (path.endsWith("/api/v1/auth/csrf")) return Promise.resolve(response({ token: "csrf-token" }));
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}/comments`)) {
+        return Promise.resolve(response({ items: [] }));
+      }
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}`)) {
+        return Promise.resolve(response(publication()));
+      }
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}/reaction`)) {
+        return Promise.resolve(response({ active: false, count: 0 }));
+      }
+      if (path.endsWith("/api/guest/authors") && init?.method === "POST") {
+        return Promise.resolve(response({ guestId: "guest-id" }, 201));
+      }
+      if (path.endsWith(`/api/guest/posts/${PUBLICATION_ID}/comments`) && init?.method === "POST") {
+        return Promise.resolve(
+          response({
+            id: "guest-comment",
+            publicationId: PUBLICATION_ID,
+            authorId: null,
+            authorType: "GUEST",
+            parentCommentId: null,
+            body: "산책 정보 감사합니다.",
+            lifecycle: "ACTIVE",
+            createdAt: "2026-08-10T09:00:00Z",
+            updatedAt: "2026-08-10T09:00:00Z",
+            version: 0,
+          }, 201),
+        );
+      }
+      return Promise.reject(new Error(`Unexpected request: ${path}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    document.cookie = "XSRF-TOKEN=csrf-token; path=/";
+
+    render(
+      <MemoryRouter initialEntries={[`/posts/${PUBLICATION_ID}`]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(await screen.findByLabelText("관리 비밀번호"), {
+      target: { value: "guest-password" },
+    });
+    fireEvent.change(screen.getByLabelText("댓글"), {
+      target: { value: "산책 정보 감사합니다." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "댓글 등록" }));
+
+    expect(await screen.findByText("비회원")).toBeInTheDocument();
+    await waitFor(() => {
+      const calls = fetchMock.mock.calls.map(([input, init]) => [String(input), init?.method]);
+      expect(calls.findIndex(([path]) => path?.endsWith("/api/guest/authors"))).toBeLessThan(
+        calls.findIndex(([path]) => path?.endsWith(`/api/guest/posts/${PUBLICATION_ID}/comments`)),
+      );
+    });
+  });
 });

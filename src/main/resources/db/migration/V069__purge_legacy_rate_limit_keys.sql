@@ -1,0 +1,1 @@
+DELETE FROM security_rate_limit_window;

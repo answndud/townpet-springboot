@@ -33,6 +33,27 @@ class GuestStepUpService {
   }
 
   @Transactional
+  GuestAuthorEntity authenticate(UUID publicId, String password) {
+    GuestAuthorEntity guest =
+        guests
+            .findByPublicId(publicId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+    Instant now = Instant.now();
+    if (guest.getLockedUntil() != null && guest.getLockedUntil().isAfter(now)) {
+      throw new ResponseStatusException(
+          HttpStatus.TOO_MANY_REQUESTS, "Guest credential is temporarily locked");
+    }
+    if (!passwords.matches(password, guest.getManagementPasswordHash())) {
+      Instant lock = guest.getFailedAttempts() + 1 >= 5 ? now.plus(Duration.ofMinutes(10)) : null;
+      guest.recordFailure(lock);
+      guests.saveAndFlush(guest);
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid guest credential");
+    }
+    guest.clearFailures();
+    return guests.saveAndFlush(guest);
+  }
+
+  @Transactional
   Challenge issue(UUID publicId, String scope, String password) {
     if (!SCOPE.matcher(scope).matches()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid step-up scope");

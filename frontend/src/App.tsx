@@ -17,6 +17,7 @@ const ProfilePage = lazy(() => import("./ProfilePage"));
 const NotificationPage = lazy(() => import("./NotificationPage"));
 const AdminPoliciesPage = lazy(() => import("./AdminPoliciesPage"));
 const AdminReportsPage = lazy(() => import("./AdminReportsPage"));
+const AdminCommentModerationPage = lazy(() => import("./AdminCommentModerationPage"));
 const AdminHomePage = lazy(() => import("./AdminHomePage"));
 const MfaPage = lazy(() => import("./MfaPage"));
 const AdminAuthAuditsPage = lazy(() => import("./AdminAuthAuditsPage"));
@@ -423,6 +424,7 @@ function AppShell() {
         <Route path="/lounges/breeds/:breedCode" element={<BreedLoungePage />} />
         <Route path="/admin/reports" element={<ModeratorRoute><AdminReportsPage /></ModeratorRoute>} />
         <Route path="/admin/reports/:reportId" element={<ModeratorRoute><AdminReportsPage /></ModeratorRoute>} />
+        <Route path="/admin/comments" element={<ModeratorRoute><AdminCommentModerationPage /></ModeratorRoute>} />
         <Route path="/admin" element={<ModeratorRoute><AdminHomePage /></ModeratorRoute>} />
         <Route path="/admin/ops" element={<ModeratorRoute><AdminHomePage /></ModeratorRoute>} />
         <Route path="/admin/auth-audits" element={<ModeratorRoute><AdminAuthAuditsPage /></ModeratorRoute>} />

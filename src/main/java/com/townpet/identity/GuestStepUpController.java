@@ -47,9 +47,18 @@ public class GuestStepUpController {
   @MemberOrAnonymousOnly
   @ResponseStatus(HttpStatus.CREATED)
   GuestResponse createAuthor(
-      @Valid @RequestBody CreateGuestRequest request, HttpServletResponse response) {
-    rateLimiter.requireCapacity("guest-create", "anonymous", 30, Duration.ofMinutes(1));
-    GuestAuthorEntity guest = steps.createGuest(request.password());
+      @Valid @RequestBody CreateGuestRequest request,
+      @Nullable @CookieValue(name = GUEST_COOKIE, required = false) String cookieGuestId,
+      HttpServletResponse response,
+      HttpServletRequest httpRequest) {
+    GuestAuthorEntity guest;
+    if (cookieGuestId == null) {
+      rateLimiter.requireCapacity(
+          "guest-create-ip", clientAddress.resolve(httpRequest), 20, Duration.ofHours(1));
+      guest = steps.createGuest(request.password());
+    } else {
+      guest = steps.authenticate(parseGuestId(cookieGuestId), request.password());
+    }
     response.addHeader(
         "Set-Cookie",
         ResponseCookie.from(GUEST_COOKIE, guest.getPublicId().toString())

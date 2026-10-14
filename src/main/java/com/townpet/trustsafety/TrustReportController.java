@@ -2,6 +2,7 @@ package com.townpet.trustsafety;
 
 import com.townpet.common.MemberOnly;
 import com.townpet.common.UuidV7;
+import com.townpet.engagement.api.CommentModeration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
@@ -18,9 +19,11 @@ import org.springframework.web.server.ResponseStatusException;
 @Validated
 class TrustReportController {
   private final TrustReportRepository reports;
+  private final CommentModeration comments;
 
-  TrustReportController(TrustReportRepository reports) {
+  TrustReportController(TrustReportRepository reports, CommentModeration comments) {
     this.reports = reports;
+    this.comments = comments;
   }
 
   @PostMapping
@@ -29,6 +32,12 @@ class TrustReportController {
   ReportResponse create(
       @AuthenticationPrincipal UserDetails p, @Valid @RequestBody CreateRequest r) {
     UUID member = memberId(p);
+    if ("COMMENT".equals(r.targetType()) && !comments.isActive(r.targetId())) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
+    if (!"COMMENT".equals(r.targetType()) && !"PUBLICATION".equals(r.targetType())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported report target");
+    }
     if (reports
         .findByReporterMemberIdAndTargetTypeAndTargetId(member, r.targetType(), r.targetId())
         .isPresent()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Already reported");

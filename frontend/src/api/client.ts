@@ -119,7 +119,9 @@ export type FeedItem = {
 export type Comment = {
   id: string;
   publicationId: string;
-  authorId: string;
+  authorId: string | null;
+  authorType: "MEMBER" | "GUEST";
+  guestOwnedByViewer: boolean;
   parentCommentId: string | null;
   body: string;
   lifecycle: "ACTIVE" | "DELETED";
@@ -560,8 +562,21 @@ export const trustApi = {
 export const adminModerationApi = {
   reviewReport(id: string, status: "REVIEWED" | "REJECTED") { return mutate(`/api/admin/reports/${encodeURIComponent(id)}`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ status }) }); },
   setPublicationVisibility(id: string, visible: boolean, reason: string) { return mutate<{ id: string; lifecycle: string }>(`/api/admin/moderation/posts/${encodeURIComponent(id)}/visibility`, { method: "PATCH", headers: jsonHeaders, body: JSON.stringify({ visible, reason }) }); },
+  moderateComment(id: string, action: "DELETE" | "RESTORE", reason: string) { return mutate<AdminComment>(`/api/admin/comments/${encodeURIComponent(id)}/moderation`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ action, reason }) }); },
   memberAction(action: "sanction" | "hide-content" | "restore-content", memberId: string, reason: string) { return mutate<{ memberId: string; action: string; affectedPublications: number }>(`/api/admin/moderation/users/${action}`, { method: "POST", headers: jsonHeaders, body: JSON.stringify({ memberId, reason }) }); },
   mediaCleanup(dryRun: boolean) { return mutate<{ candidateCount: number; candidateBytes: number; deletedCount: number; observedAt: string }>(`/api/v1/operations/media/uploads/cleanup?dryRun=${dryRun}`, { method: "POST" }); },
+};
+
+export type AdminComment = {
+  id: string;
+  publicationId: string;
+  parentCommentId: string | null;
+  authorType: "MEMBER" | "GUEST";
+  lifecycle: "ACTIVE" | "DELETED" | "MODERATOR_DELETED";
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
 };
 export const adminPolicyApi = {
   get(key: string, signal?: AbortSignal) { return apiFetch<PolicyDocument>(`/api/admin/policies?key=${encodeURIComponent(key)}`, { signal }); },
@@ -839,8 +854,13 @@ export const guestApi = {
     });
   },
   createComment(publicationId: string, input: { password: string; body: string; parentCommentId?: string }) {
-    return mutate<{ id: string }>(`/api/guest/posts/${encodeURIComponent(publicationId)}/comments`, {
+    return mutate<Comment>(`/api/guest/posts/${encodeURIComponent(publicationId)}/comments`, {
       method: "POST", headers: jsonHeaders, body: JSON.stringify(input),
+    });
+  },
+  deleteComment(publicationId: string, commentId: string, input: { password: string; version: number }) {
+    return mutate<void>(`/api/guest/posts/${encodeURIComponent(publicationId)}/comments/${encodeURIComponent(commentId)}`, {
+      method: "DELETE", headers: jsonHeaders, body: JSON.stringify(input),
     });
   },
   updatePublication(publicationId: string, input: { password: string; title: string; body: string; version: number }) {

@@ -50,6 +50,7 @@ class CommentService {
               .findByIdAndLifecycle(parentCommentId, CommentLifecycle.ACTIVE)
               .orElseThrow(CommentNotFoundException::new);
       if (!parent.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
+      if (parent.getParentCommentId() != null) throw new CommentReplyDepthExceededException();
     }
     CommentEntity comment =
         comments.saveAndFlush(
@@ -67,11 +68,27 @@ class CommentService {
     return comment;
   }
 
+  @Transactional
+  void deleteGuest(
+      UUID guestPublicId, String password, UUID publicationId, UUID commentId, long expectedVersion) {
+    GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
+    requireAccessiblePublication(publicationId, null);
+    CommentEntity comment = activeComment(commentId);
+    if (!comment.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
+    if (!guest.internalId().equals(comment.getGuestAuthorId())) throw new CommentOwnershipException();
+    if (comment.getVersion() != expectedVersion) throw new CommentVersionConflictException();
+    comment.delete(Instant.now());
+    comments.saveAndFlush(comment);
+  }
+
   @Transactional(readOnly = true)
-  List<CommentEntity> list(UUID publicationId, @Nullable UUID viewerMemberId) {
+  List<CommentEntity> list(UUID publicationId, @Nullable UUID viewerMemberId, @Nullable UUID guestPublicId) {
     requireAccessiblePublication(publicationId, viewerMemberId);
+    UUID guestInternalId = guestPublicId == null ? null : guests.internalId(guestPublicId).orElse(null);
     return comments.findTop500ByPublicationIdAndLifecycleOrderByCreatedAtAscIdAsc(
-        publicationId, CommentLifecycle.ACTIVE);
+        publicationId, CommentLifecycle.ACTIVE).stream()
+        .peek(comment -> comment.setViewerOwnsGuestComment(guestInternalId != null && guestInternalId.equals(comment.getGuestAuthorId())))
+        .toList();
   }
 
   @Transactional
@@ -84,6 +101,7 @@ class CommentService {
               .findByIdAndLifecycle(parentCommentId, CommentLifecycle.ACTIVE)
               .orElseThrow(CommentNotFoundException::new);
       if (!parent.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
+      if (parent.getParentCommentId() != null) throw new CommentReplyDepthExceededException();
     }
     try {
       CommentEntity comment =
@@ -173,3 +191,5 @@ final class CommentNotFoundException extends RuntimeException {}
 final class CommentOwnershipException extends RuntimeException {}
 
 final class CommentVersionConflictException extends RuntimeException {}
+
+final class CommentReplyDepthExceededException extends RuntimeException {}

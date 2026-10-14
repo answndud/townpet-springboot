@@ -71,6 +71,8 @@ class LegacyCommentController {
         comment.getId(),
         comment.getPublicationId(),
         comment.getAuthorMemberId(),
+        CommentAuthorType.MEMBER,
+        false,
         comment.getParentCommentId(),
         comment.getBody(),
         comment.getLifecycle(),

@@ -6,10 +6,14 @@ type PublicationCommentThreadProps = {
   comments: Comment[];
   replyingTo: Comment | null;
   memberViewer: boolean;
+  guestViewer: boolean;
   viewerId: string | null;
+  guestPassword: string;
   commentBody: string;
   commentSubmitting: boolean;
   onDelete: (comment: Comment) => void;
+  onReport: (comment: Comment) => void;
+  onChangeGuestPassword: (value: string) => void;
   onReply: (comment: Comment) => void;
   onCancelReply: () => void;
   onChangeBody: (value: string) => void;
@@ -27,10 +31,14 @@ function CommentItem({
   children,
   isReplying,
   memberViewer,
+  guestViewer,
   viewerId,
+  guestPassword,
   commentBody,
   commentSubmitting,
   onDelete,
+  onReport,
+  onChangeGuestPassword,
   onReply,
   onCancelReply,
   onChangeBody,
@@ -47,10 +55,11 @@ function CommentItem({
   return (
     <article className={comment.parentCommentId ? "publication-comment publication-comment-reply" : "publication-comment"} data-comment-id={comment.id}>
       <div className="publication-comment-meta">
-        <strong>TownPet 회원</strong>
+        <strong>{comment.authorType === "GUEST" ? "비회원" : "TownPet 회원"}</strong>
         <time dateTime={comment.createdAt}>{formatDateTimeLong(comment.createdAt)}</time>
-        {memberViewer && viewerId === comment.authorId ? <button className="text-button comment-action comment-action-danger" type="button" onClick={() => onDelete(comment)}>삭제</button> : null}
-        {memberViewer ? <button ref={replyButtonRef} className="text-button comment-action" type="button" onClick={() => onReply(comment)} aria-expanded={isReplying} aria-controls={`reply-form-${comment.id}`}>답글</button> : null}
+        {((memberViewer && viewerId === comment.authorId) || (guestViewer && comment.guestOwnedByViewer)) ? <button className="text-button comment-action comment-action-danger" type="button" onClick={() => onDelete(comment)}>삭제</button> : null}
+        {memberViewer && viewerId !== comment.authorId ? <button className="text-button comment-action" type="button" onClick={() => onReport(comment)}>신고</button> : null}
+        {memberViewer || guestViewer ? <button ref={replyButtonRef} className="text-button comment-action" type="button" onClick={() => onReply(comment)} aria-expanded={isReplying} aria-controls={`reply-form-${comment.id}`}>답글</button> : null}
       </div>
       {comment.parentCommentId ? <span className="publication-comment-reply-label">답글</span> : null}
       <p>{comment.body}</p>
@@ -64,9 +73,10 @@ function CommentItem({
             답글
             <textarea aria-label="답글" maxLength={5000} value={commentBody} onChange={(event) => onChangeBody(event.target.value)} placeholder="반려생활에 도움이 되는 이야기를 남겨 주세요." autoFocus />
           </label>
+          {guestViewer ? <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => onChangeGuestPassword(event.target.value)} autoComplete="current-password" /></label> : null}
           <div className="publication-comment-submit">
             <span className="field-help">{commentBody.length.toLocaleString()}/5,000</span>
-            <button className="button button-primary" type="submit" disabled={commentSubmitting || !commentBody.trim()}>{commentSubmitting ? "등록 중..." : "답글 등록"}</button>
+            <button className="button button-primary" type="submit" disabled={commentSubmitting || !commentBody.trim() || (guestViewer && guestPassword.length < 8)}>{commentSubmitting ? "등록 중..." : "답글 등록"}</button>
           </div>
         </form>
       ) : null}

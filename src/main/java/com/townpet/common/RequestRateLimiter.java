@@ -2,15 +2,21 @@ package com.townpet.common;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,31 +28,56 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public final class RequestRateLimiter {
   private static final Logger log = LoggerFactory.getLogger(RequestRateLimiter.class);
+  private static final String LOCAL_KEY = "townpet-local-rate-limit-key-change-before-production";
   private static final long CLEANUP_INTERVAL_MILLIS = 10 * 60 * 1000L;
   @Nullable private final JdbcTemplate jdbc;
   private final boolean sharedDatabaseEnabled;
   private final Map<String, Window> windows = new LinkedHashMap<>();
   private final MeterRegistry metrics;
+  private final byte[] rateKeySecret;
   private long lastCleanupMillis;
 
   /** Test-only fallback for unit tests that do not load the application context. */
   public RequestRateLimiter() {
-    this(null, Metrics.globalRegistry);
+    this(null, Metrics.globalRegistry, LOCAL_KEY);
+  }
+
+  RequestRateLimiter(@Nullable JdbcTemplate jdbc, MeterRegistry metrics) {
+    this(jdbc, metrics, LOCAL_KEY);
   }
 
   @Autowired
-  RequestRateLimiter(@Nullable JdbcTemplate jdbc, MeterRegistry metrics) {
+  RequestRateLimiter(
+      @Nullable JdbcTemplate jdbc,
+      MeterRegistry metrics,
+      @Value("${townpet.security.rate-limit-hmac-key:" + LOCAL_KEY + "}") String key) {
     this.jdbc = jdbc;
     this.sharedDatabaseEnabled = jdbc != null && !isH2(jdbc);
     this.metrics = metrics;
+    if (key.getBytes(StandardCharsets.UTF_8).length < 32) {
+      throw new IllegalArgumentException("Rate-limit HMAC key must contain at least 32 bytes");
+    }
+    this.rateKeySecret = key.getBytes(StandardCharsets.UTF_8);
   }
 
   public void requireCapacity(String bucket, String key, int maxRequests, Duration windowDuration) {
+    String protectedKey = protectKey(key);
     if (sharedDatabaseEnabled) {
-      requireDatabaseCapacity(bucket, key, maxRequests, windowDuration);
+      requireDatabaseCapacity(bucket, protectedKey, maxRequests, windowDuration);
       return;
     }
-    requireInMemoryCapacity(bucket, key, maxRequests, windowDuration);
+    requireInMemoryCapacity(bucket, protectedKey, maxRequests, windowDuration);
+  }
+
+  private String protectKey(String key) {
+    try {
+      Mac hmac = Mac.getInstance("HmacSHA256");
+      hmac.init(new SecretKeySpec(rateKeySecret, "HmacSHA256"));
+      return Base64.getUrlEncoder().withoutPadding().encodeToString(
+          hmac.doFinal(key.getBytes(StandardCharsets.UTF_8)));
+    } catch (GeneralSecurityException exception) {
+      throw new IllegalStateException("Could not protect rate-limit key", exception);
+    }
   }
 
   private void requireDatabaseCapacity(

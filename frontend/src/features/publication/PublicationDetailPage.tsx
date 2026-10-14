@@ -47,7 +47,7 @@ export default function PublicationDetailPage() {
   const { publicationId = "" } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { member: authMember } = useAuth();
+  const { member: authMember, status: authStatus } = useAuth();
   const guestView = location.pathname.endsWith("/guest");
   const viewerId = authMember?.id ?? null;
   const viewerRole = authMember?.role ?? null;
@@ -59,6 +59,7 @@ export default function PublicationDetailPage() {
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentBody, setCommentBody] = useState("");
   const [guestPassword, setGuestPassword] = useState("");
+  const [guestCredentialReady, setGuestCredentialReady] = useState(false);
   const [guestManagePassword, setGuestManagePassword] = useState("");
   const [guestEditing, setGuestEditing] = useState(false);
   const [guestTitle, setGuestTitle] = useState("");
@@ -79,6 +80,7 @@ export default function PublicationDetailPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState<TrustReportReason>("OTHER");
   const [reportDetail, setReportDetail] = useState("");
+  const [reportingComment, setReportingComment] = useState<Comment | null>(null);
 
   useEffect(() => {
     if (publication) {
@@ -187,6 +189,7 @@ export default function PublicationDetailPage() {
 
   const memberViewer = viewerRole === "MEMBER";
   const moderatorViewer = viewerRole === "MODERATOR";
+  const guestViewer = authStatus === "anonymous";
   async function setPublicationReaction() {
     if (!publication || reactionSubmitting) return;
     setReactionSubmitting(true);
@@ -239,15 +242,34 @@ export default function PublicationDetailPage() {
     setCommentSubmitting(true);
     setCommentError(null);
     try {
-      const created = guestView
-        ? await guestApi.createComment(publication.id, { password: guestPassword, body: commentBody.trim(), ...(replyingTo ? { parentCommentId: replyingTo.id } : {}) }) as Comment
-        : await publicationApi.createComment(publication.id, { body: commentBody.trim(), ...(replyingTo ? { parentCommentId: replyingTo.id } : {}) });
+      let created: Comment;
+      if (guestViewer) {
+        if (!guestCredentialReady) {
+          await guestApi.createAuthor(guestPassword);
+          setGuestCredentialReady(true);
+        }
+        created = await guestApi.createComment(publication.id, {
+          password: guestPassword,
+          body: commentBody.trim(),
+          ...(replyingTo ? { parentCommentId: replyingTo.id } : {}),
+        });
+      } else {
+        created = await publicationApi.createComment(publication.id, {
+          body: commentBody.trim(),
+          ...(replyingTo ? { parentCommentId: replyingTo.id } : {}),
+        });
+      }
       setComments((current) => [...current, created]);
       setCommentBody("");
       setReplyingTo(null);
     } catch (requestError) {
-      if (requestError instanceof ApiError && requestError.status === 401) {
+      if (requestError instanceof ApiError && requestError.status === 401 && !guestViewer) {
         navigate(`/login?next=/posts/${publication.id}#comments`, { replace: true });
+      } else if (requestError instanceof ApiError && requestError.status === 401 && guestViewer) {
+        setGuestCredentialReady(false);
+        setCommentError("관리 비밀번호를 확인해 주세요.");
+      } else if (requestError instanceof ApiError && requestError.status === 400) {
+        setCommentError("답글은 한 단계까지만 작성할 수 있습니다.");
       } else if (requestError instanceof ApiError && requestError.status === 404) {
         setCommentError("삭제되었거나 댓글을 작성할 수 없는 게시글입니다.");
       } else {
@@ -262,11 +284,19 @@ export default function PublicationDetailPage() {
     if (!publication || !window.confirm("이 댓글을 삭제할까요?")) return;
     setCommentError(null);
     try {
-      await publicationApi.deleteComment(publication.id, comment.id, comment.version);
+      if (comment.authorType === "GUEST") {
+        await guestApi.deleteComment(publication.id, comment.id, { password: guestPassword, version: comment.version });
+      } else {
+        await publicationApi.deleteComment(publication.id, comment.id, comment.version);
+      }
       setComments((current) => current.filter((item) => item.id !== comment.id));
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 409) {
         setCommentError("다른 곳에서 댓글이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");
+      } else if (requestError instanceof ApiError && requestError.status === 401) {
+        setCommentError("관리 비밀번호가 맞지 않거나 비회원 자격 쿠키가 없습니다.");
+      } else if (requestError instanceof ApiError && requestError.status === 403) {
+        setCommentError("본인이 작성한 댓글만 삭제할 수 있습니다.");
       } else {
         setCommentError("댓글을 삭제하지 못했습니다.");
       }
@@ -329,6 +359,19 @@ export default function PublicationDetailPage() {
       setReportDetail("");
     } catch (requestError) {
       setMutationError(requestError instanceof ApiError && requestError.status === 409 ? "이미 신고한 게시글입니다." : "신고를 접수하지 못했습니다.");
+    }
+  }
+
+  async function reportComment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!reportingComment) return;
+    try {
+      await trustApi.report({ targetType: "COMMENT", targetId: reportingComment.id, reason: reportReason, detail: reportDetail.trim() || undefined });
+      setCommentError("댓글 신고를 접수했습니다.");
+      setReportingComment(null);
+      setReportDetail("");
+    } catch (requestError) {
+      setCommentError(requestError instanceof ApiError && requestError.status === 409 ? "이미 신고한 댓글입니다." : "댓글 신고를 접수하지 못했습니다.");
     }
   }
 
@@ -512,6 +555,13 @@ export default function PublicationDetailPage() {
           <h2 id="comments-heading">댓글 {comments.length}</h2>
         </div>
         {commentError ? <p className="form-error publication-error" role="alert">{commentError}</p> : null}
+        {reportingComment ? <form className="surface-card publication-fields" onSubmit={reportComment}>
+          <h3>댓글 신고</h3>
+          <p>{reportingComment.body}</p>
+          <label>사유<select value={reportReason} onChange={(event) => setReportReason(event.target.value as TrustReportReason)}><option value="SPAM">스팸·홍보</option><option value="ABUSE">욕설·괴롭힘</option><option value="PRIVACY">개인정보 노출</option><option value="ILLEGAL">불법·위험 정보</option><option value="OTHER">기타</option></select></label>
+          <label>상세 설명<textarea maxLength={1000} value={reportDetail} onChange={(event) => setReportDetail(event.target.value)} /></label>
+          <div className="profile-actions"><button className="button button-primary" type="submit">신고 접수</button><button className="button button-soft" type="button" onClick={() => setReportingComment(null)}>취소</button></div>
+        </form> : null}
         {commentsLoading ? (
           <p className="publication-comments-state" role="status">댓글을 불러오는 중...</p>
         ) : comments.length === 0 ? (
@@ -522,10 +572,14 @@ export default function PublicationDetailPage() {
               comments={comments}
               replyingTo={replyingTo}
               memberViewer={memberViewer}
+              guestViewer={guestViewer}
               viewerId={viewerId}
+              guestPassword={guestPassword}
               commentBody={commentBody}
               commentSubmitting={commentSubmitting}
               onDelete={deleteComment}
+              onReport={setReportingComment}
+              onChangeGuestPassword={setGuestPassword}
               onReply={setReplyingTo}
               onCancelReply={() => setReplyingTo(null)}
               onChangeBody={setCommentBody}
@@ -533,9 +587,12 @@ export default function PublicationDetailPage() {
             />
           </div>
         )}
-        {!replyingTo && (memberViewer || (guestView && !viewerId)) ? (
+        {!replyingTo && (memberViewer || guestViewer) ? (
           <form className="publication-comment-form" aria-label="댓글 작성" onSubmit={createComment} noValidate>
-            {guestView && !viewerId ? <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} /></label> : null}
+            {guestViewer ? <>
+              <p className="field-help">비회원 댓글은 작성한 브라우저의 쿠키와 관리 비밀번호로 삭제할 수 있습니다. 쿠키를 지우면 삭제 권한을 잃을 수 있습니다. 댓글에 전화번호 등 개인정보를 적지 마세요.</p>
+              <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} autoComplete="current-password" /></label>
+            </> : null}
             <label>
               댓글
               <textarea
@@ -548,7 +605,7 @@ export default function PublicationDetailPage() {
             </label>
             <div className="publication-comment-submit">
               <span className="field-help">{commentBody.length.toLocaleString()}/5,000</span>
-              <button className="button button-primary" type="submit" disabled={commentSubmitting || !commentBody.trim() || (guestView && !viewerId && guestPassword.length < 8)}>
+              <button className="button button-primary" type="submit" disabled={commentSubmitting || !commentBody.trim() || (guestViewer && guestPassword.length < 8)}>
                 {commentSubmitting ? "등록 중..." : "댓글 등록"}
               </button>
             </div>

@@ -31,4 +31,9 @@ class GuestDirectoryAdapter implements GuestDirectory {
     }
     return new GuestIdentity(guest.getId(), guest.getPublicId());
   }
+
+  @Override
+  public java.util.Optional<UUID> internalId(UUID publicId) {
+    return guests.findByPublicId(publicId).map(GuestAuthorEntity::getId);
+  }
 }

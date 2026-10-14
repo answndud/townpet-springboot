@@ -42,6 +42,8 @@ class CommentEntity {
 
   @Version private long version;
 
+  @jakarta.persistence.Transient private boolean viewerOwnsGuestComment;
+
   protected CommentEntity() {}
 
   CommentEntity(
@@ -72,6 +74,16 @@ class CommentEntity {
 
   void delete(Instant changedAt) {
     this.lifecycle = CommentLifecycle.DELETED;
+    this.updatedAt = changedAt;
+  }
+
+  void deleteByModerator(Instant changedAt) {
+    this.lifecycle = CommentLifecycle.MODERATOR_DELETED;
+    this.updatedAt = changedAt;
+  }
+
+  void restoreByModerator(Instant changedAt) {
+    this.lifecycle = CommentLifecycle.ACTIVE;
     this.updatedAt = changedAt;
   }
 
@@ -121,4 +133,8 @@ class CommentEntity {
   long getVersion() {
     return version;
   }
+
+  void setViewerOwnsGuestComment(boolean owns) { this.viewerOwnsGuestComment = owns; }
+
+  boolean viewerOwnsGuestComment() { return viewerOwnsGuestComment; }
 }

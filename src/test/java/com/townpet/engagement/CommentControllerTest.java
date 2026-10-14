@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import jakarta.servlet.http.Cookie;
+import com.townpet.identity.MfaTestSupport;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -54,6 +56,7 @@ class CommentControllerTest {
 
   @DynamicPropertySource
   static void databaseProperties(DynamicPropertyRegistry registry) {
+    registry.add("townpet.engagement.guest-comments.enabled", () -> true);
     registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
     registry.add("spring.datasource.username", POSTGRES::getUsername);
     registry.add("spring.datasource.password", POSTGRES::getPassword);
@@ -102,6 +105,7 @@ class CommentControllerTest {
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].id").value(firstCommentId))
         .andExpect(jsonPath("$.items[0].body").value("첫 번째 댓글"))
+        .andExpect(jsonPath("$.items[0].authorType").value("MEMBER"))
         .andExpect(jsonPath("$.items[1].id").value(secondCommentId));
 
     mockMvc
@@ -184,6 +188,177 @@ class CommentControllerTest {
     mockMvc
         .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void guestsCanCommentOnPublicationsAndRepliesAreLimitedToOneLevel() throws Exception {
+    String publicationId = createPublication(login("demo-member-1@townpet.local"));
+    MvcResult guestResult =
+        mockMvc
+            .perform(
+                post("/api/guest/authors")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"password\":\"guest-password\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    Cookie guestCookie =
+        Objects.requireNonNull(guestResult.getResponse().getCookie("TOWNPET_GUEST_ID"));
+
+    MvcResult rootResult =
+        mockMvc
+            .perform(
+                post("/api/guest/posts/{publicationId}/comments", publicationId)
+                    .cookie(guestCookie)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"password\":\"guest-password\",\"body\":\"비회원 댓글\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.authorType").value("GUEST"))
+            .andReturn();
+    String rootId =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(rootResult.getResponse().getContentAsString())
+            .path("id")
+            .asText();
+
+    MvcResult replyResult =
+        mockMvc
+            .perform(
+                post("/api/guest/posts/{publicationId}/comments", publicationId)
+                    .cookie(guestCookie)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"password\":\"guest-password\",\"body\":\"비회원 답글\","
+                            + "\"parentCommentId\":\""
+                            + rootId
+                            + "\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String replyId =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(replyResult.getResponse().getContentAsString())
+            .path("id")
+            .asText();
+
+    mockMvc
+        .perform(
+            post("/api/guest/posts/{publicationId}/comments", publicationId)
+                .cookie(guestCookie)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"password\":\"guest-password\",\"body\":\"깊은 답글\","
+                        + "\"parentCommentId\":\""
+                        + replyId
+                        + "\"}"))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(2))
+        .andExpect(jsonPath("$.items[0].authorType").value("GUEST"))
+        .andExpect(jsonPath("$.items[0].authorId").isEmpty())
+        .andExpect(jsonPath("$.items[0].guestOwnedByViewer").value(false));
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId).cookie(guestCookie))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].guestOwnedByViewer").value(true));
+    mockMvc
+        .perform(
+            delete("/api/guest/posts/{publicationId}/comments/{commentId}", publicationId, rootId)
+                .cookie(guestCookie)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\":\"guest-password\",\"version\":0}"))
+        .andExpect(status().isNoContent());
+  }
+
+  @Test
+  void moderatorCanFindUnreportedGuestCommentsDeleteAndRestoreWithAudit() throws Exception {
+    String publicationId = createPublication(login("demo-member-1@townpet.local"));
+    MvcResult guestResult =
+        mockMvc
+            .perform(
+                post("/api/guest/authors")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"password\":\"guest-password\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    Cookie guestCookie =
+        Objects.requireNonNull(guestResult.getResponse().getCookie("TOWNPET_GUEST_ID"));
+    MvcResult commentResult =
+        mockMvc
+            .perform(
+                post("/api/guest/posts/{publicationId}/comments", publicationId)
+                    .cookie(guestCookie)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"password\":\"guest-password\",\"body\":\"신고하지 않은 댓글\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String commentId =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(commentResult.getResponse().getContentAsString())
+            .path("id")
+            .asText();
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM trust_report WHERE target_type = 'COMMENT' AND target_id = ?",
+                Integer.class,
+                UUID.fromString(commentId)))
+        .isZero();
+
+    jdbc.update(
+        "UPDATE identity_credential SET password_hash = (SELECT password_hash FROM"
+            + " identity_credential WHERE email = ?) WHERE email = ?",
+        "demo-member-1@townpet.local",
+        "demo-moderator@townpet.local");
+    Cookie moderator = MfaTestSupport.completeEnrollment(mockMvc, login("demo-moderator@townpet.local"));
+
+    mockMvc
+        .perform(get("/api/admin/comments").param("authorType", "GUEST").cookie(moderator))
+        .andDo(MockMvcResultHandlers.print())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(commentId))
+        .andExpect(jsonPath("$[0].lifecycle").value("ACTIVE"));
+
+    mockMvc
+        .perform(
+            post("/api/admin/comments/{commentId}/moderation", commentId)
+                .cookie(moderator)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"DELETE\",\"reason\":\"운영 기준 위반\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lifecycle").value("MODERATOR_DELETED"));
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(0));
+
+    mockMvc
+        .perform(
+            post("/api/admin/comments/{commentId}/moderation", commentId)
+                .cookie(moderator)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"RESTORE\",\"reason\":\"재검토 결과 복구\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.lifecycle").value("ACTIVE"));
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(1));
+    org.assertj.core.api.Assertions.assertThat(
+            jdbc.queryForList(
+                "SELECT action FROM moderation_action WHERE target_type = 'COMMENT' AND target_id = ? ORDER BY created_at",
+                String.class,
+                UUID.fromString(commentId)))
+        .containsExactly("COMMENT_DELETED", "COMMENT_RESTORED");
   }
 
   private String createPublication(Cookie session) throws Exception {

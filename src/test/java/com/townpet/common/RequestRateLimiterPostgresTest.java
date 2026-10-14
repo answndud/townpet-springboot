@@ -1,6 +1,7 @@
 package com.townpet.common;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
@@ -40,6 +41,9 @@ class RequestRateLimiterPostgresTest {
 
     first.requireCapacity("shared", "same-key", 2, Duration.ofMinutes(1));
     second.requireCapacity("shared", "same-key", 2, Duration.ofMinutes(1));
+    String storedKey = database.queryForObject(
+        "SELECT rate_key FROM security_rate_limit_window WHERE bucket = 'shared'", String.class);
+    assertThat(storedKey).isNotEqualTo("same-key").hasSize(43);
 
     assertThrows(
         ResponseStatusException.class,
