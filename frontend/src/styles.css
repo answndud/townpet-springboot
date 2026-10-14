@@ -59,13 +59,6 @@ nav a.active { color: var(--brand); text-decoration: underline; text-decoration-
 .feed-home-tabs button.active { border-bottom: 2px solid var(--brand); color: var(--brand-strong); }
 .community-board-tabs a { color: var(--muted-text); font-weight: 700; }
 .community-board-tabs a.active { border-bottom: 2px solid var(--brand); color: var(--brand-strong); text-decoration: none; }
-.search-panel.community-bottom-search select { border-color: transparent; padding-inline: 8px; border-right: 1px solid #e3eaf0; }
-.search-panel.community-bottom-search select:focus-visible { border-color: transparent; box-shadow: none; }
-.search-panel.community-bottom-search input { border-color: transparent; padding-inline: 10px; }
-.search-panel.community-bottom-search input:focus-visible { border-color: transparent; box-shadow: none; }
-.search-panel.community-bottom-search .button { padding-inline: 10px; border-left: 1px solid #e3eaf0; }
-.search-panel.community-bottom-search .button:hover,.search-panel.community-bottom-search .button:focus-visible { background: var(--brand-soft); color: var(--brand-strong); box-shadow: none; }
-.community-bottom-search .search-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .community-state { margin-top: 12px; text-align: center; }
 .community-state h1,.community-state h2 { color: var(--text); }
 .community-state .button { margin-top: 14px; }
@@ -259,10 +252,6 @@ h1,h2,p { margin: 0; }
 .feed-item-title { max-width: 100%; }
 .feed-item-title:hover h2 { color: #2f5da4; text-decoration: underline; text-underline-offset: 3px; }
 .feed-item-meta { display: flex; align-items: center; }
-.feed-pagination { display: flex; align-items: center; justify-content: center; gap: 4px; border-top: 1px solid var(--surface-border); background: transparent; }
-.feed-pagination > .button { min-width: 26px; min-height: 26px; border: 0; border-radius: 0; background: transparent; padding: 0 6px; color: var(--muted-text); font-size: 13px; font-weight: 600; line-height: 1; }
-.feed-pagination > .button:hover:not(:disabled),.feed-pagination > .button:focus-visible { background: var(--surface-muted); color: var(--text-soft); }
-.feed-pagination button:disabled { cursor: default; opacity: .38; }
 .feed-empty { margin-top: 12px; text-align: center; }
 .feed-empty h2 { color: #173963; font-size: 18px; }
 .feed-empty p { margin-top: 7px; }
@@ -750,3 +739,18 @@ h1,h2,p { margin: 0; }
 @media(max-width:380px) { .search-panel.community-bottom-search { grid-template-columns:92px minmax(0,1fr) auto; } }
 :is(input,select,textarea):not([type=checkbox]):not([type=radio]){font-weight:400}
 .desktop-nav>a{font-size:14px;font-weight:500}
+
+.search-panel.community-bottom-search{border:1px solid var(--surface-border-strong)}
+.community-bottom-search .search-label{display:none}
+.search-panel.community-bottom-search select,.search-panel.community-bottom-search input{border:0;box-shadow:none}
+.search-panel.community-bottom-search select{border-right:1px solid var(--surface-border)}
+.search-panel.community-bottom-search input:focus-visible,.search-panel.community-bottom-search select:focus-visible{outline:2px solid var(--brand);outline-offset:-3px}
+.search-panel.community-bottom-search .button{border:0;border-left:1px solid var(--surface-border);border-radius:0;background:transparent}
+.search-panel.community-bottom-search .button:hover,.search-panel.community-bottom-search .button:focus-visible{background:var(--brand-soft)}
+.feed-pagination{gap:2px;padding:10px 8px}
+.feed-page-numbers{display:flex;align-items:center;gap:2px}
+.feed-pagination .feed-page-number,.feed-pagination .feed-page-arrow{display:inline-grid;min-width:34px;min-height:34px;place-items:center;border:0;border-radius:0;background:transparent;padding:0 8px;color:var(--text-soft);font-size:13px;font-weight:500}
+.feed-pagination .feed-page-number:hover:not(:disabled),.feed-pagination .feed-page-arrow:hover:not(:disabled){background:var(--surface-muted)}
+.feed-pagination .feed-page-number.active{background:var(--brand-soft);color:var(--brand-strong);font-weight:700}
+.feed-pagination .feed-page-number:disabled{cursor:default;opacity:1}
+.feed-pagination .feed-page-arrow:disabled{opacity:.35}
