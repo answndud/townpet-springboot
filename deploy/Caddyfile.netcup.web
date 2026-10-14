@@ -46,6 +46,8 @@ http://{$TOWNPET_DOMAIN} {
 		file_server
 	}
 	handle {
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
 		file_server
 	}
 }

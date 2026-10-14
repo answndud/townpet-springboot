@@ -15,7 +15,8 @@ class CareRequestService {
 
   @Transactional(readOnly = true)
   List<CareRequestEntity> open() {
-    return requests.findTop100ByStatusOrderByStartsAtAscIdAsc(CareRequestStatus.OPEN);
+    return requests.findTop100ByStatusAndStartsAtAfterOrderByStartsAtAscIdAsc(
+        CareRequestStatus.OPEN, Instant.now());
   }
 
   @Transactional(readOnly = true)

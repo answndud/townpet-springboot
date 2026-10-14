@@ -16,7 +16,8 @@ class GatheringServiceTest {
     List<GatheringEntity> entities = java.util.stream.IntStream.range(0, 100)
         .mapToObj(i -> new GatheringEntity(UUID.randomUUID(), UUID.randomUUID(), "g" + i, "d", "l", Instant.now(), 10))
         .toList();
-    when(gatherings.findTop100ByStatusOrderByStartsAtAscIdAsc(GatheringStatus.ACTIVE)).thenReturn(entities);
+    when(gatherings.findTop100ByStatusAndStartsAtAfterOrderByStartsAtAscIdAsc(
+        eq(GatheringStatus.ACTIVE), any(Instant.class))).thenReturn(entities);
     when(participants.countByGatheringIdIn(anyCollection())).thenReturn(List.of());
 
     List<GatheringService.GatheringView> result = new GatheringService(gatherings, participants).list();
@@ -24,5 +25,20 @@ class GatheringServiceTest {
     assertThat(result).hasSize(100);
     verify(participants).countByGatheringIdIn(argThat(ids -> ids.size() == 100));
     verify(participants, never()).countByGatheringId(any());
+  }
+
+  @Test
+  void rejectsJoiningGatheringThatHasAlreadyStarted() {
+    GatheringRepository gatherings = mock(GatheringRepository.class);
+    GatheringParticipantRepository participants = mock(GatheringParticipantRepository.class);
+    UUID id = UUID.randomUUID();
+    when(gatherings.findForUpdate(id)).thenReturn(java.util.Optional.of(
+        new GatheringEntity(id, UUID.randomUUID(), "산책", "설명", "마포", Instant.now().minusSeconds(1), 8)));
+
+    org.assertj.core.api.Assertions.assertThatThrownBy(
+        () -> new GatheringService(gatherings, participants).join(id, UUID.randomUUID()))
+        .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+        .hasMessageContaining("already started");
+    verify(participants, never()).save(any());
   }
 }

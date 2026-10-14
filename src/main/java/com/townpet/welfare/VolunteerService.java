@@ -20,7 +20,7 @@ class VolunteerService {
   @Transactional(readOnly = true)
   List<Opportunity> list() {
     return jdbc.query(
-        "SELECT id,publisher_member_id,title,description,organization,location,starts_at,capacity,status,created_at,updated_at,version FROM volunteer_opportunity WHERE status IN ('OPEN','FULL') ORDER BY starts_at,id LIMIT ?",
+        "SELECT id,publisher_member_id,title,description,organization,location,starts_at,capacity,status,created_at,updated_at,version FROM volunteer_opportunity WHERE status IN ('OPEN','FULL') AND starts_at > CURRENT_TIMESTAMP ORDER BY starts_at,id LIMIT ?",
         (rs, n) -> map(rs),
         PUBLIC_LIMIT);
   }
@@ -73,6 +73,9 @@ class VolunteerService {
             .orElseThrow(NoSuchElementException::new);
     if (!Set.of("OPEN", "FULL").contains(opportunity.status())) {
       throw new IllegalStateException("Opportunity is closed");
+    }
+    if (!opportunity.startsAt().isAfter(Instant.now())) {
+      throw new IllegalStateException("Opportunity has already started");
     }
     Integer applicationCountValue =
         jdbc.queryForObject(

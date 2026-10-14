@@ -125,6 +125,7 @@ export function MarketplaceDetailPage() {
         <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[listing.kind]}</span><span className="publication-chip">{STATUS_LABELS[listing.status]}</span></div>
         <h1>{listing.title}</h1><p className="marketplace-price">{formatPrice(listing.priceKrw)}</p><p className="marketplace-description">{listing.description}</p>
         <div className="marketplace-detail-meta"><span>TownPet 회원</span><span>·</span><time dateTime={listing.createdAt}>{formatDateTime(listing.createdAt)}</time></div>
+        {!owner ? <p className="field-help marketplace-share-help" role="note">합성 데모 게시글입니다. 실제 연락이나 거래는 지원하지 않습니다.</p> : null}
         {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
         {owner && (listing.status === "AVAILABLE" || listing.status === "RESERVED") ? <div className="marketplace-actions">
           {listing.status === "AVAILABLE" ? <button className="button button-primary" type="button" disabled={changing} onClick={() => changeStatus("RESERVED")}>예약 처리</button> : <button className="button button-soft" type="button" disabled={changing} onClick={() => changeStatus("AVAILABLE")}>예약 취소</button>}

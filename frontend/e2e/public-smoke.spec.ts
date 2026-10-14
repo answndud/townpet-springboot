@@ -51,3 +51,30 @@ test("anonymous member-write entry redirects to login with its return path", asy
   await expect(page.getByRole("heading",{name:"로그인",exact:true})).toBeVisible();
   expect(new URL(page.url()).searchParams.get("next")).toBe("/marketplace/new");
 });
+
+test("volunteer opportunities load publicly with a clear login action", async ({ page }) => {
+  await page.route("**/api/v1/volunteer", route => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify([{
+      id: "opportunity-1",
+      title: "보호소 산책 봉사",
+      description: "보호소 동물의 산책을 돕습니다.",
+      organization: "마포 반려동물 보호소",
+      location: "서울 마포구",
+      startsAt: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+      capacity: 8,
+      status: "OPEN",
+    }]),
+  }));
+
+  await page.goto("/volunteer");
+  await expect(page.getByRole("heading", { name: "반려동물 봉사 기회" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "보호소 산책 봉사" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "로그인하고 신청" })).toHaveAttribute("href", "/login?next=/volunteer");
+});
+
+test("unknown direct URLs render TownPet's not-found page", async ({ page }) => {
+  await page.goto("/this-page-does-not-exist");
+  await expect(page.getByRole("heading", { name: "페이지를 찾을 수 없습니다" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "홈으로 돌아가기" })).toHaveAttribute("href", "/");
+});

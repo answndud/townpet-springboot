@@ -7,6 +7,16 @@ import { setDynamicSeo } from "../../utils/seo";
 
 const labels: Record<LocalResourceKind, string> = { LOCAL_GUIDE: "지역 가이드", WELFARE: "복지 안내", CARE: "케어 가이드" };
 
+function publicSourceUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.hostname.endsWith(".example") ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 export function LocalCareListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialKind = searchParams.get("kind") as LocalResourceKind | null;
@@ -58,11 +68,12 @@ export function LocalCareDetailPage() {
   const { resourceId = "" } = useParams();
   const { data: item, error: requestError } = useAbortableRequest<LocalResource>((signal) => localResourceApi.detail(resourceId, signal), [resourceId]);
   const error = requestError instanceof ApiError && requestError.status === 404 ? "정보를 찾을 수 없습니다." : requestError ? "정보를 불러오지 못했습니다." : null;
+  const sourceUrl = publicSourceUrl(item?.sourceUrl);
   useEffect(() => {
-    if (item) setDynamicSeo({ title: item.title, description: item.summary, canonicalPath: `/guides/${item.id}`, type: "article", dateModified: item.updatedAt, citationUrl: item.sourceUrl });
+    if (item) setDynamicSeo({ title: item.title, description: item.summary, canonicalPath: `/guides/${item.id}`, type: "article", dateModified: item.updatedAt, citationUrl: sourceUrl ?? undefined });
     else if (requestError) setDynamicSeo({ title: "페이지를 찾을 수 없습니다", description: error ?? "정보를 불러오지 못했습니다.", canonicalPath: `/guides/${resourceId}`, indexable: false });
-  }, [error, item, requestError, resourceId]);
+  }, [error, item, requestError, resourceId, sourceUrl]);
   if (error) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/guides">목록으로</Link></section></main>;
   if (!item) return <main className="page placeholder-page"><section className="surface-card" role="status">정보를 불러오는 중...</section></main>;
-  return <main className="page localcare-page"><Link className="publication-text-link" to="/guides">목록으로</Link><article className="surface-card localcare-detail"><span className="publication-chip publication-chip-primary">{labels[item.kind]}</span><h1>{item.title}</h1><p className="localcare-summary">{item.summary}</p><div className="localcare-content">{item.content}</div><footer><span>출처: {item.sourceName}</span><span>최종 확인: {formatDateOnly(item.updatedAt)}</span>{item.sourceUrl ? <a href={item.sourceUrl} rel="noreferrer" target="_blank">원문 보기</a> : null}</footer></article></main>;
+  return <main className="page localcare-page"><Link className="publication-text-link" to="/guides">목록으로</Link><article className="surface-card localcare-detail"><span className="publication-chip publication-chip-primary">{labels[item.kind]}</span><h1>{item.title}</h1><p className="localcare-summary">{item.summary}</p><div className="localcare-content">{item.content}</div><footer><span>출처: {item.sourceName}</span><span>최종 확인: {formatDateOnly(item.updatedAt)}</span>{sourceUrl ? <a href={sourceUrl} rel="noreferrer noopener" target="_blank">원문 보기</a> : null}</footer></article></main>;
 }

@@ -53,6 +53,49 @@ class CareControllerTest {
   @Autowired MockMvc mockMvc;
 
   @Test
+  void volunteerListIsPublicButCreatingAnOpportunityRequiresMemberAuthentication() throws Exception {
+    mockMvc.perform(get("/api/v1/volunteer"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray());
+
+    mockMvc.perform(
+            post("/api/v1/volunteer")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"봉사\",\"description\":\"도움\",\"organization\":\"센터\",\"location\":\"마포\",\"startsAt\":\"2030-01-01T10:00:00Z\",\"capacity\":5}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void cannotApplyToAnExpiredCareRequest() throws Exception {
+    Cookie owner = login("demo-member-1@townpet.local");
+    Cookie caregiver = login("demo-member-2@townpet.local");
+    java.time.Instant ended = java.time.Instant.now().minusSeconds(120);
+    MvcResult created = mockMvc.perform(
+            post("/api/v1/care/requests")
+                .cookie(owner)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"지난 요청\",\"description\":\"기간이 끝난 요청\",\"location\":\"마포구\",\"startsAt\":\""
+                    + ended.minusSeconds(3600)
+                    + "\",\"endsAt\":\""
+                    + ended
+                    + "\",\"rewardHint\":\"없음\"}"))
+        .andExpect(status().isCreated())
+        .andReturn();
+    String requestId = new com.fasterxml.jackson.databind.ObjectMapper()
+        .readTree(created.getResponse().getContentAsString()).path("id").asText();
+
+    mockMvc.perform(
+            post("/api/v1/care/requests/{requestId}/applications", requestId)
+                .cookie(caregiver)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"지원합니다\"}"))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
   void ownerAcceptsSingleApplicantAndCompletesCareWithFeedback() throws Exception {
     Cookie owner = login("demo-member-1@townpet.local");
     Cookie caregiver = login("demo-member-2@townpet.local");

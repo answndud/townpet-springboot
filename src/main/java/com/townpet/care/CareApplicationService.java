@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import java.time.Instant;
 import java.util.*;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,8 @@ class CareApplicationService {
         requests
             .findByIdAndStatus(requestId, CareRequestStatus.OPEN)
             .orElseThrow(NoSuchElementException::new);
+    if (!request.getStartsAt().isAfter(Instant.now()))
+      throw new IllegalStateException("Request has expired");
     if (request.getRequesterMemberId().equals(applicant))
       throw new IllegalArgumentException("Requester cannot apply");
     if (applications.findByRequestIdAndApplicantMemberId(requestId, applicant).isPresent())
@@ -52,6 +55,9 @@ class CareApplicationService {
     if (!request.getRequesterMemberId().equals(requester)) throw new SecurityException();
     if (request.getStatus() != CareRequestStatus.OPEN) {
       throw new IllegalStateException("Request is no longer open");
+    }
+    if (!request.getStartsAt().isAfter(Instant.now())) {
+      throw new IllegalStateException("Request has expired");
     }
     if (status != CareApplicationStatus.ACCEPTED && status != CareApplicationStatus.DECLINED) {
       throw new IllegalStateException("Only ACCEPTED or DECLINED is allowed");

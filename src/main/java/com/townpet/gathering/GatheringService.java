@@ -21,7 +21,8 @@ class GatheringService {
 
   @Transactional(readOnly = true)
   List<GatheringView> list() {
-    List<GatheringEntity> result = gatherings.findTop100ByStatusOrderByStartsAtAscIdAsc(GatheringStatus.ACTIVE);
+    List<GatheringEntity> result = gatherings.findTop100ByStatusAndStartsAtAfterOrderByStartsAtAscIdAsc(
+        GatheringStatus.ACTIVE, Instant.now());
     Map<UUID, Integer> counts = new HashMap<>();
     if (!result.isEmpty()) {
       participants.countByGatheringIdIn(result.stream().map(GatheringEntity::getId).toList())
@@ -64,6 +65,8 @@ class GatheringService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     if (gathering.getStatus() != GatheringStatus.ACTIVE)
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Gathering is cancelled");
+    if (!gathering.getStartsAt().isAfter(Instant.now()))
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Gathering has already started");
     if (participants.findByGatheringIdAndMemberId(id, member).isPresent())
       return view(gathering, member);
     if (participants.countByGatheringId(id) >= gathering.getCapacity())
