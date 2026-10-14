@@ -26,6 +26,11 @@ test("navigation supports hover, keyboard and separate mobile account actions", 
     await menu.getByRole("menuitem").first().press("Escape");
     await expect(trigger).toBeFocused();
     await expect(menu).toBeHidden();
+    await trigger.hover();
+    await trigger.press("ArrowDown");
+    await expect(menu.getByRole("menuitem").first()).toBeFocused();
+    await menu.getByRole("menuitem").first().press("Escape");
+    await expect(menu).toBeHidden();
   }
   await page.setViewportSize({width:390,height:844});
   await page.route("**/api/v1/local-resources*", route => route.fulfill({contentType:"application/json",body:"[]"}));

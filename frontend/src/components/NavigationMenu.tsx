@@ -15,7 +15,7 @@ export default function NavigationMenu({ label, links, className = "", onIntent 
   const trigger = useRef<HTMLButtonElement>(null);
   const items = useRef<Array<HTMLAnchorElement | null>>([]);
   const pointer = useRef("");
-  const pendingFocus = useRef<number | null>(null);
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const active = links.some(([, href]) => location.pathname === href || location.pathname.startsWith(`${href}/`));
   const menuId = `navigation-${label.replace(/\s+/g, "-")}`;
 
@@ -30,11 +30,11 @@ export default function NavigationMenu({ label, links, className = "", onIntent 
   }, [open]);
 
   useLayoutEffect(() => {
-    if (open && pendingFocus.current !== null) {
-      focus(pendingFocus.current);
-      pendingFocus.current = null;
+    if (open && focusIndex !== null) {
+      focus(focusIndex);
+      setFocusIndex(null);
     }
-  }, [open]);
+  }, [open, focusIndex]);
 
   function focus(index: number) {
     items.current[(index + links.length) % links.length]?.focus();
@@ -46,8 +46,8 @@ export default function NavigationMenu({ label, links, className = "", onIntent 
     } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       const next = index < 0 ? (event.key === "ArrowDown" ? 0 : links.length - 1) : index + (event.key === "ArrowDown" ? 1 : -1);
-      if (open) focus(next);
-      else { pendingFocus.current = next; setOpen(true); }
+      setFocusIndex(next);
+      setOpen(true);
     } else if (open && (event.key === "Home" || event.key === "End")) {
       event.preventDefault(); focus(event.key === "Home" ? 0 : links.length - 1);
     }
