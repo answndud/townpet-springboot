@@ -669,3 +669,10 @@ h1, h2, p { margin: 0; }
 .publication-fields input[type=checkbox],.publication-fields input[type=radio] { width:16px; height:16px; min-height:16px; padding:0; flex:0 0 16px; }
 .animal-community-selector .field-help { margin:0 0 12px; }
 @media(max-width:760px) { .publication-fields .animal-board-options label { min-height:44px; } }
+.animal-community-picker { border-block:1px solid var(--surface-border); }
+.animal-community-picker summary { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-height:44px; padding:8px 0; cursor:pointer; color:var(--text); font-size:13px; }
+.animal-community-picker summary::after { content:"＋"; color:var(--brand); }
+.animal-community-picker[open] summary::after { content:"−"; }
+.animal-community-picker summary small { margin-left:auto; font-size:12px; color:var(--muted-text); font-weight:400; }
+.animal-community-picker .animal-community-selector { padding-top:12px; }
+.animal-community-picker summary:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }

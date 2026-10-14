@@ -160,6 +160,7 @@ describe("Publication journeys", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "게시글 수정" })).toBeInTheDocument();
+    fireEvent.click(screen.getByText("동물 게시판 선택"));
     expect(screen.getByRole("checkbox", { name: "강아지" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "고양이" })).toBeChecked();
     fireEvent.change(screen.getByLabelText("제목"), { target: { value: "수정한 산책 정보" } });

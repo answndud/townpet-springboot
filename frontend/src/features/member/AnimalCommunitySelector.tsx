@@ -29,6 +29,8 @@ export default function AnimalCommunitySelector({
   }
 
   return (
+    <details className="animal-community-picker">
+      <summary><span>동물 게시판 선택</span><small>{ANIMAL_BOARD_GROUPS.flatMap(group => group.options).filter(option => selected.has(option.code)).map(option => option.label).join(" · ") || "선택 안 함"}</small></summary>
     <fieldset className="animal-community-selector">
       <legend>{label}</legend>
       <p className="field-help">{help}</p>
@@ -52,5 +54,6 @@ export default function AnimalCommunitySelector({
         ))}
       </div>
     </fieldset>
+    </details>
   );
 }
