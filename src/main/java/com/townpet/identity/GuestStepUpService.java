@@ -38,6 +38,22 @@ class GuestStepUpService {
         guests
             .findByPublicId(publicId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+    return authenticate(guest, password);
+  }
+
+  @Transactional
+  GuestAuthorEntity authenticateByInternalId(UUID internalId, String password) {
+    GuestAuthorEntity guest =
+        guests.findById(internalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+    // Comment passwords are verified per comment. Do not persist failed attempts or lock
+    // this credential: anyone who can see a comment could otherwise lock its owner out.
+    if (!passwords.matches(password, guest.getManagementPasswordHash())) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid guest credential");
+    }
+    return guest;
+  }
+
+  private GuestAuthorEntity authenticate(GuestAuthorEntity guest, String password) {
     Instant now = Instant.now();
     if (guest.getLockedUntil() != null && guest.getLockedUntil().isAfter(now)) {
       throw new ResponseStatusException(

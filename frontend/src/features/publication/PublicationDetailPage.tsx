@@ -59,7 +59,10 @@ export default function PublicationDetailPage() {
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [commentBody, setCommentBody] = useState("");
   const [guestPassword, setGuestPassword] = useState("");
-  const [guestCredentialReady, setGuestCredentialReady] = useState(false);
+  const [guestManageComment, setGuestManageComment] = useState<Comment | null>(null);
+  const [guestManageMode, setGuestManageMode] = useState<"edit" | "delete" | null>(null);
+  const [guestCommentManagePassword, setGuestCommentManagePassword] = useState("");
+  const [guestEditBody, setGuestEditBody] = useState("");
   const [guestManagePassword, setGuestManagePassword] = useState("");
   const [guestEditing, setGuestEditing] = useState(false);
   const [guestTitle, setGuestTitle] = useState("");
@@ -244,10 +247,6 @@ export default function PublicationDetailPage() {
     try {
       let created: Comment;
       if (guestViewer) {
-        if (!guestCredentialReady) {
-          await guestApi.createAuthor(guestPassword);
-          setGuestCredentialReady(true);
-        }
         created = await guestApi.createComment(publication.id, {
           password: guestPassword,
           body: commentBody.trim(),
@@ -266,8 +265,7 @@ export default function PublicationDetailPage() {
       if (requestError instanceof ApiError && requestError.status === 401 && !guestViewer) {
         navigate(`/login?next=/posts/${publication.id}#comments`, { replace: true });
       } else if (requestError instanceof ApiError && requestError.status === 401 && guestViewer) {
-        setGuestCredentialReady(false);
-        setCommentError("관리 비밀번호를 확인해 주세요.");
+        setCommentError("비회원 댓글을 등록하지 못했습니다. 입력 내용을 확인해 주세요.");
       } else if (requestError instanceof ApiError && requestError.status === 400) {
         setCommentError("답글은 한 단계까지만 작성할 수 있습니다.");
       } else if (requestError instanceof ApiError && requestError.status === 404) {
@@ -281,25 +279,59 @@ export default function PublicationDetailPage() {
   }
 
   async function deleteComment(comment: Comment) {
+    if (guestViewer && comment.authorType === "GUEST") {
+      setGuestManageComment(comment);
+      setGuestManageMode("delete");
+      setGuestCommentManagePassword("");
+      setCommentError(null);
+      return;
+    }
     if (!publication || !window.confirm("이 댓글을 삭제할까요?")) return;
     setCommentError(null);
     try {
-      if (comment.authorType === "GUEST") {
-        await guestApi.deleteComment(publication.id, comment.id, { password: guestPassword, version: comment.version });
-      } else {
-        await publicationApi.deleteComment(publication.id, comment.id, comment.version);
-      }
+      await publicationApi.deleteComment(publication.id, comment.id, comment.version);
       setComments((current) => current.filter((item) => item.id !== comment.id));
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 409) {
         setCommentError("다른 곳에서 댓글이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");
-      } else if (requestError instanceof ApiError && requestError.status === 401) {
-        setCommentError("관리 비밀번호가 맞지 않거나 비회원 자격 쿠키가 없습니다.");
-      } else if (requestError instanceof ApiError && requestError.status === 403) {
-        setCommentError("본인이 작성한 댓글만 삭제할 수 있습니다.");
       } else {
         setCommentError("댓글을 삭제하지 못했습니다.");
       }
+    }
+  }
+
+  function editGuestComment(comment: Comment) {
+    setGuestManageComment(comment);
+    setGuestManageMode("edit");
+    setGuestCommentManagePassword("");
+    setGuestEditBody(comment.body);
+    setCommentError(null);
+  }
+
+  function cancelGuestCommentManage() {
+    setGuestManageComment(null);
+    setGuestManageMode(null);
+    setGuestCommentManagePassword("");
+  }
+
+  async function submitGuestCommentManage(event: FormEvent<HTMLFormElement>, comment: Comment) {
+    event.preventDefault();
+    if (!publication || !guestManageMode || guestCommentManagePassword.length < 8) return;
+    try {
+      if (guestManageMode === "delete") {
+        await guestApi.deleteComment(publication.id, comment.id, { password: guestCommentManagePassword, version: comment.version });
+        setComments((current) => current.filter((item) => item.id !== comment.id));
+      } else {
+        const updated = await guestApi.editComment(publication.id, comment.id, { password: guestCommentManagePassword, version: comment.version, body: guestEditBody.trim() });
+        setComments((current) => current.map((item) => item.id === comment.id ? updated : item));
+      }
+      cancelGuestCommentManage();
+      setCommentError(null);
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) setCommentError("댓글 비밀번호가 일치하지 않습니다.");
+      else if (requestError instanceof ApiError && requestError.status === 429) setCommentError("비밀번호 확인 횟수가 많습니다. 잠시 뒤 다시 시도해 주세요.");
+      else if (requestError instanceof ApiError && requestError.status === 409) setCommentError("댓글이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");
+      else setCommentError(guestManageMode === "delete" ? "댓글을 삭제하지 못했습니다." : "댓글을 수정하지 못했습니다.");
     }
   }
 
@@ -578,6 +610,15 @@ export default function PublicationDetailPage() {
               commentBody={commentBody}
               commentSubmitting={commentSubmitting}
               onDelete={deleteComment}
+              onEdit={editGuestComment}
+              guestManageComment={guestManageComment}
+              guestManageMode={guestManageMode}
+              guestManagePassword={guestCommentManagePassword}
+              guestEditBody={guestEditBody}
+              onChangeGuestManagePassword={setGuestCommentManagePassword}
+              onChangeGuestEditBody={setGuestEditBody}
+              onCancelGuestManage={cancelGuestCommentManage}
+              onSubmitGuestManage={submitGuestCommentManage}
               onReport={setReportingComment}
               onChangeGuestPassword={setGuestPassword}
               onReply={setReplyingTo}
@@ -590,7 +631,7 @@ export default function PublicationDetailPage() {
         {!replyingTo && (memberViewer || guestViewer) ? (
           <form className="publication-comment-form" aria-label="댓글 작성" onSubmit={createComment} noValidate>
             {guestViewer ? <>
-              <p className="field-help">비회원 댓글은 작성한 브라우저의 쿠키와 관리 비밀번호로 삭제할 수 있습니다. 쿠키를 지우면 삭제 권한을 잃을 수 있습니다. 댓글에 전화번호 등 개인정보를 적지 마세요.</p>
+              <p className="field-help">댓글을 수정·삭제할 때 사용할 비밀번호를 설정하세요. 비밀번호를 잊으면 댓글을 직접 관리할 수 없습니다. 전화번호 등 개인정보는 댓글에 적지 마세요.</p>
               <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} autoComplete="current-password" /></label>
             </> : null}
             <label>

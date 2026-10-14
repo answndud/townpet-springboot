@@ -11,10 +11,12 @@ import org.springframework.web.server.ResponseStatusException;
 class GuestDirectoryAdapter implements GuestDirectory {
   private final GuestAuthorRepository guests;
   private final PasswordEncoder passwords;
+  private final GuestStepUpService steps;
 
-  GuestDirectoryAdapter(GuestAuthorRepository guests, PasswordEncoder passwords) {
+  GuestDirectoryAdapter(GuestAuthorRepository guests, PasswordEncoder passwords, GuestStepUpService steps) {
     this.guests = guests;
     this.passwords = passwords;
+    this.steps = steps;
   }
 
   @Override
@@ -33,7 +35,14 @@ class GuestDirectoryAdapter implements GuestDirectory {
   }
 
   @Override
-  public java.util.Optional<UUID> internalId(UUID publicId) {
-    return guests.findByPublicId(publicId).map(GuestAuthorEntity::getId);
+  public GuestIdentity createCommentAuthor(String password) {
+    GuestAuthorEntity guest = steps.createGuest(password);
+    return new GuestIdentity(guest.getId(), guest.getPublicId());
+  }
+
+  @Override
+  public GuestIdentity authenticateByInternalId(UUID internalId, String password) {
+    GuestAuthorEntity guest = steps.authenticateByInternalId(internalId, password);
+    return new GuestIdentity(guest.getId(), guest.getPublicId());
   }
 }

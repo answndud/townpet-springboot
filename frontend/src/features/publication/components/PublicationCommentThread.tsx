@@ -12,6 +12,15 @@ type PublicationCommentThreadProps = {
   commentBody: string;
   commentSubmitting: boolean;
   onDelete: (comment: Comment) => void;
+  onEdit: (comment: Comment) => void;
+  guestManageComment: Comment | null;
+  guestManageMode: "edit" | "delete" | null;
+  guestEditBody: string;
+  guestManagePassword: string;
+  onChangeGuestEditBody: (value: string) => void;
+  onChangeGuestManagePassword: (value: string) => void;
+  onCancelGuestManage: () => void;
+  onSubmitGuestManage: (event: FormEvent<HTMLFormElement>, comment: Comment) => void;
   onReport: (comment: Comment) => void;
   onChangeGuestPassword: (value: string) => void;
   onReply: (comment: Comment) => void;
@@ -37,6 +46,15 @@ function CommentItem({
   commentBody,
   commentSubmitting,
   onDelete,
+  onEdit,
+  guestManageComment,
+  guestManageMode,
+  guestEditBody,
+  guestManagePassword,
+  onChangeGuestEditBody,
+  onChangeGuestManagePassword,
+  onCancelGuestManage,
+  onSubmitGuestManage,
   onReport,
   onChangeGuestPassword,
   onReply,
@@ -57,12 +75,26 @@ function CommentItem({
       <div className="publication-comment-meta">
         <strong>{comment.authorType === "GUEST" ? "비회원" : "TownPet 회원"}</strong>
         <time dateTime={comment.createdAt}>{formatDateTimeLong(comment.createdAt)}</time>
-        {((memberViewer && viewerId === comment.authorId) || (guestViewer && comment.guestOwnedByViewer)) ? <button className="text-button comment-action comment-action-danger" type="button" onClick={() => onDelete(comment)}>삭제</button> : null}
+        {memberViewer && viewerId === comment.authorId ? <button className="text-button comment-action comment-action-danger" type="button" onClick={() => onDelete(comment)}>삭제</button> : null}
+        {guestViewer && comment.authorType === "GUEST" ? <>
+          <button className="text-button comment-action" type="button" onClick={() => onEdit(comment)}>수정</button>
+          <button className="text-button comment-action comment-action-danger" type="button" onClick={() => onDelete(comment)}>삭제</button>
+        </> : null}
         {memberViewer && viewerId !== comment.authorId ? <button className="text-button comment-action" type="button" onClick={() => onReport(comment)}>신고</button> : null}
         {memberViewer || guestViewer ? <button ref={replyButtonRef} className="text-button comment-action" type="button" onClick={() => onReply(comment)} aria-expanded={isReplying} aria-controls={`reply-form-${comment.id}`}>답글</button> : null}
       </div>
       {comment.parentCommentId ? <span className="publication-comment-reply-label">답글</span> : null}
       <p>{comment.body}</p>
+      {guestViewer && guestManageComment?.id === comment.id ? (
+        <form className="publication-comment-form publication-comment-form-inline" aria-label={guestManageMode === "edit" ? "비회원 댓글 수정" : "비회원 댓글 삭제 확인"} onSubmit={(event) => onSubmitGuestManage(event, comment)}>
+          <label>댓글 비밀번호<input name="password" type="password" minLength={8} maxLength={72} autoComplete="current-password" value={guestManagePassword} onChange={(event) => onChangeGuestManagePassword(event.target.value)} required /></label>
+          {guestManageMode === "edit" ? <label>댓글 내용<textarea maxLength={5000} value={guestEditBody} onChange={(event) => onChangeGuestEditBody(event.target.value)} required /></label> : <p className="field-help">작성할 때 설정한 비밀번호가 일치하면 댓글을 삭제합니다.</p>}
+          <div className="publication-comment-submit">
+            <button className="button button-primary" type="submit">{guestManageMode === "edit" ? "수정 저장" : "댓글 삭제"}</button>
+            <button className="button button-soft" type="button" onClick={onCancelGuestManage}>취소</button>
+          </div>
+        </form>
+      ) : null}
       {isReplying ? (
         <form id={`reply-form-${comment.id}`} className="publication-comment-form publication-comment-form-inline" aria-label="답글 작성" onSubmit={onSubmit} noValidate>
           <div className="publication-replying">
@@ -73,7 +105,10 @@ function CommentItem({
             답글
             <textarea aria-label="답글" maxLength={5000} value={commentBody} onChange={(event) => onChangeBody(event.target.value)} placeholder="반려생활에 도움이 되는 이야기를 남겨 주세요." autoFocus />
           </label>
-          {guestViewer ? <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => onChangeGuestPassword(event.target.value)} autoComplete="current-password" /></label> : null}
+          {guestViewer ? <>
+            <p className="field-help">댓글마다 비밀번호가 적용되며, 같은 비밀번호로 해당 댓글을 수정·삭제합니다.</p>
+            <label>댓글 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => onChangeGuestPassword(event.target.value)} autoComplete="current-password" /></label>
+          </> : null}
           <div className="publication-comment-submit">
             <span className="field-help">{commentBody.length.toLocaleString()}/5,000</span>
             <button className="button button-primary" type="submit" disabled={commentSubmitting || !commentBody.trim() || (guestViewer && guestPassword.length < 8)}>{commentSubmitting ? "등록 중..." : "답글 등록"}</button>

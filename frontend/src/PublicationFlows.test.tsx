@@ -186,12 +186,36 @@ describe("Publication journeys", () => {
   });
 
   it("lets a non-member comment on a public post and labels the author clearly", async () => {
+    let guestComment: {
+      id: string;
+      publicationId: string;
+      authorId: null;
+      authorType: "GUEST";
+      parentCommentId: null;
+      body: string;
+      lifecycle: "ACTIVE";
+      createdAt: string;
+      updatedAt: string;
+      version: number;
+    } | null = {
+      id: "guest-comment",
+      publicationId: PUBLICATION_ID,
+      authorId: null,
+      authorType: "GUEST",
+      parentCommentId: null,
+      body: "산책 정보 감사합니다.",
+      lifecycle: "ACTIVE",
+      createdAt: "2026-08-10T09:00:00Z",
+      updatedAt: "2026-08-10T09:00:00Z",
+      version: 0,
+    };
+    let hasGuestComment = false;
     const fetchMock = vi.fn<typeof fetch>((input, init) => {
       const path = String(input);
       if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response(undefined, 401));
       if (path.endsWith("/api/v1/auth/csrf")) return Promise.resolve(response({ token: "csrf-token" }));
       if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}/comments`)) {
-        return Promise.resolve(response({ items: [] }));
+        return Promise.resolve(response({ items: hasGuestComment && guestComment ? [guestComment] : [] }));
       }
       if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}`)) {
         return Promise.resolve(response(publication()));
@@ -199,24 +223,18 @@ describe("Publication journeys", () => {
       if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}/reaction`)) {
         return Promise.resolve(response({ active: false, count: 0 }));
       }
-      if (path.endsWith("/api/guest/authors") && init?.method === "POST") {
-        return Promise.resolve(response({ guestId: "guest-id" }, 201));
-      }
       if (path.endsWith(`/api/guest/posts/${PUBLICATION_ID}/comments`) && init?.method === "POST") {
-        return Promise.resolve(
-          response({
-            id: "guest-comment",
-            publicationId: PUBLICATION_ID,
-            authorId: null,
-            authorType: "GUEST",
-            parentCommentId: null,
-            body: "산책 정보 감사합니다.",
-            lifecycle: "ACTIVE",
-            createdAt: "2026-08-10T09:00:00Z",
-            updatedAt: "2026-08-10T09:00:00Z",
-            version: 0,
-          }, 201),
-        );
+        hasGuestComment = true;
+        return Promise.resolve(response(guestComment, 201));
+      }
+      if (path.endsWith(`/api/guest/posts/${PUBLICATION_ID}/comments/guest-comment`) && init?.method === "PATCH") {
+        guestComment = { ...guestComment!, body: "수정한 산책 정보", version: 1 };
+        return Promise.resolve(response(guestComment));
+      }
+      if (path.endsWith(`/api/guest/posts/${PUBLICATION_ID}/comments/guest-comment`) && init?.method === "DELETE") {
+        guestComment = null;
+        hasGuestComment = false;
+        return Promise.resolve(response(undefined, 204));
       }
       return Promise.reject(new Error(`Unexpected request: ${path}`));
     });
@@ -238,11 +256,24 @@ describe("Publication journeys", () => {
     fireEvent.click(screen.getByRole("button", { name: "댓글 등록" }));
 
     expect(await screen.findByText("비회원")).toBeInTheDocument();
-    await waitFor(() => {
-      const calls = fetchMock.mock.calls.map(([input, init]) => [String(input), init?.method]);
-      expect(calls.findIndex(([path]) => path?.endsWith("/api/guest/authors"))).toBeLessThan(
-        calls.findIndex(([path]) => path?.endsWith(`/api/guest/posts/${PUBLICATION_ID}/comments`)),
-      );
-    });
+    const submitCall = fetchMock.mock.calls.find(([input, init]) =>
+      String(input).endsWith(`/api/guest/posts/${PUBLICATION_ID}/comments`) && init?.method === "POST",
+    );
+    expect(submitCall?.[1]?.body).toBe(JSON.stringify({ password: "guest-password", body: "산책 정보 감사합니다." }));
+    expect(fetchMock.mock.calls.some(([input]) => String(input).endsWith("/api/guest/authors"))).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "수정" }));
+    fireEvent.change(screen.getByLabelText("댓글 비밀번호"), { target: { value: "guest-password" } });
+    fireEvent.change(screen.getByLabelText("댓글 내용"), { target: { value: "수정한 산책 정보" } });
+    fireEvent.click(screen.getByRole("button", { name: "수정 저장" }));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "PATCH")).toBe(true));
+    expect(await screen.findByText("수정한 산책 정보")).toBeInTheDocument();
+    const editCall = fetchMock.mock.calls.find(([, init]) => init?.method === "PATCH");
+    expect(editCall?.[1]?.body).toBe(JSON.stringify({ password: "guest-password", version: 0, body: "수정한 산책 정보" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+    fireEvent.change(screen.getByLabelText("댓글 비밀번호"), { target: { value: "guest-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "댓글 삭제" }));
+    await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true));
   });
 });

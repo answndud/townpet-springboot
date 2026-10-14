@@ -121,7 +121,6 @@ export type Comment = {
   publicationId: string;
   authorId: string | null;
   authorType: "MEMBER" | "GUEST";
-  guestOwnedByViewer: boolean;
   parentCommentId: string | null;
   body: string;
   lifecycle: "ACTIVE" | "DELETED";
@@ -861,6 +860,11 @@ export const guestApi = {
   deleteComment(publicationId: string, commentId: string, input: { password: string; version: number }) {
     return mutate<void>(`/api/guest/posts/${encodeURIComponent(publicationId)}/comments/${encodeURIComponent(commentId)}`, {
       method: "DELETE", headers: jsonHeaders, body: JSON.stringify(input),
+    });
+  },
+  editComment(publicationId: string, commentId: string, input: { password: string; version: number; body: string }) {
+    return mutate<Comment>(`/api/guest/posts/${encodeURIComponent(publicationId)}/comments/${encodeURIComponent(commentId)}`, {
+      method: "PATCH", headers: jsonHeaders, body: JSON.stringify(input),
     });
   },
   updatePublication(publicationId: string, input: { password: string; title: string; body: string; version: number }) {

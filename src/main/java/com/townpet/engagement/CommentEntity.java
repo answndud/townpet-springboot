@@ -42,7 +42,6 @@ class CommentEntity {
 
   @Version private long version;
 
-  @jakarta.persistence.Transient private boolean viewerOwnsGuestComment;
 
   protected CommentEntity() {}
 
@@ -134,7 +133,4 @@ class CommentEntity {
     return version;
   }
 
-  void setViewerOwnsGuestComment(boolean owns) { this.viewerOwnsGuestComment = owns; }
-
-  boolean viewerOwnsGuestComment() { return viewerOwnsGuestComment; }
 }

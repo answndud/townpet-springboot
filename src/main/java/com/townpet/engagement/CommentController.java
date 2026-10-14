@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -39,11 +38,10 @@ class CommentController {
 
   @GetMapping
   CommentListResponse list(
-      @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal,
-      @Nullable @CookieValue(name = com.townpet.identity.GuestStepUpController.GUEST_COOKIE, required = false) UUID guestId) {
+      @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal) {
     try {
       return new CommentListResponse(
-              comments.list(publicationId, viewerMemberId(principal), guestId).stream()
+              comments.list(publicationId, viewerMemberId(principal)).stream()
               .map(CommentController::toResponse)
               .toList());
     } catch (CommentPublicationNotFoundException | CommentNotFoundException exception) {
@@ -132,7 +130,6 @@ class CommentController {
         comment.getPublicationId(),
         comment.getAuthorMemberId(),
         comment.getGuestAuthorId() == null ? CommentAuthorType.MEMBER : CommentAuthorType.GUEST,
-        comment.viewerOwnsGuestComment(),
         comment.getParentCommentId(),
         comment.getBody(),
         comment.getLifecycle(),
@@ -156,7 +153,6 @@ class CommentController {
       UUID publicationId,
       @Nullable UUID authorId,
       CommentAuthorType authorType,
-      boolean guestOwnedByViewer,
       @Nullable UUID parentCommentId,
       String body,
       CommentLifecycle lifecycle,

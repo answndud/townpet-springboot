@@ -193,29 +193,19 @@ class CommentControllerTest {
   @Test
   void guestsCanCommentOnPublicationsAndRepliesAreLimitedToOneLevel() throws Exception {
     String publicationId = createPublication(login("demo-member-1@townpet.local"));
-    MvcResult guestResult =
-        mockMvc
-            .perform(
-                post("/api/guest/authors")
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"password\":\"guest-password\"}"))
-            .andExpect(status().isCreated())
-            .andReturn();
-    Cookie guestCookie =
-        Objects.requireNonNull(guestResult.getResponse().getCookie("TOWNPET_GUEST_ID"));
-
     MvcResult rootResult =
         mockMvc
             .perform(
                 post("/api/guest/posts/{publicationId}/comments", publicationId)
-                    .cookie(guestCookie)
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{\"password\":\"guest-password\",\"body\":\"비회원 댓글\"}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.authorType").value("GUEST"))
             .andReturn();
+    org.assertj.core.api.Assertions.assertThat(
+            rootResult.getResponse().getCookie("TOWNPET_GUEST_ID"))
+        .isNull();
     String rootId =
         new com.fasterxml.jackson.databind.ObjectMapper()
             .readTree(rootResult.getResponse().getContentAsString())
@@ -226,7 +216,6 @@ class CommentControllerTest {
         mockMvc
             .perform(
                 post("/api/guest/posts/{publicationId}/comments", publicationId)
-                    .cookie(guestCookie)
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(
@@ -245,7 +234,6 @@ class CommentControllerTest {
     mockMvc
         .perform(
             post("/api/guest/posts/{publicationId}/comments", publicationId)
-                .cookie(guestCookie)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -260,41 +248,42 @@ class CommentControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items.length()").value(2))
         .andExpect(jsonPath("$.items[0].authorType").value("GUEST"))
-        .andExpect(jsonPath("$.items[0].authorId").isEmpty())
-        .andExpect(jsonPath("$.items[0].guestOwnedByViewer").value(false));
+        .andExpect(jsonPath("$.items[0].authorId").isEmpty());
+    for (int attempt = 0; attempt < 5; attempt++) {
+      mockMvc
+          .perform(
+              org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
+                      "/api/guest/posts/{publicationId}/comments/{commentId}", publicationId, rootId)
+                  .with(csrf())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"password\":\"wrong-password\",\"version\":0,\"body\":\"변경 시도\"}"))
+          .andExpect(status().isUnauthorized());
+    }
     mockMvc
-        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId).cookie(guestCookie))
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(
+                    "/api/guest/posts/{publicationId}/comments/{commentId}", publicationId, rootId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\":\"guest-password\",\"version\":0,\"body\":\"수정한 댓글\"}"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.items[0].guestOwnedByViewer").value(true));
+        .andExpect(jsonPath("$.body").value("수정한 댓글"));
     mockMvc
         .perform(
             delete("/api/guest/posts/{publicationId}/comments/{commentId}", publicationId, rootId)
-                .cookie(guestCookie)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"password\":\"guest-password\",\"version\":0}"))
+                .content("{\"password\":\"guest-password\",\"version\":1}"))
         .andExpect(status().isNoContent());
   }
 
   @Test
   void moderatorCanFindUnreportedGuestCommentsDeleteAndRestoreWithAudit() throws Exception {
     String publicationId = createPublication(login("demo-member-1@townpet.local"));
-    MvcResult guestResult =
-        mockMvc
-            .perform(
-                post("/api/guest/authors")
-                    .with(csrf())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"password\":\"guest-password\"}"))
-            .andExpect(status().isCreated())
-            .andReturn();
-    Cookie guestCookie =
-        Objects.requireNonNull(guestResult.getResponse().getCookie("TOWNPET_GUEST_ID"));
     MvcResult commentResult =
         mockMvc
             .perform(
                 post("/api/guest/posts/{publicationId}/comments", publicationId)
-                    .cookie(guestCookie)
                     .with(csrf())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{\"password\":\"guest-password\",\"body\":\"신고하지 않은 댓글\"}"))

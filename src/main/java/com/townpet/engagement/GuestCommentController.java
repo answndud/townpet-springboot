@@ -3,7 +3,6 @@ package com.townpet.engagement;
 import com.townpet.common.ClientAddress;
 import com.townpet.common.MemberOrAnonymousOnly;
 import com.townpet.common.RequestRateLimiter;
-import com.townpet.identity.GuestStepUpController;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -13,18 +12,16 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
@@ -50,28 +47,26 @@ class GuestCommentController {
   @ResponseStatus(HttpStatus.CREATED)
   Response create(
       @PathVariable UUID publicationId,
-      @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
       @Valid @RequestBody CreateRequest request,
       HttpServletRequest httpRequest) {
     requireEnabled();
     rateLimiter.requireCapacity(
         "guest-content-ip", clientAddress.resolve(httpRequest), 120, Duration.ofHours(1));
     rateLimiter.requireCapacity(
-        "guest-comment-create", guestId.toString(), 30, Duration.ofHours(1));
+        "guest-comment-create", clientAddress.resolve(httpRequest), 30, Duration.ofHours(1));
     rateLimiter.requireCapacity(
         "guest-comment-post",
-        guestId + ":" + publicationId,
+        clientAddress.resolve(httpRequest) + ":" + publicationId,
         5,
         Duration.ofMinutes(10));
     rateLimiter.requireCapacity(
         "guest-comment-repeat",
-        guestId + ":" + publicationId + ":" + normalizeForDuplicateCheck(request.body()),
+        clientAddress.resolve(httpRequest) + ":" + publicationId + ":" + normalizeForDuplicateCheck(request.body()),
         1,
         Duration.ofMinutes(10));
     try {
       return response(
           comments.createGuest(
-              guestId,
               request.password(),
               publicationId,
               request.parentCommentId(),
@@ -89,14 +84,35 @@ class GuestCommentController {
   void delete(
       @PathVariable UUID publicationId,
       @PathVariable UUID commentId,
-      @CookieValue(name = GuestStepUpController.GUEST_COOKIE) UUID guestId,
       @Valid @RequestBody DeleteRequest request,
       HttpServletRequest httpRequest) {
     requireEnabled();
     rateLimiter.requireCapacity(
         "guest-content-ip", clientAddress.resolve(httpRequest), 120, Duration.ofHours(1));
     try {
-      comments.deleteGuest(guestId, request.password(), publicationId, commentId, request.version());
+      rateLimiter.requireCapacity("guest-comment-password-check", clientAddress.resolve(httpRequest), 20, Duration.ofHours(1));
+      comments.deleteGuest(request.password(), publicationId, commentId, request.version());
+    } catch (CommentPublicationNotFoundException | CommentNotFoundException exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    } catch (CommentOwnershipException exception) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    } catch (CommentVersionConflictException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT);
+    }
+  }
+
+  @PatchMapping("/{commentId}")
+  @MemberOrAnonymousOnly
+  Response edit(
+      @PathVariable UUID publicationId,
+      @PathVariable UUID commentId,
+      @Valid @RequestBody EditRequest request,
+      HttpServletRequest httpRequest) {
+    requireEnabled();
+    rateLimiter.requireCapacity("guest-content-ip", clientAddress.resolve(httpRequest), 120, Duration.ofHours(1));
+    rateLimiter.requireCapacity("guest-comment-password-check", clientAddress.resolve(httpRequest), 20, Duration.ofHours(1));
+    try {
+      return response(comments.editGuest(request.password(), publicationId, commentId, request.version(), request.body()));
     } catch (CommentPublicationNotFoundException | CommentNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (CommentOwnershipException exception) {
@@ -116,7 +132,6 @@ class GuestCommentController {
         comment.getPublicationId(),
         null,
         CommentAuthorType.GUEST,
-        true,
         comment.getParentCommentId(),
         comment.getBody(),
         comment.getLifecycle(),
@@ -134,14 +149,18 @@ class GuestCommentController {
       @NotBlank @Size(max = 5000) String body,
       @Nullable UUID parentCommentId) {}
 
-  record DeleteRequest(@NotBlank @Size(min = 8, max = 72) String password, @NotNull @jakarta.validation.constraints.Min(0) Long version) {}
+  record DeleteRequest(@NotBlank @Size(min = 8, max = 72) String password, @NotNull @Min(0) Long version) {}
+
+  record EditRequest(
+      @NotBlank @Size(min = 8, max = 72) String password,
+      @NotNull @Min(0) Long version,
+      @NotBlank @Size(max = 5000) String body) {}
 
   record Response(
       UUID id,
       UUID publicationId,
       @Nullable UUID authorId,
       CommentAuthorType authorType,
-      boolean guestOwnedByViewer,
       @Nullable UUID parentCommentId,
       String body,
       CommentLifecycle lifecycle,

@@ -37,12 +37,10 @@ class CommentService {
 
   @Transactional
   CommentEntity createGuest(
-      UUID guestPublicId,
       String password,
       UUID publicationId,
       @Nullable UUID parentCommentId,
       String body) {
-    GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
     requireAccessiblePublication(publicationId, null);
     if (parentCommentId != null) {
       CommentEntity parent =
@@ -52,6 +50,7 @@ class CommentService {
       if (!parent.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
       if (parent.getParentCommentId() != null) throw new CommentReplyDepthExceededException();
     }
+    GuestDirectory.GuestIdentity guest = guests.createCommentAuthor(password);
     CommentEntity comment =
         comments.saveAndFlush(
             CommentEntity.forGuest(publicationId, guest.internalId(), parentCommentId, body));
@@ -70,25 +69,35 @@ class CommentService {
 
   @Transactional
   void deleteGuest(
-      UUID guestPublicId, String password, UUID publicationId, UUID commentId, long expectedVersion) {
-    GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
+      String password, UUID publicationId, UUID commentId, long expectedVersion) {
     requireAccessiblePublication(publicationId, null);
     CommentEntity comment = activeComment(commentId);
     if (!comment.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
-    if (!guest.internalId().equals(comment.getGuestAuthorId())) throw new CommentOwnershipException();
+    if (comment.getGuestAuthorId() == null) throw new CommentOwnershipException();
+    guests.authenticateByInternalId(comment.getGuestAuthorId(), password);
     if (comment.getVersion() != expectedVersion) throw new CommentVersionConflictException();
     comment.delete(Instant.now());
     comments.saveAndFlush(comment);
   }
 
+  @Transactional
+  CommentEntity editGuest(
+      String password, UUID publicationId, UUID commentId, long expectedVersion, String body) {
+    requireAccessiblePublication(publicationId, null);
+    CommentEntity comment = activeComment(commentId);
+    if (!comment.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
+    if (comment.getGuestAuthorId() == null) throw new CommentOwnershipException();
+    guests.authenticateByInternalId(comment.getGuestAuthorId(), password);
+    if (comment.getVersion() != expectedVersion) throw new CommentVersionConflictException();
+    comment.edit(body, Instant.now());
+    return comments.saveAndFlush(comment);
+  }
+
   @Transactional(readOnly = true)
-  List<CommentEntity> list(UUID publicationId, @Nullable UUID viewerMemberId, @Nullable UUID guestPublicId) {
+  List<CommentEntity> list(UUID publicationId, @Nullable UUID viewerMemberId) {
     requireAccessiblePublication(publicationId, viewerMemberId);
-    UUID guestInternalId = guestPublicId == null ? null : guests.internalId(guestPublicId).orElse(null);
     return comments.findTop500ByPublicationIdAndLifecycleOrderByCreatedAtAscIdAsc(
-        publicationId, CommentLifecycle.ACTIVE).stream()
-        .peek(comment -> comment.setViewerOwnsGuestComment(guestInternalId != null && guestInternalId.equals(comment.getGuestAuthorId())))
-        .toList();
+        publicationId, CommentLifecycle.ACTIVE);
   }
 
   @Transactional
