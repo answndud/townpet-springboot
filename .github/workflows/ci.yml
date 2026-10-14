@@ -329,7 +329,7 @@ jobs:
             -e TOWNPET_DOMAIN=townpet.example.com -e TOWNPET_MEDIA_DOMAIN=media.townpet.example.com \
             "ghcr.io/$GITHUB_REPOSITORY_OWNER/townpet-web@$WEB_DIGEST"
           for attempt in $(seq 1 15); do
-            if docker exec townpet-web-smoke wget -qO- http://127.0.0.1/assets/index.css >/dev/null 2>&1; then exit 0; fi
+            if docker exec townpet-web-smoke wget -qO- http://127.0.0.1/index.html >/dev/null 2>&1; then exit 0; fi
             sleep 1
           done
           docker logs townpet-web-smoke

@@ -93,6 +93,8 @@ server {
     sub_filter 'content="우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하는 TownPet입니다."' 'content="$townpet_page_description"';
     sub_filter 'content="우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하세요."' 'content="$townpet_og_description"';
     sub_filter_once off;
+    sub_filter 'src="/assets/index.js"' 'src="__TOWNPET_ENTRY_JS__"';
+    sub_filter 'href="/assets/index.css"' 'href="__TOWNPET_ENTRY_CSS__"';
     sub_filter 'href="https://townpet.cloud/"' 'href="https://townpet.cloud$townpet_canonical_path"';
     sub_filter 'content="https://townpet.cloud/"' 'content="https://townpet.cloud$townpet_canonical_path"';
 
