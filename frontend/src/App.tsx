@@ -1,5 +1,5 @@
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
-import { lazy, KeyboardEvent, ReactNode, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, ReactNode, Suspense, useEffect, useRef, useState } from "react";
 import { authApi } from "./api/client";
 import LoginPage from "./LoginPage";
 import PasswordResetPage from "./PasswordResetPage";
@@ -7,6 +7,7 @@ import VerifyEmailPage from "./VerifyEmailPage";
 import LegalPage from "./LegalPage";
 import HomeFeedPage from "./HomeFeedPage";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
+import NavigationMenu from "./components/NavigationMenu";
 import AnimalBoardMenu from "./features/member/AnimalBoardMenu";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { installPerformanceObservers, recordRouteTiming } from "./utils/performance";
@@ -94,92 +95,6 @@ const MEMBER_ACCOUNT_LINKS = [
   ["알림", "/notifications"],
 ] as const;
 
-function HeaderMenu({
-  label,
-  links,
-  className,
-}: {
-  label: string;
-  links: ReadonlyArray<readonly [string, string]>;
-  className?: string;
-}) {
-  const location = useLocation();
-  const [open, setOpen] = useState(false);
-  const menuActive = links.some(([, href]) => location.pathname === href || location.pathname.startsWith(`${href}/`));
-  const menuRef = useRef<HTMLDivElement>(null);
-  const menuItemsRef = useRef<HTMLAnchorElement[]>([]);
-
-  useEffect(() => {
-    setOpen(false);
-  }, [location.pathname, location.search]);
-
-  useEffect(() => {
-    if (!open) return;
-    const closeOnOutsideClick = (event: MouseEvent) => {
-      if (event.target instanceof Node && !menuRef.current?.contains(event.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", closeOnOutsideClick);
-    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
-  }, [open]);
-
-  function focusMenuItem(index: number) {
-    const items = menuItemsRef.current;
-    if (!items.length) return;
-    items[(index + items.length) % items.length]?.focus();
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
-    if (event.key === "Escape") {
-      setOpen(false);
-      event.currentTarget.focus();
-    } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      setOpen(true);
-      window.setTimeout(() => focusMenuItem(event.key === "ArrowDown" ? 0 : -1), 0);
-    }
-  }
-
-  function handleMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    const currentIndex = menuItemsRef.current.indexOf(document.activeElement as HTMLAnchorElement);
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      focusMenuItem(currentIndex + (event.key === "ArrowDown" ? 1 : -1));
-    } else if (event.key === "Home" || event.key === "End") {
-      event.preventDefault();
-      focusMenuItem(event.key === "Home" ? 0 : -1);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      setOpen(false);
-      menuRef.current?.querySelector<HTMLButtonElement>(".header-menu-trigger")?.focus();
-    }
-  }
-
-  return (
-    <div ref={menuRef} className={`header-menu${className ? ` ${className}` : ""}${open ? " open" : ""}`}>
-      <button
-        className={`header-menu-trigger${menuActive ? " active" : ""}`}
-        type="button"
-        aria-haspopup="true"
-        aria-expanded={open}
-        aria-controls={`${label}-menu`}
-        onClick={() => setOpen((current) => !current)}
-        onKeyDown={handleKeyDown}
-      >
-        {label}<span aria-hidden="true">⌄</span>
-      </button>
-      <div id={`${label}-menu`} className="header-menu-panel" role="menu" aria-label={`${label} 바로가기`} onKeyDown={handleMenuKeyDown}>
-        {links.map(([linkLabel, href]) => (
-          <NavLink key={href} ref={(element) => { if (element) menuItemsRef.current[links.findIndex(([, linkHref]) => linkHref === href)] = element; }} role="menuitem" to={href} onMouseEnter={() => preloadRoute(href)} onFocus={() => preloadRoute(href)} onClick={() => setOpen(false)}>
-            {linkLabel}
-          </NavLink>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function Header() {
   const { status, member } = useAuth();
   const navigate = useNavigate();
@@ -223,9 +138,9 @@ function Header() {
   function toggle(next: "browse" | "account", button: HTMLButtonElement | null) { openedBy.current = button; setPanel(panel === next ? null : next); }
   return <header ref={header} className="site-header">
     <div className="header-inner">
-      <Link className="brand" to="/" aria-label="TownPet 홈으로 이동">TownPet<span>반려동물 커뮤니티</span></Link>
+      <Link className="brand" to="/" aria-label="TownPet 홈으로 이동">TownPet</Link>
       <nav aria-label="주요 이동" className="desktop-nav">
-        <NavLink to="/">홈</NavLink><AnimalBoardMenu /><HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} /><NavLink to="/guides">지역 가이드</NavLink>
+        <NavLink to="/">홈</NavLink><AnimalBoardMenu /><NavigationMenu label="공통게시판" links={COMMON_BOARD_LINKS} onIntent={preloadRoute} /><NavLink to="/guides">지역 가이드</NavLink>
       </nav>
       <div className="header-account">
         {authenticated ? <button ref={accountButton} className="account-toggle" type="button" aria-expanded={panel === "account"} aria-controls="account-navigation" onClick={() => toggle("account",accountButton.current)}>내 계정</button> : <Link className="account-login" to="/login" data-testid="header-login-link-home">로그인</Link>}
@@ -342,7 +257,7 @@ function NotFoundPage() {
   return (
     <main className="page placeholder-page">
       <section className="surface-card">
-        <span className="eyebrow">TOWNPET</span>
+
         <h1>페이지를 찾을 수 없습니다</h1>
         <p>요청한 주소가 없거나 더 이상 공개되지 않습니다.</p>
         <Link className="button button-primary" to="/">

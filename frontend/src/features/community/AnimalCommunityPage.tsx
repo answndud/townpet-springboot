@@ -186,7 +186,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
     <main className="page community-page">
       <header className="community-hero">
         <div>
-          <p className="eyebrow">{mode === "common" ? boardCode === "all" ? "COMMON BOARDS" : `COMMON BOARD · ${boardCode.toUpperCase()}` : "ANIMAL BOARDS"}</p>
+          <p className="eyebrow">{mode === "common" ? "공통 게시판" : "동물별 게시판"}</p>
           <h1>{pageLabel}</h1>
           <p>{heroDescription}</p>
         </div>

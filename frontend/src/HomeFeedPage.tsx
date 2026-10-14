@@ -123,7 +123,7 @@ export default function HomeFeedPage() {
       </header>
 
       <nav className="community-board-tabs feed-home-tabs" aria-label="피드 보기 전환">
-        <span className="feed-toolbar-label">피드</span>
+
         <button className={!popularView ? "active" : ""} aria-current={!popularView ? "page" : undefined} type="button" onClick={() => setSearchParams({ view: "all", ...(query ? { q: query } : {}), ...(searchField !== "ALL" ? { searchField } : {}) })}>전체</button>
         <button className={popularView ? "active" : ""} aria-current={popularView ? "page" : undefined} type="button" onClick={() => setSearchParams({ view: "popular", ...(query ? { q: query } : {}), ...(searchField !== "ALL" ? { searchField } : {}) })}>HOT</button>
       </nav>
@@ -173,7 +173,6 @@ export default function HomeFeedPage() {
       </section><aside className="home-sidebar">
         <section className="sidebar-section"><p className="eyebrow">동물별 게시판</p><nav className="animal-discovery" aria-label="동물별 이야기">{ANIMAL_BOARD_OPTIONS.map(option => <Link key={option.code} to={`/animals/${option.code.toLowerCase()}`}>{option.label}<span aria-hidden="true">↗</span></Link>)}</nav></section>
         <section className="sidebar-guide"><h2>지역 가이드</h2><p>산책 장소, 복지 제도, 케어 정보를 출처와 함께 확인하세요.</p><Link to="/guides">지역 가이드 보기 →</Link></section>
-        <p className="sandbox-note">합성 데이터로 구성된 포트폴리오입니다. 실제 거래·돌봄·입양을 중개하지 않습니다.</p>
       </aside></div>
     </main>
   );

@@ -58,7 +58,7 @@ export default function MfaPage() {
     return (
       <main className="page placeholder-page">
         <section className="surface-card profile-card">
-          <p className="eyebrow">MODERATOR SECURITY</p>
+
           <h1>복구 코드 보관</h1>
           <p>복구 코드는 지금 한 번만 표시됩니다. 안전한 비밀번호 관리자에 저장하세요.</p>
           <pre aria-label="MFA 복구 코드">{recoveryCodes.join("\n")}</pre>
@@ -71,7 +71,7 @@ export default function MfaPage() {
   return (
     <main className="page placeholder-page">
       <section className="surface-card profile-card">
-        <p className="eyebrow">MODERATOR SECURITY</p>
+
         <h1>{mode === "enroll" ? "운영자 MFA 등록" : "운영자 MFA 확인"}</h1>
         {mode === "enroll" ? (
           <>

@@ -78,7 +78,7 @@ export default function ProfilePage() {
   return (
     <main className="page profile-page">
       <section className="surface-card profile-card">
-        <span className="eyebrow">MY TOWNPET</span>
+
         <h1>{member ? `${member.nickname}님의 프로필` : "프로필 불러오는 중..."}</h1>
         {member ? (
           <>
@@ -90,7 +90,7 @@ export default function ProfilePage() {
               </div>
             ) : null}
             <h2 className="profile-section-title">반려동물</h2>
-            <ul>{member.pets.map((pet) => <li key={pet.id}>{pet.name} · {pet.species}</li>)}</ul>
+            {member.pets.length ? <ul>{member.pets.map((pet) => <li key={pet.id}>{pet.name} · {pet.species}</li>)}</ul> : <p>등록한 반려동물이 없습니다.</p>}
             {member.role === "MEMBER" ? (
               <form className="form-section" onSubmit={saveVisibility}>
                 <h2>공개 범위</h2>

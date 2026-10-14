@@ -105,7 +105,7 @@ export default function OnboardingPage() {
   return (
     <main className="page onboarding-page">
       <header className="onboarding-heading">
-        <span className="eyebrow">MY TOWNPET</span>
+
         <h1>내 동네와 반려동물 설정</h1>
         <p>{member?.nickname}님에게 맞는 동네 정보와 반려동물 프로필을 준비합니다.</p>
       </header>

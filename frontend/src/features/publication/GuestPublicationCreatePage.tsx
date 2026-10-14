@@ -31,7 +31,7 @@ export default function GuestPublicationCreatePage() {
   return (
     <main className="page publication-page">
       <section className="publication-hero">
-        <div><p className="eyebrow">GUEST COMMUNITY</p><h1>비회원 글쓰기</h1><p>관리 비밀번호로 나중에 내 글을 수정·삭제할 수 있어요.</p></div>
+        <div><h1>비회원 글쓰기</h1><p>관리 비밀번호로 나중에 내 글을 수정·삭제할 수 있어요.</p></div>
         <Link className="publication-text-link" to="/?view=all">피드로 돌아가기</Link>
       </section>
       <form className="publication-form" onSubmit={submit} noValidate>

@@ -39,7 +39,7 @@ export default function CorrectionCreatePage() {
     <main className="page marketplace-page">
       <section className="marketplace-hero">
         <div>
-          <p className="eyebrow">CORRECTION REQUEST</p>
+
           <h1>정보 정정 요청</h1>
           <p>잘못된 정보나 보완이 필요한 내용을 운영팀에 알려 주세요.</p>
         </div>

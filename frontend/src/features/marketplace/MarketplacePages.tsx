@@ -32,7 +32,7 @@ function MarketplaceHeader({ action = true }: { action?: boolean }) {
   return (
     <header className="marketplace-hero">
       <div>
-        <p className="eyebrow">TOWNPET MARKETPLACE</p>
+
         <h1>동네 거래</h1>
         <p>반려동물 용품의 판매, 대여, 나눔 정보를 확인하세요.</p>
       </div>
@@ -116,7 +116,7 @@ export function MarketplaceDetailPage() {
   }
 
   if (loading) return <main className="page marketplace-page"><section className="surface-card" role="status">거래 정보를 불러오는 중...</section></main>;
-  if (!listing || error) return <main className="page marketplace-page marketplace-state"><section className="surface-card"><p className="eyebrow">MARKETPLACE</p><h1>{error ?? "거래 정보를 찾을 수 없습니다"}</h1><Link className="button button-soft" to="/marketplace">목록으로</Link></section></main>;
+  if (!listing || error) return <main className="page marketplace-page marketplace-state"><section className="surface-card"><h1>{error ?? "거래 정보를 찾을 수 없습니다"}</h1><Link className="button button-soft" to="/marketplace">목록으로</Link></section></main>;
   const owner = member?.role === "MEMBER" && member.id === listing.ownerMemberId;
   return (
     <main className="page marketplace-page">
@@ -173,7 +173,7 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
 
   if (edit && loading) return <main className="page marketplace-page"><section className="surface-card" role="status">수정 정보를 불러오는 중...</section></main>;
   return (
-    <main className="page marketplace-page"><section className="marketplace-hero"><div><p className="eyebrow">COMMON BOARD · MARKETPLACE</p><h1>{edit ? "거래 글 수정" : "새 거래 글"}</h1><p>모든 동물 가족이 함께 보는 공통게시판에 가격과 상태를 분명하게 적어 주세요.</p></div></section>
+    <main className="page marketplace-page"><section className="marketplace-hero"><div><h1>{edit ? "거래 글 수정" : "새 거래 글"}</h1><p>모든 동물 가족이 함께 보는 공통게시판에 가격과 상태를 분명하게 적어 주세요.</p></div></section>
       <form className="surface-card marketplace-form" onSubmit={submit} noValidate>
         <label>거래 유형<select value={kind} disabled={edit} onChange={(event) => setKind(event.target.value as MarketplaceListingKind)}>{(Object.keys(KIND_LABELS) as MarketplaceListingKind[]).map((option) => <option key={option} value={option}>{KIND_LABELS[option]}</option>)}</select></label>
         <label>제목<input maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="예: 강아지 이동장 판매해요" /></label>

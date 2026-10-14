@@ -5,7 +5,28 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/api/v1/discovery/**", route => route.fulfill({contentType:"application/json",body:JSON.stringify({items:[],page:{hasNext:false,nextCursor:null}})}));
 });
 
-test("mobile navigation keeps guides accessible and closes on route changes", async ({ page }) => {
+test("navigation supports hover, keyboard and separate mobile account actions", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("link",{name:"TownPet 홈으로 이동",exact:true})).toHaveText("TownPet");
+  for (const label of ["동물 게시판", "공통게시판"]) {
+    const trigger = page.getByRole("button",{name:label,exact:true});
+    const menu = page.getByRole("menu",{name:label + " 바로가기",exact:true});
+    await trigger.hover();
+    await expect(trigger).toHaveAttribute("aria-expanded","true");
+    const bounds = await trigger.boundingBox();
+    await page.mouse.move(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height + 3);
+    await expect(menu).toBeVisible();
+    await menu.getByRole("menuitem").first().hover();
+    await expect(menu).toBeVisible();
+    await page.mouse.move(0,0);
+    await expect(trigger).toHaveAttribute("aria-expanded","false");
+    await expect(menu).toBeHidden();
+    await trigger.press("ArrowDown");
+    await expect(menu.getByRole("menuitem").first()).toBeFocused();
+    await menu.getByRole("menuitem").first().press("Escape");
+    await expect(trigger).toBeFocused();
+    await expect(menu).toBeHidden();
+  }
   await page.setViewportSize({width:390,height:844});
   await page.route("**/api/v1/local-resources*", route => route.fulfill({contentType:"application/json",body:"[]"}));
   await page.goto("/");

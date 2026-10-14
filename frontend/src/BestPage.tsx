@@ -20,7 +20,7 @@ export default function BestPage() {
   };
   return (
     <main className="page feed-page">
-      <section className="feed-hero"><div><p className="eyebrow">BEST OF TOWNPET</p><h1>인기 게시글</h1><p>추천 수가 높은 공개 게시글을 모았습니다. 추천 수가 같으면 최신 글이 먼저 보입니다.</p></div></section>
+      <section className="feed-hero"><div><h1>인기 게시글</h1><p>추천 수가 높은 공개 게시글을 모았습니다. 추천 수가 같으면 최신 글이 먼저 보입니다.</p></div></section>
       {feed.error ? <p role="alert">인기 게시글을 불러오지 못했습니다.</p> : null}
       <section className="surface-card feed-list" aria-label="인기 게시글 목록" aria-live="polite" aria-busy={feed.loading}>
         {feed.loading ? <p className="feed-empty" role="status">인기 게시글을 불러오는 중...</p> : null}

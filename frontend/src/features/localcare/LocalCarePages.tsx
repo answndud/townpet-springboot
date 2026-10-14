@@ -28,7 +28,7 @@ export function LocalCareListPage() {
   return (
     <main className="page localcare-page">
       <section className="localcare-hero">
-        <p className="eyebrow">LOCAL · WELFARE · CARE</p>
+
         <h1>우리 동네 반려생활 가이드</h1>
         <p>산책 장소부터 복지 제도와 케어 팁까지, 출처와 갱신 시각을 함께 확인하세요.</p>
       </section>
