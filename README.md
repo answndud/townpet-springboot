@@ -121,26 +121,21 @@ offset pagination은 앞 페이지에 새 글이 삽입될 때 중복·누락이
 - 권한 우회, 다른 사용자 resource 접근, 신고·moderation 경계 테스트
 - 조회수 동시 요청 160건을 8개 thread로 실행한 counter 대사
 - 모집 정원 경합과 media 첨부 개수 제한 동시성 테스트
-- React unit test, TypeScript typecheck, Vite build, Playwright 사용자 흐름
+- React 사용자 흐름 test, TypeScript가 포함된 Vite build, 필요할 때 Playwright smoke
 - k6 기반 public feed·member read·mixed workload smoke
 - 백업 복호화, disposable restore, 컨테이너 health check, 이미지 rollback rehearsal
 
-로컬에서 주요 검증을 실행하려면 다음 명령을 사용합니다.
+로컬에서는 변경 영역에 맞는 검증만 실행합니다. 배포 전에는 CI와 같은 최소 gate를 한 번 실행합니다.
 
 ```bash
-# Backend
-./gradlew clean check migrationTest
+./gradlew releaseCheck bootJar
 
-# Frontend
-cd frontend
-corepack pnpm install --frozen-lockfile
-corepack pnpm typecheck
-corepack pnpm test
-corepack pnpm build
-corepack pnpm test:e2e
+cd frontend && corepack pnpm test && corepack pnpm build
 ```
 
-Docker daemon과 필요한 환경 변수가 있는 경우 전체 frontend-backend smoke는 아래 스크립트로 실행할 수 있습니다.
+`build`에 TypeScript 검사가 포함됩니다. 브라우저 로그인·이동을 바꾼 경우에만 Playwright smoke를 추가하고, schema를 바꾼 경우에만 `./gradlew migrationTest`를 실행합니다. 의존성 설치는 최초 준비 또는 lockfile 변경 때만 필요합니다.
+
+전체 frontend-backend smoke는 API 연결을 바꾸거나 문제가 재현될 때 실행합니다.
 
 ```bash
 ./scripts/frontend-backend-smoke.sh

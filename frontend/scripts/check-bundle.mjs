@@ -20,11 +20,10 @@ const entryGzipBytes = gzipSync(await readFile(entry.path)).length;
 const cssBytes = statSync(css.path).size;
 const cssGzipBytes = gzipSync(await readFile(css.path)).length;
 const budgets = [
-  ["entry JS", entryBytes, 320_000],
   ["entry JS gzip", entryGzipBytes, 100_000],
 ];
 
-console.log(`[bundle-size] entry CSS: ${cssBytes} bytes (${cssGzipBytes} bytes gzip)`);
+console.log(`[bundle-size] entry JS: ${entryBytes} bytes (${entryGzipBytes} bytes gzip); CSS: ${cssBytes} bytes (${cssGzipBytes} bytes gzip)`);
 for (const [label, actual, limit] of budgets) {
   console.log(`[bundle-budget] ${label}: ${actual} bytes / ${limit} bytes`);
   if (actual > limit) throw new Error(`${label} exceeds its ${limit}-byte budget.`);

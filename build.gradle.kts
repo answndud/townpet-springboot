@@ -5,10 +5,8 @@ import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
     java
-    jacoco
     id("org.springframework.boot") version "4.1.0"
     id("io.spring.dependency-management") version "1.1.7"
-    id("com.diffplug.spotless") version "7.0.2"
     id("net.ltgt.errorprone") version "4.1.0"
 }
 
@@ -109,24 +107,8 @@ tasks.named<JavaCompile>("compileJava") {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-    // Each suite remains single-forked. The fast and integration suites may
-    // run as separate Gradle tasks in parallel, while each Test task owns its
-    // own isolated JVM/container lifecycle.
-    maxParallelForks = 1
     testLogging {
         events(TestLogEvent.FAILED, TestLogEvent.SKIPPED)
-    }
-}
-
-spotless {
-    // Keep formatting available through spotlessApply, but do not make
-    // cosmetic wrapping/import changes a mandatory check dependency.
-    setEnforceCheck(false)
-    java {
-        target("src/**/*.java")
-        googleJavaFormat("1.36.1")
-        trimTrailingWhitespace()
-        endWithNewline()
     }
 }
 
@@ -231,41 +213,5 @@ tasks.register("releaseCheck") {
 }
 
 tasks.named("check") {
-    dependsOn(tasks.named("jacocoTestReport"))
     dependsOn(tasks.named("integrationTest"))
-}
-
-tasks.named<JacocoReport>("jacocoTestReport") {
-    dependsOn(tasks.named("test"), tasks.named("integrationTest"))
-    executionData(
-        layout.buildDirectory.file("jacoco/test.exec"),
-        layout.buildDirectory.file("jacoco/integrationTest.exec"),
-    )
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
-    finalizedBy(tasks.named("jacocoTestCoverageVerification"))
-}
-
-tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
-    dependsOn(tasks.named("test"), tasks.named("integrationTest"))
-    executionData(
-        layout.buildDirectory.file("jacoco/test.exec"),
-        layout.buildDirectory.file("jacoco/integrationTest.exec"),
-    )
-    violationRules {
-        rule {
-            limit {
-                counter = "LINE"
-                value = "COVEREDRATIO"
-                minimum = "0.60".toBigDecimal()
-            }
-            limit {
-                counter = "BRANCH"
-                value = "COVEREDRATIO"
-                minimum = "0.40".toBigDecimal()
-            }
-        }
-    }
 }

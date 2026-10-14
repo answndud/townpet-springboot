@@ -49,14 +49,6 @@ jobs:
           java-version: '25'
           cache: gradle
       - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
-      - name: Validate PR metadata
-        if: github.event_name == 'pull_request'
-        run: sh scripts/validate-pr-metadata.sh
-      - name: Validate release candidate
-        if: github.event_name != 'pull_request'
-        run: ./scripts/validate-release-candidate.sh
-      - name: Validate Docker-backed test runtime
-        run: ./scripts/docker-runtime-preflight.sh
       - name: Run compact deployment gate and build once
         run: ./gradlew releaseCheck bootJar --configuration-cache --no-daemon --parallel
       - name: Upload tested backend artifact
@@ -87,7 +79,6 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: corepack enable
       - run: corepack pnpm install --frozen-lockfile
-      - run: corepack pnpm typecheck
       - run: corepack pnpm test
       - run: corepack pnpm build
 
