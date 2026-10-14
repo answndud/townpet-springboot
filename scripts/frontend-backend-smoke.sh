@@ -31,8 +31,7 @@ done
 curl --fail --silent http://127.0.0.1:8080/actuator/health/readiness | grep -q '"status":"UP"'
 
 cd "${ROOT_DIR}/frontend"
-corepack pnpm install --frozen-lockfile >/dev/null
-corepack pnpm build >/dev/null
+test -f dist/index.html || { echo "Build frontend once before smoke" >&2; exit 1; }
 corepack pnpm preview --host 127.0.0.1 >"${frontend_log}" 2>&1 &
 frontend_pid=$!
 cd "${ROOT_DIR}"

@@ -9,7 +9,7 @@ const assets = readdirSync(assetsDir).map((name) => ({
   path: join(assetsDir, name),
 }));
 const entry = assets.find(({ name }) => /^index(?:-[^/]+)?\.js$/.test(name));
-const css = assets.find(({ name }) => /^index-[^/]+\.css$/.test(name));
+const css = assets.find(({ name }) => /^index(?:-[^/]+)?\.css$/.test(name));
 
 if (!entry || !css) {
   throw new Error("Bundle budget could not find the entry JS and CSS assets.");
@@ -18,10 +18,12 @@ if (!entry || !css) {
 const entryBytes = statSync(entry.path).size;
 const entryGzipBytes = gzipSync(await readFile(entry.path)).length;
 const cssBytes = statSync(css.path).size;
+const cssGzipBytes = gzipSync(await readFile(css.path)).length;
 const budgets = [
   ["entry JS", entryBytes, 320_000],
   ["entry JS gzip", entryGzipBytes, 100_000],
   ["entry CSS", cssBytes, 54_500],
+  ["entry CSS gzip", cssGzipBytes, 12_000],
 ];
 
 for (const [label, actual, limit] of budgets) {

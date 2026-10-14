@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: ".",
   testMatch: "**/*.spec.ts",
-  testIgnore: ["desktop-visual.spec.ts"],
+  testIgnore: ["public-smoke.spec.ts"],
   fullyParallel: false,
   workers: 1,
   timeout: 120_000,

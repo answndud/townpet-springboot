@@ -80,7 +80,7 @@ public class PublicSeoRenderer {
             + (schema.isEmpty()
                 ? ""
                 : "<script type=\"application/ld+json\">" + schema + "</script>")
-            + "</head><body><div id=\"root\"><main><article><p>TownPet 공개 콘텐츠</p><h1>"
+            + "<link rel=\"stylesheet\" href=\"/assets/index.css\"></head><body><div id=\"root\"><main class=\"page publication-page\"><article class=\"surface-card publication-detail-card\"><p>TownPet 공개 콘텐츠</p><h1>"
             + escape(page.title())
             + "</h1>"
             + body

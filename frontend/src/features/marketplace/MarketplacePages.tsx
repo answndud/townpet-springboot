@@ -1,5 +1,6 @@
+import { ContentVisual } from "../../components/CommunityVisual";
 import { FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   marketplaceApi,
@@ -19,7 +20,7 @@ const KIND_LABELS: Record<MarketplaceListingKind, string> = {
   GROUP_BUY: "공동구매",
 };
 const STATUS_LABELS: Record<MarketplaceListingStatus, string> = {
-  AVAILABLE: "판매 중",
+  AVAILABLE: "거래 가능",
   RESERVED: "예약됨",
   COMPLETED: "거래 완료",
   CANCELLED: "취소됨",
@@ -33,8 +34,8 @@ function MarketplaceHeader({ action = true }: { action?: boolean }) {
     <header className="marketplace-hero">
       <div>
         <p className="eyebrow">TOWNPET MARKETPLACE</p>
-        <h1>반려생활 물품을 나누고 거래해요</h1>
-        <p>결제 없이 판매·대여·나눔 조건을 정리하고 안전하게 상태를 공유합니다.</p>
+        <h1>동네 거래</h1>
+        <p>반려동물 용품의 판매, 대여, 나눔 정보를 확인하세요.</p>
       </div>
       {action ? <Link className="button button-write" to="/marketplace/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>물품 등록</span></Link> : null}
     </header>
@@ -42,9 +43,15 @@ function MarketplaceHeader({ action = true }: { action?: boolean }) {
 }
 
 export function MarketplaceListPage() {
-  const [kind, setKind] = useState<MarketplaceListingKind | "">("");
+  const [params, setParams] = useSearchParams();
+  const kindParam = params.get("kind") ?? "";
+  const kind = kindParam in KIND_LABELS ? kindParam as MarketplaceListingKind : "";
+  const setKind = (value: string) => { const next = new URLSearchParams(params); if (value) next.set("kind",value); else next.delete("kind"); setParams(next); };
+  const query = params.get("q") ?? "";
+  const fieldParam = params.get("searchField");
+  const searchField = fieldParam === "TITLE" || fieldParam === "BODY" ? fieldParam : "ALL";
   const { member } = useAuth();
-  const { data: items, error: requestError, loading } = useAbortableRequest<MarketplaceListing[]>((signal) => marketplaceApi.list(kind || undefined, 30, signal), [kind]);
+  const { data: items, error: requestError, loading } = useAbortableRequest<MarketplaceListing[]>((signal) => marketplaceApi.list(kind || undefined, 30, signal, { query, searchField }), [kind, query, searchField]);
   const listings = items ?? [];
   const viewerRole = member?.role ?? null;
   const error = requestError ? "거래 목록을 불러오지 못했습니다." : null;
@@ -61,16 +68,20 @@ export function MarketplaceListPage() {
         </div>
         <span className="marketplace-count">{listings.length}개</span>
       </div>
+      <form className="search-panel community-bottom-search" aria-label="거래 물품 검색" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); const next = new URLSearchParams(params); const value = String(data.get("q") ?? "").trim(); if (value) next.set("q",value); else next.delete("q"); next.set("searchField",String(data.get("searchField") ?? "ALL")); setParams(next); }}>
+        <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
+        <label><span className="search-label">거래 검색</span><input aria-label="거래 검색" name="q" key={query} defaultValue={query} placeholder="물품 이름이나 설명" /></label><button className="button button-soft" type="submit">검색</button>
+      </form>
       {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
       {loading ? <section className="surface-card" role="status">거래 목록을 불러오는 중...</section> : null}
-      {!loading && listings.length === 0 ? (
+      {!loading && !error && listings.length === 0 ? (
         <section className="surface-card marketplace-empty"><h2>아직 등록된 물품이 없습니다</h2><p>첫 번째 반려생활 물품을 올려 보세요.</p>{viewerRole !== "MODERATOR" ? <Link className="button button-write" to="/marketplace/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>물품 등록</span></Link> : null}</section>
       ) : null}
       {!loading && listings.length > 0 ? (
         <section className="marketplace-grid" aria-label="거래 목록">
           {listings.map((item) => (
             <Link className="surface-card marketplace-card" key={item.id} to={`/marketplace/${item.id}`}>
-              <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[item.kind]}</span><span className="publication-chip">{STATUS_LABELS[item.status]}</span></div>
+              <ContentVisual kind="shop" /><div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[item.kind]}</span><span className="publication-chip">{STATUS_LABELS[item.status]}</span></div>
               <h2>{item.title}</h2><p>{item.description}</p>
               <strong>{formatPrice(item.priceKrw)}</strong>
               <small>{formatDateTime(item.createdAt)}</small>
@@ -111,7 +122,7 @@ export function MarketplaceDetailPage() {
   return (
     <main className="page marketplace-page">
       <div className="marketplace-detail-nav"><Link className="publication-text-link" to="/marketplace">← 거래 목록</Link>{owner && listing.status === "AVAILABLE" ? <Link className="button button-soft" to={`/marketplace/${listing.id}/edit`}>수정</Link> : null}</div>
-      <article className="surface-card marketplace-detail-card">
+      <article className="surface-card marketplace-detail-card"><ContentVisual kind="shop" />
         <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[listing.kind]}</span><span className="publication-chip">{STATUS_LABELS[listing.status]}</span></div>
         <h1>{listing.title}</h1><p className="marketplace-price">{formatPrice(listing.priceKrw)}</p><p className="marketplace-description">{listing.description}</p>
         <div className="marketplace-detail-meta"><span>TownPet 회원</span><span>·</span><time dateTime={listing.createdAt}>{formatDateTime(listing.createdAt)}</time></div>
@@ -141,7 +152,7 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
     if (!loadedItem) return;
     setKind(loadedItem.kind); setTitle(loadedItem.title); setDescription(loadedItem.description); setPrice(loadedItem.priceKrw === null ? "" : String(loadedItem.priceKrw)); setVersion(loadedItem.version);
   }, [loadedItem]);
-  useEffect(() => { if (loadError) setError("수정할 listing을 불러오지 못했습니다."); }, [loadError]);
+  useEffect(() => { if (loadError) setError("수정할 거래 정보를 불러오지 못했습니다."); }, [loadError]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

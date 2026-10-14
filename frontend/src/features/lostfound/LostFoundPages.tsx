@@ -1,3 +1,5 @@
+import { ContentVisual } from "../../components/CommunityVisual";
+import { SEARCH_REGIONS, approximateArea } from "./regions";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -22,8 +24,7 @@ function LostFoundHero({ canWrite }: { canWrite: boolean }) {
 
 export function LostFoundListPage() {
   const [kind, setKind] = useState<LostFoundAlertKind | "">("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
+  const [region, setRegion] = useState("");
   const [radius, setRadius] = useState("5000");
   const [submitted, setSubmitted] = useState({ latitude: "", longitude: "", radius: "5000" });
   const { member } = useAuth();
@@ -46,17 +47,16 @@ export function LostFoundListPage() {
         </div>
         <span className="marketplace-count">{alerts.length}건</span>
       </div>
-      <form className="lostfound-radius search-panel search-panel-location" onSubmit={(event) => { event.preventDefault(); setSubmitted({ latitude, longitude, radius }); }}>
-        <label><span>위도</span><input inputMode="decimal" value={latitude} onChange={(event) => setLatitude(event.target.value)} placeholder="예: 37.55" /></label>
-        <label><span>경도</span><input inputMode="decimal" value={longitude} onChange={(event) => setLongitude(event.target.value)} placeholder="예: 126.91" /></label>
-        <label><span>반경(m)</span><input type="number" min="1" max="100000" value={radius} onChange={(event) => setRadius(event.target.value)} /></label>
+      <form className="lostfound-radius search-panel search-panel-location" aria-label="동네 근처 검색" onSubmit={(event) => { event.preventDefault(); const area = SEARCH_REGIONS.find(item => item.label === region); setSubmitted({ latitude: area ? String(area.latitude) : "", longitude: area ? String(area.longitude) : "", radius }); }}>
+        <label><span>서울 주요 지역</span><select aria-label="동네 선택" value={region} onChange={(event) => setRegion(event.target.value)}><option value="">전체 지역</option>{SEARCH_REGIONS.map(area => <option key={area.label}>{area.label}</option>)}</select></label>
+        <label><span>검색 거리</span><select aria-label="검색 거리" value={radius} onChange={(event) => setRadius(event.target.value)}><option value="2000">2km 이내</option><option value="5000">5km 이내</option><option value="10000">10km 이내</option></select></label>
         <button className="button button-soft" type="submit">근처 검색</button>
       </form>
       {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
       {loading ? <section className="surface-card" role="status">목록을 불러오는 중...</section> : null}
       {!loading && !alerts.length && !error ? <section className="surface-card marketplace-empty"><h2>등록된 제보가 없습니다</h2><p>새로운 분실·발견 소식을 등록해 주세요.</p></section> : null}
       <section className="lostfound-grid" aria-label="분실·목격 목록">
-        {alerts.map((item) => <Link className="surface-card lostfound-card" key={item.id} to={`/lost-found/${item.id}`}><div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{kindLabel[item.kind]}</span><span className="publication-chip">{statusLabel[item.status]}</span></div><h2>{item.title}</h2><p>{item.description}</p><small>마지막 확인 {dateText(item.lastSeenAt)} · 근사 위치 {item.approximateLocation.latitude.toFixed(3)}, {item.approximateLocation.longitude.toFixed(3)}</small></Link>)}
+        {alerts.map((item) => <Link className="surface-card lostfound-card" key={item.id} to={`/lost-found/${item.id}`}><ContentVisual kind="paw" /><div className="marketplace-card-meta"><span className={`publication-chip ${item.kind === "LOST" ? "chip-alert" : "chip-success"}`}>{kindLabel[item.kind]}</span><span className="publication-chip">{statusLabel[item.status]}</span></div><h2>{item.title}</h2><p>{item.description}</p><small>마지막 확인 {dateText(item.lastSeenAt)} · {approximateArea(item.approximateLocation)}</small></Link>)}
       </section>
     </main>
   );
@@ -80,7 +80,7 @@ export function LostFoundDetailPage() {
   if (loading) return <main className="page lostfound-page"><section className="surface-card" role="status">제보를 불러오는 중...</section></main>;
   if (!alert || error) return <main className="page lostfound-page marketplace-state"><section className="surface-card"><h1>{error ?? "제보를 찾을 수 없습니다"}</h1><Link className="button button-soft" to="/lost-found">목록으로</Link></section></main>;
   const owner = member?.role === "MEMBER" && member.id === alert.reporterMemberId;
-  return <main className="page lostfound-page"><div className="marketplace-detail-nav"><Link className="publication-text-link" to="/lost-found">← 제보 목록</Link>{member?.role === "MEMBER" ? <Link className="button button-soft" to="/lost-found/new">새 제보</Link> : null}</div><article className="surface-card lostfound-detail"><div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{kindLabel[alert.kind]}</span><span className="publication-chip">{statusLabel[alert.status]}</span></div><h1>{alert.title}</h1><p className="lostfound-description">{alert.description}</p><p className="lostfound-meta">마지막 확인 {dateText(alert.lastSeenAt)} · 공개 위치는 약 250m 근사값입니다.</p><div className="lostfound-sightings"><div className="section-heading-row"><div><p className="eyebrow">SIGHTINGS</p><h2>목격 제보 {sightings.length}건</h2></div>{member?.role === "MEMBER" && alert.status === "ACTIVE" ? <Link className="button button-primary" to={`/lost-found/${alert.id}/sightings/new`}>목격 제보</Link> : null}</div>{!sightings.length ? <p className="publication-comments-state">아직 목격 제보가 없습니다.</p> : <div className="lostfound-sighting-list">{sightings.map((sighting) => <article className="lostfound-sighting" key={sighting.id}><strong>{dateText(sighting.seenAt)}</strong><p>{sighting.description}</p><small>근사 위치 {sighting.approximateLocation.latitude.toFixed(3)}, {sighting.approximateLocation.longitude.toFixed(3)}</small>{owner ? <Link className="publication-text-link" to={`/lost-found/sightings/${sighting.id}/exact`}>정확 위치 보기</Link> : null}</article>)}</div>}</div>{owner && alert.status !== "CLOSED" ? <div className="marketplace-actions">{alert.status === "ACTIVE" ? <button className="button button-soft" type="button" disabled={Boolean(pendingStatus)} onClick={() => void changeStatus("RESOLVED")}>해결 처리</button> : <button className="button button-soft" type="button" disabled={Boolean(pendingStatus)} onClick={() => void changeStatus("ACTIVE")}>재개</button>}<button className="button button-danger" type="button" disabled={Boolean(pendingStatus)} onClick={() => void changeStatus("CLOSED")}>종료</button></div> : null}{error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}</article></main>;
+  return <main className="page lostfound-page"><div className="marketplace-detail-nav"><Link className="publication-text-link" to="/lost-found">← 제보 목록</Link>{member?.role === "MEMBER" ? <Link className="button button-soft" to="/lost-found/new">새 제보</Link> : null}</div><article className="surface-card lostfound-detail"><ContentVisual kind="paw" /><div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{kindLabel[alert.kind]}</span><span className="publication-chip">{statusLabel[alert.status]}</span></div><h1>{alert.title}</h1><p className="lostfound-description">{alert.description}</p><p className="lostfound-meta">마지막 확인 {dateText(alert.lastSeenAt)} · 공개 위치는 약 250m 근사값입니다.</p><div className="lostfound-sightings"><div className="section-heading-row"><div><p className="eyebrow">SIGHTINGS</p><h2>목격 제보 {sightings.length}건</h2></div>{member?.role === "MEMBER" && alert.status === "ACTIVE" ? <Link className="button button-primary" to={`/lost-found/${alert.id}/sightings/new`}>목격 제보</Link> : null}</div>{!sightings.length ? <p className="publication-comments-state">아직 목격 제보가 없습니다.</p> : <div className="lostfound-sighting-list">{sightings.map((sighting) => <article className="lostfound-sighting" key={sighting.id}><strong>{dateText(sighting.seenAt)}</strong><p>{sighting.description}</p><small>{approximateArea(sighting.approximateLocation)}</small>{owner ? <Link className="publication-text-link" to={`/lost-found/sightings/${sighting.id}/exact`}>정확 위치 보기</Link> : null}</article>)}</div>}</div>{owner && alert.status !== "CLOSED" ? <div className="marketplace-actions">{alert.status === "ACTIVE" ? <button className="button button-soft" type="button" disabled={Boolean(pendingStatus)} onClick={() => void changeStatus("RESOLVED")}>해결 처리</button> : <button className="button button-soft" type="button" disabled={Boolean(pendingStatus)} onClick={() => void changeStatus("ACTIVE")}>재개</button>}<button className="button button-danger" type="button" disabled={Boolean(pendingStatus)} onClick={() => void changeStatus("CLOSED")}>종료</button></div> : null}{error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}</article></main>;
 }
 
 export function LostFoundAlertFormPage() {

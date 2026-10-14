@@ -90,7 +90,12 @@ BEGIN
       )
       VALUES (
         publication_id, author_id, post_types[type_no], animal_codes[animal_no],
-        animal_labels[animal_no] || ' ' || type_labels[type_no] || ' 데모 ' || lpad(post_no::TEXT, 2, '0'),
+        animal_labels[animal_no] || CASE post_types[type_no]
+          WHEN 'FREE_BOARD' THEN ' 보호자의 하루 루틴을 공유합니다'
+          WHEN 'QA_QUESTION' THEN ' 먹이와 활동 시간을 어떻게 기록하시나요?'
+          WHEN 'PET_SHOWCASE' THEN '에게 마련해 준 새로운 공간'
+          ELSE ' 용품을 고를 때 확인한 세 가지'
+        END,
         CASE post_types[type_no]
           WHEN 'FREE_BOARD' THEN animal_labels[animal_no] || ' 가족이 함께 참고할 산책·생활 팁을 정리했습니다. 처음 시작하는 보호자도 편하게 경험을 나눠 주세요.'
           WHEN 'QA_QUESTION' THEN animal_labels[animal_no] || '와 함께 지내며 생긴 질문입니다. 비슷한 경험이 있다면 준비물과 주의할 점을 알려 주세요.'
@@ -178,7 +183,7 @@ DELETE FROM market_listing WHERE id IN (
 );
 INSERT INTO market_listing (id, owner_member_id, kind, status, title, description, price_krw, created_at, updated_at, version)
 VALUES
-  ('00000000-0000-4000-8000-000000009101', '00000000-0000-4000-8000-000000000201', 'SELL', 'AVAILABLE', '캣타워 상태 좋은 제품', '분해 가능한 캣타워입니다. 사용감은 사진과 동일하며 직거래 가능합니다.', 35000, '2026-08-11T09:00:00+09:00', '2026-08-11T09:00:00+09:00', 0),
+  ('00000000-0000-4000-8000-000000009101', '00000000-0000-4000-8000-000000000201', 'SELL', 'AVAILABLE', '캣타워 상태 좋은 제품', '분해 가능한 캣타워입니다. 사용감이 있으며 직거래 가능합니다.', 35000, '2026-08-11T09:00:00+09:00', '2026-08-11T09:00:00+09:00', 0),
   ('00000000-0000-4000-8000-000000009102', '00000000-0000-4000-8000-000000000202', 'RENT', 'AVAILABLE', '대형 이동장 단기 대여', '병원 방문이나 이사 때 필요한 분께 일주일 단위로 대여합니다.', 10000, '2026-08-10T09:00:00+09:00', '2026-08-10T09:00:00+09:00', 0),
   ('00000000-0000-4000-8000-000000009103', '00000000-0000-4000-8000-000000000203', 'SHARE', 'AVAILABLE', '미개봉 사료 샘플 나눔', '알레르기 확인용으로 소분한 샘플을 필요한 가족에게 나눔합니다.', NULL, '2026-08-09T09:00:00+09:00', '2026-08-09T09:00:00+09:00', 0);
 

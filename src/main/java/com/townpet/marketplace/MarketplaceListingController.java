@@ -54,12 +54,17 @@ class MarketplaceListingController {
   List<ListingResponse> list(
       @org.springframework.web.bind.annotation.RequestParam(required = false)
           MarketplaceListingKind kind,
-      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit) {
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit,
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "") String q,
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "ALL") String searchField) {
     if (limit < 1 || limit > 50) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
     }
+    if (q.length() > 120 || !java.util.Set.of("ALL", "TITLE", "BODY").contains(searchField)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid search filter");
+    }
     List<MarketplaceListingService.ListingView> available =
-        listings.listAvailable(Optional.ofNullable(kind), limit);
+        listings.listAvailable(Optional.ofNullable(kind), limit, q.trim(), searchField);
     return available.stream().map(MarketplaceListingController::toResponse).toList();
   }
 

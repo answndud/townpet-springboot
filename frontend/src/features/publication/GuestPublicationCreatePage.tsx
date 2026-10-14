@@ -36,8 +36,7 @@ export default function GuestPublicationCreatePage() {
       </section>
       <form className="publication-form" onSubmit={submit} noValidate>
         <section className="surface-card publication-fields">
-          <label>관리 비밀번호<input type="password" minLength={8} maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" /></label>
-          <span className="field-help">8~72자 · 글 관리에 필요합니다.</span>
+          <label>관리 비밀번호<input type="password" minLength={8} maxLength={72} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" /><span className="field-help">8~72자 · 글 관리에 필요합니다.</span></label>
           <label>제목<input maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
           <label>본문<textarea maxLength={20000} value={body} onChange={(event) => setBody(event.target.value)} /></label>
         </section>

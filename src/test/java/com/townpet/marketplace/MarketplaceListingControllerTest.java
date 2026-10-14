@@ -112,6 +112,15 @@ class MarketplaceListingControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(id));
 
+    mockMvc.perform(get("/api/v1/marketplace/listings").param("q", "Dog").param("searchField", "TITLE"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(id));
+    mockMvc.perform(get("/api/v1/marketplace/listings").param("q", "Dog").param("searchField", "BODY"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+    mockMvc.perform(get("/api/v1/marketplace/listings").param("q", "%"))
+        .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+    mockMvc.perform(get("/api/v1/marketplace/listings").param("searchField", "INVALID"))
+        .andExpect(status().isBadRequest());
+
     mockMvc
         .perform(
             patch("/api/v1/marketplace/listings/{id}", id)

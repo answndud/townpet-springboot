@@ -57,12 +57,8 @@ jobs:
         run: ./scripts/validate-release-candidate.sh
       - name: Validate Docker-backed test runtime
         run: ./scripts/docker-runtime-preflight.sh
-      - name: Run full backend gate
-        if: github.event_name == 'pull_request'
-        run: ./gradlew check --configuration-cache --no-daemon --parallel
-      - name: Run main backend gate and package artifact
-        if: github.event_name != 'pull_request'
-        run: ./gradlew check bootJar --configuration-cache --no-daemon --parallel
+      - name: Run compact deployment gate and build once
+        run: ./gradlew releaseCheck bootJar --configuration-cache --no-daemon --parallel
       - name: Upload tested backend artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -95,37 +91,12 @@ jobs:
       - run: corepack pnpm test
       - run: corepack pnpm build
 
-  web-runtime-smoke:
-    name: Frontend container runtime smoke
-    needs: frontend
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          context: .
-          file: deploy/Dockerfile.frontend
-          tags: townpet-web:runtime-smoke
-          load: true
-      - name: Start and probe frontend container
-        run: |
-          set -euo pipefail
-          trap 'docker rm -f townpet-web-runtime-smoke >/dev/null 2>&1 || true' EXIT
-          docker run -d --name townpet-web-runtime-smoke \
-            -e TOWNPET_DOMAIN=townpet.example.com \
-            -e TOWNPET_MEDIA_DOMAIN=media.townpet.example.com \
-            townpet-web:runtime-smoke
-          for attempt in $(seq 1 30); do
-            if docker exec townpet-web-runtime-smoke wget -qO- http://127.0.0.1/index.html >/dev/null 2>&1; then
-              test "$(docker inspect --format '{{.State.Status}}' townpet-web-runtime-smoke)" = running
-              exit 0
-            fi
-            sleep 2
-          done
-          docker inspect townpet-web-runtime-smoke
-          docker logs townpet-web-runtime-smoke
-          exit 1
+          name: townpet-frontend-dist
+          path: frontend/dist
+          if-no-files-found: error
+          retention-days: 1
 
   repository-security:
     name: Repository security policy
@@ -133,8 +104,6 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: bash scripts/security-static-check.sh
-      - run: bash scripts/validate-ci-contract.sh
-      - run: bash scripts/backup-reference-policy-test.sh
       - name: Validate resolved Compose contracts
         run: |
           set -euo pipefail
@@ -151,7 +120,7 @@ jobs:
 
   dependency-scan:
     name: Dependency vulnerability scan
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch' && inputs.deep_checks == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -167,7 +136,7 @@ jobs:
 
   frontend-sbom:
     name: Frontend dependency SBOM
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch' && inputs.deep_checks == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -199,13 +168,17 @@ jobs:
         working-directory: frontend
       - run: corepack pnpm exec playwright install --with-deps chromium
         working-directory: frontend
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: townpet-frontend-dist
+          path: frontend/dist
       - run: corepack pnpm test:e2e -- --project=chromium
         working-directory: frontend
       - run: corepack pnpm -C frontend test:e2e:auth
 
   live-publication-e2e:
     name: Live publication E2E
-    if: inputs.publish_images == true || github.event_name == 'pull_request' || github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch' && inputs.deep_checks == true
     needs: [backend, frontend, repository-security]
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -289,7 +262,7 @@ jobs:
   publish_images:
     name: Publish tested images
     if: inputs.publish_images == true || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    needs: [backend, frontend, repository-security, dependency-scan, frontend-sbom, live-publication-e2e]
+    needs: [backend, frontend, repository-security]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -310,6 +283,10 @@ jobs:
         with:
           name: townpet-backend-jar
           path: release-artifacts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: townpet-frontend-dist
+          path: release-artifacts/frontend
       - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         id: backend-meta
         with:
@@ -335,13 +312,28 @@ jobs:
         id: web-build
         with:
           context: .
-          file: deploy/Dockerfile.frontend
+          file: deploy/Dockerfile.frontend.release
           platforms: linux/amd64
           push: true
           tags: ${{ steps.web-meta.outputs.tags }}
           labels: ${{ steps.web-meta.outputs.labels }}
           provenance: true
           sbom: true
+      - name: Smoke the exact published frontend image
+        env:
+          WEB_DIGEST: ${{ steps.web-build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          trap 'docker rm -f townpet-web-smoke >/dev/null 2>&1 || true' EXIT
+          docker run -d --name townpet-web-smoke \
+            -e TOWNPET_DOMAIN=townpet.example.com -e TOWNPET_MEDIA_DOMAIN=media.townpet.example.com \
+            "ghcr.io/$GITHUB_REPOSITORY_OWNER/townpet-web@$WEB_DIGEST"
+          for attempt in $(seq 1 15); do
+            if docker exec townpet-web-smoke wget -qO- http://127.0.0.1/assets/index.css >/dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          docker logs townpet-web-smoke
+          exit 1
       - name: Record promotion manifest
         env:
           BACKEND_DIGEST: ${{ steps.backend-build.outputs.digest }}

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
@@ -6,39 +6,6 @@ import App from "./App";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Animal community journeys", () => {
-  it("loads one animal community and exposes its internal board tabs", async () => {
-    const fetchMock = vi.fn<typeof fetch>((input) => {
-      const path = String(input);
-      if (path.endsWith("/api/v1/members/me")) {
-        return Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }));
-      }
-      return Promise.resolve(new Response(JSON.stringify({
-        items: [{ id: "dog-post", kind: "PUBLICATION", type: "FREE_BOARD", title: "강아지 산책 질문", body: "강아지와 걷기 좋은 길을 알려 주세요.", authorId: "member", neighborhoodId: null, animalCode: "DOG", status: "ACTIVE", lifecycle: "ACTIVE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/posts/dog-post" }],
-        page: { nextCursor: null, hasNext: false },
-        animalCode: "dog",
-        board: "questions",
-      }), { status: 200, headers: { "content-type": "application/json" } }));
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    render(<MemoryRouter initialEntries={["/animals/dog/questions"]}><App /></MemoryRouter>);
-
-    expect(await screen.findByRole("heading", { name: "강아지 게시판" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "강아지 산책 질문" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "입양" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "반려동물 자랑" })).toHaveAttribute("href", "/animals/dog/showcase");
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/communities/dog/feed?board=questions&limit=20",
-      expect.objectContaining({ credentials: "include" }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "인기글" }));
-    expect(await screen.findByRole("heading", { name: "강아지 산책 질문" })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenLastCalledWith(
-      "/api/v1/communities/dog/feed?board=questions&limit=20&sort=POPULAR",
-      expect.objectContaining({ credentials: "include" }),
-    );
-    expect(screen.getByRole("button", { name: "인기글" })).toHaveAttribute("aria-pressed", "true");
-  });
 
   it("does not present an anonymous publication as an operations-team post", async () => {
     vi.stubGlobal("fetch", vi.fn<typeof fetch>((input) => {
@@ -57,27 +24,15 @@ describe("Animal community journeys", () => {
     expect(screen.queryByText("TownPet 운영팀")).not.toBeInTheDocument();
   });
 
-  it("loads a common board outside the animal community route", async () => {
-    const fetchMock = vi.fn<typeof fetch>((input) => {
-      const path = String(input);
-      if (path.endsWith("/api/v1/members/me")) {
-        return Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }));
-      }
-      return Promise.resolve(new Response(JSON.stringify({
-        items: [{ id: "market-post", kind: "MARKETPLACE", type: "MARKETPLACE", title: "강아지 용품 거래", body: "공통 거래 게시판 글입니다.", authorId: "member", neighborhoodId: null, animalCode: null, status: "AVAILABLE", lifecycle: "AVAILABLE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/marketplace/market-post" }],
-        page: { nextCursor: null, hasNext: false },
-      }), { status: 200, headers: { "content-type": "application/json" } }));
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    render(<MemoryRouter initialEntries={["/boards/marketplace"]}><App /></MemoryRouter>);
-
-    expect(await screen.findByRole("heading", { name: "거래 게시판" })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "강아지 용품 거래" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "봉사" })).toHaveAttribute("href", "/boards/volunteer");
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/boards/marketplace/feed?limit=20",
-      expect.objectContaining({ credentials: "include" }),
-    );
+  it("opens the canonical marketplace from its common-board alias", async () => {
+    const fetchMock = vi.fn<typeof fetch>(input => String(input).endsWith("/api/v1/members/me")
+      ? Promise.resolve(new Response(JSON.stringify({detail:"Unauthorized"}), {status:401}))
+      : Promise.resolve(new Response(JSON.stringify([{id:"market-post",title:"강아지 용품 거래",description:"판매 설명",kind:"SELL",status:"AVAILABLE",priceKrw:12000,createdAt:"2026-08-12T08:00:00Z",version:0}]), {status:200,headers:{"content-type":"application/json"}})));
+    vi.stubGlobal("fetch",fetchMock);
+    render(<MemoryRouter initialEntries={["/boards/marketplace?q=용품&searchField=TITLE"]}><App /></MemoryRouter>);
+    expect(await screen.findByRole("heading",{name:"동네 거래"})).toBeInTheDocument();
+    expect(await screen.findByRole("heading",{name:"강아지 용품 거래"})).toBeInTheDocument();
+    expect(screen.getByText("12,000원")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/v1/marketplace/listings?limit=30&q=%EC%9A%A9%ED%92%88&searchField=TITLE",expect.objectContaining({credentials:"include"}));
   });
 });

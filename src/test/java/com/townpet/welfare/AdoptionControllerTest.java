@@ -73,6 +73,18 @@ class AdoptionControllerTest {
             .path("id")
             .asText();
 
+    mockMvc.perform(get("/api/v1/adoptions/" + id))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(id));
+    mockMvc.perform(get("/api/v1/hospital-reviews"))
+        .andExpect(status().isOk());
+    mockMvc.perform(post("/api/v1/adoptions").with(csrf())
+        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isUnauthorized());
+    mockMvc.perform(post("/api/v1/hospital-reviews").with(csrf())
+        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isUnauthorized());
+
     mockMvc
         .perform(get("/api/boards/adoption/posts"))
         .andExpect(status().isOk())

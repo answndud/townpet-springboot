@@ -26,34 +26,16 @@ const alert = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("LostFound journeys", () => {
-  it("loads public alerts and opens the sighting flow", async () => {
-    const fetchMock = vi.fn<typeof fetch>((input) => {
-      const path = String(input);
-      if (path.includes("/api/v1/lost-found/alerts?") && !path.includes("/sightings")) return Promise.resolve(response([alert]));
-      if (path.endsWith("/api/v1/lost-found/alerts/" + alert.id)) return Promise.resolve(response(alert));
-      if (path.includes("/sightings?")) return Promise.resolve(response([]));
-      if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response({
-        id: "00000000-0000-4000-8000-000000000201",
-        nickname: "demo-member-1",
-        role: "MEMBER",
-        bio: null,
-        neighborhoodId: null,
-        pets: [],
-        showPublicPosts: true,
-        showPublicComments: true,
-        showPublicPets: true,
-        showPublicReactions: true,
-      }));
-      return Promise.resolve(response({}));
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
+  it("searches a named region without requesting or exposing exact coordinates", async () => {
+    const fetchMock = vi.fn<typeof fetch>(input => String(input).endsWith("/api/v1/members/me")
+      ? Promise.resolve(response({detail:"Unauthorized"},401)) : Promise.resolve(response([alert])));
+    vi.stubGlobal("fetch",fetchMock);
     render(<MemoryRouter initialEntries={["/lost-found"]}><App /></MemoryRouter>);
-    expect(await screen.findByRole("heading", { name: "Mango를 찾습니다" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("link", { name: /Mango를 찾습니다/ }));
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Mango를 찾습니다" })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "목격 제보" })).toHaveAttribute("href", `/lost-found/${alert.id}/sightings/new`);
-    }, { timeout: 3000 });
+    expect(await screen.findByRole("heading",{name:"Mango를 찾습니다"})).toBeInTheDocument();
+    expect(screen.queryByLabelText("위도")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("combobox",{name:"동네 선택"}),{target:{value:"마포·서대문"}});
+    fireEvent.change(screen.getByRole("combobox",{name:"검색 거리"}),{target:{value:"2000"}});
+    fireEvent.click(screen.getByRole("button",{name:"근처 검색"}));
+    await waitFor(()=>expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining("latitude=37.555&longitude=126.915&radiusMeters=2000"),expect.anything()));
   });
 });

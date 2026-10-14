@@ -27,6 +27,7 @@ class PublicSeoRendererTest {
     assertThat(response.getHeaders().getFirst("X-Robots-Tag")).isEqualTo("index,follow");
     assertThat(response.getBody())
         .contains("<h1>A &lt;title&gt;</h1>")
+        .contains("<link rel=\"stylesheet\" href=\"/assets/index.css\">")
         .contains("본문 &lt;script&gt;alert(1)&lt;/script&gt;")
         .contains("https://townpet.cloud/posts/0198f342-13d7-7000-8000-000000000005")
         .contains("property=\"og:image\" content=\"https://townpet.cloud/townpet-logo.svg\"")
@@ -48,6 +49,7 @@ class PublicSeoRendererTest {
     assertThat(response.getHeaders().getFirst("X-Robots-Tag")).isEqualTo("noindex,follow");
     assertThat(response.getBody())
         .contains("<meta name=\"robots\" content=\"noindex,follow\">")
+        .contains("href=\"/assets/index.css\"")
         .doesNotContain("application/ld+json");
   }
 

@@ -1,3 +1,5 @@
+import { CommunityIcon, NeighborhoodIllustration } from "./components/CommunityVisual";
+import { ANIMAL_BOARD_OPTIONS } from "./features/member/AnimalBoardCatalog";
 import { Link, useSearchParams } from "react-router-dom";
 import { publicationApi, type FeedItem, type Publication } from "./api/client";
 import { useAuth } from "./auth/AuthContext";
@@ -107,7 +109,20 @@ export default function HomeFeedPage() {
   const writeHref = member?.role === "MEMBER" ? "/posts/new" : "/guest/posts/new";
 
   return (
-    <main className="page feed-page">
+    <main className="page feed-page home-page">
+      <section className="home-welcome">
+        <div><p className="eyebrow">TOWNPET COMMUNITY</p><h2>반려동물 커뮤니티</h2><p>동물별 게시글과 지역 정보를 확인하세요.<br className="desktop-break" /> 거래, 분실·목격, 모임, 돌봄 게시판을 이용할 수 있습니다.</p><Link className="home-explore" to="/animals/all">동물 게시판 보기 <span aria-hidden="true">↗</span></Link></div>
+        <NeighborhoodIllustration />
+      </section>
+      <nav className="home-services" aria-label="반려생활 바로가기">
+        {([
+          ["shop", "동네 거래", "물품 판매·나눔", "/marketplace"],
+          ["location", "분실·목격", "우리 동네 제보", "/lost-found"],
+          ["calendar", "동네 모임", "일정·참가 정보", "/gatherings"],
+          ["care", "이웃 돌봄", "돌봄 요청·지원", "/care"],
+        ] as const).map(([kind, title, description, href]) => <Link key={href} to={href}><span className={`service-icon visual-${kind}`}><CommunityIcon kind={kind} /></span><span><strong>{title}</strong><small>{description}</small></span><span className="service-arrow" aria-hidden="true">↗</span></Link>)}
+      </nav>
+      <div className="home-layout"><section className="home-feed">
       <header className="feed-hero">
         <div>
           <p className="feed-location" aria-label="현재 위치">
@@ -126,6 +141,18 @@ export default function HomeFeedPage() {
         <button className={popularView ? "active" : ""} aria-current={popularView ? "page" : undefined} type="button" onClick={() => setSearchParams({ view: "popular", ...(query ? { q: query } : {}), ...(searchField !== "ALL" ? { searchField } : {}) })}>HOT</button>
       </nav>
 
+      <form aria-label="피드 게시글 검색" className="search-panel community-bottom-search feed-bottom-search" onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        const value = String(form.get("q") ?? "").trim();
+        const field = String(form.get("searchField") ?? "ALL");
+        setSearchParams({ view: popularView ? "popular" : "all", ...(value ? { q: value } : {}), ...(field !== "ALL" ? { searchField: field } : {}) });
+      }}>
+        <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
+        <label><span className="search-label">피드 게시글 검색</span><input aria-label="검색어" name="q" defaultValue={query} placeholder="제목이나 내용" /></label>
+        <button className="button button-soft" type="submit">검색</button>
+      </form>
+
       {popularView ? <HotFeedList items={popularItems} loading={popularLoading} error={popularError} page={page} hasNext={popularFeed.hasNext} onPageChange={setPage} /> : error ? <p className="form-error feed-error" role="alert">{error}</p> : loading ? (
         <section className="surface-card feed-list" aria-busy="true" aria-label="전체글 목록">
           <p className="feed-empty" role="status">전체글을 불러오는 중...</p>
@@ -143,7 +170,7 @@ export default function HomeFeedPage() {
               <div className="feed-item-chips">
                 <span className="publication-chip publication-chip-primary">{homeFeedLabel(item)}</span>
               </div>
-              <Link className="feed-item-title" to={`/posts/${item.id}`}><h2>{item.title}</h2></Link>
+              <Link className="feed-item-title" to={item.href || `/posts/${item.id}`}><h2>{item.title}</h2></Link>
               <div className="feed-item-meta">
                 <span>TownPet 회원</span>
                 <span aria-hidden="true">·</span>
@@ -155,17 +182,12 @@ export default function HomeFeedPage() {
         </section>
       )}
 
-      <form aria-label="피드 게시글 검색" className="search-panel community-bottom-search feed-bottom-search" onSubmit={(event) => {
-        event.preventDefault();
-        const form = new FormData(event.currentTarget);
-        const value = String(form.get("q") ?? "").trim();
-        const field = String(form.get("searchField") ?? "ALL");
-        setSearchParams({ view: popularView ? "popular" : "all", ...(value ? { q: value } : {}), ...(field !== "ALL" ? { searchField: field } : {}) });
-      }}>
-        <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
-        <label><span className="search-label">피드 게시글 검색</span><input aria-label="검색어" name="q" defaultValue={query} placeholder="제목이나 내용" /></label>
-        <button className="button button-soft" type="submit">검색</button>
-      </form>
+
+      </section><aside className="home-sidebar">
+        <section className="sidebar-section"><p className="eyebrow">동물별 게시판</p><h2>동물 선택</h2><nav className="animal-discovery" aria-label="동물별 이야기">{ANIMAL_BOARD_OPTIONS.map(option => <Link key={option.code} to={`/animals/${option.code.toLowerCase()}`}>{option.label}<span aria-hidden="true">↗</span></Link>)}</nav></section>
+        <section className="sidebar-guide"><CommunityIcon kind="guide" /><h2>지역 가이드</h2><p>산책 장소, 복지 제도, 케어 정보를 출처와 함께 확인하세요.</p><Link to="/guides">지역 가이드 보기 →</Link></section>
+        <p className="sandbox-note">합성 데이터로 구성된 포트폴리오입니다. 실제 거래·돌봄·입양을 중개하지 않습니다.</p>
+      </aside></div>
     </main>
   );
 }

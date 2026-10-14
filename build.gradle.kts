@@ -206,6 +206,30 @@ tasks.named<Test>("performanceTest") {
     }
 }
 
+// Deploy gate: one unit run and the domain boundaries that can break public use.
+// Exhaustive regression, query plans and browser combinations remain manual.
+registerVerificationTestTask("releaseIntegrationTest", "Runs the bounded deployment regression suite.")
+tasks.named<Test>("releaseIntegrationTest") {
+    filter {
+        listOf(
+            "com.townpet.identity.IdentityMemberControllerTest",
+            "com.townpet.publication.PublicationControllerTest",
+            "com.townpet.lostfound.LostFoundAlertControllerTest",
+            "com.townpet.lostfound.LostFoundSightingControllerTest",
+            "com.townpet.marketplace.MarketplaceListingControllerTest",
+            "com.townpet.welfare.AdoptionControllerTest",
+            "com.townpet.gathering.GatheringControllerTest",
+            "com.townpet.care.CareControllerTest",
+            "com.townpet.platform.DatabaseBaselineTest",
+        ).forEach { includeTestsMatching(it) }
+    }
+}
+tasks.register("releaseCheck") {
+    group = "verification"
+    description = "Runs the fast unit and critical database deployment checks once."
+    dependsOn("test", "releaseIntegrationTest")
+}
+
 tasks.named("check") {
     dependsOn(tasks.named("jacocoTestReport"))
     dependsOn(tasks.named("integrationTest"))

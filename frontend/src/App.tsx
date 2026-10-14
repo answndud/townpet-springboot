@@ -181,6 +181,18 @@ function HeaderMenu({
 
 function Header() {
   const { status, member } = useAuth();
+  const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => { setMobileOpen(false); }, [location.pathname, location.search]);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function escape(event: globalThis.KeyboardEvent) {
+      if (event.key === "Escape") { setMobileOpen(false); menuButton.current?.focus(); }
+    }
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
+  }, [mobileOpen]);
 
   return (
     <header className="site-header">
@@ -217,7 +229,14 @@ function Header() {
             </NavLink>
           </nav>
         )}
+        <button ref={menuButton} className="mobile-menu-toggle" type="button" aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? "닫기" : "메뉴"}<span aria-hidden="true">{mobileOpen ? "×" : "☰"}</span></button>
       </div>
+      {mobileOpen ? <nav id="mobile-navigation" className="mobile-navigation" aria-label="모바일 주요 이동">
+        <Link to="/">홈</Link><Link to="/animals/all">동물 게시판</Link><Link to="/boards/all">전체 공통게시판</Link>
+        <Link to="/marketplace">동네 거래</Link><Link to="/lost-found">분실·목격</Link><Link to="/gatherings">동네 모임</Link><Link to="/care">이웃 돌봄</Link>
+        <Link to="/boards/adoption">입양</Link><Link to="/hospital-reviews">병원 후기</Link><Link to="/volunteer">봉사</Link><Link to="/guides">지역 가이드</Link><Link to="/profile">내 프로필</Link>
+        {member ? <><Link to="/notifications">알림</Link>{member.role === "MODERATOR" ? <Link to="/admin">운영 콘솔</Link> : null}</> : <Link to="/login">로그인</Link>}
+      </nav> : null}
     </header>
   );
 }
@@ -226,7 +245,7 @@ function Footer() {
   return (
     <footer className="site-footer">
       <div className="header-inner">
-        <span>© TownPet</span>
+        <div className="footer-brand"><strong>TownPet</strong><span>반려동물 커뮤니티</span><small>합성 콘텐츠로 구성된 포트폴리오 체험 공간입니다.</small></div>
         <nav aria-label="서비스 안내">
           <Link to="/terms">이용약관</Link>
           <Link to="/privacy">개인정보처리방침</Link>

@@ -871,9 +871,11 @@ export const volunteerApi = { list(signal?: AbortSignal) { return apiFetch<Volun
 export const hospitalReviewApi = { list(query = "", signal?: AbortSignal) { const params = query ? `?hospital=${encodeURIComponent(query)}` : ""; return apiFetch<HospitalReview[]>(`/api/v1/hospital-reviews${params}`, { signal }); }, create(input: { hospitalName: string; address: string; rating: number; body: string }) { return mutate<HospitalReview>("/api/v1/hospital-reviews", { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); }, flag(id: string, input: { reason: string; detail?: string }) { return mutate(`/api/v1/hospital-reviews/${encodeURIComponent(id)}/flags`, { method: "POST", headers: jsonHeaders, body: JSON.stringify(input) }); } };
 
 export const marketplaceApi = {
-  list(kind?: MarketplaceListingKind, limit = 20, signal?: AbortSignal) {
+  list(kind?: MarketplaceListingKind, limit = 20, signal?: AbortSignal, filter?: { query?: string; searchField?: string }) {
     const search = new URLSearchParams({ limit: String(limit) });
     if (kind) search.set("kind", kind);
+    if (filter?.query) search.set("q", filter.query);
+    if (filter?.searchField && filter.searchField !== "ALL") search.set("searchField", filter.searchField);
     return apiFetch<MarketplaceListing[]>(`/api/v1/marketplace/listings?${search}`, { signal });
   },
   detail(listingId: string, signal?: AbortSignal) {

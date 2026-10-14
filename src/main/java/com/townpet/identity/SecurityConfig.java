@@ -93,6 +93,10 @@ public class SecurityConfig {
                   .hasRole("MODERATOR")
                   .requestMatchers("/api/v1/catalog/**")
                   .permitAll()
+                  .requestMatchers(HttpMethod.GET,
+                      "/api/v1/adoptions", "/api/v1/adoptions/*",
+                      "/api/v1/hospital-reviews", "/api/v1/hospital-reviews/*")
+                  .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/local-resources/**")
                   .permitAll()
                   .requestMatchers(HttpMethod.GET, "/api/v1/gatherings/**")

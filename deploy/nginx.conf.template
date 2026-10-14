@@ -1,5 +1,6 @@
 map $uri $townpet_cache_control {
     default "no-cache";
+    /assets/index.css "no-cache";
     ~^/assets/ "public, max-age=31536000, immutable";
 }
 
@@ -109,6 +110,7 @@ server {
     location = /robots.txt { add_header Cache-Control "public, max-age=14400" always; try_files $uri =404; }
     location = /sitemap.xml { add_header Cache-Control "public, max-age=14400" always; try_files $uri =404; }
     location ^~ /assets/ { try_files $uri =404; }
+    location = /assets/index.css { try_files $uri =404; }
     location = /assets/index.js { add_header Cache-Control "no-cache" always; try_files $uri =404; }
 
     location ~ "^/(?:posts|adoptions|marketplace|lost-found|gatherings|care|guides)/[0-9a-fA-F-]{36}/?$" {

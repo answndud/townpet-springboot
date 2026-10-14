@@ -117,7 +117,9 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/deploy/compose'"
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/deploy/compose' '$DEPLOY_PATH/migration/fixtures'"
+          scp migration/fixtures/community-presentation.sql \
+            "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/migration/fixtures/"
           scp deploy/compose/netcup.yml deploy/compose/edge.yml deploy/compose/Caddyfile.netcup \
             "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/deploy/compose/"
           scp deploy/nginx.conf.template \
@@ -146,3 +148,11 @@ jobs:
              DEPLOY_LOCK_FILE=/tmp/portfolio-deploy.lock \
              EDGE_ENV_VALIDATOR=deploy/validate-edge-env.sh \
              TOWNPET_ENV_VALIDATOR=deploy/validate-portfolio-env.sh deploy/deploy-netcup.sh"
+      - name: Update known synthetic fixture titles
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" \
+            "cd '$DEPLOY_PATH' && docker exec -i townpet-postgres sh -c 'exec psql -v ON_ERROR_STOP=1 -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DB\"' < migration/fixtures/community-presentation.sql"

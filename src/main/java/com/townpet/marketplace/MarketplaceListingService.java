@@ -68,15 +68,28 @@ class MarketplaceListingService {
 
   @Transactional(readOnly = true)
   List<ListingView> listAvailable(Optional<MarketplaceListingKind> kind, int limit) {
+    return listAvailable(kind, limit, "", "ALL");
+  }
+
+  @Transactional(readOnly = true)
+  List<ListingView> listAvailable(Optional<MarketplaceListingKind> kind, int limit, String query, String searchField) {
+    String searchColumn = switch (searchField) {
+      case "TITLE" -> "title";
+      case "BODY" -> "description";
+      default -> "title || ' ' || description";
+    };
+    String queryClause = query.isBlank() ? "" : " AND position(lower(?) in lower(" + searchColumn + ")) > 0";
     String kindClause = kind.isPresent() ? " AND kind = ?" : "";
     String sql =
         "SELECT id, owner_member_id, kind, status, title, description, price_krw, "
             + "created_at, updated_at, version FROM market_listing "
             + "WHERE status = 'AVAILABLE'"
             + kindClause
+            + queryClause
             + " ORDER BY created_at DESC, id DESC LIMIT ?";
     List<Object> args = new java.util.ArrayList<>();
     kind.ifPresent(value -> args.add(value.name()));
+    if (!query.isBlank()) args.add(query);
     args.add(limit);
     return jdbc.query(sql, (rs, rowNum) -> map(rs), args.toArray());
   }
