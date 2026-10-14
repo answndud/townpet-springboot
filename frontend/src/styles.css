@@ -660,3 +660,5 @@ h1, h2, p { margin: 0; }
 @media(max-width:760px) { .profile-card .profile-actions .button,.auth-links a,.auth-card .back-link,.publication-text-link { min-height:44px; align-items:center; } .account-logout { min-height:44px; } }
 .app-shell-bg:has(.auth-page) .desktop-nav { display:none; }
 .app-shell-bg:has(.auth-page) .header-account { margin-left:auto; }
+.placeholder-page,.marketplace-state { min-height:0; display:block; }
+.placeholder-page > .surface-card,.marketplace-state > .surface-card { margin-inline:auto; }

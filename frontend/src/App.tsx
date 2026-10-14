@@ -192,6 +192,15 @@ function Header() {
   const accountButton = useRef<HTMLButtonElement>(null);
   const openedBy = useRef<HTMLButtonElement | null>(null);
   const authenticated = status === "authenticated" && member;
+  useEffect(() => {
+    let mobile = window.innerWidth <= 760;
+    const close = () => {
+      const next = window.innerWidth <= 760;
+      if (next !== mobile) { setPanel(null); mobile = next; }
+    };
+    window.addEventListener("resize", close);
+    return () => window.removeEventListener("resize", close);
+  }, []);
   useEffect(() => { setPanel(null); }, [location.pathname, location.search]);
   useEffect(() => {
     if (!panel) return;
@@ -224,7 +233,7 @@ function Header() {
       </div>
     </div>
     {panel === "account" && authenticated ? <nav id="account-navigation" className="account-navigation" aria-label="내 계정">
-      {MEMBER_ACCOUNT_LINKS.map(([label,href]) => <Link key={href} to={href}>{label}</Link>)}
+      {MEMBER_ACCOUNT_LINKS.filter(([,href]) => member.role === "MEMBER" || href === "/profile").map(([label,href]) => <Link key={href} to={href}>{label}</Link>)}
       {member.role === "MEMBER" ? <><Link to="/my-posts">내 글</Link><Link to="/saved">저장한 글</Link></> : null}
       {member.role === "MODERATOR" ? <Link to="/admin">운영 콘솔</Link> : null}
       <button className="account-logout" type="button" disabled={loggingOut} onClick={async () => {
