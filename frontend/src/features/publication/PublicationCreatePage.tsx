@@ -140,7 +140,6 @@ export default function PublicationCreatePage() {
               제목
               <input
                 required
-                autoFocus
                 aria-label="제목"
                 maxLength={TITLE_MAX_LENGTH}
                 value={title}

@@ -599,7 +599,7 @@ h1, h2, p { margin: 0; }
 .publication-fields,.marketplace-form,.lostfound-form { max-width:800px; padding:24px; margin:16px auto 0; gap:16px; }
 .publication-fields { grid-template-columns:1fr; overflow:visible; } .publication-fields > * { grid-column:1/-1; }
 .publication-fields label,.marketplace-form label,.lostfound-form label { font-size:14px; gap:6px; }
-.publication-fields input,.publication-fields select,.publication-fields textarea,.auth-form input,.marketplace-form input,.marketplace-form select,.marketplace-form textarea,.lostfound-form input,.lostfound-form textarea { width:100%; min-height:40px; border:1px solid var(--surface-border-strong); padding:8px 10px; background:#fff; font-size:16px; color:var(--text); }
+.publication-fields input:not([type=checkbox]):not([type=radio]),.publication-fields select,.publication-fields textarea,.auth-form input,.marketplace-form input,.marketplace-form select,.marketplace-form textarea,.lostfound-form input,.lostfound-form textarea { width:100%; min-height:40px; border:1px solid var(--surface-border-strong); padding:8px 10px; background:#fff; font-size:16px; color:var(--text); }
 .publication-fields textarea { min-height:200px; }
 .auth-page { min-height:0; padding-top:40px; padding-bottom:64px; }
 .auth-card { max-width:440px; width:100%; padding:24px; } .auth-card h1 { font-size:24px; }
@@ -662,3 +662,10 @@ h1, h2, p { margin: 0; }
 .app-shell-bg:has(.auth-page) .header-account { margin-left:auto; }
 .placeholder-page,.marketplace-state { min-height:0; display:block; }
 .placeholder-page > .surface-card,.marketplace-state > .surface-card { margin-inline:auto; }
+.publication-fields .animal-board-group { display:grid; grid-template-columns:76px minmax(0,1fr); gap:8px; align-items:start; }
+.publication-fields .animal-board-group > strong { padding-top:8px; font-size:12px; font-weight:500; color:var(--muted-text); }
+.publication-fields .animal-board-options { gap:4px 12px; }
+.publication-fields .animal-board-options label { display:flex; align-items:center; min-height:32px; gap:6px; font-size:13px; font-weight:400; }
+.publication-fields input[type=checkbox],.publication-fields input[type=radio] { width:16px; height:16px; min-height:16px; padding:0; flex:0 0 16px; }
+.animal-community-selector .field-help { margin:0 0 12px; }
+@media(max-width:760px) { .publication-fields .animal-board-options label { min-height:44px; } }
