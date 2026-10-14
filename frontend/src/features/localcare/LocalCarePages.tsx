@@ -1,4 +1,3 @@
-import { CommunityIcon } from "../../components/CommunityVisual";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ApiError, localResourceApi, type LocalResource, type LocalResourceKind } from "../../api/client";
@@ -47,7 +46,7 @@ export function LocalCareListPage() {
       </form>
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       <section className="localcare-grid" aria-label="지역 생활 정보" aria-busy={loading}>
-        {items.map((item) => <Link className="surface-card localcare-card" key={item.id} to={`/guides/${item.id}`}><span className="guide-icon"><CommunityIcon kind="guide" /></span><span className="publication-chip publication-chip-primary">{labels[item.kind]}</span><h2>{item.title}</h2><p>{item.summary}</p><small>{item.sourceName} · {formatDateOnly(item.updatedAt)} 업데이트</small></Link>)}
+        {items.map((item) => <Link className="surface-card localcare-card" key={item.id} to={`/guides/${item.id}`}><span className="publication-chip publication-chip-primary">{labels[item.kind]}</span><h2>{item.title}</h2><p>{item.summary}</p><small>{item.sourceName} · {formatDateOnly(item.updatedAt)} 업데이트</small></Link>)}
       </section>
       {!items.length && !error && !loading ? <p className="surface-card localcare-empty">조건에 맞는 정보가 없습니다.</p> : null}
 
@@ -65,5 +64,5 @@ export function LocalCareDetailPage() {
   }, [error, item, requestError, resourceId]);
   if (error) return <main className="page placeholder-page"><section className="surface-card"><p role="alert">{error}</p><Link className="button button-soft" to="/guides">목록으로</Link></section></main>;
   if (!item) return <main className="page placeholder-page"><section className="surface-card" role="status">정보를 불러오는 중...</section></main>;
-  return <main className="page localcare-page"><Link className="publication-text-link" to="/guides">목록으로</Link><article className="surface-card localcare-detail"><span className="guide-icon"><CommunityIcon kind="guide" /></span><span className="publication-chip publication-chip-primary">{labels[item.kind]}</span><h1>{item.title}</h1><p className="localcare-summary">{item.summary}</p><div className="localcare-content">{item.content}</div><footer><span>출처: {item.sourceName}</span><span>최종 확인: {formatDateOnly(item.updatedAt)}</span>{item.sourceUrl ? <a href={item.sourceUrl} rel="noreferrer" target="_blank">원문 보기</a> : null}</footer></article></main>;
+  return <main className="page localcare-page"><Link className="publication-text-link" to="/guides">목록으로</Link><article className="surface-card localcare-detail"><span className="publication-chip publication-chip-primary">{labels[item.kind]}</span><h1>{item.title}</h1><p className="localcare-summary">{item.summary}</p><div className="localcare-content">{item.content}</div><footer><span>출처: {item.sourceName}</span><span>최종 확인: {formatDateOnly(item.updatedAt)}</span>{item.sourceUrl ? <a href={item.sourceUrl} rel="noreferrer" target="_blank">원문 보기</a> : null}</footer></article></main>;
 }

@@ -1,5 +1,6 @@
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { lazy, KeyboardEvent, ReactNode, Suspense, useEffect, useRef, useState } from "react";
+import { authApi } from "./api/client";
 import LoginPage from "./LoginPage";
 import PasswordResetPage from "./PasswordResetPage";
 import VerifyEmailPage from "./VerifyEmailPage";
@@ -181,64 +182,64 @@ function HeaderMenu({
 
 function Header() {
   const { status, member } = useAuth();
+  const navigate = useNavigate();
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const menuButton = useRef<HTMLButtonElement>(null);
-  useEffect(() => { setMobileOpen(false); }, [location.pathname, location.search]);
+  const [panel, setPanel] = useState<"browse" | "account" | null>(null);
+  const header = useRef<HTMLElement>(null);
+  const browseButton = useRef<HTMLButtonElement>(null);
+  const accountButton = useRef<HTMLButtonElement>(null);
+  const openedBy = useRef<HTMLButtonElement | null>(null);
+  const authenticated = status === "authenticated" && member;
+  useEffect(() => { setPanel(null); }, [location.pathname, location.search]);
   useEffect(() => {
-    if (!mobileOpen) return;
-    function escape(event: globalThis.KeyboardEvent) {
-      if (event.key === "Escape") { setMobileOpen(false); menuButton.current?.focus(); }
+    if (!panel) return;
+    const container = header.current?.querySelector<HTMLElement>(panel === "browse" ? "#mobile-navigation" : "#account-navigation");
+    container?.querySelector<HTMLElement>("a,button")?.focus();
+    function keydown(event: globalThis.KeyboardEvent) {
+      if (event.key === "Escape") { setPanel(null); openedBy.current?.focus(); }
+      if (event.key === "Tab" && container) {
+        const items = Array.from(container.querySelectorAll<HTMLElement>("a,button"));
+        const first = items[0], last = items.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
     }
-    document.addEventListener("keydown", escape);
-    return () => document.removeEventListener("keydown", escape);
-  }, [mobileOpen]);
-
-  return (
-    <header className="site-header">
-      <div className="header-inner">
-        <Link className="brand" to="/" aria-label="TownPet 홈으로 이동">
-          <img src="/townpet-logo.svg" alt="TownPet" />
-        </Link>
-        {status === "authenticated" && member ? (
-          member.role === "MODERATOR" ? (
-            <nav aria-label="운영자 주요 이동" className="desktop-nav">
-              <NavLink to="/admin">운영 콘솔</NavLink>
-              <AnimalBoardMenu />
-              <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
-              <NavLink className="desktop-nav-secondary" to="/guides">지역 가이드</NavLink>
-              <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
-            </nav>
-          ) : (
-            <nav aria-label="주요 이동" className="desktop-nav">
-              <AnimalBoardMenu />
-              <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
-              <NavLink className="desktop-nav-secondary" to="/profile">내 프로필</NavLink>
-              <NavLink className="desktop-nav-secondary" to="/notifications">알림</NavLink>
-              <HeaderMenu className="mobile-only-menu" label="더보기" links={MEMBER_ACCOUNT_LINKS} />
-            </nav>
-          )
-        ) : (
-          <nav aria-label="공개 안내 페이지 주요 이동" className="desktop-nav">
-            <AnimalBoardMenu />
-            <HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} />
-            <NavLink className="desktop-nav-secondary" to="/guides">지역 가이드</NavLink>
-            <NavLink to="/profile">내 프로필</NavLink>
-            <NavLink to="/login" data-testid="header-login-link-home">
-              로그인
-            </NavLink>
-          </nav>
-        )}
-        <button ref={menuButton} className="mobile-menu-toggle" type="button" aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(!mobileOpen)}>{mobileOpen ? "닫기" : "메뉴"}<span aria-hidden="true">{mobileOpen ? "×" : "☰"}</span></button>
+    function outside(event: PointerEvent) { if (!header.current?.contains(event.target as Node)) setPanel(null); }
+    document.addEventListener("keydown", keydown);
+    document.addEventListener("pointerdown", outside);
+    return () => { document.removeEventListener("keydown", keydown); document.removeEventListener("pointerdown", outside); };
+  }, [panel]);
+  function toggle(next: "browse" | "account", button: HTMLButtonElement | null) { openedBy.current = button; setPanel(panel === next ? null : next); }
+  return <header ref={header} className="site-header">
+    <div className="header-inner">
+      <Link className="brand" to="/" aria-label="TownPet 홈으로 이동">TownPet<span>반려동물 커뮤니티</span></Link>
+      <nav aria-label="주요 이동" className="desktop-nav">
+        <NavLink to="/">홈</NavLink><AnimalBoardMenu /><HeaderMenu label="공통게시판" links={COMMON_BOARD_LINKS} /><NavLink to="/guides">지역 가이드</NavLink>
+      </nav>
+      <div className="header-account">
+        {authenticated ? <button ref={accountButton} className="account-toggle" type="button" aria-expanded={panel === "account"} aria-controls="account-navigation" onClick={() => toggle("account",accountButton.current)}>내 계정</button> : <Link className="account-login" to="/login" data-testid="header-login-link-home">로그인</Link>}
+        <button ref={browseButton} className="mobile-menu-toggle" type="button" aria-expanded={panel === "browse"} aria-controls="mobile-navigation" onClick={() => toggle("browse",browseButton.current)}>{panel === "browse" ? "닫기" : "메뉴"}<span aria-hidden="true">{panel === "browse" ? "×" : "☰"}</span></button>
       </div>
-      {mobileOpen ? <nav id="mobile-navigation" className="mobile-navigation" aria-label="모바일 주요 이동">
-        <Link to="/">홈</Link><Link to="/animals/all">동물 게시판</Link><Link to="/boards/all">전체 공통게시판</Link>
-        <Link to="/marketplace">동네 거래</Link><Link to="/lost-found">분실·목격</Link><Link to="/gatherings">동네 모임</Link><Link to="/care">이웃 돌봄</Link>
-        <Link to="/boards/adoption">입양</Link><Link to="/hospital-reviews">병원 후기</Link><Link to="/volunteer">봉사</Link><Link to="/guides">지역 가이드</Link><Link to="/profile">내 프로필</Link>
-        {member ? <><Link to="/notifications">알림</Link>{member.role === "MODERATOR" ? <Link to="/admin">운영 콘솔</Link> : null}</> : <Link to="/login">로그인</Link>}
-      </nav> : null}
-    </header>
-  );
+    </div>
+    {panel === "account" && authenticated ? <nav id="account-navigation" className="account-navigation" aria-label="내 계정">
+      {MEMBER_ACCOUNT_LINKS.map(([label,href]) => <Link key={href} to={href}>{label}</Link>)}
+      {member.role === "MEMBER" ? <><Link to="/my-posts">내 글</Link><Link to="/saved">저장한 글</Link></> : null}
+      {member.role === "MODERATOR" ? <Link to="/admin">운영 콘솔</Link> : null}
+      <button className="account-logout" type="button" disabled={loggingOut} onClick={async () => {
+        setLoggingOut(true); setLogoutError(null);
+        try { await authApi.logout(); setPanel(null); navigate("/login"); }
+        catch { setLogoutError("로그아웃하지 못했습니다. 다시 시도하세요."); }
+        finally { setLoggingOut(false); }
+      }}>{loggingOut ? "로그아웃 중…" : "로그아웃"}</button>
+      {logoutError ? <p className="form-error" role="alert">{logoutError}</p> : null}
+    </nav> : null}
+    {panel === "browse" ? <nav id="mobile-navigation" className="mobile-navigation" aria-label="모바일 주요 이동">
+      <div><strong>게시판</strong><Link to="/">홈</Link><Link to="/animals/all">동물 게시판</Link><Link to="/boards/all">전체 공통게시판</Link></div>
+      <div><strong>지역 생활</strong><Link to="/marketplace">동네 거래</Link><Link to="/lost-found">분실·목격</Link><Link to="/gatherings">동네 모임</Link><Link to="/care">이웃 돌봄</Link><Link to="/boards/adoption">입양</Link><Link to="/hospital-reviews">병원 후기</Link><Link to="/volunteer">봉사</Link><Link to="/guides">지역 가이드</Link></div>
+    </nav> : null}
+  </header>;
 }
 
 function Footer() {

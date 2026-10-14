@@ -1,4 +1,3 @@
-import { CommunityIcon, NeighborhoodIllustration } from "./components/CommunityVisual";
 import { ANIMAL_BOARD_OPTIONS } from "./features/member/AnimalBoardCatalog";
 import { Link, useSearchParams } from "react-router-dom";
 import { publicationApi, type FeedItem, type Publication } from "./api/client";
@@ -110,18 +109,6 @@ export default function HomeFeedPage() {
 
   return (
     <main className="page feed-page home-page">
-      <section className="home-welcome">
-        <div><p className="eyebrow">TOWNPET COMMUNITY</p><h2>반려동물 커뮤니티</h2><p>동물별 게시글과 지역 정보를 확인하세요.<br className="desktop-break" /> 거래, 분실·목격, 모임, 돌봄 게시판을 이용할 수 있습니다.</p><Link className="home-explore" to="/animals/all">동물 게시판 보기 <span aria-hidden="true">↗</span></Link></div>
-        <NeighborhoodIllustration />
-      </section>
-      <nav className="home-services" aria-label="반려생활 바로가기">
-        {([
-          ["shop", "동네 거래", "물품 판매·나눔", "/marketplace"],
-          ["location", "분실·목격", "우리 동네 제보", "/lost-found"],
-          ["calendar", "동네 모임", "일정·참가 정보", "/gatherings"],
-          ["care", "이웃 돌봄", "돌봄 요청·지원", "/care"],
-        ] as const).map(([kind, title, description, href]) => <Link key={href} to={href}><span className={`service-icon visual-${kind}`}><CommunityIcon kind={kind} /></span><span><strong>{title}</strong><small>{description}</small></span><span className="service-arrow" aria-hidden="true">↗</span></Link>)}
-      </nav>
       <div className="home-layout"><section className="home-feed">
       <header className="feed-hero">
         <div>
@@ -160,7 +147,7 @@ export default function HomeFeedPage() {
       ) : items.length === 0 ? (
         <section className="surface-card feed-empty">
           <h2>{query ? "검색 결과가 없습니다" : "아직 표시할 글이 없습니다"}</h2>
-          <p>{query ? "다른 검색어로 다시 시도해 보세요." : "첫 번째 반려생활 이야기를 나눠 보세요."}</p>
+          <p>{query ? "다른 검색어로 다시 시도해 보세요." : "글을 작성하거나 다른 게시판을 확인하세요."}</p>
           {canWrite ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}
         </section>
       ) : (
@@ -184,8 +171,8 @@ export default function HomeFeedPage() {
 
 
       </section><aside className="home-sidebar">
-        <section className="sidebar-section"><p className="eyebrow">동물별 게시판</p><h2>동물 선택</h2><nav className="animal-discovery" aria-label="동물별 이야기">{ANIMAL_BOARD_OPTIONS.map(option => <Link key={option.code} to={`/animals/${option.code.toLowerCase()}`}>{option.label}<span aria-hidden="true">↗</span></Link>)}</nav></section>
-        <section className="sidebar-guide"><CommunityIcon kind="guide" /><h2>지역 가이드</h2><p>산책 장소, 복지 제도, 케어 정보를 출처와 함께 확인하세요.</p><Link to="/guides">지역 가이드 보기 →</Link></section>
+        <section className="sidebar-section"><p className="eyebrow">동물별 게시판</p><nav className="animal-discovery" aria-label="동물별 이야기">{ANIMAL_BOARD_OPTIONS.map(option => <Link key={option.code} to={`/animals/${option.code.toLowerCase()}`}>{option.label}<span aria-hidden="true">↗</span></Link>)}</nav></section>
+        <section className="sidebar-guide"><h2>지역 가이드</h2><p>산책 장소, 복지 제도, 케어 정보를 출처와 함께 확인하세요.</p><Link to="/guides">지역 가이드 보기 →</Link></section>
         <p className="sandbox-note">합성 데이터로 구성된 포트폴리오입니다. 실제 거래·돌봄·입양을 중개하지 않습니다.</p>
       </aside></div>
     </main>

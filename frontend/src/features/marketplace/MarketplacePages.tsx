@@ -1,4 +1,3 @@
-import { ContentVisual } from "../../components/CommunityVisual";
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
@@ -81,7 +80,7 @@ export function MarketplaceListPage() {
         <section className="marketplace-grid" aria-label="거래 목록">
           {listings.map((item) => (
             <Link className="surface-card marketplace-card" key={item.id} to={`/marketplace/${item.id}`}>
-              <ContentVisual kind="shop" /><div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[item.kind]}</span><span className="publication-chip">{STATUS_LABELS[item.status]}</span></div>
+              <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[item.kind]}</span><span className="publication-chip">{STATUS_LABELS[item.status]}</span></div>
               <h2>{item.title}</h2><p>{item.description}</p>
               <strong>{formatPrice(item.priceKrw)}</strong>
               <small>{formatDateTime(item.createdAt)}</small>
@@ -122,7 +121,7 @@ export function MarketplaceDetailPage() {
   return (
     <main className="page marketplace-page">
       <div className="marketplace-detail-nav"><Link className="publication-text-link" to="/marketplace">← 거래 목록</Link>{owner && listing.status === "AVAILABLE" ? <Link className="button button-soft" to={`/marketplace/${listing.id}/edit`}>수정</Link> : null}</div>
-      <article className="surface-card marketplace-detail-card"><ContentVisual kind="shop" />
+      <article className="surface-card marketplace-detail-card">
         <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[listing.kind]}</span><span className="publication-chip">{STATUS_LABELS[listing.status]}</span></div>
         <h1>{listing.title}</h1><p className="marketplace-price">{formatPrice(listing.priceKrw)}</p><p className="marketplace-description">{listing.description}</p>
         <div className="marketplace-detail-meta"><span>TownPet 회원</span><span>·</span><time dateTime={listing.createdAt}>{formatDateTime(listing.createdAt)}</time></div>
