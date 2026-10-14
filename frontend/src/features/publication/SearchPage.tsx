@@ -14,6 +14,7 @@ export default function SearchPage(_props: { guest?: boolean }) {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const hasSearch = Boolean(urlQuery || urlFrom || urlTo);
 
   useEffect(() => {
     setQuery(urlQuery);
@@ -43,5 +44,43 @@ export default function SearchPage(_props: { guest?: boolean }) {
     const next = Object.fromEntries(Object.entries({ q: query.trim(), from, to }).filter(([, value]) => value));
     setParams(next);
   }
-  return <main className="page feed-page"><header className="feed-hero"><div><h1>반려생활 정보 검색</h1><p>게시글 제목·본문과 기간으로 필요한 정보를 찾아보세요.</p></div></header>{error ? <p role="alert">{error}</p> : null}<section className="surface-card feed-list" aria-label="검색 결과" aria-busy={loading}>{loading ? <p role="status">검색 중...</p> : null}{!loading ? items.map((item) => <article className="feed-item" key={`${item.kind}:${item.id}`}><Link className="feed-item-title" to={item.href || `/posts/${item.id}`}><h2>{item.title}</h2></Link></article>) : null}{!loading && !items.length && !error ? <p>검색 결과가 없습니다.</p> : null}</section><form aria-label="반려생활 정보 검색" className="search-panel search-panel-advanced" onSubmit={submit}><label><span className="search-label">검색어</span><input aria-label="검색어" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="산책, 병원, 분실..." /></label><label><span className="search-label">시작일</span><input aria-label="시작일" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></label><label><span className="search-label">종료일</span><input aria-label="종료일" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></label><button className="button button-soft" type="submit">검색</button></form></main>;
+  return (
+    <main className="page feed-page search-page">
+      <header className="feed-hero">
+        <div>
+          <h1>반려생활 정보 검색</h1>
+          <p>게시글 제목·본문과 기간으로 필요한 정보를 찾아보세요.</p>
+        </div>
+      </header>
+      <form aria-label="반려생활 정보 검색" className="search-panel search-panel-advanced" onSubmit={submit}>
+        <label>
+          <span className="search-label">검색어</span>
+          <input aria-label="검색어" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="산책, 병원, 분실..." />
+        </label>
+        <label>
+          <span className="search-label">시작일</span>
+          <input aria-label="시작일" type="date" value={from} onChange={(event) => setFrom(event.target.value)} />
+        </label>
+        <label>
+          <span className="search-label">종료일</span>
+          <input aria-label="종료일" type="date" value={to} onChange={(event) => setTo(event.target.value)} />
+        </label>
+        <button className="button button-soft" type="submit">검색</button>
+      </form>
+      {error ? <p role="alert">{error}</p> : null}
+      {hasSearch ? (
+        <section className="surface-card feed-list" aria-label="검색 결과" aria-busy={loading}>
+          {loading ? <p role="status">검색 중...</p> : null}
+          {!loading ? items.map((item) => (
+            <article className="feed-item" key={`${item.kind}:${item.id}`}>
+              <Link className="feed-item-title" to={item.href || `/posts/${item.id}`}>
+                <h2>{item.title}</h2>
+              </Link>
+            </article>
+          )) : null}
+          {!loading && !items.length && !error ? <p>검색 결과가 없습니다.</p> : null}
+        </section>
+      ) : <p className="search-empty-hint">검색어 또는 기간을 입력하세요.</p>}
+    </main>
+  );
 }
