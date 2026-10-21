@@ -581,7 +581,7 @@ export default function PublicationDetailPage() {
       </article>
       <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading" aria-busy={commentsLoading}>
         <div className="publication-comments-heading">
-          <h2 id="comments-heading">댓글 {comments.length}</h2>
+          <h2 id="comments-heading">댓글 <span className="publication-comment-count">{comments.length}</span></h2>
         </div>
         {commentError ? <p className="form-error publication-error" role="alert">{commentError}</p> : null}
         {reportingComment ? <form className="surface-card publication-fields" onSubmit={reportComment}>
