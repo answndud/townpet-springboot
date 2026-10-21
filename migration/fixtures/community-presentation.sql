@@ -43,6 +43,6 @@ FROM (VALUES
 ) AS sample(id, title, created_at)
 WHERE post.id = sample.id
   AND post.title = sample.title
-  AND post.created_at = TIMESTAMPTZ '2026-09-16 19:25:00+09:00'
+  AND date_trunc('minute', post.created_at) = TIMESTAMPTZ '2026-09-16 19:25:00+09:00'
   AND post.updated_at = post.created_at;
 COMMIT;
