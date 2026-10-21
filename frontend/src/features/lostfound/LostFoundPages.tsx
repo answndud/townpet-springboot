@@ -10,12 +10,12 @@ import {
 } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
+import { formatDateTimeLong } from "../../utils/date";
 import { setDynamicSeo } from "../../utils/seo";
 
 const kindLabel: Record<LostFoundAlertKind, string> = { LOST: "분실", FOUND: "발견" };
 const statusLabel = { ACTIVE: "진행 중", RESOLVED: "해결", CLOSED: "종료" } as const;
-const dateFormat = new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
-const dateText = (value: string) => dateFormat.format(new Date(value));
+const dateText = formatDateTimeLong;
 
 function LostFoundHero({ canWrite }: { canWrite: boolean }) {
   return <header className="lostfound-hero"><div><h1>분실·목격 제보</h1></div>{canWrite ? <Link className="button button-write" to="/lost-found/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>제보 등록</span></Link> : null}</header>;

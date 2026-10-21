@@ -2,8 +2,9 @@ const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
   month: "numeric",
   day: "numeric",
-  hour: "numeric",
+  hour: "2-digit",
   minute: "2-digit",
+  hourCycle: "h23",
 });
 const DATE_TIME_LONG_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
@@ -11,6 +12,7 @@ const DATE_TIME_LONG_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   day: "numeric",
   hour: "2-digit",
   minute: "2-digit",
+  hourCycle: "h23",
 });
 const DATE_ONLY_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
@@ -18,14 +20,19 @@ const DATE_ONLY_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   day: "numeric",
 });
 const DATE_MEDIUM_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
-  dateStyle: "medium",
-  timeStyle: "short",
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
 });
 const DATE_COMPACT_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   month: "short",
   day: "numeric",
   hour: "2-digit",
   minute: "2-digit",
+  hourCycle: "h23",
 });
 const DATE_COMPACT_WITH_YEAR_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
@@ -33,6 +40,7 @@ const DATE_COMPACT_WITH_YEAR_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   day: "numeric",
   hour: "2-digit",
   minute: "2-digit",
+  hourCycle: "h23",
 });
 
 export function formatDateTime(value: string) {
