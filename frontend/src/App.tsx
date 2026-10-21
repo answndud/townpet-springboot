@@ -136,7 +136,7 @@ function Header() {
     document.addEventListener("pointerdown", outside);
     return () => { document.removeEventListener("keydown", keydown); document.removeEventListener("pointerdown", outside); };
   }, [panel]);
-  function toggle(next: "browse" | "account", button: HTMLButtonElement | null) { openedBy.current = button; setPanel(panel === next ? null : next); }
+  function toggle(next: "browse" | "account", button: HTMLButtonElement | null) { openedBy.current = button; setPanel(current => current === next ? null : next); }
   return <header ref={header} className="site-header">
     <div className="header-inner">
       <Link className="brand" to="/" aria-label="TownPet 홈으로 이동">TownPet</Link>

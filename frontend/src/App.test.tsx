@@ -25,7 +25,7 @@ describe("TownPet Vite shell", () => {
     expect(screen.queryByRole("heading", { name: "운영 콘솔" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "내 프로필" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "내 계정" }));
-    const account = screen.getByRole("navigation", { name: "내 계정" });
+    const account = await screen.findByRole("navigation", { name: "내 계정" });
     expect(within(account).getByRole("link", { name: "내 프로필" })).toHaveAttribute("href", "/profile");
     expect(within(account).getByRole("link", { name: "저장한 글" })).toHaveAttribute("href", "/saved");
     expect(within(account).queryByRole("link", { name: "운영 콘솔" })).not.toBeInTheDocument();
@@ -58,7 +58,7 @@ describe("TownPet Vite shell", () => {
     expect(await screen.findByRole("heading", { name: "HOT 글" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "내 동네와 반려동물 설정" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "내 계정" }));
-    const account = screen.getByRole("navigation", { name: "내 계정" });
+    const account = await screen.findByRole("navigation", { name: "내 계정" });
     expect(within(account).getByRole("link", { name: "운영 콘솔" })).toHaveAttribute("href", "/admin");
     expect(within(account).queryByRole("link", { name: "저장한 글" })).not.toBeInTheDocument();
   });
