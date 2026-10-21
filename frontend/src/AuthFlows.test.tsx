@@ -16,6 +16,18 @@ afterEach(() => {
 });
 
 describe("Credentials journeys", () => {
+  it("shows password recovery once and keeps email verification available", async () => {
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(input => String(input).endsWith("/api/v1/members/me")
+      ? Promise.resolve(response({ detail: "Unauthorized" }, 401))
+      : Promise.resolve(response({}))));
+
+    render(<MemoryRouter initialEntries={["/login"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "로그인" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "비밀번호 재설정" })).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "이메일 인증" })).toHaveAttribute("href", "/verify-email");
+  });
+
   it("does not redirect a successful login back to the credentials route", async () => {
     const member = {
       id: "00000000-0000-4000-8000-000000000201",

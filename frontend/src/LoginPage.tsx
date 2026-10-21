@@ -135,9 +135,8 @@ export default function LoginPage() {
         </aside>
       ) : null}
 
-      <nav className="auth-links" aria-label="계정 도움말">
+      <nav className="auth-links" aria-label="계정 인증">
         <Link to="/verify-email">이메일 인증</Link>
-        <Link to="/password/reset">비밀번호 재설정</Link>
       </nav>
     </AuthPageLayout>
   );

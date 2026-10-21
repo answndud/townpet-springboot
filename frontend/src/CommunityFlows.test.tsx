@@ -7,6 +7,24 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("Animal community journeys", () => {
 
+  it("offers a write action and available engagement data on the common-board feed", async () => {
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>((input) => {
+      if (String(input).endsWith("/api/v1/members/me")) {
+        return Promise.resolve(new Response(JSON.stringify({ detail: "Unauthorized" }), { status: 401 }));
+      }
+      return Promise.resolve(new Response(JSON.stringify({
+        items: [{ id: "common-post", kind: "PUBLICATION", type: "FREE_BOARD", title: "동네 산책 코스", body: "내용", authorId: null, neighborhoodId: null, status: "ACTIVE", lifecycle: "ACTIVE", createdAt: "2026-08-12T08:00:00Z", updatedAt: "2026-08-12T08:00:00Z", version: 0, href: "/posts/common-post", recommendationCount: 3 }],
+        page: { nextCursor: null, hasNext: false },
+      }), { status: 200, headers: { "content-type": "application/json" } }));
+    }));
+
+    render(<MemoryRouter initialEntries={["/boards/all"]}><App /></MemoryRouter>);
+
+    expect(await screen.findByRole("heading", { name: "동네 산책 코스" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "글쓰기" })).toHaveAttribute("href", "/posts/new");
+    expect(screen.getByText("추천 3")).toBeInTheDocument();
+  });
+
   it("does not present an anonymous publication as an operations-team post", async () => {
     vi.stubGlobal("fetch", vi.fn<typeof fetch>((input) => {
       if (String(input).endsWith("/api/v1/members/me")) {

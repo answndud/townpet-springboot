@@ -62,7 +62,7 @@ function writePath(mode: "animal" | "common", animalCode: string, board: string)
     return `/posts/new${query ? `?${query}` : ""}`;
   }
   const paths: Record<string, string | null> = {
-    all: null,
+    all: "/posts/new",
     adoption: "/adoptions/new",
     "lost-found": "/lost-found/new",
     "hospital-reviews": "/hospital-reviews",
@@ -75,7 +75,7 @@ function writePath(mode: "animal" | "common", animalCode: string, board: string)
   return base;
 }
 
-function FeedCard({ item, popularView }: { item: FeedItem; popularView: boolean }) {
+function FeedCard({ item }: { item: FeedItem }) {
   const href = item.href || `/posts/${item.id}`;
   const authorLabel = item.authorId
     ? "TownPet 회원"
@@ -91,7 +91,7 @@ function FeedCard({ item, popularView }: { item: FeedItem; popularView: boolean 
       <div className="feed-item-meta">
         <span>{authorLabel}</span>
         <span aria-hidden="true">·</span>
-        {popularView && item.recommendationCount != null ? <><span>추천 {item.recommendationCount}</span><span aria-hidden="true">·</span></> : null}
+        {item.recommendationCount != null && item.recommendationCount > 0 ? <><span>추천 {item.recommendationCount}</span><span aria-hidden="true">·</span></> : null}
         <time dateTime={item.createdAt}>{date(item.createdAt)}</time>
       </div>
     </article>
@@ -211,7 +211,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
       {!loading && !error && !items.length ? <section className="surface-card community-state"><h2>{query ? "검색 결과 없음" : popularView ? "인기글 없음" : `${boardLabel} 게시글 없음`}</h2>{writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}</section> : null}
       {!loading && !error && items.length ? (
         <section className="surface-card feed-list" aria-label={`${pageLabel} ${boardLabel} 게시글 목록`}>
-          {items.map((item) => <FeedCard key={`${item.kind}:${item.id}`} item={item} popularView={popularView} />)}
+          {items.map((item) => <FeedCard key={`${item.kind}:${item.id}`} item={item} />)}
           <CursorPagination page={page} hasPrevious={page > 1} hasNext={feed.hasNext} disabled={feed.loading} onPageChange={setPage} />
         </section>
       ) : null}
