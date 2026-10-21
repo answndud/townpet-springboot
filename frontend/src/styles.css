@@ -203,9 +203,9 @@ h1,h2,p { margin: 0; }
 .publication-comments-state { padding: 18px 0 4px; color: var(--muted-text); font-size: 13px; }
 .publication-login-prompt { display: inline-flex; margin-top: 8px; color: #315b9a; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .publication-comment-list { display: grid; }
-.publication-comment { border-bottom: 1px solid #e3ecf8; padding: 9px 0; }
+.publication-comment { border-bottom: 1px solid #e3ecf8; padding: 6px 0; }
 .publication-comment:last-child { border-bottom: 0; }
-.publication-comment-meta { display: flex; align-items: center; gap: 0 8px; color: var(--muted-text); }
+.publication-comment-meta { display: flex; align-items: center; gap: 0 8px; color: var(--muted-text); font-size: 11px; line-height: 1.35; }
 .publication-comment-meta strong { color: #315484; }
 .publication-comment-meta time { margin-right: auto; white-space: nowrap; }
 .publication-comment-meta .comment-action { display: inline-flex; align-items: center; min-height: 34px; padding: 0 4px; margin-block: -5px; color: #315b9a; font-size: 12px; }
@@ -214,9 +214,9 @@ h1,h2,p { margin: 0; }
 .publication-comment-meta .comment-action-danger:hover,.publication-comment-meta .comment-action-danger:focus-visible { color: #8e1725; }
 .publication-replying .comment-action { color: #315b9a; }
 .publication-replying .comment-action:hover,.publication-replying .comment-action:focus-visible { color: #245da5; text-decoration: underline; text-underline-offset: 3px; }
-.publication-comment p { margin-top: 4px; color: #233f67; white-space: pre-wrap; overflow-wrap: anywhere; }
-.publication-comment-children { margin: 8px 0 0 16px; border-left: 2px solid #e1ebf8; }
-.publication-comment-children .publication-comment { padding-block: 7px; }
+.publication-comment p { margin-top: 2px; color: #233f67; white-space: pre-wrap; overflow-wrap: anywhere; }
+.publication-comment-children { margin: 6px 0 0 16px; border-left: 2px solid #e1ebf8; }
+.publication-comment-children .publication-comment { padding-block: 5px; }
 .publication-comment-children .publication-comment:first-child { padding-top: 0; }
 .publication-comment-children .publication-comment:last-child { padding-bottom: 0; }
 .publication-comment-form { display: grid; gap: 8px; margin-top: 12px; border-top: 1px solid #dbe6f5; padding-top: 16px; }
@@ -236,7 +236,7 @@ h1,h2,p { margin: 0; }
 .feed-hero p:not(.eyebrow) { max-width: 660px; margin-top: 4px; font-size: 12px; }
 .feed-hero .button { flex: 0 0 auto; min-height: 34px; padding-inline: 14px; font-size: 12px; font-weight: 600; }
 
-.publication-comment-reply-label { color: #3567b5; font-size: 12px; font-weight: 700; }
+.publication-comment-reply-label { color: #3567b5; font-size: 10px; font-weight: 700; }
 .publication-replying { display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #8db2e8; background: #f5f9ff; padding: 8px 10px; color: #4f678d; font-size: 12px; }
 .publication-comment-form-inline .publication-replying { margin: -2px -2px 2px; }
 .publication-view-count { color: var(--muted-text); font-size: 12px; }
@@ -555,7 +555,7 @@ h1,h2,p { margin: 0; }
 .publication-detail-card,.publication-comments { padding:24px; }
 .publication-detail-heading h1,.marketplace-detail-card h1,.lostfound-detail h1,.localcare-detail h1,.gathering-detail h1 { font-size:24px; line-height:1.45; }
 .publication-body { font-size:16px; line-height:1.75; max-width:760px; padding:20px 0; color:var(--text); }
-.publication-comment p { font-size:14px; line-height:1.55; }
+.publication-comment p { font-size:12px; line-height:1.5; }
 .engagement-button { min-height:36px; padding:6px 12px; font-size:13px; }
 .marketplace-detail-card,.lostfound-detail,.localcare-detail,.gathering-detail { max-width:800px; margin:16px auto 0; padding:24px; }
 .marketplace-description,.lostfound-description,.localcare-content { font-size:16px; line-height:1.75; }
