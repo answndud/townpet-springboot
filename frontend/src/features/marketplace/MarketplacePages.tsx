@@ -9,7 +9,7 @@ import {
 } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
-import { formatDateTime } from "../../utils/date";
+import { formatDateCompactTime, formatDateTime } from "../../utils/date";
 import { setDynamicSeo } from "../../utils/seo";
 
 const KIND_LABELS: Record<MarketplaceListingKind, string> = {
@@ -64,7 +64,7 @@ export function MarketplaceListPage() {
             <button className={kind === option ? "market-filter active" : "market-filter"} aria-pressed={kind === option} key={option} type="button" onClick={() => setKind(option)}>{KIND_LABELS[option]}</button>
           ))}
         </div>
-        <span className="marketplace-count">{listings.length}개</span>
+        {!loading && !error ? <span className="marketplace-count">{listings.length}개</span> : null}
       </div>
       <form className="search-panel community-bottom-search" aria-label="거래 물품 검색" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); const next = new URLSearchParams(params); const value = String(data.get("q") ?? "").trim(); if (value) next.set("q",value); else next.delete("q"); next.set("searchField",String(data.get("searchField") ?? "ALL")); setParams(next); }}>
         <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
@@ -82,7 +82,7 @@ export function MarketplaceListPage() {
               <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[item.kind]}</span><span className="publication-chip">{STATUS_LABELS[item.status]}</span></div>
               <h2>{item.title}</h2><p>{item.description}</p>
               <strong>{formatPrice(item.priceKrw)}</strong>
-              <small>{formatDateTime(item.createdAt)}</small>
+              <small>{formatDateCompactTime(item.createdAt)}</small>
             </Link>
           ))}
         </section>

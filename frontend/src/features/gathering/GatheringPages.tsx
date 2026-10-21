@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, gatheringApi, type Gathering } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
-import { formatDateMediumTime } from "../../utils/date";
+import { formatDateCompactTime, formatDateMediumTime } from "../../utils/date";
 import { setDynamicSeo } from "../../utils/seo";
 
 function date(value: string) { return formatDateMediumTime(value); }
@@ -13,7 +13,7 @@ export function GatheringListPage() {
   const { data: items, error: requestError, loading } = useAbortableRequest<Gathering[]>((signal) => gatheringApi.list(signal), []);
   const error = requestError ? "모임을 불러오지 못했습니다." : null;
   const gatherings = items ?? [];
-  return <main className="page gathering-page"><section className="localcare-hero"><div><h1>동네 모임</h1></div>{member?.role !== "MODERATOR" ? <Link className="button button-write" to="/gatherings/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>모임 만들기</span></Link> : null}</section>{error ? <p role="alert">{error}</p> : null}<section className="gathering-grid" aria-busy={loading}>{gatherings.map((item) => { const past = new Date(item.startsAt).getTime() <= Date.now(); return <Link className="surface-card gathering-card" key={item.id} to={`/gatherings/${item.id}`}><div className="gathering-date"><time dateTime={item.startsAt}>{new Intl.DateTimeFormat("ko-KR", {month:"short", day:"numeric"}).format(new Date(item.startsAt))}</time></div><span className="publication-chip publication-chip-primary">{item.status === "CANCELLED" ? "취소된 모임" : past ? "지난 모임" : `${item.participantCount}/${item.capacity}명`}</span><h2>{item.title}</h2><p>{item.description}</p><strong className="card-location">{item.location}</strong><small>{date(item.startsAt)}</small></Link>; })}</section>{!gatherings.length && !error && !loading ? <p className="surface-card">예정된 모임 없음</p> : null}</main>;
+  return <main className="page gathering-page"><section className="localcare-hero"><div><h1>동네 모임</h1></div>{member?.role !== "MODERATOR" ? <Link className="button button-write" to="/gatherings/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>모임 만들기</span></Link> : null}</section>{error ? <p role="alert">{error}</p> : null}<section className="gathering-grid" aria-busy={loading}>{gatherings.map((item) => { const past = new Date(item.startsAt).getTime() <= Date.now(); return <Link className="surface-card gathering-card" key={item.id} to={`/gatherings/${item.id}`}><div className="gathering-date"><time dateTime={item.startsAt}>{new Intl.DateTimeFormat("ko-KR", {month:"short", day:"numeric"}).format(new Date(item.startsAt))}</time></div><span className="publication-chip publication-chip-primary">{item.status === "CANCELLED" ? "취소된 모임" : past ? "지난 모임" : `${item.participantCount}/${item.capacity}명`}</span><h2>{item.title}</h2><p>{item.description}</p><strong className="card-location">{item.location}</strong><small>{formatDateCompactTime(item.startsAt)}</small></Link>; })}</section>{!gatherings.length && !error && !loading ? <p className="surface-card">예정된 모임 없음</p> : null}</main>;
 }
 
 export function GatheringDetailPage() {

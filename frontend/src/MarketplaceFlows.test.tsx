@@ -29,6 +29,30 @@ afterEach(() => {
 });
 
 describe("Marketplace journeys", () => {
+  it("does not show a zero result count while listings are still loading", async () => {
+    let resolveListings!: (value: Response) => void;
+    const listingsPending = new Promise<Response>((resolve) => { resolveListings = resolve; });
+    const fetchMock = vi.fn<typeof fetch>((input) => {
+      const path = String(input);
+      if (path.includes("/api/v1/marketplace/listings?")) return listingsPending;
+      return Promise.resolve(response({}));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MemoryRouter initialEntries={["/marketplace"]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("거래 목록을 불러오는 중...")).toBeInTheDocument();
+    expect(screen.queryByText("0개")).not.toBeInTheDocument();
+
+    resolveListings(response([listing]));
+    expect(await screen.findByRole("heading", { name: "강아지 이동장" })).toBeInTheDocument();
+    expect(screen.getByText("1개")).toBeInTheDocument();
+  });
+
   it("loads the public listing and creates a new listing", async () => {
     const fetchMock = vi.fn<typeof fetch>((input, init) => {
       const path = String(input);

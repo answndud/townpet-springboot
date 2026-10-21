@@ -4,6 +4,7 @@ import { commonBoardApi, communityApi, type FeedItem } from "../../api/client";
 import { ANIMAL_BOARD_GROUPS } from "../member/AnimalBoardCatalog";
 import CursorPagination from "../../components/CursorPagination";
 import { useCursorPagination } from "../../hooks/useCursorPagination";
+import { formatDateCompactTime } from "../../utils/date";
 
 export const ANIMAL_BOARD_TABS = [
   ["all", "전체"],
@@ -50,7 +51,7 @@ function normalizeAnimalCode(raw: string) {
 }
 
 function date(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  return formatDateCompactTime(value);
 }
 
 function writePath(mode: "animal" | "common", animalCode: string, board: string): string | null {

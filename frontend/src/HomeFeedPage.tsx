@@ -4,6 +4,7 @@ import { publicationApi, type FeedItem, type Publication } from "./api/client";
 import { useAuth } from "./auth/AuthContext";
 import CursorPagination from "./components/CursorPagination";
 import { useCursorPagination } from "./hooks/useCursorPagination";
+import { formatDateCompactTime } from "./utils/date";
 
 type PopularItem = Pick<Publication, "id" | "title" | "body" | "createdAt"> & {
   recommendationCount?: number;
@@ -31,17 +32,6 @@ function homeFeedLabel(item: FeedItem) {
   return HOME_FEED_TYPE_LABELS[item.type] ?? (item.kind === "PUBLICATION" ? "게시글" : "반려생활 소식");
 }
 
-const FEED_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
-  month: "long",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-function formatFeedDate(value: string) {
-  return FEED_DATE_FORMATTER.format(new Date(value));
-}
-
 function HotFeedList({ items, loading, error, page, hasNext, onPageChange }: { items: PopularItem[]; loading: boolean; error: string | null; page: number; hasNext: boolean; onPageChange: (page: number) => void }) {
   return (
     <section className="surface-card feed-list" aria-label="HOT 글 목록" aria-busy={loading}>
@@ -58,7 +48,7 @@ function HotFeedList({ items, loading, error, page, hasNext, onPageChange }: { i
                 </Link>
                 <div className="feed-item-meta">
                   {item.recommendationCount !== undefined ? <small>추천 {item.recommendationCount}</small> : null}
-                  <time dateTime={item.createdAt}>{formatFeedDate(item.createdAt)}</time>
+                  <time dateTime={item.createdAt}>{formatDateCompactTime(item.createdAt)}</time>
                 </div>
               </div>
             </article>
@@ -160,7 +150,7 @@ export default function HomeFeedPage() {
               <div className="feed-item-meta">
                 <span>TownPet 회원</span>
                 <span aria-hidden="true">·</span>
-                <time dateTime={item.createdAt}>{formatFeedDate(item.createdAt)}</time>
+                <time dateTime={item.createdAt}>{formatDateCompactTime(item.createdAt)}</time>
               </div>
             </article>
           ))}
