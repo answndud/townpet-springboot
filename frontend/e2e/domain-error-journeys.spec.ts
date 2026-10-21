@@ -26,7 +26,7 @@ test.describe("desktop domain write error journeys", () => {
     await page.getByLabel("설명").fill("서버 충돌 시 작성 내용이 유지되어야 합니다.");
     await page.getByLabel("가격(원)").fill("10000");
     await page.getByRole("button", { name: "등록" }).click();
-    await expect(page.getByRole("alert")).toHaveText("예약 이후에는 거래 조건을 수정할 수 없습니다.");
+    await expect(page.getByRole("alert")).toHaveText("예약 후 거래 조건 변경 불가");
     await expect(page.getByLabel("제목")).toHaveValue("충돌 검증 거래 글");
     expect(called).toBe(true);
   });
@@ -44,7 +44,7 @@ test.describe("desktop domain write error journeys", () => {
     await page.getByLabel("위도").fill("37.550");
     await page.getByLabel("경도").fill("126.910");
     await page.getByRole("button", { name: "제보 등록" }).click();
-    await expect(page.getByRole("alert")).toHaveText("제목, 설명과 위치를 확인해 주세요.");
+    await expect(page.getByRole("alert")).toHaveText("제목·설명·위치 입력 오류");
     await expect(page.getByLabel("위도")).toHaveValue("37.550");
     expect(called).toBe(true);
   });
@@ -81,7 +81,7 @@ test.describe("desktop domain write error journeys", () => {
     await page.getByLabel("시작 시각").fill("2026-08-20T10:00");
     await page.getByLabel("종료 시각").fill("2026-08-20T12:00");
     await page.getByRole("button", { name: "등록" }).click();
-    await expect(page.getByRole("alert")).toHaveText("돌봄 요청 내용을 확인해 주세요.");
+    await expect(page.getByRole("alert")).toHaveText("돌봄 요청 정보 오류");
     await expect(page.getByLabel("제목")).toHaveValue("돌봄 검증 요청");
     expect(called).toBe(true);
   });

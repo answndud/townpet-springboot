@@ -196,28 +196,27 @@ h1,h2,p { margin: 0; }
 .engagement-stat { background: #f8fbff; color: #486894; }
 .publication-action-icon { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .engagement-button-like.active .publication-action-icon { fill: currentColor; }
-.engagement-note,.publication-engagement-help { color: var(--muted-text); font-size: 12px; line-height: 1.5; }
-.publication-engagement-help { margin: 0; }
+.engagement-note { color: var(--muted-text); font-size: 12px; line-height: 1.5; }
 .publication-comments { margin-top: 14px; }
 .publication-comments-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #dbe6f5; padding-bottom: 14px; }
 .publication-comments-heading h2 { margin-top: 5px; color: #173963; font-size: 18px; }
 .publication-comments-state { padding: 18px 0 4px; color: var(--muted-text); font-size: 13px; }
-.publication-login-prompt { padding: 18px 0 4px; color: var(--muted-text); }
+.publication-login-prompt { display: inline-flex; margin-top: 8px; color: #315b9a; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .publication-comment-list { display: grid; }
-.publication-comment { border-bottom: 1px solid #e3ecf8; padding: 15px 0; }
+.publication-comment { border-bottom: 1px solid #e3ecf8; padding: 9px 0; }
 .publication-comment:last-child { border-bottom: 0; }
-.publication-comment-meta { display: flex; align-items: center; gap: 8px; color: var(--muted-text); }
+.publication-comment-meta { display: flex; align-items: center; gap: 0 8px; color: var(--muted-text); }
 .publication-comment-meta strong { color: #315484; }
-.publication-comment-meta time { margin-right: auto; }
-.publication-comment-meta .comment-action { display: inline-flex; align-items: center; min-height: 42px; padding: 0 4px; margin-block: -9px; color: #315b9a; font-size: 12px; }
+.publication-comment-meta time { margin-right: auto; white-space: nowrap; }
+.publication-comment-meta .comment-action { display: inline-flex; align-items: center; min-height: 34px; padding: 0 4px; margin-block: -5px; color: #315b9a; font-size: 12px; }
 .publication-comment-meta .comment-action:hover,.publication-comment-meta .comment-action:focus-visible { color: #245da5; text-decoration: underline; text-underline-offset: 3px; }
 .publication-comment-meta .comment-action-danger { color: #a11f2d; }
 .publication-comment-meta .comment-action-danger:hover,.publication-comment-meta .comment-action-danger:focus-visible { color: #8e1725; }
 .publication-replying .comment-action { color: #315b9a; }
 .publication-replying .comment-action:hover,.publication-replying .comment-action:focus-visible { color: #245da5; text-decoration: underline; text-underline-offset: 3px; }
-.publication-comment p { margin-top: 8px; color: #233f67; white-space: pre-wrap; overflow-wrap: anywhere; }
-.publication-comment-children { margin: 14px 0 0 24px; border-left: 2px solid #e1ebf8; }
-.publication-comment-children .publication-comment { padding-block: 12px; }
+.publication-comment p { margin-top: 4px; color: #233f67; white-space: pre-wrap; overflow-wrap: anywhere; }
+.publication-comment-children { margin: 8px 0 0 16px; border-left: 2px solid #e1ebf8; }
+.publication-comment-children .publication-comment { padding-block: 7px; }
 .publication-comment-children .publication-comment:first-child { padding-top: 0; }
 .publication-comment-children .publication-comment:last-child { padding-bottom: 0; }
 .publication-comment-form { display: grid; gap: 8px; margin-top: 12px; border-top: 1px solid #dbe6f5; padding-top: 16px; }
@@ -227,7 +226,6 @@ h1,h2,p { margin: 0; }
 .publication-comment-form textarea:focus-visible { border-color: var(--brand); }
 .publication-comment-submit { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .publication-comment-submit .button { min-height: 36px; padding-inline: 14px; font-size: 12px; }
-.publication-login-prompt a { color: #315b9a; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .publication-state-page { min-height: calc(100vh - 52px); display: grid; place-items: center; }
 .publication-state-page .surface-card { width: min(100%, 620px); }
 .publication-state-page h1 { margin-top: 10px; color: #10284a; }
@@ -413,8 +411,8 @@ h1,h2,p { margin: 0; }
   .publication-submit-row .button { min-width: 112px; }
   .publication-body { padding-top: 20px; }
   .publication-comments-heading { align-items: flex-start; }
-  .publication-comment-meta time { flex-basis: 100%; margin-right: 0; }
-  .publication-comment-children { margin-left: 12px; padding-left: 10px; }
+  .publication-login-prompt,.publication-comment-meta .comment-action { min-height: 44px; align-items: center; }
+  .publication-comment-children { margin-left: 8px; padding-left: 8px; }
   .publication-comment-form-inline { padding: 10px; }
   .publication-comment-submit { align-items: stretch; flex-direction: column; }
   .publication-comment-submit .field-help { align-self: flex-start; }
@@ -557,7 +555,7 @@ h1,h2,p { margin: 0; }
 .publication-detail-card,.publication-comments { padding:24px; }
 .publication-detail-heading h1,.marketplace-detail-card h1,.lostfound-detail h1,.localcare-detail h1,.gathering-detail h1 { font-size:24px; line-height:1.45; }
 .publication-body { font-size:16px; line-height:1.75; max-width:760px; padding:20px 0; color:var(--text); }
-.publication-comment p { font-size:15px; line-height:1.7; }
+.publication-comment p { font-size:14px; line-height:1.55; }
 .engagement-button { min-height:36px; padding:6px 12px; font-size:13px; }
 .marketplace-detail-card,.lostfound-detail,.localcare-detail,.gathering-detail { max-width:800px; margin:16px auto 0; padding:24px; }
 .marketplace-description,.lostfound-description,.localcare-content { font-size:16px; line-height:1.75; }
@@ -605,7 +603,7 @@ h1,h2,p { margin: 0; }
 .marketplace-card h2 { grid-row:2; } .marketplace-card > strong { grid-column:2; grid-row:2; white-space:nowrap; }
 .marketplace-card p { -webkit-line-clamp:1; } .marketplace-card small { margin-top:2px; }
 .search-panel { border:0; } .marketplace-toolbar .search-panel { margin-bottom:0; }
-.publication-comment-children { max-width:100%; margin-left:12px; padding-left:12px; }
+.publication-comment-children { max-width:100%; margin-left:8px; padding-left:8px; }
 @media(max-width:760px) {
  .marketplace-card { column-gap:12px; } .marketplace-card > strong { font-size:16px; } .profile-card .form-section label { min-height:44px; }
  .page { padding-inline:16px; } .community-board-tabs { margin-inline:0; padding-inline:0; }

@@ -39,8 +39,8 @@ export default function LoginPage() {
     } catch (requestError) {
       setError(
         requestError instanceof ApiError && requestError.status === 401
-          ? "이메일 인증 여부와 로그인 정보를 확인해 주세요."
-          : "로그인 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+          ? "이메일 인증 또는 로그인 정보 오류"
+          : "로그인 요청 실패",
       );
     } finally {
       setSubmitting(false);
@@ -58,7 +58,6 @@ export default function LoginPage() {
     <AuthPageLayout
       eyebrow="계정 접속"
       title="로그인"
-      description="가입한 이메일과 비밀번호로 로그인해 주세요."
     >
       <form onSubmit={submit} className="auth-form" noValidate>
         <label>
@@ -72,7 +71,6 @@ export default function LoginPage() {
             spellCheck={false}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@townpet.dev"
             aria-invalid={Boolean(error)}
           />
         </label>
@@ -91,7 +89,6 @@ export default function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
             onKeyUp={(event) => setCapsLockOn(event.getModifierState("CapsLock"))}
             onBlur={() => setCapsLockOn(false)}
-            placeholder="비밀번호를 입력해 주세요"
             aria-label="비밀번호"
             aria-invalid={Boolean(error)}
           />
@@ -128,7 +125,7 @@ export default function LoginPage() {
         <aside className="demo-credential" aria-label="포트폴리오 데모 계정">
           <div>
             <strong>데모 계정</strong>
-            <p>공개 showcase의 합성 계정이며 입력 데이터는 주기적으로 초기화됩니다.</p>
+            <p>합성 데모 계정 · 데이터 주기 초기화</p>
           </div>
           <code>{DEMO_EMAIL}</code>
           <code>{DEMO_PASSWORD}</code>

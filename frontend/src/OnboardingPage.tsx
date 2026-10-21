@@ -69,7 +69,7 @@ export default function OnboardingPage() {
     } catch (requestError) {
       setError(
         requestError instanceof ApiError && requestError.status === 400
-          ? "동네와 반려동물 입력값을 확인해 주세요."
+          ? "동네·반려동물 정보 오류"
           : "온보딩 정보를 저장하지 못했습니다.",
       );
     } finally {
@@ -107,14 +107,12 @@ export default function OnboardingPage() {
       <header className="onboarding-heading">
 
         <h1>내 동네와 반려동물 설정</h1>
-        <p>{member?.nickname}님에게 맞는 동네 정보와 반려동물 프로필을 준비합니다.</p>
       </header>
 
       <form className="onboarding-form" onSubmit={save}>
         <section className="surface-card form-section">
           <div>
             <h2>내 동네</h2>
-            <p>피드와 지역 정보를 확인할 대표 동네를 선택해 주세요.</p>
           </div>
           <label>
             대표 동네
@@ -128,7 +126,7 @@ export default function OnboardingPage() {
               }}
             >
               <option value="" disabled>
-                동네를 선택해 주세요
+                동네 선택
               </option>
               {options.map((neighborhood) => (
                 <option key={neighborhood.id} value={neighborhood.id}>
@@ -146,7 +144,6 @@ export default function OnboardingPage() {
                 setBio(event.target.value);
                 setSaved(false);
               }}
-              placeholder="나와 반려동물을 간단히 소개해 주세요."
             />
             <span className="field-help">{bio.length}/500</span>
           </label>
@@ -156,7 +153,7 @@ export default function OnboardingPage() {
           <div className="section-heading-row">
             <div>
               <h2>반려동물</h2>
-              <p>최대 10마리까지 등록할 수 있습니다.</p>
+              <p>최대 10마리</p>
             </div>
             <button
               type="button"

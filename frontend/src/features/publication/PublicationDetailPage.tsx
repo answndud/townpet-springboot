@@ -265,11 +265,11 @@ export default function PublicationDetailPage() {
       if (requestError instanceof ApiError && requestError.status === 401 && !guestViewer) {
         navigate(`/login?next=/posts/${publication.id}#comments`, { replace: true });
       } else if (requestError instanceof ApiError && requestError.status === 401 && guestViewer) {
-        setCommentError("비회원 댓글을 등록하지 못했습니다. 입력 내용을 확인해 주세요.");
+        setCommentError("비회원 댓글 등록 실패 · 입력값 오류");
       } else if (requestError instanceof ApiError && requestError.status === 400) {
-        setCommentError("답글은 한 단계까지만 작성할 수 있습니다.");
+        setCommentError("답글은 1단계까지");
       } else if (requestError instanceof ApiError && requestError.status === 404) {
-        setCommentError("삭제되었거나 댓글을 작성할 수 없는 게시글입니다.");
+        setCommentError("댓글 작성 불가 게시글");
       } else {
         setCommentError("댓글을 등록하지 못했습니다.");
       }
@@ -293,7 +293,7 @@ export default function PublicationDetailPage() {
       setComments((current) => current.filter((item) => item.id !== comment.id));
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 409) {
-        setCommentError("다른 곳에서 댓글이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");
+        setCommentError("댓글 변경됨 · 새로고침 필요");
       } else {
         setCommentError("댓글을 삭제하지 못했습니다.");
       }
@@ -329,8 +329,8 @@ export default function PublicationDetailPage() {
       setCommentError(null);
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) setCommentError("댓글 비밀번호가 일치하지 않습니다.");
-      else if (requestError instanceof ApiError && requestError.status === 429) setCommentError("비밀번호 확인 횟수가 많습니다. 잠시 뒤 다시 시도해 주세요.");
-      else if (requestError instanceof ApiError && requestError.status === 409) setCommentError("댓글이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");
+      else if (requestError instanceof ApiError && requestError.status === 429) setCommentError("비밀번호 확인 횟수 초과 · 잠시 후 재시도");
+      else if (requestError instanceof ApiError && requestError.status === 409) setCommentError("댓글 변경됨 · 새로고침 필요");
       else setCommentError(guestManageMode === "delete" ? "댓글을 삭제하지 못했습니다." : "댓글을 수정하지 못했습니다.");
     }
   }
@@ -346,7 +346,7 @@ export default function PublicationDetailPage() {
       navigate("/my-posts", { replace: true });
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 409) {
-        setMutationError("다른 곳에서 게시글이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");
+        setMutationError("게시글 변경됨 · 새로고침 필요");
       } else if (requestError instanceof ApiError && requestError.status === 401) {
         navigate(`/login?next=/posts/${publication.id}`, { replace: true });
       } else {
@@ -386,7 +386,7 @@ export default function PublicationDetailPage() {
     if (!publication) return;
     try {
       await trustApi.report({ targetType: "PUBLICATION", targetId: publication.id, reason: reportReason, detail: reportDetail.trim() || undefined });
-      setMutationError("신고가 접수되었습니다. 운영팀이 확인합니다.");
+      setMutationError("신고 접수 · 운영 검토 예정");
       setReportOpen(false);
       setReportDetail("");
     } catch (requestError) {
@@ -482,7 +482,7 @@ export default function PublicationDetailPage() {
         <form className="surface-card publication-fields" onSubmit={(event) => { event.preventDefault(); void reportPublication(); }}>
           <h2>게시글 신고</h2>
           <label>사유<select value={reportReason} onChange={(event) => setReportReason(event.target.value as TrustReportReason)}><option value="SPAM">스팸·홍보</option><option value="ABUSE">욕설·괴롭힘</option><option value="PRIVACY">개인정보 노출</option><option value="ILLEGAL">불법·위험 정보</option><option value="OTHER">기타</option></select></label>
-          <label>상세 설명<textarea maxLength={1000} value={reportDetail} onChange={(event) => setReportDetail(event.target.value)} placeholder="운영팀이 확인할 내용을 적어 주세요." /></label>
+          <label>상세 설명<textarea maxLength={1000} value={reportDetail} onChange={(event) => setReportDetail(event.target.value)} /></label>
           <div className="profile-actions"><button className="button button-primary" type="submit">신고 접수</button><button className="button button-soft" type="button" onClick={() => setReportOpen(false)}>취소</button></div>
         </form>
       ) : null}
@@ -577,9 +577,6 @@ export default function PublicationDetailPage() {
               </button>
             </div>
           ) : null}
-          <p className="publication-engagement-help">
-            {moderatorViewer ? "좋아요 수만 확인할 수 있습니다." : memberViewer ? "좋아요는 한 번만, 저장한 글은 프로필에서 다시 볼 수 있어요." : "로그인하면 좋아요와 저장을 사용할 수 있어요."}
-          </p>
         </div>
       </article>
       <section className="surface-card publication-comments" id="comments" aria-labelledby="comments-heading" aria-busy={commentsLoading}>
@@ -596,9 +593,7 @@ export default function PublicationDetailPage() {
         </form> : null}
         {commentsLoading ? (
           <p className="publication-comments-state" role="status">댓글을 불러오는 중...</p>
-        ) : comments.length === 0 ? (
-          <p className="publication-comments-state">첫 번째 댓글을 남겨 보세요.</p>
-        ) : (
+        ) : comments.length > 0 ? (
           <div className="publication-comment-list">
             <PublicationCommentThread
               comments={comments}
@@ -627,12 +622,11 @@ export default function PublicationDetailPage() {
               onSubmit={createComment}
             />
           </div>
-        )}
+        ) : null}
         {!replyingTo && (memberViewer || guestViewer) ? (
           <form className="publication-comment-form" aria-label="댓글 작성" onSubmit={createComment} noValidate>
             {guestViewer ? <>
-              <p className="field-help">댓글을 수정·삭제할 때 사용할 비밀번호를 설정하세요. 비밀번호를 잊으면 댓글을 직접 관리할 수 없습니다. 전화번호 등 개인정보는 댓글에 적지 마세요.</p>
-              <label>관리 비밀번호<input type="password" minLength={8} value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} autoComplete="current-password" /></label>
+              <label>댓글 관리 비밀번호 입력<input type="password" minLength={8} value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} autoComplete="current-password" /></label>
             </> : null}
             <label>
               댓글
@@ -641,7 +635,6 @@ export default function PublicationDetailPage() {
                 maxLength={5000}
                 value={commentBody}
                 onChange={(event) => setCommentBody(event.target.value)}
-                placeholder="반려생활에 도움이 되는 이야기를 남겨 주세요."
               />
             </label>
             <div className="publication-comment-submit">
@@ -651,12 +644,8 @@ export default function PublicationDetailPage() {
               </button>
             </div>
           </form>
-        ) : !replyingTo && moderatorViewer ? (
-          <p className="publication-login-prompt">운영자 계정은 일반 회원용 댓글을 작성할 수 없습니다.</p>
-        ) : !replyingTo ? (
-          <p className="publication-login-prompt">
-            <Link to={`/login?next=/posts/${publication.id}#comments`}>로그인</Link>하면 댓글을 남길 수 있어요.
-          </p>
+        ) : !replyingTo && !moderatorViewer ? (
+          <Link className="publication-login-prompt" to={`/login?next=/posts/${publication.id}#comments`}>로그인</Link>
         ) : null}
       </section>
     </main>

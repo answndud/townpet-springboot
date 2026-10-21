@@ -82,7 +82,7 @@ export default function ProfilePage() {
         <h1>{member ? `${member.nickname}님의 프로필` : "프로필 불러오는 중..."}</h1>
         {member ? (
           <>
-            <p>{member.bio ?? "소개가 없습니다."}</p>
+            <p>{member.bio ?? "소개 없음"}</p>
             {member.role === "MEMBER" ? (
               <div className="profile-actions">
                 <Link className="button button-soft" to="/my-posts">내 작성글</Link>
@@ -90,7 +90,7 @@ export default function ProfilePage() {
               </div>
             ) : null}
             <h2 className="profile-section-title">반려동물</h2>
-            {member.pets.length ? <ul>{member.pets.map((pet) => <li key={pet.id}>{pet.name} · {pet.species}</li>)}</ul> : <p>등록한 반려동물이 없습니다.</p>}
+            {member.pets.length ? <ul>{member.pets.map((pet) => <li key={pet.id}>{pet.name} · {pet.species}</li>)}</ul> : <p>반려동물 없음</p>}
             {member.role === "MEMBER" ? (
               <form className="form-section" onSubmit={saveVisibility}>
                 <h2>공개 범위</h2>
@@ -104,8 +104,8 @@ export default function ProfilePage() {
             ) : (
               <section className="form-section">
                 <h2>운영자 프로필</h2>
-                <p>운영자 계정은 회원 공개 프로필 설정 대신 운영 콘솔을 사용합니다.</p>
-                <Link className="button button-soft" to="/admin">운영 콘솔로 이동</Link>
+                <p>프로필 설정 미지원</p>
+                <Link className="button button-soft" to="/admin">운영 콘솔</Link>
               </section>
             )}
           </>

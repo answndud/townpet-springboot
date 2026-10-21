@@ -155,7 +155,7 @@ function Header() {
       <button className="account-logout" type="button" disabled={loggingOut} onClick={async () => {
         setLoggingOut(true); setLogoutError(null);
         try { await authApi.logout(); setPanel(null); navigate("/login"); }
-        catch { setLogoutError("로그아웃하지 못했습니다. 다시 시도하세요."); }
+        catch { setLogoutError("로그아웃 실패"); }
         finally { setLoggingOut(false); }
       }}>{loggingOut ? "로그아웃 중…" : "로그아웃"}</button>
       {logoutError ? <p className="form-error" role="alert">{logoutError}</p> : null}
@@ -171,7 +171,7 @@ function Footer() {
   return (
     <footer className="site-footer">
       <div className="header-inner">
-        <div className="footer-brand"><strong>TownPet</strong><span>반려동물 커뮤니티</span><small>합성 콘텐츠로 구성된 포트폴리오 체험 공간입니다.</small></div>
+        <div className="footer-brand"><strong>TownPet</strong><span>반려동물 커뮤니티</span><small>합성 데이터 · 포트폴리오</small></div>
         <nav aria-label="서비스 안내">
           <Link to="/terms">이용약관</Link>
           <Link to="/privacy">개인정보처리방침</Link>
@@ -241,7 +241,7 @@ function NonModeratorRoute({ children }: { children: ReactNode }) {
 
 function AuthError() {
   const { refresh } = useAuth();
-  return <main className="page placeholder-page"><section className="surface-card"><p className="form-error" role="alert">로그인 상태를 확인하지 못했습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><button className="button button-soft" type="button" onClick={refresh}>다시 시도</button></section></main>;
+  return <main className="page placeholder-page"><section className="surface-card"><p className="form-error" role="alert">로그인 상태 확인 실패</p><button className="button button-soft" type="button" onClick={refresh}>다시 시도</button></section></main>;
 }
 
 function RootRoute() {
@@ -260,7 +260,7 @@ function NotFoundPage() {
       <section className="surface-card">
 
         <h1>페이지를 찾을 수 없습니다</h1>
-        <p>요청한 주소가 없거나 더 이상 공개되지 않습니다.</p>
+        <p>주소 없음 또는 비공개</p>
         <Link className="button button-primary" to="/">
           홈으로 돌아가기
         </Link>
@@ -316,39 +316,39 @@ function applySeo(location: { pathname: string; search: string }) {
   const hasQuery = new URLSearchParams(location.search).size > 0;
   const noindex = isPrivate || isSearch || isUtility || hasQuery || rawPath === "/404";
   const titleByPath: Array<[string, string, string]> = [
-    ["/", "우리 동네 반려생활 정보", "우리 동네 반려생활 정보와 공개 커뮤니티를 한곳에서 확인하세요."],
-    ["/terms", "이용약관", "TownPet 공개 커뮤니티 이용약관입니다."],
-    ["/privacy", "개인정보 처리방침", "TownPet portfolio sandbox의 개인정보 처리방침입니다."],
-    ["/best", "인기 게시글", "TownPet에서 추천 수가 높은 공개 반려생활 게시글을 확인하세요."],
-    ["/boards", "공개 커뮤니티 게시판", "반려생활에 도움이 되는 TownPet 공개 커뮤니티 게시판입니다."],
-    ["/marketplace", "동네 거래", "우리 동네 반려생활 용품과 나눔 정보를 확인하세요."],
-    ["/lost-found", "분실·목격", "반려동물 분실과 발견 정보를 확인하고 공유하세요."],
-    ["/guides", "지역 가이드", "병원·산책·복지 등 지역 반려생활 정보를 확인하세요."],
-    ["/gatherings", "동네 모임", "반려생활을 함께하는 동네 모임 정보를 확인하세요."],
-    ["/care", "이웃 돌봄", "우리 동네 반려동물 돌봄 정보를 확인하세요."],
-    ["/volunteer", "봉사 기회", "반려동물과 지역을 위한 봉사 기회를 확인하세요."],
-    ["/hospital-reviews", "동물병원 후기", "반려생활에 도움이 되는 동물병원 후기를 확인하세요."],
+    ["/", "우리 동네 반려생활 정보", "TownPet 공개 커뮤니티"],
+    ["/terms", "이용약관", "TownPet 이용약관"],
+    ["/privacy", "개인정보 처리방침", "TownPet 개인정보 처리방침"],
+    ["/best", "인기 게시글", "추천 게시글"],
+    ["/boards", "공개 커뮤니티 게시판", "반려생활 공개 게시판"],
+    ["/marketplace", "동네 거래", "반려동물 용품 거래·나눔"],
+    ["/lost-found", "분실·목격", "반려동물 분실·목격 정보"],
+    ["/guides", "지역 가이드", "지역 병원·산책·복지 정보"],
+    ["/gatherings", "동네 모임", "지역 반려생활 모임"],
+    ["/care", "이웃 돌봄", "반려동물 돌봄 정보"],
+    ["/volunteer", "봉사 기회", "반려동물·지역 봉사 기회"],
+    ["/hospital-reviews", "동물병원 후기", "동물병원 이용 후기"],
   ];
   const dynamicTitleByPath: Array<[RegExp, string, string]> = [
-    [/^\/boards(?:\/|$)/, "공개 커뮤니티 게시판", "반려생활에 도움이 되는 TownPet 공개 커뮤니티 게시판입니다."],
-    [/^\/animals(?:\/|$)/, "반려동물 게시판", "반려동물 종류별 TownPet 공개 커뮤니티 게시판입니다."],
-    [/^\/towns(?:\/|$)/, "지역 반려생활", "지역별 입양·거래·가이드 정보를 확인하세요."],
-    [/^\/lounges\/breeds(?:\/|$)/, "품종 커뮤니티", "품종별 반려생활 이야기와 공개 게시글을 확인하세요."],
-    [/^\/posts\/[^/]+$/, "공개 게시글", "TownPet 공개 반려생활 게시글의 내용과 대화를 확인하세요."],
-    [/^\/adoptions\/[^/]+$/, "입양 정보", "새 가족을 기다리는 반려동물의 공개 입양 정보를 확인하세요."],
-    [/^\/marketplace\/[^/]+$/, "동네 거래 정보", "우리 동네 반려생활 용품과 나눔 정보를 확인하세요."],
-    [/^\/lost-found\/[^/]+$/, "분실·목격 정보", "반려동물 분실과 발견에 관한 공개 정보를 확인하세요."],
-    [/^\/gatherings\/[^/]+$/, "동네 모임 정보", "반려생활을 함께하는 공개 동네 모임 정보를 확인하세요."],
-    [/^\/care\/[^/]+$/, "이웃 돌봄 정보", "우리 동네 반려동물 돌봄 요청의 공개 정보를 확인하세요."],
-    [/^\/guides\/[^/]+$/, "지역 가이드", "병원·산책·복지 등 공개 지역 반려생활 정보를 확인하세요."],
-    [/^\/members\/[^/]+$/, "공개 회원 프로필", "TownPet 회원이 공개한 반려생활 활동을 확인하세요."],
-    [/^\/users\/[^/]+$/, "공개 회원 프로필", "TownPet 회원이 공개한 반려생활 활동을 확인하세요."],
+    [/^\/boards(?:\/|$)/, "공개 커뮤니티 게시판", "반려생활 공개 게시판"],
+    [/^\/animals(?:\/|$)/, "반려동물 게시판", "동물별 커뮤니티 게시판"],
+    [/^\/towns(?:\/|$)/, "지역 반려생활", "지역별 입양·거래·가이드"],
+    [/^\/lounges\/breeds(?:\/|$)/, "품종 커뮤니티", "품종별 커뮤니티 게시글"],
+    [/^\/posts\/[^/]+$/, "공개 게시글", "반려생활 커뮤니티 게시글"],
+    [/^\/adoptions\/[^/]+$/, "입양 정보", "반려동물 입양 정보"],
+    [/^\/marketplace\/[^/]+$/, "동네 거래 정보", "반려동물 용품 거래·나눔"],
+    [/^\/lost-found\/[^/]+$/, "분실·목격 정보", "반려동물 분실·목격 정보"],
+    [/^\/gatherings\/[^/]+$/, "동네 모임 정보", "지역 반려생활 모임"],
+    [/^\/care\/[^/]+$/, "이웃 돌봄 정보", "반려동물 돌봄 요청"],
+    [/^\/guides\/[^/]+$/, "지역 가이드", "지역 병원·산책·복지 정보"],
+    [/^\/members\/[^/]+$/, "공개 회원 프로필", "TownPet 공개 회원 프로필"],
+    [/^\/users\/[^/]+$/, "공개 회원 프로필", "TownPet 공개 회원 프로필"],
   ];
   const match = titleByPath.find(([path]) => rawPath === path || (path !== "/" && rawPath.startsWith(`${path}/`)));
   const dynamicMatch = dynamicTitleByPath.find(([path]) => path.test(rawPath));
   const title = match?.[1] ?? (noindex ? "TownPet" : "반려생활 커뮤니티");
   const resolvedTitle = dynamicMatch?.[1] ?? title;
-  const description = dynamicMatch?.[2] ?? match?.[2] ?? "TownPet 공개 반려생활 커뮤니티의 정보와 이야기를 확인하세요.";
+  const description = dynamicMatch?.[2] ?? match?.[2] ?? "TownPet 공개 커뮤니티";
   document.title = `TownPet | ${resolvedTitle}`;
   upsertMeta("name", "description", description);
   upsertMeta("name", "robots", noindex ? "noindex,nofollow" : "index,follow");

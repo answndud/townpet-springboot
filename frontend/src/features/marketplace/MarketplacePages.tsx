@@ -34,7 +34,6 @@ function MarketplaceHeader({ action = true }: { action?: boolean }) {
       <div>
 
         <h1>동네 거래</h1>
-        <p>반려동물 용품의 판매, 대여, 나눔 정보를 확인하세요.</p>
       </div>
       {action ? <Link className="button button-write" to="/marketplace/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>물품 등록</span></Link> : null}
     </header>
@@ -69,12 +68,12 @@ export function MarketplaceListPage() {
       </div>
       <form className="search-panel community-bottom-search" aria-label="거래 물품 검색" onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); const next = new URLSearchParams(params); const value = String(data.get("q") ?? "").trim(); if (value) next.set("q",value); else next.delete("q"); next.set("searchField",String(data.get("searchField") ?? "ALL")); setParams(next); }}>
         <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
-        <label><span className="search-label">거래 검색</span><input aria-label="거래 검색" name="q" key={query} defaultValue={query} placeholder="물품 이름이나 설명" /></label><button className="button button-soft" type="submit">검색</button>
+        <label><span className="search-label">거래 검색</span><input aria-label="거래 검색" name="q" key={query} defaultValue={query} /></label><button className="button button-soft" type="submit">검색</button>
       </form>
       {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
       {loading ? <section className="surface-card" role="status">거래 목록을 불러오는 중...</section> : null}
       {!loading && !error && listings.length === 0 ? (
-        <section className="surface-card marketplace-empty"><h2>아직 등록된 물품이 없습니다</h2><p>첫 번째 반려생활 물품을 올려 보세요.</p>{viewerRole !== "MODERATOR" ? <Link className="button button-write" to="/marketplace/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>물품 등록</span></Link> : null}</section>
+        <section className="surface-card marketplace-empty"><h2>등록된 물품 없음</h2>{viewerRole !== "MODERATOR" ? <Link className="button button-write" to="/marketplace/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>물품 등록</span></Link> : null}</section>
       ) : null}
       {!loading && listings.length > 0 ? (
         <section className="marketplace-grid" aria-label="거래 목록">
@@ -111,7 +110,7 @@ export function MarketplaceDetailPage() {
     try { await marketplaceApi.changeStatus(listing.id, status, listing.version); retry(); }
     catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) { navigate(`/login?next=/marketplace/${listing.id}`); return; }
-      setActionError(requestError instanceof ApiError && requestError.status === 409 ? "현재 상태에서는 변경할 수 없습니다." : "상태를 변경하지 못했습니다.");
+      setActionError(requestError instanceof ApiError && requestError.status === 409 ? "현재 상태에서 변경 불가" : "상태 변경 실패");
     } finally { setChanging(false); }
   }
 
@@ -125,7 +124,7 @@ export function MarketplaceDetailPage() {
         <div className="marketplace-card-meta"><span className="publication-chip publication-chip-primary">{KIND_LABELS[listing.kind]}</span><span className="publication-chip">{STATUS_LABELS[listing.status]}</span></div>
         <h1>{listing.title}</h1><p className="marketplace-price">{formatPrice(listing.priceKrw)}</p><p className="marketplace-description">{listing.description}</p>
         <div className="marketplace-detail-meta"><span>TownPet 회원</span><span>·</span><time dateTime={listing.createdAt}>{formatDateTime(listing.createdAt)}</time></div>
-        {!owner ? <p className="field-help marketplace-share-help" role="note">합성 데모 게시글입니다. 실제 연락이나 거래는 지원하지 않습니다.</p> : null}
+        {!owner ? <p className="field-help marketplace-share-help" role="note">합성 데이터 · 실제 거래 불가</p> : null}
         {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
         {owner && (listing.status === "AVAILABLE" || listing.status === "RESERVED") ? <div className="marketplace-actions">
           {listing.status === "AVAILABLE" ? <button className="button button-primary" type="button" disabled={changing} onClick={() => changeStatus("RESERVED")}>예약 처리</button> : <button className="button button-soft" type="button" disabled={changing} onClick={() => changeStatus("AVAILABLE")}>예약 취소</button>}
@@ -158,7 +157,7 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
     event.preventDefault();
     const priceKrw = kind === "SHARE" ? null : Number(price);
     const invalidPrice = kind !== "SHARE" && (priceKrw === null || !Number.isInteger(priceKrw) || priceKrw < 0);
-    if (!title.trim() || !description.trim() || invalidPrice) { setError("제목, 설명과 가격을 확인해 주세요."); return; }
+    if (!title.trim() || !description.trim() || invalidPrice) { setError("제목·설명·가격 입력 오류"); return; }
     setSubmitting(true); setError(null);
     try {
       const input = { kind, title: title.trim(), description: description.trim(), priceKrw };
@@ -168,18 +167,18 @@ export function MarketplaceFormPage({ edit = false, initialKind = "SELL" }: { ed
       navigate(`/marketplace/${item.id}`);
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) { navigate(`/login?next=${edit ? `/marketplace/${listingId}/edit` : "/marketplace/new"}`); return; }
-      setError(requestError instanceof ApiError && requestError.status === 409 ? "예약 이후에는 거래 조건을 수정할 수 없습니다." : "등록 정보를 저장하지 못했습니다.");
+      setError(requestError instanceof ApiError && requestError.status === 409 ? "예약 후 거래 조건 변경 불가" : "등록 정보 저장 실패");
     } finally { setSubmitting(false); }
   }
 
   if (edit && loading) return <main className="page marketplace-page"><section className="surface-card" role="status">수정 정보를 불러오는 중...</section></main>;
   return (
-    <main className="page marketplace-page"><section className="marketplace-hero"><div><h1>{edit ? "거래 글 수정" : "새 거래 글"}</h1><p>모든 동물 가족이 함께 보는 공통게시판에 가격과 상태를 분명하게 적어 주세요.</p></div></section>
+    <main className="page marketplace-page"><section className="marketplace-hero"><div><h1>{edit ? "거래 글 수정" : "새 거래 글"}</h1></div></section>
       <form className="surface-card marketplace-form" onSubmit={submit} noValidate>
         <label>거래 유형<select value={kind} disabled={edit} onChange={(event) => setKind(event.target.value as MarketplaceListingKind)}>{(Object.keys(KIND_LABELS) as MarketplaceListingKind[]).map((option) => <option key={option} value={option}>{KIND_LABELS[option]}</option>)}</select></label>
-        <label>제목<input maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="예: 강아지 이동장 판매해요" /></label>
-        <label>설명<textarea maxLength={5000} value={description} onChange={(event) => setDescription(event.target.value)} placeholder="상태, 거래 방법과 주의사항을 적어 주세요." /></label>
-        {kind === "SHARE" ? <p className="field-help marketplace-share-help">나눔은 가격 없이 등록됩니다.</p> : <label>가격(원)<input type="number" min="0" step="1" value={price} onChange={(event) => setPrice(event.target.value)} placeholder="0" /></label>}
+        <label>제목<input maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+        <label>설명<textarea maxLength={5000} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
+        {kind === "SHARE" ? null : <label>가격(원)<input type="number" min="0" step="1" value={price} onChange={(event) => setPrice(event.target.value)} /></label>}
         {error ? <p className="form-error marketplace-error" role="alert">{error}</p> : null}
         <div className="publication-submit-row"><Link className="publication-text-link" to={edit ? `/marketplace/${listingId}` : "/marketplace"}>취소</Link><button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "저장 중..." : edit ? "수정 저장" : "등록"}</button></div>
       </form>

@@ -33,7 +33,6 @@ export default function PersonalPostsPage({ saved = false }: { saved?: boolean }
             <strong>{saved ? "북마크" : "내 작성글"}</strong>
           </p>
           <h1>{saved ? "저장한 글" : "내가 쓴 글"}</h1>
-          <p>{saved ? "나중에 다시 보고 싶은 반려생활 정보를 모아 두었습니다." : "내가 작성한 글과 기록을 확인하세요."}</p>
         </div>
         <Link className="button button-write" to="/posts/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link>
       </header>
@@ -41,8 +40,7 @@ export default function PersonalPostsPage({ saved = false }: { saved?: boolean }
       {loading ? <p className="surface-card" role="status">게시글을 불러오는 중...</p> : null}
       {!loading && !filteredItems.length && !error ? (
         <section className="surface-card feed-empty">
-          <h2>{query ? "조건에 맞는 게시글이 없습니다" : "아직 게시글이 없습니다"}</h2>
-          <p>{query ? "다른 검색어로 다시 시도해 보세요." : "글을 작성하면 이곳에서 확인할 수 있습니다."}</p>
+          <h2>{query ? "검색 결과 없음" : "게시글 없음"}</h2>
           <Link className="button button-write" to="/posts/new"><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link>
         </section>
       ) : null}
@@ -55,7 +53,7 @@ export default function PersonalPostsPage({ saved = false }: { saved?: boolean }
         setSearchParams({ ...(nextQuery ? { q: nextQuery } : {}), ...(nextField !== "ALL" ? { searchField: nextField } : {}) });
       }}>
         <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
-        <label><span className="search-label">게시글 검색</span><input aria-label="검색어" name="q" defaultValue={query} placeholder="제목이나 내용" /></label>
+        <label><span className="search-label">게시글 검색</span><input aria-label="검색어" name="q" defaultValue={query} /></label>
         <button className="button button-soft" type="submit">검색</button>
       </form>
     </main>

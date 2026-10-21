@@ -96,13 +96,13 @@ export default function PublicationEditPage() {
       navigate(`/posts/${edited.id}`, { replace: true });
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 409) {
-        setError("다른 곳에서 게시글이 변경되었습니다. 최신 내용을 다시 불러와 수정해 주세요.");
+        setError("게시글 변경됨 · 최신 내용 필요");
       } else if (requestError instanceof ApiError && requestError.status === 403) {
         setError("작성자만 이 게시글을 수정할 수 있습니다.");
       } else if (requestError instanceof ApiError && requestError.status === 401) {
         navigate(`/login?next=/posts/${publication.id}/edit`, { replace: true });
       } else if (requestError instanceof ApiError && requestError.status === 400) {
-        setError("제목과 본문을 확인해 주세요.");
+        setError("제목·본문 입력 오류");
       } else {
         setError("게시글을 수정하지 못했습니다.");
       }
@@ -138,7 +138,6 @@ export default function PublicationEditPage() {
         <div>
           <p className="eyebrow">글 수정</p>
           <h1>게시글 수정</h1>
-          <p>전체 커뮤니티에 공개되는 내용과 글 정보를 확인해 주세요.</p>
         </div>
         <div className="publication-hero-actions">
           <span className="publication-chip">작성자 수정</span>
@@ -185,14 +184,8 @@ export default function PublicationEditPage() {
           </section>
 
           <aside className="surface-card publication-policy">
-            <p className="eyebrow">수정 안내</p>
-            <p>저장 시 읽어 온 버전을 검사해 다른 곳의 변경을 조용히 덮어쓰지 않습니다.</p>
-            <div>
-              <strong>저장 전 확인</strong>
-              <ul>
-                <li>개인정보와 민감한 연락처는 공개하지 마세요.</li>
-              </ul>
-            </div>
+            <p className="eyebrow">공개 범위</p>
+            <p>전체 공개 · 개인정보 입력 금지</p>
           </aside>
         </div>
 

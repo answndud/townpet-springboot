@@ -24,7 +24,7 @@ export default function PasswordResetPage() {
       await authApi.requestPasswordReset(email);
       setRequestSent(true);
     } catch {
-      setError("요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      setError("재설정 요청 실패");
     } finally {
       setRequesting(false);
     }
@@ -60,13 +60,11 @@ export default function PasswordResetPage() {
     <AuthPageLayout
       eyebrow="계정 복구"
       title="비밀번호 재설정"
-      description="가입한 이메일로 일회성 토큰을 요청한 뒤 새 비밀번호를 설정합니다."
     >
       <div className="auth-steps">
         <form onSubmit={requestReset} className="auth-form auth-step">
           <div>
             <h2>1. 재설정 메일 받기</h2>
-            <p>계정 존재 여부와 관계없이 같은 안내를 제공합니다.</p>
           </div>
           <label>
             이메일
@@ -77,13 +75,11 @@ export default function PasswordResetPage() {
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@townpet.dev"
             />
           </label>
           {requestSent ? (
             <div className="form-success" role="status" aria-live="polite">
-              <p>입력한 주소의 계정을 확인한 뒤 필요한 경우 재설정 메일을 보냈습니다.</p>
-              <p>메일이 도착하지 않으면 스팸함을 확인하거나 몇 분 뒤 다시 요청해 주세요.</p>
+              <p>계정이 있으면 재설정 메일을 보냅니다.</p>
             </div>
           ) : null}
           <button
@@ -98,7 +94,7 @@ export default function PasswordResetPage() {
         <form onSubmit={confirmReset} className="auth-form auth-step">
           <div>
             <h2>2. 새 비밀번호 설정</h2>
-            <p>대·소문자, 숫자와 특수문자를 포함해 10자 이상 입력해 주세요.</p>
+            <p>10자 이상 · 대/소문자·숫자·특수문자 포함</p>
           </div>
           <label>
             재설정 토큰
@@ -109,7 +105,6 @@ export default function PasswordResetPage() {
               value={token}
               onChange={(event) => setToken(event.target.value)}
               autoComplete="off"
-              placeholder="메일로 받은 토큰"
             />
           </label>
           <label>

@@ -49,13 +49,12 @@ export default function SearchPage(_props: { guest?: boolean }) {
       <header className="feed-hero">
         <div>
           <h1>반려생활 정보 검색</h1>
-          <p>게시글 제목·본문과 기간으로 필요한 정보를 찾아보세요.</p>
         </div>
       </header>
       <form aria-label="반려생활 정보 검색" className="search-panel search-panel-advanced" onSubmit={submit}>
         <label>
           <span className="search-label">검색어</span>
-          <input aria-label="검색어" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="산책, 병원, 분실..." />
+          <input aria-label="검색어" value={query} onChange={(event) => setQuery(event.target.value)} />
         </label>
         <label>
           <span className="search-label">시작일</span>
@@ -80,7 +79,7 @@ export default function SearchPage(_props: { guest?: boolean }) {
           )) : null}
           {!loading && !items.length && !error ? <p>검색 결과가 없습니다.</p> : null}
         </section>
-      ) : <p className="search-empty-hint">검색어 또는 기간을 입력하세요.</p>}
+      ) : null}
     </main>
   );
 }

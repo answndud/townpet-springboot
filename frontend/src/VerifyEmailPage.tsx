@@ -22,7 +22,7 @@ export default function VerifyEmailPage() {
       await authApi.requestEmailVerification(email);
       setRequestSent(true);
     } catch {
-      setError("인증 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      setError("인증 요청 실패");
     } finally {
       setRequesting(false);
     }
@@ -51,13 +51,12 @@ export default function VerifyEmailPage() {
     <AuthPageLayout
       eyebrow="계정 확인"
       title="이메일 인증"
-      description="이메일 소유를 확인해야 Credentials 로그인을 사용할 수 있습니다."
+      description="로그인 전 이메일 인증"
     >
       <div className="auth-steps">
         <form onSubmit={requestVerification} className="auth-form auth-step">
           <div>
             <h2>1. 인증 메일 받기</h2>
-            <p>계정이나 인증 상태를 노출하지 않고 같은 결과를 안내합니다.</p>
           </div>
           <label>
             이메일
@@ -68,13 +67,11 @@ export default function VerifyEmailPage() {
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@townpet.dev"
             />
           </label>
           {requestSent ? (
             <div className="form-success" role="status" aria-live="polite">
-              <p>입력한 주소의 계정을 확인한 뒤 필요한 경우 인증 메일을 보냈습니다.</p>
-              <p>메일이 도착하지 않으면 스팸함을 확인하거나 몇 분 뒤 다시 요청해 주세요.</p>
+              <p>계정이 있으면 인증 메일을 보냅니다.</p>
             </div>
           ) : null}
           <button
@@ -89,7 +86,6 @@ export default function VerifyEmailPage() {
         <form onSubmit={confirmVerification} className="auth-form auth-step">
           <div>
             <h2>2. 인증 토큰 확인</h2>
-            <p>메일로 받은 일회성 토큰을 입력해 주세요.</p>
           </div>
           <label>
             인증 토큰
@@ -100,7 +96,6 @@ export default function VerifyEmailPage() {
               value={token}
               onChange={(event) => setToken(event.target.value)}
               autoComplete="off"
-              placeholder="메일로 받은 토큰"
             />
           </label>
           {error ? (

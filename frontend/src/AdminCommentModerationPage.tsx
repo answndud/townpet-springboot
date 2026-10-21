@@ -52,7 +52,7 @@ export default function AdminCommentModerationPage() {
       retry();
     } catch (error) {
       if (error instanceof ApiError && [401, 403].includes(error.status)) navigate("/", { replace: true });
-      else setActionError("댓글 상태를 변경하지 못했습니다. 목록을 새로고침하고 다시 확인해 주세요.");
+      else setActionError("댓글 상태 변경 실패");
     } finally {
       setPendingId(null);
     }
@@ -63,7 +63,6 @@ export default function AdminCommentModerationPage() {
     <main className="page notification-page">
       <section className="localcare-hero">
         <h1>댓글 운영 관리</h1>
-        <p>신고 여부와 관계없이 공개 댓글을 확인하고 필요한 조치를 할 수 있습니다.</p>
       </section>
       {pageError ? <p role="alert">{pageError}</p> : null}
       {notice ? <p role="status">{notice}</p> : null}
@@ -76,7 +75,7 @@ export default function AdminCommentModerationPage() {
         <label>작성 종료<input type="datetime-local" value={draft.until} onChange={(event) => setDraft({ ...draft, until: event.target.value })} /></label>
         <div className="profile-actions"><button className="button button-primary" type="submit">검색</button><button className="button button-soft" type="button" onClick={() => { setDraft(emptyFilters); setQuery(emptyFilters); }}>초기화</button></div>
       </form>
-      <label className="surface-card">운영 조치 사유<input value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} required placeholder="조치 근거를 입력하세요" /></label>
+      <label className="surface-card">운영 조치 사유<input value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} required /></label>
       <section className="notification-list" aria-label="댓글 목록" aria-busy={loading}>
         {(comments ?? []).map((comment) => (
           <article className="surface-card notification-item" key={comment.id}>
@@ -86,7 +85,7 @@ export default function AdminCommentModerationPage() {
             <div className="profile-actions"><Link to={`/posts/${comment.publicationId}`}>게시글 맥락 보기</Link>{comment.lifecycle === "ACTIVE" ? <button className="button button-danger" type="button" disabled={!reason.trim() || Boolean(pendingId)} onClick={() => void moderate(comment, "DELETE")}>{pendingId === comment.id ? "처리 중..." : "운영자 삭제"}</button> : comment.lifecycle === "MODERATOR_DELETED" ? <button className="button button-soft" type="button" disabled={!reason.trim() || Boolean(pendingId)} onClick={() => void moderate(comment, "RESTORE")}>{pendingId === comment.id ? "처리 중..." : "복구"}</button> : null}</div>
           </article>
         ))}
-        {!comments?.length && !pageError && !loading ? <p className="surface-card">조건에 맞는 댓글이 없습니다.</p> : null}
+        {!comments?.length && !pageError && !loading ? <p className="surface-card">댓글 없음</p> : null}
       </section>
       <Link className="publication-text-link" to="/admin">운영 콘솔로</Link>
     </main>

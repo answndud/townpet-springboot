@@ -76,10 +76,10 @@ export default function PublicationCreatePage() {
       }
       setError(
         createdPublicationId
-          ? "글은 등록됐지만 첨부 파일을 연결하지 못했습니다. 아래 글에서 내용을 확인한 뒤 필요하면 다시 첨부해 주세요."
+          ? "글 등록 완료 · 첨부 파일 연결 실패"
           : requestError instanceof ApiError && requestError.status === 400
-          ? "제목과 본문을 확인해 주세요."
-          : "글을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+          ? "제목·본문 입력 오류"
+          : "글 등록 실패",
       );
       if (createdPublicationId) setPartialPublicationId(createdPublicationId);
     } finally {
@@ -114,7 +114,6 @@ export default function PublicationCreatePage() {
         <div>
           <p className="eyebrow">글 작성</p>
           <h1>새 글 작성</h1>
-          <p>모든 방문자가 볼 수 있는 게시글을 작성해 주세요.</p>
         </div>
         <div className="publication-hero-actions">
           <span className="publication-chip">회원 작성</span>
@@ -144,7 +143,6 @@ export default function PublicationCreatePage() {
                 maxLength={TITLE_MAX_LENGTH}
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="제목을 입력해 주세요"
               />
               <span className="field-help">{title.length}/{TITLE_MAX_LENGTH}</span>
             </label>
@@ -156,7 +154,6 @@ export default function PublicationCreatePage() {
                 maxLength={BODY_MAX_LENGTH}
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                placeholder="반려생활 이야기를 구체적으로 적어 주세요."
               />
               <span className="field-help">{body.length.toLocaleString()}/{BODY_MAX_LENGTH.toLocaleString()}</span>
             </label>
@@ -168,16 +165,8 @@ export default function PublicationCreatePage() {
           </section>
 
           <aside className="surface-card publication-policy">
-            <p className="eyebrow">작성 기준</p>
-            <p>자유게시판 글은 전체 커뮤니티에 공개됩니다.</p>
-            <div>
-              <strong>등록 전 확인</strong>
-              <ul>
-                <li>동물, 지역, 상황을 구체적으로 적어 주세요.</li>
-                <li>개인정보와 민감한 연락처는 공개하지 마세요.</li>
-                <li>게시판 성격에 맞는 내용인지 한 번 더 확인해 주세요.</li>
-              </ul>
-            </div>
+            <p className="eyebrow">공개 범위</p>
+            <p>전체 공개 · 개인정보 입력 금지</p>
           </aside>
         </div>
 

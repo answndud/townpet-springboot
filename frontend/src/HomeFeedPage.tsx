@@ -47,7 +47,7 @@ function HotFeedList({ items, loading, error, page, hasNext, onPageChange }: { i
     <section className="surface-card feed-list" aria-label="HOT 글 목록" aria-busy={loading}>
       {error ? <p className="form-error feed-error" role="alert">{error}</p> : null}
       {loading ? <p className="feed-empty" role="status">HOT 글을 불러오는 중...</p> : null}
-      {!loading && !error && items.length === 0 ? <p className="feed-empty">아직 추천을 받은 HOT 글이 없습니다.</p> : null}
+      {!loading && !error && items.length === 0 ? <p className="feed-empty">HOT 글 없음</p> : null}
       {!loading && !error
         ? items.map((item, index) => (
             <article className="feed-item best-feed-item" key={item.id}>
@@ -136,7 +136,7 @@ export default function HomeFeedPage() {
         setSearchParams({ view: popularView ? "popular" : "all", ...(value ? { q: value } : {}), ...(field !== "ALL" ? { searchField: field } : {}) });
       }}>
         <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
-        <label><span className="search-label">피드 게시글 검색</span><input aria-label="검색어" name="q" defaultValue={query} placeholder="제목이나 내용" /></label>
+        <label><span className="search-label">피드 게시글 검색</span><input aria-label="검색어" name="q" defaultValue={query} /></label>
         <button className="button button-soft" type="submit">검색</button>
       </form>
 
@@ -146,8 +146,7 @@ export default function HomeFeedPage() {
         </section>
       ) : items.length === 0 ? (
         <section className="surface-card feed-empty">
-          <h2>{query ? "검색 결과가 없습니다" : "아직 표시할 글이 없습니다"}</h2>
-          <p>{query ? "다른 검색어로 다시 시도해 보세요." : "글을 작성하거나 다른 게시판을 확인하세요."}</p>
+          <h2>{query ? "검색 결과 없음" : "게시글 없음"}</h2>
           {canWrite ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}
         </section>
       ) : (
@@ -172,7 +171,7 @@ export default function HomeFeedPage() {
 
       </section><aside className="home-sidebar">
         <section className="sidebar-section"><p className="eyebrow">동물별 게시판</p><nav className="animal-discovery" aria-label="동물별 이야기">{ANIMAL_BOARD_OPTIONS.map(option => <Link key={option.code} to={`/animals/${option.code.toLowerCase()}`}>{option.label}<span aria-hidden="true">↗</span></Link>)}</nav></section>
-        <section className="sidebar-guide"><h2>지역 가이드</h2><p>산책 장소, 복지 제도, 케어 정보를 출처와 함께 확인하세요.</p><Link to="/guides">지역 가이드 보기 →</Link></section>
+        <section className="sidebar-guide"><h2>지역 가이드</h2><Link to="/guides">지역 가이드 보기 →</Link></section>
       </aside></div>
     </main>
   );

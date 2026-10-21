@@ -247,7 +247,7 @@ describe("Publication journeys", () => {
       </MemoryRouter>,
     );
 
-    fireEvent.change(await screen.findByLabelText("관리 비밀번호"), {
+    fireEvent.change(await screen.findByLabelText("댓글 관리 비밀번호 입력"), {
       target: { value: "guest-password" },
     });
     fireEvent.change(screen.getByLabelText("댓글"), {

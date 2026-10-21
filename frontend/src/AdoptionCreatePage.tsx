@@ -24,7 +24,7 @@ export default function AdoptionCreatePage() {
         navigate(`/login?next=${encodeURIComponent("/adoptions/new")}`);
         return;
       }
-      setError("입양 정보를 확인해 주세요.");
+      setError("입양 정보 입력 오류");
     } finally {
       setSaving(false);
     }
@@ -32,7 +32,7 @@ export default function AdoptionCreatePage() {
 
   return (
     <main className="page marketplace-page">
-      <section className="marketplace-hero"><div><h1>입양 글 작성</h1><p>모든 동물 가족이 함께 보는 공통게시판에 입양 소식을 올려 보세요.</p></div></section>
+      <section className="marketplace-hero"><div><h1>입양 글 작성</h1></div></section>
       <form className="surface-card publication-fields" onSubmit={submit}>
         <label>제목<input required maxLength={120} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
         <label>설명<textarea required maxLength={5000} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>

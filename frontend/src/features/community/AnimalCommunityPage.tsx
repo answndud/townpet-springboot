@@ -152,9 +152,6 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
   const pageLabel = mode === "common"
     ? boardCode === "all" ? "공통게시판" : `${boardLabel} 게시판`
     : animalLabel;
-  const heroDescription = mode === "common"
-    ? boardCode === "all" ? "입양, 거래, 분실·목격, 모임, 돌봄 정보를 확인하세요." : `${boardLabel} 관련 소식과 정보를 확인하세요.`
-    : "동물별로 필요한 질문과 정보를 한곳에서 찾아보세요.";
   const writeHref = writePath(mode, animalCode ?? "ALL", boardCode ?? "all");
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
@@ -179,7 +176,7 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
 
   if ((mode === "animal" && !animalCode) || !boardCode) {
     const fallbackHref = mode === "common" ? "/boards/all" : "/animals/all";
-    return <main className="page community-page"><section className="surface-card community-state"><h1>페이지를 찾을 수 없습니다</h1><p>{mode === "common" ? "공통게시판 주소" : "동물 게시판 주소"}를 확인해 주세요.</p><Link className="button button-soft" to={fallbackHref}>{mode === "common" ? "공통게시판으로 이동" : "전체 동물 게시판으로 이동"}</Link></section></main>;
+    return <main className="page community-page"><section className="surface-card community-state"><h1>페이지를 찾을 수 없습니다</h1><p>{mode === "common" ? "공통게시판" : "동물 게시판"} 주소 오류</p><Link className="button button-soft" to={fallbackHref}>{mode === "common" ? "공통게시판" : "전체 동물 게시판"}</Link></section></main>;
   }
 
   return (
@@ -188,9 +185,8 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
         <div>
           <p className="eyebrow">{mode === "common" ? "공통 게시판" : "동물별 게시판"}</p>
           <h1>{pageLabel}</h1>
-          <p>{heroDescription}</p>
         </div>
-        {writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : <span className="field-help">게시판을 선택해 글을 작성하세요.</span>}
+        {writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}
       </header>
 
       {mode === "common" && boardCode !== "all" && ["marketplace", "lost-found", "gatherings", "care", "hospital-reviews", "volunteer"].includes(boardCode) ? <Link className="board-domain-link" to={`/${boardCode}`}>{boardLabel} 상세 조건으로 둘러보기 <span aria-hidden="true">→</span></Link> : null}
@@ -206,13 +202,13 @@ function CommunityBoardPage({ mode }: { mode: "animal" | "common" }) {
         {mode === "animal" ? <button className={`market-filter${popularView ? " active" : ""}`} type="button" aria-pressed={popularView} onClick={togglePopular}>인기글</button> : <span />}
         <form className="search-panel community-bottom-search" onSubmit={submitSearch}>
         <label><span className="search-label">검색 위치</span><select aria-label="검색 위치" name="searchField" defaultValue={searchField}><option value="ALL">제목+내용</option><option value="TITLE">제목</option><option value="BODY">내용</option></select></label>
-        <label><span className="search-label">{mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"}</span><input aria-label={mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"} name="q" value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder="제목이나 내용" /></label>
+        <label><span className="search-label">{mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"}</span><input aria-label={mode === "common" ? "공통게시판에서 검색" : "이 동물 게시판에서 검색"} name="q" value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} /></label>
         <button className="button button-soft" type="submit">검색</button>
         </form>
       </div>
       {loading ? <section className="surface-card community-state" role="status">게시글을 불러오는 중...</section> : null}
       {!loading && error ? <section className="surface-card community-state"><h2>{error}</h2><button className="button button-soft" type="button" onClick={() => setRetryVersion((current) => current + 1)}>다시 시도</button></section> : null}
-      {!loading && !error && !items.length ? <section className="surface-card community-state"><h2>{query ? "검색 결과가 없습니다" : popularView ? "인기글이 없습니다" : `${boardLabel} 게시판이 비어 있습니다`}</h2><p>{query ? "다른 검색어로 다시 시도해 보세요." : popularView ? "추천 10개 이상인 글이 아직 없습니다." : `${mode === "common" ? pageLabel : animalLabel}의 첫 번째 글을 남겨 보세요.`}</p>{writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}</section> : null}
+      {!loading && !error && !items.length ? <section className="surface-card community-state"><h2>{query ? "검색 결과 없음" : popularView ? "인기글 없음" : `${boardLabel} 게시글 없음`}</h2>{writeHref ? <Link className="button button-write" to={writeHref}><span className="button-write-icon" aria-hidden="true">＋</span><span>글쓰기</span></Link> : null}</section> : null}
       {!loading && !error && items.length ? (
         <section className="surface-card feed-list" aria-label={`${pageLabel} ${boardLabel} 게시글 목록`}>
           {items.map((item) => <FeedCard key={`${item.kind}:${item.id}`} item={item} popularView={popularView} />)}

@@ -20,7 +20,7 @@ export default function AnimalCommunitySelector({
   value,
   onChange,
   label = "동물 게시판 분류",
-  help = "여러 동물을 선택하면 각 동물 게시판에 함께 노출됩니다.",
+  help = "선택 게시판에 노출",
 }: AnimalCommunitySelectorProps) {
   const selected = new Set(value);
 

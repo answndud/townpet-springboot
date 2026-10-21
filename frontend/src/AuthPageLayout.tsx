@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 type AuthPageLayoutProps = {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   children: ReactNode;
 };
 
@@ -20,7 +20,7 @@ export default function AuthPageLayout({
         <header className="auth-heading">
           <span className="eyebrow">{eyebrow}</span>
           <h1>{title}</h1>
-          <p>{description}</p>
+          {description ? <p>{description}</p> : null}
         </header>
         {children}
         <Link to="/" className="back-link">

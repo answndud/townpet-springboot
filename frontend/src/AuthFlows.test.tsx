@@ -74,7 +74,7 @@ describe("Credentials journeys", () => {
     fireEvent.click(screen.getByRole("button", { name: "재설정 메일 요청" }));
 
     expect(
-      await screen.findByText("입력한 주소의 계정을 확인한 뒤 필요한 경우 재설정 메일을 보냈습니다."),
+      await screen.findByText("계정이 있으면 재설정 메일을 보냅니다."),
     ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenLastCalledWith(
       "/api/v1/auth/password-resets",

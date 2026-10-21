@@ -23,7 +23,7 @@ export default function MfaPage() {
     let active = true;
     void authApi.startMfaEnrollment()
       .then((response) => { if (active) setEnrollment(response); })
-      .catch(() => { if (active) setError("MFA 등록을 시작하지 못했습니다. 잠시 후 다시 시도해 주세요."); });
+      .catch(() => { if (active) setError("MFA 등록 시작 실패"); });
     return () => { active = false; };
   }, [mode]);
 
@@ -46,8 +46,8 @@ export default function MfaPage() {
     } catch (requestError) {
       setError(
         requestError instanceof ApiError && requestError.status === 429
-          ? "시도 횟수가 너무 많습니다. 잠시 후 다시 시도해 주세요."
-          : "인증 코드를 확인하지 못했습니다. 다시 입력해 주세요.",
+          ? "인증 시도 초과 · 잠시 후 다시 시도"
+          : "인증 코드 오류",
       );
     } finally {
       setSubmitting(false);
@@ -60,7 +60,7 @@ export default function MfaPage() {
         <section className="surface-card profile-card">
 
           <h1>복구 코드 보관</h1>
-          <p>복구 코드는 지금 한 번만 표시됩니다. 안전한 비밀번호 관리자에 저장하세요.</p>
+          <p>복구 코드 · 1회 표시</p>
           <pre aria-label="MFA 복구 코드">{recoveryCodes.join("\n")}</pre>
           <button className="button button-primary" type="button" onClick={() => navigate(nextPath, { replace: true })}>운영 콘솔로 이동</button>
         </section>
@@ -75,10 +75,10 @@ export default function MfaPage() {
         <h1>{mode === "enroll" ? "운영자 MFA 등록" : "운영자 MFA 확인"}</h1>
         {mode === "enroll" ? (
           <>
-            <p>인증 앱에서 아래 QR URI 또는 secret을 등록한 뒤 6자리 코드를 입력하세요.</p>
+            <p>QR 또는 키 등록 · 6자리 코드 입력</p>
             {enrollment ? <><code>{enrollment.secret}</code><p><small>{enrollment.otpauthUri}</small></p></> : <p role="status">등록 정보를 준비하는 중...</p>}
           </>
-        ) : <p>인증 앱의 6자리 코드를 입력하세요.</p>}
+        ) : <p>인증 앱 코드 · 6자리</p>}
         <form className="auth-form" onSubmit={submit}>
           <label>{recoveryMode ? "복구 코드" : "인증 코드"}<input required inputMode="numeric" autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value)} maxLength={recoveryMode ? 16 : 6} /></label>
           {error ? <p className="form-error" role="alert">{error}</p> : null}
