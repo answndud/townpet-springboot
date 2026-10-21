@@ -494,6 +494,7 @@ h1,h2,p { margin: 0; }
   --type-body:14px;
   --type-compact:13px;
   --type-reading:16px;
+  --type-content:15px;
   --type-control:13px;
   --type-meta:12px;
   --type-comment-meta:11px;
@@ -587,11 +588,11 @@ h1,h2,p { margin: 0; }
 .publication-page:has(.publication-detail-card),.publication-page:has(.publication-form),.marketplace-page:has(.marketplace-form) { max-width:824px; }
 .publication-detail-card,.publication-comments { padding:24px; }
 .publication-detail-heading h1,.marketplace-detail-card h1,.lostfound-detail h1,.localcare-detail h1,.gathering-detail h1 { font-size:var(--type-page-title); line-height:var(--line-heading); }
-.publication-body { font-size:var(--type-reading); line-height:var(--line-reading); max-width:760px; padding:20px 0; color:var(--text); }
+.publication-body { font-size:var(--type-content); line-height:var(--line-reading); max-width:760px; padding:20px 0; color:var(--text); }
 .publication-comment p { font-size:12px; line-height:1.5; }
 .engagement-button { min-height:36px; padding:6px 12px; font-size:13px; }
 .marketplace-detail-card,.lostfound-detail,.localcare-detail,.gathering-detail { max-width:800px; margin:16px auto 0; padding:24px; }
-.marketplace-description,.lostfound-description,.localcare-content { font-size:var(--type-reading); line-height:var(--line-reading); }
+.marketplace-description,.lostfound-description,.localcare-content { font-size:var(--type-content); line-height:var(--line-reading); }
 .publication-fields,.marketplace-form,.lostfound-form { max-width:800px; padding:24px; margin:16px auto 0; gap:16px; }
 .publication-fields { grid-template-columns:1fr; overflow:visible; } .publication-fields > * { grid-column:1/-1; }
 .publication-fields label,.marketplace-form label,.lostfound-form label { font-size:var(--type-body); font-weight:500; color:var(--text); gap:6px; }
@@ -705,7 +706,7 @@ h1,h2,p { margin: 0; }
   margin: 28px 0 8px;
 }
 .legal-card p {
-  font-size: var(--type-reading);
+  font-size: var(--type-content);
   line-height: var(--line-reading);
 }
 .legal-card .button {
