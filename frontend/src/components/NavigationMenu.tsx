@@ -62,7 +62,7 @@ export default function NavigationMenu({ label, links, className = "", onIntent 
       aria-haspopup="menu" aria-expanded={open} aria-controls={menuId}
       onPointerDown={event => { pointer.current = event.pointerType; }}
       onClick={event => { setOpen(current => event.detail > 0 && pointer.current === "mouse" ? true : !current); pointer.current = ""; }}>
-      {label}<span aria-hidden="true">⌄</span>
+      {label}
     </button>
     <div id={menuId} className="header-menu-panel" role="menu" aria-label={`${label} 바로가기`}>
       {links.map(([title, href], index) => <NavLink key={href} ref={element => { items.current[index] = element; }} role="menuitem" to={href}
