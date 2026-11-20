@@ -20,4 +20,4 @@ RUN apt-get update \
 COPY --from=build --chown=townpet:townpet /workspace/build/libs/*.jar /app/townpet.jar
 USER 10001:10001
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-jar", "/app/townpet.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:-UseBASE64Intrinsics", "-jar", "/app/townpet.jar"]
