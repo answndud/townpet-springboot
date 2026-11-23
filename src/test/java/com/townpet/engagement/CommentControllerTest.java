@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -353,6 +354,54 @@ class CommentControllerTest {
                 String.class,
                 UUID.fromString(commentId)))
         .containsExactly("COMMENT_DELETED", "COMMENT_RESTORED");
+  }
+
+  @Test
+  void membersCannotEditOrDeleteGuestComments() throws Exception {
+    String publicationId = createPublication(login("demo-member-1@townpet.local"));
+    MvcResult guestComment =
+        mockMvc
+            .perform(
+                post("/api/guest/posts/{publicationId}/comments", publicationId)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"password\":\"guest-password\",\"body\":\"비회원 댓글\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String commentId =
+        new com.fasterxml.jackson.databind.ObjectMapper()
+            .readTree(guestComment.getResponse().getContentAsString())
+            .path("id")
+            .asText();
+    Cookie member = login("demo-member-2@townpet.local");
+
+    mockMvc
+        .perform(
+            patch(
+                    "/api/v1/publications/{publicationId}/comments/{commentId}",
+                    publicationId,
+                    commentId)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":0,\"body\":\"회원이 바꾼 댓글\"}"))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            delete(
+                    "/api/v1/publications/{publicationId}/comments/{commentId}",
+                    publicationId,
+                    commentId)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":0}"))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(1))
+        .andExpect(jsonPath("$.items[0].body").value("비회원 댓글"));
   }
 
   @Test

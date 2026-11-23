@@ -145,7 +145,7 @@ class CommentService {
     if (!comment.getPublicationId().equals(publicationId)) {
       throw new CommentNotFoundException();
     }
-    if (!comment.getAuthorMemberId().equals(memberId)) {
+    if (!comment.isAuthoredByMember(memberId)) {
       throw new CommentOwnershipException();
     }
     if (comment.getVersion() != expectedVersion) {
@@ -181,7 +181,7 @@ class CommentService {
 
   private static void requireOwnershipAndVersion(
       CommentEntity comment, UUID memberId, long expectedVersion) {
-    if (!comment.getAuthorMemberId().equals(memberId)) throw new CommentOwnershipException();
+    if (!comment.isAuthoredByMember(memberId)) throw new CommentOwnershipException();
     if (comment.getVersion() != expectedVersion) throw new CommentVersionConflictException();
   }
 

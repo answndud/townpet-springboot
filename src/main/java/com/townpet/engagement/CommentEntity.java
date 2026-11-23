@@ -20,8 +20,7 @@ class CommentEntity {
   @Column(nullable = false)
   private UUID publicationId;
 
-  @Column(nullable = false)
-  private UUID authorMemberId;
+  @Nullable @Column private UUID authorMemberId;
 
   @Nullable private UUID guestAuthorId;
 
@@ -99,8 +98,14 @@ class CommentEntity {
     return publicationId;
   }
 
+  @Nullable
   UUID getAuthorMemberId() {
     return authorMemberId;
+  }
+
+  /** Guest comments have no member author, so they are never authored by a member. */
+  boolean isAuthoredByMember(UUID memberId) {
+    return memberId.equals(authorMemberId);
   }
 
   @Nullable
