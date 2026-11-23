@@ -85,14 +85,24 @@ class DemoDataRefresher {
 
   @EventListener(ApplicationReadyEvent.class)
   void refreshOnStartup() {
-    refresh();
+    refreshQuietly();
   }
 
   @Scheduled(
       fixedDelayString = "${townpet.demo-data.refresh.interval-ms:86400000}",
       initialDelayString = "${townpet.demo-data.refresh.interval-ms:86400000}")
   void refreshDaily() {
-    refresh();
+    refreshQuietly();
+  }
+
+  /** Refreshing sample dates is cosmetic, so a failure must never stop the application. */
+  private void refreshQuietly() {
+    try {
+      refresh();
+    } catch (RuntimeException exception) {
+      log.warn(
+          "event=demo_data_refresh outcome=failure reason={}", exception.getClass().getSimpleName());
+    }
   }
 
   /** Returns how many fixture rows were moved forward. */
