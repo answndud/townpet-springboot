@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.townpet.support.PostgresTestContainer;
 import jakarta.servlet.http.Cookie;
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -29,16 +30,10 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Tag("integration")
 class PublicationControllerTest {
@@ -46,22 +41,9 @@ class PublicationControllerTest {
   private static final UUID NEIGHBORHOOD_ID =
       UUID.fromString("00000000-0000-4000-8000-000000000101");
 
-  @Container
-  static final PostgreSQLContainer<?> POSTGRES =
-      new PostgreSQLContainer<>(
-              DockerImageName.parse("postgis/postgis:18-3.6").asCompatibleSubstituteFor("postgres"))
-          .withDatabaseName("townpet")
-          .withUsername("townpet_app")
-          .withPassword("townpet_test")
-          .withCopyFileToContainer(
-              MountableFile.forClasspathResource("postgres-extensions.sql"),
-              "/docker-entrypoint-initdb.d/001_extensions.sql");
-
   @DynamicPropertySource
   static void databaseProperties(DynamicPropertyRegistry registry) {
-    registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-    registry.add("spring.datasource.username", POSTGRES::getUsername);
-    registry.add("spring.datasource.password", POSTGRES::getPassword);
+    PostgresTestContainer.register(registry);
   }
 
   @Autowired MockMvc mockMvc;

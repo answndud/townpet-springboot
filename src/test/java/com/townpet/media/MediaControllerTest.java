@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.townpet.identity.MfaTestSupport;
+import com.townpet.support.PostgresTestContainer;
 import jakarta.servlet.http.Cookie;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -31,38 +32,19 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Tag("integration")
 class MediaControllerTest {
   private static final byte[] JPEG_BYTES = createJpegBytes();
   private static final String CHECKSUM = checksum(JPEG_BYTES);
 
-  @Container
-  static final PostgreSQLContainer<?> POSTGRES =
-      new PostgreSQLContainer<>(
-              DockerImageName.parse("postgis/postgis:18-3.6").asCompatibleSubstituteFor("postgres"))
-          .withDatabaseName("townpet")
-          .withUsername("townpet_app")
-          .withPassword("townpet_test")
-          .withCopyFileToContainer(
-              MountableFile.forClasspathResource("postgres-extensions.sql"),
-              "/docker-entrypoint-initdb.d/001_extensions.sql");
-
   @DynamicPropertySource
   static void databaseProperties(DynamicPropertyRegistry registry) {
-    registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-    registry.add("spring.datasource.username", POSTGRES::getUsername);
-    registry.add("spring.datasource.password", POSTGRES::getPassword);
+    PostgresTestContainer.register(registry);
   }
 
   @Autowired MockMvc mockMvc;
