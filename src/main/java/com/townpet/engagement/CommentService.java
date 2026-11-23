@@ -2,6 +2,7 @@ package com.townpet.engagement;
 
 import com.townpet.common.UuidV7;
 import com.townpet.notification.api.NotificationEvent;
+import com.townpet.publication.api.ActivePublication;
 import com.townpet.publication.api.GuestDirectory;
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
@@ -55,7 +56,8 @@ class CommentService {
         comments.saveAndFlush(
             CommentEntity.forGuest(publicationId, guest.internalId(), parentCommentId, body));
     publications
-        .activeAuthorMemberId(publicationId)
+        .findActive(publicationId)
+        .map(ActivePublication::authorMemberId)
         .ifPresent(
             recipient ->
                 events.publishEvent(
@@ -117,7 +119,8 @@ class CommentService {
           comments.saveAndFlush(
               new CommentEntity(publicationId, memberId, parentCommentId, body.trim()));
       publications
-          .activeAuthorMemberId(publicationId)
+          .findActive(publicationId)
+          .map(ActivePublication::authorMemberId)
           .ifPresent(
               recipient ->
                   events.publishEvent(
@@ -184,10 +187,10 @@ class CommentService {
 
   private void requireAccessiblePublication(UUID publicationId, @Nullable UUID viewerMemberId) {
     UUID authorId =
-        publications
-            .activeAuthorMemberId(publicationId)
-            .orElseThrow(CommentPublicationNotFoundException::new);
-    if (viewerMemberId != null && blocks.isBlocked(viewerMemberId, authorId)) {
+        publications.findActive(publicationId).orElseThrow(CommentPublicationNotFoundException::new).authorMemberId();
+    if (viewerMemberId != null
+        && authorId != null
+        && blocks.isBlocked(viewerMemberId, authorId)) {
       throw new CommentPublicationNotFoundException();
     }
   }

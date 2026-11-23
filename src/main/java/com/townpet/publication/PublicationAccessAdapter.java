@@ -1,5 +1,6 @@
 package com.townpet.publication;
 
+import com.townpet.publication.api.ActivePublication;
 import com.townpet.publication.api.PublicationAccess;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,9 +23,11 @@ class PublicationAccessAdapter implements PublicationAccess {
 
   @Override
   @Transactional(readOnly = true)
-  public Optional<UUID> activeAuthorMemberId(UUID publicationId) {
+  public Optional<ActivePublication> findActive(UUID publicationId) {
     return publications
         .findByIdAndLifecycle(publicationId, PublicationLifecycle.ACTIVE)
-        .map(PublicationEntity::getAuthorMemberId);
+        .map(
+            publication ->
+                new ActivePublication(publication.getId(), publication.getAuthorMemberId()));
   }
 }

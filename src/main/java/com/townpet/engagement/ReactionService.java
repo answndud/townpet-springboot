@@ -2,6 +2,7 @@ package com.townpet.engagement;
 
 import com.townpet.common.UuidV7;
 import com.townpet.notification.api.NotificationEvent;
+import com.townpet.publication.api.ActivePublication;
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
 import java.util.UUID;
@@ -51,7 +52,8 @@ class ReactionService {
       try {
         reactions.saveAndFlush(new ReactionEntity(publicationId, memberId, TYPE));
         publications
-            .activeAuthorMemberId(publicationId)
+            .findActive(publicationId)
+            .map(ActivePublication::authorMemberId)
             .ifPresent(
                 recipient ->
                     events.publishEvent(
@@ -73,10 +75,10 @@ class ReactionService {
 
   private void requireAccessiblePublication(UUID publicationId, @Nullable UUID viewerMemberId) {
     UUID authorId =
-        publications
-            .activeAuthorMemberId(publicationId)
-            .orElseThrow(ReactionPublicationNotFoundException::new);
-    if (viewerMemberId != null && blocks.isBlocked(viewerMemberId, authorId)) {
+        publications.findActive(publicationId).orElseThrow(ReactionPublicationNotFoundException::new).authorMemberId();
+    if (viewerMemberId != null
+        && authorId != null
+        && blocks.isBlocked(viewerMemberId, authorId)) {
       throw new ReactionPublicationNotFoundException();
     }
   }

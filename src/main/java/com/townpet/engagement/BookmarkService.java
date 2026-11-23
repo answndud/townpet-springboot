@@ -56,10 +56,10 @@ class BookmarkService {
 
   private void requireAccessiblePublication(UUID publicationId, @Nullable UUID viewerMemberId) {
     UUID authorId =
-        publications
-            .activeAuthorMemberId(publicationId)
-            .orElseThrow(BookmarkPublicationNotFoundException::new);
-    if (viewerMemberId != null && blocks.isBlocked(viewerMemberId, authorId)) {
+        publications.findActive(publicationId).orElseThrow(BookmarkPublicationNotFoundException::new).authorMemberId();
+    if (viewerMemberId != null
+        && authorId != null
+        && blocks.isBlocked(viewerMemberId, authorId)) {
       throw new BookmarkPublicationNotFoundException();
     }
   }

@@ -160,9 +160,10 @@ class MediaService implements MediaOperations {
     UploadAssetEntity asset = ownedAsset(ownerMemberId, assetId);
     UUID authorId =
         publications
-            .activeAuthorMemberId(publicationId)
-            .orElseThrow(MediaPublicationNotFoundException::new);
-    if (!authorId.equals(ownerMemberId)) throw new MediaOwnershipException();
+            .findActive(publicationId)
+            .orElseThrow(MediaPublicationNotFoundException::new)
+            .authorMemberId();
+    if (authorId == null || !authorId.equals(ownerMemberId)) throw new MediaOwnershipException();
     jdbc.queryForObject(
         "SELECT id FROM publication WHERE id = ? FOR UPDATE", UUID.class, publicationId);
     Integer attachmentCount =

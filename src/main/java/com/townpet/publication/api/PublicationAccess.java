@@ -7,5 +7,6 @@ import java.util.UUID;
 public interface PublicationAccess {
   boolean existsActive(UUID publicationId);
 
-  Optional<UUID> activeAuthorMemberId(UUID publicationId);
+  /** Finds an active publication, whether it was written by a member or a guest. */
+  Optional<ActivePublication> findActive(UUID publicationId);
 }

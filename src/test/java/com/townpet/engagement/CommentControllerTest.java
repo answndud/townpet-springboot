@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -71,6 +72,8 @@ class CommentControllerTest {
   void resetState() {
     jdbc.update("DELETE FROM relationship_block");
     jdbc.update("DELETE FROM engagement_comment");
+    jdbc.update("DELETE FROM engagement_reaction");
+    jdbc.update("DELETE FROM engagement_bookmark");
     jdbc.update("DELETE FROM publication");
     jdbc.update("DELETE FROM member_profile WHERE member_id = ?", MEMBER_ID);
     jdbc.update(
@@ -350,6 +353,69 @@ class CommentControllerTest {
                 String.class,
                 UUID.fromString(commentId)))
         .containsExactly("COMMENT_DELETED", "COMMENT_RESTORED");
+  }
+
+  @Test
+  void membersAndGuestsCanInteractWithGuestAuthoredPublications() throws Exception {
+    String publicationId = createGuestPublication();
+    Cookie member = login("demo-member-2@townpet.local");
+
+    createComment(publicationId, member, "비회원 글에 남기는 회원 댓글");
+    mockMvc
+        .perform(
+            post("/api/guest/posts/{publicationId}/comments", publicationId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"password\":\"guest-password\",\"body\":\"비회원 글에 남기는 비회원 댓글\"}"))
+        .andExpect(status().isCreated());
+    mockMvc
+        .perform(
+            put("/api/v1/publications/{publicationId}/reaction", publicationId)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"active\":true}"))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            put("/api/v1/publications/{publicationId}/bookmark", publicationId)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"active\":true}"))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(2));
+  }
+
+  private String createGuestPublication() throws Exception {
+    MvcResult author =
+        mockMvc
+            .perform(
+                post("/api/guest/authors")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"password\":\"guest-password-123\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    Cookie guest = Objects.requireNonNull(author.getResponse().getCookie("TOWNPET_GUEST_ID"));
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/api/guest/posts")
+                    .cookie(guest)
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(
+                        "{\"password\":\"guest-password-123\",\"title\":\"비회원 글\",\"body\":\"본문\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    return new com.fasterxml.jackson.databind.ObjectMapper()
+        .readTree(result.getResponse().getContentAsString())
+        .path("id")
+        .asText();
   }
 
   private String createPublication(Cookie session) throws Exception {
