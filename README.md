@@ -22,6 +22,7 @@
 | 규모 기준선 | 기존 49개 page, 55개 API route의 주요 사용자 여정과 동작을 기준으로 재작성 |
 | 운영 형태 | React/Vite 정적 asset + Spring Boot + PostgreSQL/PostGIS + private MinIO + Caddy |
 | 배포 | Docker Compose, GitHub Actions, GHCR, Cloudflare DNS, netcup VPS |
+| API 계약 | [`api/openapi/townpet-v1.yaml`](api/openapi/townpet-v1.yaml) — 로그인·게시글·댓글·반응·피드·비회원 흐름과 오류(problem) 형식. `OpenApiContractTest`가 문서의 모든 경로·메서드가 실제 서버에 있는지 검사합니다 |
 
 ## 핵심 결과
 

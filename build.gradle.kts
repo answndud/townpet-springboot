@@ -107,6 +107,8 @@ tasks.named<JavaCompile>("compileJava") {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // OpenApiContractTest reads the spec by path, so editing it must re-run the tests.
+    inputs.dir("api/openapi").withPropertyName("openApiSpec").optional()
     testLogging {
         events(TestLogEvent.FAILED, TestLogEvent.SKIPPED)
     }

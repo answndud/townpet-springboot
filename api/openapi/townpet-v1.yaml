@@ -1,0 +1,619 @@
+openapi: 3.1.0
+info:
+  title: TownPet API v1
+  version: 1.0.0
+  description: |
+    Core browser-facing contract of the TownPet backend: sign-in, publications, comments,
+    reactions, bookmarks, the public feed and the guest flows.
+
+    Authentication is a server-side session (`SESSION` cookie). Every state-changing request
+    must send the CSRF token from `GET /api/v1/auth/csrf` in the `X-XSRF-TOKEN` header. Failures
+    use RFC 9457 problem details with a stable `code` (see `Problem`).
+
+    This file is hand-written. `OpenApiContractTest` fails when a documented path or method no
+    longer exists in the application, so documented endpoints cannot silently disappear.
+servers:
+  - url: https://townpet.cloud
+    description: Public portfolio sandbox (synthetic data only)
+tags:
+  - name: auth
+  - name: publications
+  - name: comments
+  - name: engagement
+  - name: feed
+  - name: guest
+security:
+  - session: []
+paths:
+  /api/v1/auth/csrf:
+    get:
+      tags: [auth]
+      summary: Issue a CSRF token
+      description: Also sets the readable `XSRF-TOKEN` cookie.
+      security: []
+      responses:
+        "200":
+          description: The token to send in `X-XSRF-TOKEN`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CsrfResponse" }
+  /api/v1/auth/sessions:
+    post:
+      tags: [auth]
+      summary: Sign in
+      description: Creates a session cookie. Moderators must then complete MFA.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateSessionRequest" }
+      responses:
+        "201":
+          description: Signed in.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionResponse" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/Problem" }
+  /api/v1/auth/sessions/current:
+    delete:
+      tags: [auth]
+      summary: Sign out
+      responses:
+        "204": { description: Signed out. }
+  /api/v1/publications:
+    post:
+      tags: [publications]
+      summary: Create a publication
+      description: Members only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePublicationRequest" }
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "403": { $ref: "#/components/responses/Problem" }
+  /api/v1/publications/mine:
+    get:
+      tags: [publications]
+      summary: My publications, newest first
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 100 }
+      responses:
+        "200":
+          description: One page of my active publications.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PublicationPage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+  /api/v1/publications/{publicationId}:
+    parameters:
+      - $ref: "#/components/parameters/PublicationId"
+    get:
+      tags: [publications]
+      summary: Read a publication
+      security: []
+      responses:
+        "200":
+          description: The publication.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+        "404": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [publications]
+      summary: Edit my publication
+      description: Optimistic locking; send the `version` you read.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EditPublicationRequest" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [publications]
+      summary: Delete my publication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VersionRequest" }
+      responses:
+        "204": { description: Deleted. }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /api/v1/publications/{publicationId}/restore:
+    parameters:
+      - $ref: "#/components/parameters/PublicationId"
+    post:
+      tags: [publications]
+      summary: Restore my deleted publication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VersionRequest" }
+      responses:
+        "200":
+          description: Restored.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /api/v1/publications/{publicationId}/comments:
+    parameters:
+      - $ref: "#/components/parameters/PublicationId"
+    get:
+      tags: [comments]
+      summary: List comments, oldest first
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 500, default: 200 }
+      responses:
+        "200":
+          description: One page of comments. Replies are one level deep.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CommentPage" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+    post:
+      tags: [comments]
+      summary: Comment as a member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateCommentRequest" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comment" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+  /api/v1/publications/{publicationId}/comments/{commentId}:
+    parameters:
+      - $ref: "#/components/parameters/PublicationId"
+      - $ref: "#/components/parameters/CommentId"
+    patch:
+      tags: [comments]
+      summary: Edit my comment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EditCommentRequest" }
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comment" }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+    delete:
+      tags: [comments]
+      summary: Delete my comment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VersionRequest" }
+      responses:
+        "204": { description: Deleted. }
+        "403": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "409": { $ref: "#/components/responses/Problem" }
+  /api/v1/publications/{publicationId}/reaction:
+    parameters:
+      - $ref: "#/components/parameters/PublicationId"
+    get:
+      tags: [engagement]
+      summary: Reaction count and whether I reacted
+      security: []
+      responses:
+        "200":
+          description: Current state.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reaction" }
+        "404": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [engagement]
+      summary: Set or clear my like
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActiveRequest" }
+      responses:
+        "200":
+          description: New state.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reaction" }
+        "404": { $ref: "#/components/responses/Problem" }
+  /api/v1/publications/{publicationId}/bookmark:
+    parameters:
+      - $ref: "#/components/parameters/PublicationId"
+    get:
+      tags: [engagement]
+      summary: Whether I bookmarked the publication
+      security: []
+      responses:
+        "200":
+          description: Current state.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bookmark" }
+        "404": { $ref: "#/components/responses/Problem" }
+    put:
+      tags: [engagement]
+      summary: Set or clear my bookmark
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ActiveRequest" }
+      responses:
+        "200":
+          description: New state.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bookmark" }
+        "404": { $ref: "#/components/responses/Problem" }
+  /api/v1/discovery:
+    get:
+      tags: [feed]
+      summary: Public feed
+      description: Keyset-paginated by `(createdAt, id)`. Pass `query` to search.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+        - name: query
+          in: query
+          schema: { type: string, maxLength: 80 }
+        - name: searchField
+          in: query
+          schema: { type: string, enum: [ALL, TITLE, BODY], default: ALL }
+        - name: animals
+          in: query
+          description: Comma separated animal community codes.
+          schema: { type: string, maxLength: 512 }
+        - name: type
+          in: query
+          schema: { type: string, maxLength: 40 }
+        - name: from
+          in: query
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: One page of feed items.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FeedResponse" }
+        "400": { $ref: "#/components/responses/Problem" }
+  /api/guest/authors:
+    post:
+      tags: [guest]
+      summary: Create a guest author
+      description: Sets the `TOWNPET_GUEST_ID` cookie used by the guest publication endpoints.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GuestPasswordRequest" }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [guestId]
+                properties:
+                  guestId: { type: string, format: uuid }
+        "400": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/Problem" }
+  /api/guest/posts:
+    post:
+      tags: [guest]
+      summary: Publish as a guest
+      description: Needs the `TOWNPET_GUEST_ID` cookie and the guest password.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, title, body]
+              properties:
+                password: { type: string, minLength: 8, maxLength: 72 }
+                title: { type: string, maxLength: 120 }
+                body: { type: string, maxLength: 20000 }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Publication" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "401": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/Problem" }
+  /api/guest/posts/{publicationId}/comments:
+    parameters:
+      - $ref: "#/components/parameters/PublicationId"
+    post:
+      tags: [guest]
+      summary: Comment as a guest
+      description: Each comment carries its own password; the same password manages it later.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, body]
+              properties:
+                password: { type: string, minLength: 8, maxLength: 72 }
+                body: { type: string, maxLength: 5000 }
+                parentCommentId: { type: [string, "null"], format: uuid }
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comment" }
+        "400": { $ref: "#/components/responses/Problem" }
+        "404": { $ref: "#/components/responses/Problem" }
+        "429": { $ref: "#/components/responses/Problem" }
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: SESSION
+  parameters:
+    PublicationId:
+      name: publicationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    CommentId:
+      name: commentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque value from the previous page's `nextCursor`.
+      schema: { type: string, maxLength: 512 }
+  responses:
+    Problem:
+      description: RFC 9457 problem details.
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    Problem:
+      type: object
+      required: [status, title, code, traceId]
+      properties:
+        status: { type: integer }
+        title: { type: string }
+        detail: { type: string, description: Generic text; never an internal message. }
+        code:
+          type: string
+          description: |
+            Stable machine-readable code. Generic codes: `VALIDATION_FAILED`, `MALFORMED_REQUEST`,
+            `UNAUTHENTICATED`, `FORBIDDEN`, `RESOURCE_NOT_FOUND`, `STATE_CONFLICT`,
+            `RATE_LIMITED`, `INTERNAL_ERROR`. Business failures use specific codes such as
+            `COMMENT_NOT_FOUND`, `COMMENT_OWNERSHIP`, `PUBLICATION_VERSION_CONFLICT`,
+            `CARE_STATE_CONFLICT` or `INVALID_PAGE_REQUEST`.
+        traceId: { type: string, description: Also returned in the `X-Trace-Id` header. }
+        fieldErrors:
+          type: array
+          description: Present for `VALIDATION_FAILED`.
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }
+    CsrfResponse:
+      type: object
+      required: [token]
+      properties:
+        token: { type: string }
+    CreateSessionRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 320 }
+        password: { type: string, minLength: 8, maxLength: 72 }
+    SessionResponse:
+      type: object
+      required: [memberId, expiresAt, role, mfaRequired, mfaEnrolled]
+      properties:
+        memberId: { type: string, format: uuid }
+        expiresAt: { type: string, format: date-time }
+        role: { type: string, enum: [MEMBER, MODERATOR] }
+        mfaRequired: { type: boolean }
+        mfaEnrolled: { type: boolean }
+    VersionRequest:
+      type: object
+      required: [version]
+      properties:
+        version: { type: integer, format: int64, minimum: 0 }
+    ActiveRequest:
+      type: object
+      required: [active]
+      properties:
+        active: { type: boolean }
+    PublicationType:
+      type: string
+      enum: [FREE_BOARD, QA_QUESTION, PET_SHOWCASE, PRODUCT_REVIEW]
+    CreatePublicationRequest:
+      type: object
+      required: [title, body]
+      properties:
+        title: { type: string, maxLength: 120 }
+        body: { type: string, maxLength: 20000 }
+        type: { $ref: "#/components/schemas/PublicationType" }
+        animalInterestCode: { type: [string, "null"], maxLength: 40 }
+        animalCommunityCodes:
+          type: [array, "null"]
+          maxItems: 12
+          items: { type: string, maxLength: 40 }
+    EditPublicationRequest:
+      allOf:
+        - $ref: "#/components/schemas/CreatePublicationRequest"
+        - type: object
+          required: [version]
+          properties:
+            version: { type: integer, format: int64, minimum: 0 }
+    Publication:
+      type: object
+      required: [id, type, title, body, lifecycle, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        type: { $ref: "#/components/schemas/PublicationType" }
+        authorId: { type: [string, "null"], format: uuid, description: Null for guest posts. }
+        animalInterestCode: { type: [string, "null"] }
+        animalCommunityCodes: { type: array, items: { type: string } }
+        title: { type: string }
+        body: { type: string }
+        lifecycle: { type: string, enum: [ACTIVE, HIDDEN, DELETED] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64 }
+    PublicationPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Publication" }
+        nextCursor: { type: [string, "null"], description: Null on the last page. }
+    CreateCommentRequest:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, maxLength: 5000 }
+        parentCommentId: { type: [string, "null"], format: uuid }
+    EditCommentRequest:
+      type: object
+      required: [body, version]
+      properties:
+        body: { type: string, maxLength: 5000 }
+        version: { type: integer, format: int64, minimum: 0 }
+    Comment:
+      type: object
+      required: [id, publicationId, authorType, body, lifecycle, createdAt, updatedAt, version]
+      properties:
+        id: { type: string, format: uuid }
+        publicationId: { type: string, format: uuid }
+        authorId: { type: [string, "null"], format: uuid, description: Null for guest comments. }
+        authorType: { type: string, enum: [MEMBER, GUEST] }
+        parentCommentId: { type: [string, "null"], format: uuid }
+        body: { type: string }
+        lifecycle: { type: string, enum: [ACTIVE, DELETED, MODERATOR_DELETED] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, format: int64 }
+    CommentPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Comment" }
+        nextCursor: { type: [string, "null"], description: Null on the last page. }
+    Reaction:
+      type: object
+      required: [active, count]
+      properties:
+        active: { type: boolean }
+        count: { type: integer, format: int64 }
+    Bookmark:
+      type: object
+      required: [active]
+      properties:
+        active: { type: boolean }
+    GuestPasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password: { type: string, minLength: 8, maxLength: 72 }
+    FeedResponse:
+      type: object
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [id, kind, title, createdAt]
+            properties:
+              id: { type: string, format: uuid }
+              kind: { type: string }
+              type: { type: string }
+              title: { type: string }
+              body: { type: string }
+              authorId: { type: [string, "null"], format: uuid }
+              animalInterestCode: { type: [string, "null"] }
+              status: { type: string }
+              lifecycle: { type: string }
+              createdAt: { type: string, format: date-time }
+              updatedAt: { type: string, format: date-time }
+              version: { type: integer, format: int64 }
+              href: { type: [string, "null"] }
+        page:
+          type: object
+          required: [hasNext]
+          properties:
+            nextCursor: { type: [string, "null"] }
+            hasNext: { type: boolean }
