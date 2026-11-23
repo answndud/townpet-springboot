@@ -49,24 +49,17 @@ class PublicationEntity {
 
   protected PublicationEntity() {}
 
-  PublicationEntity(
-      UUID authorMemberId,
-      String title,
-      String body) {
-    this(authorMemberId, PublicationType.FREE_BOARD, null, title, body);
+  PublicationEntity(UUID authorMemberId, String title, String body, Instant now) {
+    this(authorMemberId, PublicationType.FREE_BOARD, null, title, body, now);
   }
 
   PublicationEntity(
       UUID authorMemberId,
       @Nullable String animalInterestCode,
       String title,
-      String body) {
-    this(
-        authorMemberId,
-        PublicationType.FREE_BOARD,
-        animalInterestCode,
-        title,
-        body);
+      String body,
+      Instant now) {
+    this(authorMemberId, PublicationType.FREE_BOARD, animalInterestCode, title, body, now);
   }
 
   PublicationEntity(
@@ -74,7 +67,8 @@ class PublicationEntity {
       PublicationType type,
       @Nullable String animalInterestCode,
       String title,
-      String body) {
+      String body,
+      Instant now) {
     this.id = UuidV7.randomUuid();
     this.authorMemberId = authorMemberId;
     this.type = type;
@@ -82,11 +76,11 @@ class PublicationEntity {
     this.title = title;
     this.body = body;
     this.lifecycle = PublicationLifecycle.ACTIVE;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
     this.updatedAt = createdAt;
   }
 
-  static PublicationEntity forGuest(UUID guestAuthorId, String title, String body) {
+  static PublicationEntity forGuest(UUID guestAuthorId, String title, String body, Instant now) {
     PublicationEntity publication = new PublicationEntity();
     publication.id = UuidV7.randomUuid();
     publication.guestAuthorId = guestAuthorId;
@@ -94,7 +88,7 @@ class PublicationEntity {
     publication.title = title.trim();
     publication.body = body.trim();
     publication.lifecycle = PublicationLifecycle.ACTIVE;
-    publication.createdAt = Instant.now();
+    publication.createdAt = now;
     publication.updatedAt = publication.createdAt;
     return publication;
   }

@@ -3,6 +3,7 @@ package com.townpet.publication;
 import com.townpet.common.CurrentMember;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -21,11 +22,15 @@ import org.springframework.web.server.ResponseStatusException;
 @PreAuthorize("hasRole('MODERATOR')")
 class PublicationModerationController {
   private final PublicationRepository publications;
+  private final Clock clock;
   private final JdbcTemplate jdbc;
 
-  PublicationModerationController(PublicationRepository publications, JdbcTemplate jdbc) {
+  PublicationModerationController(PublicationRepository publications, JdbcTemplate jdbc,
+      Clock clock) {
     this.publications = publications;
     this.jdbc = jdbc;
+  
+    this.clock = clock;
   }
 
   @PatchMapping("/{id}/visibility")
@@ -38,7 +43,7 @@ class PublicationModerationController {
         publications
             .findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     if (request.visible()) publication.makeVisible(now);
     else publication.hide(now);
     publications.saveAndFlush(publication);

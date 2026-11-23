@@ -6,6 +6,8 @@ import com.townpet.member.api.MemberDirectory;
 import com.townpet.publication.api.GuestDirectory;
 import com.townpet.publication.api.PublicationModeration;
 import com.townpet.relationship.api.BlockDirectory;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -24,18 +26,22 @@ class PublicationService implements PublicationModeration {
   private final BlockDirectory blocks;
   private final GuestDirectory guests;
   private final AnimalCommunityTagger communityTags;
+  private final Clock clock;
 
   PublicationService(
       PublicationRepository publications,
       MemberDirectory members,
       BlockDirectory blocks,
       GuestDirectory guests,
-      AnimalCommunityTagger communityTags) {
+      AnimalCommunityTagger communityTags,
+      Clock clock) {
     this.publications = publications;
     this.members = members;
     this.blocks = blocks;
     this.guests = guests;
     this.communityTags = communityTags;
+  
+    this.clock = clock;
   }
 
   @Transactional
@@ -67,7 +73,8 @@ class PublicationService implements PublicationModeration {
                 type == null ? PublicationType.FREE_BOARD : type,
                 normalizedAnimalInterestCode,
                 title.trim(),
-                body.trim()));
+                body.trim(),
+                Instant.now(clock)));
     communityTags.replace(
         "PUBLICATION",
         publication.getId(),
@@ -93,7 +100,7 @@ class PublicationService implements PublicationModeration {
   @Transactional
   PublicationEntity createGuest(UUID guestPublicId, String password, String title, String body) {
     GuestDirectory.GuestIdentity guest = guests.authenticate(guestPublicId, password);
-    return publications.save(PublicationEntity.forGuest(guest.internalId(), title, body));
+    return publications.save(PublicationEntity.forGuest(guest.internalId(), title, body, Instant.now(clock)));
   }
 
   @Transactional
@@ -112,7 +119,7 @@ class PublicationService implements PublicationModeration {
     if (!guest.internalId().equals(publication.getGuestAuthorId()))
       throw new PublicationOwnershipException();
     requireCurrentVersion(publication, expectedVersion);
-    publication.edit(null, title.trim(), body.trim(), java.time.Instant.now());
+    publication.edit(null, title.trim(), body.trim(), java.time.Instant.now(clock));
     return publications.saveAndFlush(publication);
   }
 
@@ -126,7 +133,7 @@ class PublicationService implements PublicationModeration {
     if (!guest.internalId().equals(publication.getGuestAuthorId()))
       throw new PublicationOwnershipException();
     requireCurrentVersion(publication, expectedVersion);
-    publication.delete(java.time.Instant.now());
+    publication.delete(java.time.Instant.now(clock));
     publications.saveAndFlush(publication);
   }
 
@@ -151,7 +158,7 @@ class PublicationService implements PublicationModeration {
   public int setAuthorContentVisibility(UUID authorMemberId, boolean visible) {
     PublicationLifecycle from = visible ? PublicationLifecycle.HIDDEN : PublicationLifecycle.ACTIVE;
     PublicationLifecycle to = visible ? PublicationLifecycle.ACTIVE : PublicationLifecycle.HIDDEN;
-    return publications.updateLifecycleByAuthor(authorMemberId, from, to, java.time.Instant.now());
+    return publications.updateLifecycleByAuthor(authorMemberId, from, to, java.time.Instant.now(clock));
   }
 
   @Transactional
@@ -192,7 +199,7 @@ class PublicationService implements PublicationModeration {
         resolvedAnimalInterestCode,
         title.trim(),
         body.trim(),
-        java.time.Instant.now());
+        java.time.Instant.now(clock));
     PublicationEntity saved = publications.saveAndFlush(publication);
     if (replacesCommunityCodes) {
       communityTags.replace("PUBLICATION", saved.getId(), normalizedCommunityCodes);
@@ -206,7 +213,7 @@ class PublicationService implements PublicationModeration {
   PublicationEntity delete(UUID memberId, UUID publicationId, long expectedVersion) {
     PublicationEntity publication = ownedActivePublication(memberId, publicationId);
     requireCurrentVersion(publication, expectedVersion);
-    publication.delete(java.time.Instant.now());
+    publication.delete(java.time.Instant.now(clock));
     return publications.saveAndFlush(publication);
   }
 
@@ -220,7 +227,7 @@ class PublicationService implements PublicationModeration {
       throw new PublicationOwnershipException();
     }
     requireCurrentVersion(publication, expectedVersion);
-    publication.restore(java.time.Instant.now());
+    publication.restore(java.time.Instant.now(clock));
     return publications.saveAndFlush(publication);
   }
 
