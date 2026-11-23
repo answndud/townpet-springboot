@@ -1,6 +1,7 @@
 package com.townpet.identity;
 
 import com.townpet.common.ClientAddress;
+import com.townpet.common.CurrentMember;
 import com.townpet.common.RequestRateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -10,8 +11,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,8 +31,8 @@ class MfaController {
 
   @PostMapping("/enrollment")
   EnrollmentResponse enrollment(
-      @AuthenticationPrincipal UserDetails principal, HttpServletRequest httpRequest) {
-    UUID memberId = memberId(principal);
+      @CurrentMember UUID currentMemberId, HttpServletRequest httpRequest) {
+    UUID memberId = currentMemberId;
     limit(httpRequest, memberId, "mfa-enrollment-start", 5);
     MfaService.Enrollment enrollment = mfa.startEnrollment(memberId);
     return new EnrollmentResponse(
@@ -42,10 +41,10 @@ class MfaController {
 
   @PostMapping("/enrollment/confirm")
   ResponseEntity<RecoveryResponse> confirm(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody CodeRequest request,
       HttpServletRequest httpRequest) {
-    UUID memberId = memberId(principal);
+    UUID memberId = currentMemberId;
     limit(httpRequest, memberId, "mfa-enrollment-confirm", 10);
     List<String> codes = mfa.confirmEnrollment(memberId, request.code());
     httpRequest.getSession(true).setAttribute(MfaService.SESSION_VERIFIED_ATTRIBUTE, true);
@@ -54,10 +53,10 @@ class MfaController {
 
   @PostMapping("/verify")
   ResponseEntity<Void> verify(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody CodeRequest request,
       HttpServletRequest httpRequest) {
-    UUID memberId = memberId(principal);
+    UUID memberId = currentMemberId;
     limit(httpRequest, memberId, "mfa-verify", 10);
     mfa.verify(memberId, request.code());
     httpRequest.getSession(true).setAttribute(MfaService.SESSION_VERIFIED_ATTRIBUTE, true);
@@ -66,10 +65,10 @@ class MfaController {
 
   @PostMapping("/recovery")
   ResponseEntity<Void> recovery(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody RecoveryRequest request,
       HttpServletRequest httpRequest) {
-    UUID memberId = memberId(principal);
+    UUID memberId = currentMemberId;
     limit(httpRequest, memberId, "mfa-recovery", 5);
     mfa.useRecoveryCode(memberId, request.code());
     httpRequest.getSession(true).setAttribute(MfaService.SESSION_VERIFIED_ATTRIBUTE, true);
@@ -81,14 +80,6 @@ class MfaController {
         bucket + "-ip", clientAddress.resolve(request), max, Duration.ofMinutes(1));
     rateLimiter.requireCapacity(
         bucket + "-member", memberId.toString(), max, Duration.ofMinutes(1));
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (RuntimeException exception) {
-      throw new IllegalStateException("Invalid authenticated member id", exception);
-    }
   }
 
   record CodeRequest(@NotBlank @Pattern(regexp = "^\\d{6}$") String code) {}

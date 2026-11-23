@@ -1,5 +1,6 @@
 package com.townpet.operations;
 
+import com.townpet.common.CurrentMember;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,8 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -59,7 +58,7 @@ class AdminModeratorCaseController {
   CaseResponse review(
       @PathVariable UUID id,
       @Valid @RequestBody ReviewRequest request,
-      @AuthenticationPrincipal UserDetails principal) {
+      @CurrentMember UUID currentMemberId) {
     if (!Set.of("REVIEWED", "DISMISSED").contains(request.status())) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported case status");
     }
@@ -68,7 +67,7 @@ class AdminModeratorCaseController {
             "UPDATE moderator_case SET status = ?, resolved_at = CURRENT_TIMESTAMP, resolved_by = ? "
                 + "WHERE id = ? AND status = 'OPEN'",
             request.status(),
-            memberId(principal),
+            currentMemberId,
             id);
     if (updated == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     return find(id);
@@ -77,7 +76,7 @@ class AdminModeratorCaseController {
   @PostMapping("/moderation/direct")
   @Transactional
   CaseResponse direct(
-      @Valid @RequestBody DirectRequest request, @AuthenticationPrincipal UserDetails principal) {
+      @Valid @RequestBody DirectRequest request, @CurrentMember UUID currentMemberId) {
     UUID id = UUID.randomUUID();
     jdbc.update(
         "INSERT INTO moderator_case (id, case_type, target_type, target_id, subject, detail) VALUES (?, 'DIRECT_MODERATION', ?, ?, ?, ?)",
@@ -89,7 +88,7 @@ class AdminModeratorCaseController {
     jdbc.update(
         "INSERT INTO moderation_action (id, actor_member_id, target_type, target_id, action, reason) VALUES (?, ?, ?, ?, ?, ?)",
         UUID.randomUUID(),
-        memberId(principal),
+        currentMemberId,
         request.targetType(),
         request.targetId(),
         request.action(),
@@ -124,14 +123,6 @@ class AdminModeratorCaseController {
   private static @Nullable Instant resolvedAt(java.sql.ResultSet rs) throws java.sql.SQLException {
     java.sql.Timestamp timestamp = rs.getTimestamp("resolved_at");
     return timestamp == null ? null : timestamp.toInstant();
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (RuntimeException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   record ReviewRequest(

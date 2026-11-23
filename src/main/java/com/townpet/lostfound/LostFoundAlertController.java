@@ -1,5 +1,6 @@
 package com.townpet.lostfound;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
@@ -12,8 +13,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,11 +35,11 @@ class LostFoundAlertController {
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   AlertResponse create(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody CreateAlertRequest request) {
     return toResponse(
         alerts.create(
-            memberId(principal),
+            currentMemberId,
             request.kind(),
             request.title(),
             request.description(),
@@ -99,13 +98,13 @@ class LostFoundAlertController {
   @org.springframework.web.bind.annotation.PatchMapping("/{alertId}/status")
   @MemberOnly
   AlertResponse changeStatus(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID alertId,
       @Valid @RequestBody ChangeStatusRequest request) {
     try {
       return toResponse(
           alerts.changeStatus(
-              memberId(principal),
+              currentMemberId,
               alertId,
               request.status(),
               request.resolutionOutcome(),
@@ -117,14 +116,6 @@ class LostFoundAlertController {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     } catch (LostFoundAlertStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Invalid alert status transition");
-    }
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
     }
   }
 

@@ -1,5 +1,6 @@
 package com.townpet.gathering;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -7,10 +8,7 @@ import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/gatherings")
@@ -27,18 +25,18 @@ class GatheringController {
   }
 
   @GetMapping("/{id}")
-  Response get(@PathVariable UUID id, @AuthenticationPrincipal @Nullable UserDetails principal) {
-    return response(service.get(id, memberId(principal)));
+  Response get(@PathVariable UUID id, @CurrentMember(required = false) @Nullable UUID currentMemberId) {
+    return response(service.get(id, currentMemberId));
   }
 
   @PostMapping
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   Response create(
-      @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody CreateRequest r) {
+      @CurrentMember UUID currentMemberId, @Valid @RequestBody CreateRequest r) {
     return response(
         service.create(
-            required(principal),
+            currentMemberId,
             r.title(),
             r.description(),
             r.location(),
@@ -48,35 +46,20 @@ class GatheringController {
 
   @PostMapping("/{id}/participants")
   @MemberOnly
-  Response join(@AuthenticationPrincipal UserDetails p, @PathVariable UUID id) {
-    return response(service.join(id, required(p)));
+  Response join(@CurrentMember UUID currentMemberId, @PathVariable UUID id) {
+    return response(service.join(id, currentMemberId));
   }
 
   @DeleteMapping("/{id}/participants/me")
   @MemberOnly
-  Response leave(@AuthenticationPrincipal UserDetails p, @PathVariable UUID id) {
-    return response(service.leave(id, required(p)));
+  Response leave(@CurrentMember UUID currentMemberId, @PathVariable UUID id) {
+    return response(service.leave(id, currentMemberId));
   }
 
   @PatchMapping("/{id}/cancel")
   @MemberOnly
-  Response cancel(@AuthenticationPrincipal UserDetails p, @PathVariable UUID id) {
-    return response(service.cancel(id, required(p)));
-  }
-
-  private static @Nullable UUID memberId(@Nullable UserDetails p) {
-    if (p == null) return null;
-    try {
-      return UUID.fromString(p.getUsername());
-    } catch (Exception e) {
-      return null;
-    }
-  }
-
-  private static UUID required(UserDetails p) {
-    UUID id = memberId(p);
-    if (id == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    return id;
+  Response cancel(@CurrentMember UUID currentMemberId, @PathVariable UUID id) {
+    return response(service.cancel(id, currentMemberId));
   }
 
   private static Response response(GatheringService.GatheringView g) {

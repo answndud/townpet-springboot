@@ -1,13 +1,12 @@
 package com.townpet.care;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,9 +21,9 @@ class CareAssignmentController {
 
   @GetMapping("/requests/{requestId}/assignment")
   @MemberOnly
-  Response assignment(@AuthenticationPrincipal UserDetails p, @PathVariable UUID requestId) {
+  Response assignment(@CurrentMember UUID currentMemberId, @PathVariable UUID requestId) {
     try {
-      return response(service.findForParticipant(member(p), requestId));
+      return response(service.findForParticipant(currentMemberId, requestId));
     } catch (NoSuchElementException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (SecurityException e) {
@@ -35,12 +34,12 @@ class CareAssignmentController {
   @PostMapping("/requests/{requestId}/applications/{applicationId}/accept")
   @MemberOnly
   Response accept(
-      @AuthenticationPrincipal UserDetails p,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID requestId,
       @PathVariable UUID applicationId,
       @Valid @RequestBody VersionRequest r) {
     try {
-      return response(service.accept(member(p), requestId, applicationId, r.version()));
+      return response(service.accept(currentMemberId, requestId, applicationId, r.version()));
     } catch (NoSuchElementException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (SecurityException e) {
@@ -53,11 +52,11 @@ class CareAssignmentController {
   @PatchMapping("/assignments/{assignmentId}/status")
   @MemberOnly
   Response status(
-      @AuthenticationPrincipal UserDetails p,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID assignmentId,
       @Valid @RequestBody DecisionRequest r) {
     try {
-      return response(service.transition(member(p), assignmentId, r.status(), r.version()));
+      return response(service.transition(currentMemberId, assignmentId, r.status(), r.version()));
     } catch (NoSuchElementException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (SecurityException e) {
@@ -70,11 +69,11 @@ class CareAssignmentController {
   @PostMapping("/assignments/{assignmentId}/feedback")
   @MemberOnly
   FeedbackResponse feedback(
-      @AuthenticationPrincipal UserDetails p,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID assignmentId,
       @Valid @RequestBody FeedbackRequest r) {
     try {
-      CareFeedbackEntity f = service.feedback(member(p), assignmentId, r.body());
+      CareFeedbackEntity f = service.feedback(currentMemberId, assignmentId, r.body());
       return new FeedbackResponse(
           f.getId(), f.getAssignmentId(), f.getAuthorMemberId(), f.getBody(), f.getCreatedAt());
     } catch (NoSuchElementException e) {
@@ -83,14 +82,6 @@ class CareAssignmentController {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     } catch (IllegalStateException e) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
-  }
-
-  private static UUID member(UserDetails p) {
-    try {
-      return UUID.fromString(p.getUsername());
-    } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     }
   }
 

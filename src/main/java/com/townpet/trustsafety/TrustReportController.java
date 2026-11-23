@@ -1,5 +1,6 @@
 package com.townpet.trustsafety;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import com.townpet.common.UuidV7;
 import com.townpet.engagement.api.CommentModeration;
@@ -8,8 +9,6 @@ import jakarta.validation.constraints.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,8 +29,8 @@ class TrustReportController {
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   ReportResponse create(
-      @AuthenticationPrincipal UserDetails p, @Valid @RequestBody CreateRequest r) {
-    UUID member = memberId(p);
+      @CurrentMember UUID currentMemberId, @Valid @RequestBody CreateRequest r) {
+    UUID member = currentMemberId;
     if ("COMMENT".equals(r.targetType()) && !comments.isActive(r.targetId())) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
@@ -70,14 +69,6 @@ class TrustReportController {
         reports.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     report.review(r.status());
     return response(report);
-  }
-
-  private static UUID memberId(UserDetails p) {
-    try {
-      return UUID.fromString(p.getUsername());
-    } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   private static ReportResponse response(TrustReportEntity r) {

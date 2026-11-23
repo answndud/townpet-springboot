@@ -1,10 +1,9 @@
 package com.townpet.discovery;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import java.util.UUID;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,9 +20,9 @@ class LegacyDiscoveryCompatibilityController {
   @PostMapping("/api/feed/personalization")
   @MemberOnly
   FeedController.FeedResponse personalized(
-      @AuthenticationPrincipal @Nullable UserDetails principal,
+      @CurrentMember(required = false) @Nullable UUID currentMemberId,
       @RequestBody(required = false) Object ignored) {
-    UUID memberId = memberId(principal);
+    UUID memberId = currentMemberId;
     com.townpet.publication.api.PublicationFeed.Page page =
         feed.list(memberId, memberId != null, null, 20);
     return new FeedController.FeedResponse(
@@ -45,16 +44,6 @@ class LegacyDiscoveryCompatibilityController {
         item.createdAt(),
         item.updatedAt(),
         item.version());
-  }
-
-  @Nullable
-  private static UUID memberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      return null;
-    }
   }
 
 }

@@ -1,5 +1,6 @@
 package com.townpet.publication;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import com.townpet.publication.api.PublicationFeed;
 import jakarta.validation.Valid;
@@ -11,8 +12,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,7 +39,7 @@ class LegacyPostsController {
 
   @GetMapping
   LegacyList list(
-      @AuthenticationPrincipal @Nullable UserDetails principal,
+      @CurrentMember(required = false) @Nullable UUID currentMemberId,
       @RequestParam(defaultValue = "20") int limit,
       @RequestParam(required = false) @Nullable String cursor,
       @RequestParam(required = false) @Size(max = 80) @Nullable String query) {
@@ -48,7 +47,7 @@ class LegacyPostsController {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
     }
     PublicationFeed.Page page =
-        feed.list(memberId(principal), principal != null, cursor, limit, query);
+        feed.list(currentMemberId, currentMemberId != null, cursor, limit, query);
     return new LegacyList(page.items(), page.nextCursor(), page.hasNext());
   }
 
@@ -56,11 +55,11 @@ class LegacyPostsController {
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   PublicationController.PublicationResponse create(
-      @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody CreateRequest request) {
+      @CurrentMember UUID currentMemberId, @Valid @RequestBody CreateRequest request) {
     try {
       PublicationEntity publication =
           publications.create(
-              requiredMemberId(principal),
+              currentMemberId,
               PublicationType.FREE_BOARD,
               null,
               request.title(),
@@ -74,9 +73,9 @@ class LegacyPostsController {
 
   @GetMapping("/{id}")
   PublicationController.PublicationResponse get(
-      @PathVariable UUID id, @AuthenticationPrincipal @Nullable UserDetails principal) {
+      @PathVariable UUID id, @CurrentMember(required = false) @Nullable UUID currentMemberId) {
     return publications
-        .findVisible(id, memberId(principal))
+        .findVisible(id, currentMemberId)
         .map(LegacyPostsController::response)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
@@ -85,12 +84,12 @@ class LegacyPostsController {
   @MemberOnly
   PublicationController.PublicationResponse edit(
       @PathVariable UUID id,
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody EditRequest request) {
     try {
       return response(
           publications.edit(
-              requiredMemberId(principal),
+              currentMemberId,
               id,
               request.version(),
               null,
@@ -113,10 +112,10 @@ class LegacyPostsController {
   @MemberOnly
   void delete(
       @PathVariable UUID id,
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody DeleteRequest request) {
     try {
-      publications.delete(requiredMemberId(principal), id, request.version());
+      publications.delete(currentMemberId, id, request.version());
     } catch (PublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (PublicationOwnershipException exception) {
@@ -124,22 +123,6 @@ class LegacyPostsController {
     } catch (PublicationVersionConflictException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT);
     }
-  }
-
-  @Nullable
-  private static UUID memberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
-  }
-
-  private static UUID requiredMemberId(UserDetails principal) {
-    UUID memberId = memberId((UserDetails) principal);
-    if (memberId == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    return memberId;
   }
 
   private static PublicationController.PublicationResponse response(PublicationEntity publication) {

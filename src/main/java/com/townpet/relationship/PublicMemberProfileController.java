@@ -1,5 +1,6 @@
 package com.townpet.relationship;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.member.api.MemberDirectory;
 import com.townpet.member.api.MemberDirectory.PublicProfile;
 import com.townpet.relationship.api.BlockDirectory;
@@ -7,8 +8,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,8 +26,8 @@ class PublicMemberProfileController {
   }
 
   @GetMapping
-  Response response(@AuthenticationPrincipal UserDetails principal, @PathVariable UUID memberId) {
-    UUID viewerId = memberId(principal);
+  Response response(@CurrentMember UUID currentMemberId, @PathVariable UUID memberId) {
+    UUID viewerId = currentMemberId;
     if (!viewerId.equals(memberId)
         && (blocks.isBlocked(viewerId, memberId) || blocks.isBlocked(memberId, viewerId))) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -53,15 +52,6 @@ class PublicMemberProfileController {
         profile.showPublicPets(),
         profile.showPublicReactions(),
         pets);
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   record Response(

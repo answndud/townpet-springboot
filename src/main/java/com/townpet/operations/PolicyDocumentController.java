@@ -1,5 +1,6 @@
 package com.townpet.operations;
 
+import com.townpet.common.CurrentMember;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -8,8 +9,6 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -42,24 +41,16 @@ class PolicyDocumentController {
 
   @PutMapping
   Response update(
-      @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody UpdateRequest request) {
+      @CurrentMember UUID currentMemberId, @Valid @RequestBody UpdateRequest request) {
     int count =
         jdbc.update(
             "UPDATE policy_document SET title = ?, body = ?, updated_at = CURRENT_TIMESTAMP, updated_by = ? WHERE policy_key = ?",
             request.title(),
             request.body(),
-            memberId(principal),
+            currentMemberId,
             request.key());
     if (count == 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     return get(request.key());
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (RuntimeException e) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   record UpdateRequest(

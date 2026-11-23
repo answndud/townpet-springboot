@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -12,8 +13,6 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -38,10 +37,10 @@ class CommentController {
 
   @GetMapping
   CommentListResponse list(
-      @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal) {
+      @PathVariable UUID publicationId, @CurrentMember(required = false) @Nullable UUID currentMemberId) {
     try {
       return new CommentListResponse(
-              comments.list(publicationId, viewerMemberId(principal)).stream()
+              comments.list(publicationId, currentMemberId).stream()
               .map(CommentController::toResponse)
               .toList());
     } catch (CommentPublicationNotFoundException | CommentNotFoundException exception) {
@@ -52,13 +51,13 @@ class CommentController {
   @PostMapping
   @MemberOnly
   ResponseEntity<CommentResponse> create(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID publicationId,
       @Valid @RequestBody CreateCommentRequest request) {
     try {
       CommentEntity comment =
           comments.create(
-              memberId(principal), publicationId, request.parentCommentId(), request.body());
+              currentMemberId, publicationId, request.parentCommentId(), request.body());
       return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(comment));
     } catch (CommentPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -70,12 +69,12 @@ class CommentController {
   @DeleteMapping("/{commentId}")
   @MemberOnly
   ResponseEntity<Void> delete(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID publicationId,
       @PathVariable UUID commentId,
       @Valid @RequestBody DeleteCommentRequest request) {
     try {
-      comments.delete(memberId(principal), publicationId, commentId, request.version());
+      comments.delete(currentMemberId, publicationId, commentId, request.version());
       return ResponseEntity.noContent().build();
     } catch (CommentNotFoundException | CommentPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -90,14 +89,14 @@ class CommentController {
   @PatchMapping("/{commentId}")
   @MemberOnly
   CommentResponse edit(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID publicationId,
       @PathVariable UUID commentId,
       @Valid @RequestBody EditCommentRequest request) {
     try {
       return toResponse(
           comments.edit(
-              memberId(principal), publicationId, commentId, request.version(), request.body()));
+              currentMemberId, publicationId, commentId, request.version(), request.body()));
     } catch (CommentNotFoundException | CommentPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (CommentOwnershipException exception) {
@@ -105,24 +104,6 @@ class CommentController {
     } catch (CommentVersionConflictException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT);
     }
-  }
-
-  @Nullable
-  private static UUID viewerMemberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
-    }
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    UUID memberId = viewerMemberId(principal);
-    if (memberId == null) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
-    }
-    return memberId;
   }
 
   private static CommentResponse toResponse(CommentEntity comment) {

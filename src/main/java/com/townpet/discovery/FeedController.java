@@ -1,5 +1,6 @@
 package com.townpet.discovery;
 
+import com.townpet.common.CurrentMember;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -12,8 +13,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,7 +32,7 @@ class FeedController {
 
   @GetMapping
   FeedResponse list(
-      @AuthenticationPrincipal @Nullable UserDetails principal,
+      @CurrentMember(required = false) @Nullable UUID currentMemberId,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam(defaultValue = "ALL") @Size(max = 10) String searchField,
@@ -41,12 +40,12 @@ class FeedController {
       @RequestParam(required = false) @Size(max = 40) @Nullable String type,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
-    return listFeed(principal, cursor, limit, null, searchField, animals, type, from, to);
+    return listFeed(currentMemberId, cursor, limit, null, searchField, animals, type, from, to);
   }
 
   @GetMapping(params = "query")
   FeedResponse list(
-      @AuthenticationPrincipal @Nullable UserDetails principal,
+      @CurrentMember(required = false) @Nullable UUID currentMemberId,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam @Size(max = 80) String query,
@@ -55,11 +54,11 @@ class FeedController {
       @RequestParam(required = false) @Size(max = 40) @Nullable String type,
       @RequestParam(required = false) LocalDate from,
       @RequestParam(required = false) LocalDate to) {
-    return listFeed(principal, cursor, limit, query, searchField, animals, type, from, to);
+    return listFeed(currentMemberId, cursor, limit, query, searchField, animals, type, from, to);
   }
 
   private FeedResponse listFeed(
-      @AuthenticationPrincipal @Nullable UserDetails principal,
+      @CurrentMember(required = false) @Nullable UUID currentMemberId,
       @Nullable String cursor,
       int limit,
       @Nullable String query,
@@ -74,8 +73,8 @@ class FeedController {
     try {
       CommunityFeed.Page page =
           feed.list(
-              memberId(principal),
-              principal != null,
+              currentMemberId,
+              currentMemberId != null,
               cursor,
               limit,
               query,
@@ -89,18 +88,6 @@ class FeedController {
           new PageInfo(page.nextCursor(), page.hasNext()));
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed cursor");
-    }
-  }
-
-  @Nullable
-  private static UUID memberId(@Nullable UserDetails principal) {
-    if (principal == null) {
-      return null;
-    }
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
     }
   }
 

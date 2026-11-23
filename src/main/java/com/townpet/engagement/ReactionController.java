@@ -1,13 +1,12 @@
 package com.townpet.engagement;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -30,9 +29,9 @@ class ReactionController {
 
   @GetMapping
   ReactionResponse get(
-      @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal) {
+      @PathVariable UUID publicationId, @CurrentMember(required = false) @Nullable UUID currentMemberId) {
     try {
-      return toResponse(reactions.state(publicationId, memberId(principal)));
+      return toResponse(reactions.state(publicationId, currentMemberId));
     } catch (ReactionPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
@@ -41,33 +40,15 @@ class ReactionController {
   @PutMapping
   @MemberOnly
   ReactionResponse set(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID publicationId,
       @Valid @RequestBody SetReactionRequest request) {
     try {
       return toResponse(
-          reactions.set(authenticatedMemberId(principal), publicationId, request.active()));
+          reactions.set(currentMemberId, publicationId, request.active()));
     } catch (ReactionPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
-  }
-
-  @Nullable
-  private static UUID memberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
-    }
-  }
-
-  private static UUID authenticatedMemberId(UserDetails principal) {
-    UUID memberId = memberId(principal);
-    if (memberId == null) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
-    }
-    return memberId;
   }
 
   private static ReactionResponse toResponse(ReactionService.ReactionState state) {

@@ -1,5 +1,6 @@
 package com.townpet.publication;
 
+import com.townpet.common.CurrentMember;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
@@ -7,8 +8,6 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,7 +33,7 @@ class PublicationModerationController {
   Response visibility(
       @PathVariable UUID id,
       @Valid @RequestBody VisibilityRequest request,
-      @AuthenticationPrincipal UserDetails principal) {
+      @CurrentMember UUID currentMemberId) {
     PublicationEntity publication =
         publications
             .findById(id)
@@ -46,20 +45,12 @@ class PublicationModerationController {
     jdbc.update(
         "INSERT INTO moderation_action (id, actor_member_id, target_member_id, target_type, target_id, action, reason) VALUES (?, ?, ?, 'PUBLICATION', ?, ?, ?)",
         UUID.randomUUID(),
-        memberId(principal),
+        currentMemberId,
         publication.getAuthorMemberId(),
         id,
         request.visible() ? "MAKE_VISIBLE" : "HIDE",
         request.reason());
     return new Response(id, publication.getLifecycle().name());
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   record VisibilityRequest(@NotNull Boolean visible, String reason) {}

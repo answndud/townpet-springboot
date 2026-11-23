@@ -1,10 +1,9 @@
 package com.townpet.publication;
 
+import com.townpet.common.CurrentMember;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -19,21 +18,11 @@ class LegacyPublicationController {
 
   @GetMapping({"/detail", "/content"})
   PublicationController.PublicationResponse get(
-      @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal) {
+      @PathVariable UUID publicationId, @CurrentMember(required = false) @Nullable UUID currentMemberId) {
     return publications
-        .findVisible(publicationId, memberId(principal))
+        .findVisible(publicationId, currentMemberId)
         .map(LegacyPublicationController::response)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-  }
-
-  @Nullable
-  private static UUID memberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   private static PublicationController.PublicationResponse response(PublicationEntity p) {

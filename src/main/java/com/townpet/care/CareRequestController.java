@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -7,8 +8,6 @@ import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -37,13 +36,13 @@ class CareRequestController {
   @PostMapping
   @MemberOnly
   ResponseEntity<Response> create(
-      @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody CreateRequest request) {
+      @CurrentMember UUID currentMemberId, @Valid @RequestBody CreateRequest request) {
     try {
       Response response =
           response(
               requests
                   .create(
-                      memberId(principal),
+                      currentMemberId,
                       request.title(),
                       request.description(),
                       request.location(),
@@ -60,11 +59,11 @@ class CareRequestController {
   @PatchMapping("/{id}/cancel")
   @MemberOnly
   Response cancel(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID id,
       @Valid @RequestBody VersionRequest request) {
     try {
-      requests.cancel(memberId(principal), id, request.version());
+      requests.cancel(currentMemberId, id, request.version());
       return get(id);
     } catch (NoSuchElementException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -72,14 +71,6 @@ class CareRequestController {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     } catch (IllegalStateException e) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     }
   }
 

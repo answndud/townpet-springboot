@@ -1,13 +1,12 @@
 package com.townpet.welfare;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -36,10 +35,10 @@ class VolunteerController {
   @PostMapping
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
-  Response create(@AuthenticationPrincipal UserDetails p, @Valid @RequestBody CreateRequest r) {
+  Response create(@CurrentMember UUID currentMemberId, @Valid @RequestBody CreateRequest r) {
     return response(
         service.create(
-            member(p),
+            currentMemberId,
             r.title(),
             r.description(),
             r.organization(),
@@ -52,23 +51,15 @@ class VolunteerController {
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   void apply(
-      @AuthenticationPrincipal UserDetails p,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID id,
       @Valid @RequestBody ApplyRequest r) {
     try {
-      service.apply(member(p), id, r.message());
+      service.apply(currentMemberId, id, r.message());
     } catch (NoSuchElementException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (IllegalStateException e) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
-  }
-
-  private static UUID member(UserDetails p) {
-    try {
-      return UUID.fromString(p.getUsername());
-    } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     }
   }
 

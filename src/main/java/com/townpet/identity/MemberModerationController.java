@@ -1,5 +1,6 @@
 package com.townpet.identity;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.publication.api.PublicationModeration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -7,8 +8,6 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,13 +34,13 @@ class MemberModerationController {
   @Transactional
   Response content(
       @RequestBody @Valid MemberRequest request,
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       jakarta.servlet.http.HttpServletRequest http) {
     CredentialEntity credential =
         credentials
             .findByMemberId(request.memberId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    if (request.memberId().equals(memberId(principal))) {
+    if (request.memberId().equals(currentMemberId)) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Moderator cannot target self");
     }
     String action =
@@ -50,33 +49,25 @@ class MemberModerationController {
         publications.setAuthorContentVisibility(
             request.memberId(), action.equals("RESTORE_CONTENT"));
     recordAction(
-        memberId(principal), request.memberId(), request.memberId(), action, request.reason());
+        currentMemberId, request.memberId(), request.memberId(), action, request.reason());
     return new Response(credential.getMemberId(), action, affected);
   }
 
   @PostMapping("/sanction")
   @Transactional
   Response sanction(
-      @RequestBody @Valid MemberRequest request, @AuthenticationPrincipal UserDetails principal) {
+      @RequestBody @Valid MemberRequest request, @CurrentMember UUID currentMemberId) {
     CredentialEntity credential =
         credentials
             .findByMemberId(request.memberId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    if (request.memberId().equals(memberId(principal))) {
+    if (request.memberId().equals(currentMemberId)) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Moderator cannot target self");
     }
     credential.setEnabled(false);
     recordAction(
-        memberId(principal), request.memberId(), request.memberId(), "SANCTION", request.reason());
+        currentMemberId, request.memberId(), request.memberId(), "SANCTION", request.reason());
     return new Response(credential.getMemberId(), "SANCTION", 0);
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   private void recordAction(

@@ -1,5 +1,6 @@
 package com.townpet.welfare;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -9,8 +10,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,23 +48,15 @@ public class AdoptionController {
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   Response create(
-      @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody CreateRequest request) {
+      @CurrentMember UUID currentMemberId, @Valid @RequestBody CreateRequest request) {
     return response(
         adoptions.create(
-            memberId(principal),
+            currentMemberId,
             request.title(),
             request.description(),
             request.species(),
             request.breed(),
             request.neighborhoodId()));
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   private static Response response(AdoptionService.Listing item) {

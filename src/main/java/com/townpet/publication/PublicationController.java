@@ -1,6 +1,7 @@
 package com.townpet.publication;
 
 import com.townpet.catalog.api.ValidAnimalCommunityCodes;
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -17,8 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,9 +40,9 @@ class PublicationController {
   @PostMapping
   @MemberOnly
   ResponseEntity<PublicationResponse> create(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody CreatePublicationRequest request) {
-    UUID memberId = memberId(principal);
+    UUID memberId = currentMemberId;
     try {
       PublicationEntity publication =
           publications.create(
@@ -62,17 +61,17 @@ class PublicationController {
 
   @GetMapping("/{publicationId}")
   PublicationResponse get(
-      @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal) {
+      @PathVariable UUID publicationId, @CurrentMember(required = false) @Nullable UUID currentMemberId) {
     return publications
-        .findVisible(publicationId, viewerMemberId(principal))
+        .findVisible(publicationId, currentMemberId)
         .map(this::toResponse)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
   }
 
   @GetMapping("/mine")
   @MemberOnly
-  List<PublicationResponse> mine(@AuthenticationPrincipal UserDetails principal) {
-    List<PublicationEntity> mine = publications.mine(memberId(principal));
+  List<PublicationResponse> mine(@CurrentMember UUID currentMemberId) {
+    List<PublicationEntity> mine = publications.mine(currentMemberId);
     Map<UUID, List<String>> tags =
         publications.animalCommunityCodes(mine.stream().map(PublicationEntity::getId).toList());
     return mine.stream()
@@ -85,13 +84,13 @@ class PublicationController {
   @PutMapping("/{publicationId}")
   @MemberOnly
   PublicationResponse edit(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID publicationId,
       @Valid @RequestBody EditPublicationRequest request) {
     try {
       return toResponse(
           publications.edit(
-              memberId(principal),
+              currentMemberId,
               publicationId,
               request.version(),
               request.type(),
@@ -115,12 +114,12 @@ class PublicationController {
   @DeleteMapping("/{publicationId}")
   @MemberOnly
   ResponseEntity<Void> delete(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID publicationId,
       @Valid @RequestBody DeletePublicationRequest request) {
     try {
       PublicationEntity publication =
-          publications.delete(memberId(principal), publicationId, request.version());
+          publications.delete(currentMemberId, publicationId, request.version());
       return ResponseEntity.noContent().eTag("\"" + publication.getVersion() + "\"").build();
     } catch (PublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -136,12 +135,12 @@ class PublicationController {
   @PostMapping("/{publicationId}/restore")
   @MemberOnly
   PublicationResponse restore(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID publicationId,
       @Valid @RequestBody RestorePublicationRequest request) {
     try {
       return toResponse(
-          publications.restore(memberId(principal), publicationId, request.version()));
+          publications.restore(currentMemberId, publicationId, request.version()));
     } catch (PublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (PublicationOwnershipException exception) {
@@ -151,24 +150,6 @@ class PublicationController {
         | ObjectOptimisticLockingFailureException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication has changed");
     }
-  }
-
-  @Nullable
-  private static UUID viewerMemberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
-    }
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    UUID memberId = viewerMemberId(principal);
-    if (memberId == null) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
-    }
-    return memberId;
   }
 
   private PublicationResponse toResponse(PublicationEntity publication) {

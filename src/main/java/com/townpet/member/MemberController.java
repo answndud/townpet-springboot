@@ -1,5 +1,6 @@
 package com.townpet.member;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -33,11 +34,9 @@ public class MemberController {
   }
 
   @GetMapping("/me")
-  MemberResponse getCurrentMember(@AuthenticationPrincipal UserDetails principal) {
-    if (principal == null) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
-    }
-    MemberEntity member = findMember(principal);
+  MemberResponse getCurrentMember(
+      @AuthenticationPrincipal UserDetails principal, @CurrentMember UUID currentMemberId) {
+    MemberEntity member = findMember(currentMemberId);
     MemberProfileEntity profile = profiles.findByMemberId(member.getId()).orElse(null);
     return toResponse(
         principal, member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
@@ -48,8 +47,9 @@ public class MemberController {
   @Transactional
   MemberResponse updateOnboarding(
       @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody OnboardingRequest request) {
-    MemberEntity member = findMember(principal);
+    MemberEntity member = findMember(currentMemberId);
     if (request.neighborhoodId() == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "neighborhoodId is required");
     }
@@ -83,8 +83,9 @@ public class MemberController {
   @Transactional
   MemberResponse updateProfile(
       @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody ProfileUpdateRequest request) {
-    MemberEntity member = findMember(principal);
+    MemberEntity member = findMember(currentMemberId);
     MemberProfileEntity profile =
         profiles
             .findByMemberId(member.getId())
@@ -115,24 +116,10 @@ public class MemberController {
         principal, member, profile, pets.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
   }
 
-  private MemberEntity findMember(UserDetails principal) {
-    UUID memberId = memberId(principal);
+  private MemberEntity findMember(UUID memberId) {
     return members
         .findById(memberId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    if (principal == null) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
-    }
-    UUID memberId;
-    try {
-      memberId = UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
-    }
-    return memberId;
   }
 
   private static MemberResponse toResponse(

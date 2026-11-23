@@ -1,5 +1,6 @@
 package com.townpet.trustsafety;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.UuidV7;
 import com.townpet.engagement.api.CommentModeration;
 import com.townpet.engagement.api.CommentModeration.CommentView;
@@ -17,8 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.Nullable;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -69,7 +68,7 @@ class AdminCommentModerationController {
   CommentView act(
       @PathVariable UUID commentId,
       @Valid @RequestBody ActionRequest request,
-      @AuthenticationPrincipal UserDetails principal) {
+      @CurrentMember UUID currentMemberId) {
     boolean delete = "DELETE".equals(request.action());
     CommentView result =
         (delete ? comments.delete(commentId) : comments.restore(commentId))
@@ -78,19 +77,11 @@ class AdminCommentModerationController {
         "INSERT INTO moderation_action (id, actor_member_id, target_type, target_id, action, reason) "
             + "VALUES (?, ?, 'COMMENT', ?, ?, ?)",
         UuidV7.randomUuid(),
-        memberId(principal),
+        currentMemberId,
         commentId,
         delete ? "COMMENT_DELETED" : "COMMENT_RESTORED",
         request.reason().trim());
     return result;
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (RuntimeException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   record ActionRequest(

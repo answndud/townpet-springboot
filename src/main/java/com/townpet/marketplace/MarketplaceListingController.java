@@ -1,5 +1,6 @@
 package com.townpet.marketplace;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -11,8 +12,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,12 +34,12 @@ class MarketplaceListingController {
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   ListingResponse create(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody CreateListingRequest request) {
     try {
       return toResponse(
           listings.create(
-              memberId(principal),
+              currentMemberId,
               request.kind(),
               request.title(),
               request.description(),
@@ -79,13 +78,13 @@ class MarketplaceListingController {
   @org.springframework.web.bind.annotation.PatchMapping("/{listingId}/status")
   @MemberOnly
   ListingResponse changeStatus(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID listingId,
       @Valid @RequestBody ChangeStatusRequest request) {
     try {
       return toResponse(
           listings.changeStatus(
-              memberId(principal), listingId, request.status(), request.version()));
+              currentMemberId, listingId, request.status(), request.version()));
     } catch (MarketplaceListingNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (MarketplaceListingOwnershipException exception) {
@@ -98,13 +97,13 @@ class MarketplaceListingController {
   @org.springframework.web.bind.annotation.PatchMapping("/{listingId}")
   @MemberOnly
   ListingResponse update(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID listingId,
       @Valid @RequestBody UpdateListingRequest request) {
     try {
       return toResponse(
           listings.update(
-              memberId(principal),
+              currentMemberId,
               listingId,
               request.title(),
               request.description(),
@@ -116,14 +115,6 @@ class MarketplaceListingController {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     } catch (MarketplaceListingStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Listing is not editable");
-    }
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
     }
   }
 

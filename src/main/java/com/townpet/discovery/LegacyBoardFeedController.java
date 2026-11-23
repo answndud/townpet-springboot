@@ -1,5 +1,6 @@
 package com.townpet.discovery;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.publication.api.PublicationFeed;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -8,8 +9,6 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,7 +30,7 @@ class LegacyBoardFeedController {
   @GetMapping
   LegacyList list(
       @PathVariable @Size(min = 1, max = 40) String board,
-      @AuthenticationPrincipal @Nullable UserDetails principal,
+      @CurrentMember(required = false) @Nullable UUID currentMemberId,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit) {
     if (board.equalsIgnoreCase("adoption")) {
@@ -40,20 +39,10 @@ class LegacyBoardFeedController {
     try {
       PublicationFeed.Page page =
           publications.list(
-              memberId(principal), principal != null, cursor, limit);
+              currentMemberId, currentMemberId != null, cursor, limit);
       return new LegacyList(page.items(), page.nextCursor(), page.hasNext());
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid feed cursor");
-    }
-  }
-
-  @Nullable
-  private static UUID memberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
     }
   }
 

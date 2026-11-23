@@ -1,13 +1,12 @@
 package com.townpet.engagement;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -27,9 +26,9 @@ class BookmarkController {
 
   @GetMapping
   BookmarkResponse get(
-      @PathVariable UUID publicationId, @AuthenticationPrincipal @Nullable UserDetails principal) {
+      @PathVariable UUID publicationId, @CurrentMember(required = false) @Nullable UUID currentMemberId) {
     try {
-      return toResponse(bookmarks.state(publicationId, memberId(principal)));
+      return toResponse(bookmarks.state(publicationId, currentMemberId));
     } catch (BookmarkPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
@@ -38,33 +37,15 @@ class BookmarkController {
   @PutMapping
   @MemberOnly
   BookmarkResponse set(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID publicationId,
       @Valid @RequestBody SetBookmarkRequest request) {
     try {
       return toResponse(
-          bookmarks.set(authenticatedMemberId(principal), publicationId, request.active()));
+          bookmarks.set(currentMemberId, publicationId, request.active()));
     } catch (BookmarkPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
-  }
-
-  @Nullable
-  private static UUID memberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
-    }
-  }
-
-  private static UUID authenticatedMemberId(UserDetails principal) {
-    UUID memberId = memberId(principal);
-    if (memberId == null) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
-    }
-    return memberId;
   }
 
   private static BookmarkResponse toResponse(BookmarkService.BookmarkState state) {

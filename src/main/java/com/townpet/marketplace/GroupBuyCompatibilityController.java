@@ -1,5 +1,6 @@
 package com.townpet.marketplace;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -9,8 +10,6 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,11 +40,11 @@ class GroupBuyCompatibilityController {
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   MarketplaceListingController.ListingResponse create(
-      @AuthenticationPrincipal UserDetails principal, @Valid @RequestBody Request request) {
+      @CurrentMember UUID currentMemberId, @Valid @RequestBody Request request) {
     try {
       return response(
           listings.create(
-              memberId(principal),
+              currentMemberId,
               MarketplaceListingKind.GROUP_BUY,
               request.title(),
               request.description(),
@@ -68,14 +67,6 @@ class GroupBuyCompatibilityController {
         listing.createdAt(),
         listing.updatedAt(),
         listing.version());
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   record Request(

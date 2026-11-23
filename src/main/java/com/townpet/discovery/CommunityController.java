@@ -1,6 +1,7 @@
 package com.townpet.discovery;
 
 import com.townpet.catalog.api.AnimalInterestCatalog;
+import com.townpet.common.CurrentMember;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -13,8 +14,6 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,7 +52,7 @@ class CommunityController {
   @GetMapping("/{animalCode}/feed")
   CommunityFeedResponse list(
       @PathVariable String animalCode,
-      @AuthenticationPrincipal @Nullable UserDetails principal,
+      @CurrentMember(required = false) @Nullable UUID currentMemberId,
       @RequestParam(defaultValue = "all") String board,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
@@ -81,8 +80,8 @@ class CommunityController {
         page =
             popular
                 ? feed.listPopular(
-                    memberId(principal),
-                    principal != null,
+                    currentMemberId,
+                    currentMemberId != null,
                     cursor,
                     limit,
                     query,
@@ -91,8 +90,8 @@ class CommunityController {
                     toInstant,
                     boardTypes(normalizedBoard))
                 : feed.list(
-                    memberId(principal),
-                    principal != null,
+                    currentMemberId,
+                    currentMemberId != null,
                     cursor,
                     limit,
                     query,
@@ -106,8 +105,8 @@ class CommunityController {
         page =
             popular
                 ? feed.listPopularCommunity(
-                    memberId(principal),
-                    principal != null,
+                    currentMemberId,
+                    currentMemberId != null,
                     normalizedAnimalCode,
                     boardTypes(normalizedBoard),
                     cursor,
@@ -117,8 +116,8 @@ class CommunityController {
                     fromInstant,
                     toInstant)
                 : feed.listCommunity(
-                    memberId(principal),
-                    principal != null,
+                    currentMemberId,
+                    currentMemberId != null,
                     normalizedAnimalCode,
                     boardTypes(normalizedBoard),
                     cursor,
@@ -162,16 +161,6 @@ class CommunityController {
 
   private static Set<String> boardTypes(String board) {
     return "all".equals(board) ? ANIMAL_BOARD_TYPES : Set.of(BOARD_TYPES.get(board));
-  }
-
-  @Nullable
-  private static UUID memberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
-    }
   }
 
   private static FeedItemResponse toResponse(CommunityFeed.Item item) {

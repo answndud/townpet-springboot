@@ -1,5 +1,6 @@
 package com.townpet.media;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.validation.Valid;
@@ -13,8 +14,6 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,12 +39,12 @@ class MediaController {
   @PostMapping
   @MemberOnly
   MediaResponse create(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @Valid @RequestBody CreateUploadRequest request) {
     try {
       return toResponse(
           media.create(
-              memberId(principal),
+              currentMemberId,
               request.checksumSha256(),
               request.contentType(),
               request.byteSize()));
@@ -61,9 +60,9 @@ class MediaController {
   @GetMapping("/{assetId}/url")
   @MemberOnly
   ReadUrlResponse readUrl(
-      @AuthenticationPrincipal UserDetails principal, @PathVariable UUID assetId) {
+      @CurrentMember UUID currentMemberId, @PathVariable UUID assetId) {
     try {
-      return new ReadUrlResponse(media.readUrl(memberId(principal), assetId));
+      return new ReadUrlResponse(media.readUrl(currentMemberId, assetId));
     } catch (MediaAssetNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (MediaAssetStateException exception) {
@@ -74,12 +73,12 @@ class MediaController {
   @PostMapping("/{assetId}/finalize")
   @MemberOnly
   MediaResponse finalizeUpload(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID assetId,
       @Valid @RequestBody FinalizeUploadRequest request) {
     try {
       return toResponse(
-          media.finalizeUpload(memberId(principal), assetId, request.checksumSha256()));
+          media.finalizeUpload(currentMemberId, assetId, request.checksumSha256()));
     } catch (MediaAssetNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (MediaObjectNotFoundException exception) {
@@ -95,7 +94,7 @@ class MediaController {
   @PutMapping(value = "/{assetId}/content", consumes = "multipart/form-data")
   @MemberOnly
   MediaResponse uploadContent(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID assetId,
       @RequestPart("file") MultipartFile file) {
     try {
@@ -105,7 +104,7 @@ class MediaController {
             HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Missing content type");
       }
       return toResponse(
-          media.uploadContent(memberId(principal), assetId, contentType, file.getBytes()));
+          media.uploadContent(currentMemberId, assetId, contentType, file.getBytes()));
     } catch (MediaAssetNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (MediaObjectMismatchException exception) {
@@ -123,11 +122,11 @@ class MediaController {
   @PostMapping("/{assetId}/attachments/publications/{publicationId}")
   @MemberOnly
   MediaResponse attachPublication(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID assetId,
       @PathVariable UUID publicationId) {
     try {
-      return toResponse(media.attachToPublication(memberId(principal), assetId, publicationId));
+      return toResponse(media.attachToPublication(currentMemberId, assetId, publicationId));
     } catch (MediaAssetNotFoundException | MediaPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (MediaOwnershipException exception) {
@@ -137,14 +136,6 @@ class MediaController {
           HttpStatus.CONFLICT, "Publication attachment limit reached");
     } catch (MediaAssetStateException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not attachable");
-    }
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
     }
   }
 

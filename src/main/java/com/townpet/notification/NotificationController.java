@@ -1,12 +1,11 @@
 package com.townpet.notification;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,9 +22,9 @@ class NotificationController {
   @GetMapping
   @MemberOnly
   List<Response> list(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @RequestParam(defaultValue = "false") boolean unread) {
-    UUID memberId = memberId(principal);
+    UUID memberId = currentMemberId;
     var items =
         unread
             ? notifications.findTop100ByRecipientMemberIdAndReadAtIsNullOrderByCreatedAtDescIdDesc(
@@ -36,30 +35,22 @@ class NotificationController {
 
   @GetMapping("/unread-count")
   @MemberOnly
-  CountResponse unreadCount(@AuthenticationPrincipal UserDetails principal) {
+  CountResponse unreadCount(@CurrentMember UUID currentMemberId) {
     return new CountResponse(
-        notifications.countByRecipientMemberIdAndReadAtIsNull(memberId(principal)));
+        notifications.countByRecipientMemberIdAndReadAtIsNull(currentMemberId));
   }
 
   @PatchMapping("/{id}/read")
   @MemberOnly
   @Transactional
-  Response markRead(@AuthenticationPrincipal UserDetails principal, @PathVariable UUID id) {
+  Response markRead(@CurrentMember UUID currentMemberId, @PathVariable UUID id) {
     NotificationEntity notification =
         notifications
             .findById(id)
-            .filter(item -> item.getRecipientMemberId().equals(memberId(principal)))
+            .filter(item -> item.getRecipientMemberId().equals(currentMemberId))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     notification.markRead();
     return response(notification);
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (Exception exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    }
   }
 
   private static Response response(NotificationEntity item) {

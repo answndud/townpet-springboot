@@ -1,13 +1,12 @@
 package com.townpet.care;
 
+import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,9 +22,9 @@ class CareApplicationController {
   @GetMapping
   @MemberOnly
   List<Response> list(
-      @AuthenticationPrincipal UserDetails principal, @PathVariable UUID requestId) {
+      @CurrentMember UUID currentMemberId, @PathVariable UUID requestId) {
     try {
-      return applications.listForRequester(memberId(principal), requestId).stream()
+      return applications.listForRequester(currentMemberId, requestId).stream()
           .map(CareApplicationController::response)
           .toList();
     } catch (NoSuchElementException e) {
@@ -38,12 +37,12 @@ class CareApplicationController {
   @PostMapping
   @MemberOnly
   ResponseEntity<Response> apply(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID requestId,
       @Valid @RequestBody ApplyRequest request) {
     try {
       return ResponseEntity.status(HttpStatus.CREATED)
-          .body(response(applications.apply(memberId(principal), requestId, request.message())));
+          .body(response(applications.apply(currentMemberId, requestId, request.message())));
     } catch (NoSuchElementException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (IllegalArgumentException e) {
@@ -56,28 +55,20 @@ class CareApplicationController {
   @PatchMapping("/{applicationId}")
   @MemberOnly
   Response decide(
-      @AuthenticationPrincipal UserDetails principal,
+      @CurrentMember UUID currentMemberId,
       @PathVariable UUID requestId,
       @PathVariable UUID applicationId,
       @Valid @RequestBody DecisionRequest request) {
     try {
       return response(
           applications.decide(
-              memberId(principal), requestId, applicationId, request.status(), request.version()));
+              currentMemberId, requestId, applicationId, request.status(), request.version()));
     } catch (NoSuchElementException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (SecurityException e) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     } catch (IllegalStateException e) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
-  }
-
-  private static UUID memberId(UserDetails principal) {
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     }
   }
 

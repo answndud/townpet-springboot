@@ -1,5 +1,6 @@
 package com.townpet.discovery;
 
+import com.townpet.common.CurrentMember;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -10,8 +11,6 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,7 +45,7 @@ class BoardController {
   @GetMapping("/{boardCode}/feed")
   FeedController.FeedResponse list(
       @PathVariable String boardCode,
-      @AuthenticationPrincipal @Nullable UserDetails principal,
+      @CurrentMember(required = false) @Nullable UUID currentMemberId,
       @RequestParam(required = false) @Size(max = 512) @Nullable String cursor,
       @RequestParam(defaultValue = "20") @Min(1) @Max(50) int limit,
       @RequestParam(required = false) @Size(max = 80) @Nullable String query,
@@ -60,8 +59,8 @@ class BoardController {
     try {
       CommunityFeed.Page page =
           feed.list(
-              memberId(principal),
-              principal != null,
+              currentMemberId,
+              currentMemberId != null,
               cursor,
               limit,
               query,
@@ -86,16 +85,6 @@ class BoardController {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown common board");
     }
     return code;
-  }
-
-  @Nullable
-  private static UUID memberId(@Nullable UserDetails principal) {
-    if (principal == null) return null;
-    try {
-      return UUID.fromString(principal.getUsername());
-    } catch (IllegalArgumentException exception) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid principal");
-    }
   }
 
   private static FeedController.FeedItemResponse toResponse(CommunityFeed.Item item) {
