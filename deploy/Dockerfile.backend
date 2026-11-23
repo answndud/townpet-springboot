@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25-jdk AS build
+FROM eclipse-temurin:25.0.5.1_2-jdk@sha256:ce2ef9d2d67a68de5e196d4de9d743327c44a10b57fe02ec39f572c652cacfd3 AS build
 WORKDIR /workspace
 COPY . .
 RUN release_jar="$(find release-artifacts -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' -print -quit 2>/dev/null || true)"; \
@@ -8,7 +8,7 @@ RUN release_jar="$(find release-artifacts -maxdepth 1 -type f -name '*.jar' ! -n
       ./gradlew bootJar --no-daemon; \
     fi
 
-FROM eclipse-temurin:25-jre-noble
+FROM eclipse-temurin:25.0.5.1_2-jre-noble@sha256:2ec98aa522c472deadfd2b7c5b39bca680e33ef522a53a72f10789bdf89a6bb5
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends wget \
