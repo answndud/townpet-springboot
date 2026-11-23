@@ -59,7 +59,7 @@ class HospitalReviewService {
           rating,
           body.trim());
     } catch (org.springframework.dao.DataIntegrityViolationException e) {
-      throw new IllegalStateException("Already reviewed this hospital");
+      throw new HospitalReviewAlreadyExistsException();
     }
     return find(id).orElseThrow();
   }

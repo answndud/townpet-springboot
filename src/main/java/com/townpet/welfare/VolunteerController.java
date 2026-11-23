@@ -54,13 +54,7 @@ class VolunteerController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID id,
       @Valid @RequestBody ApplyRequest r) {
-    try {
-      service.apply(currentMemberId, id, r.message());
-    } catch (NoSuchElementException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (IllegalStateException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
+    service.apply(currentMemberId, id, r.message());
   }
 
   private static Response response(VolunteerService.Opportunity o) {

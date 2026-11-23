@@ -30,7 +30,7 @@ class VolunteerServiceClockTest {
     stubOpportunityStartingAt(NOW);
 
     assertThatThrownBy(() -> service.apply(APPLICANT, ID, "참여할게요"))
-        .isInstanceOf(IllegalStateException.class)
+        .isInstanceOf(VolunteerStateException.class)
         .hasMessage("Opportunity has already started");
   }
 
@@ -41,7 +41,7 @@ class VolunteerServiceClockTest {
 
     // The opportunity is full (capacity 10), which proves the start check was passed.
     assertThatThrownBy(() -> service.apply(APPLICANT, ID, "참여할게요"))
-        .isInstanceOf(IllegalStateException.class)
+        .isInstanceOf(VolunteerStateException.class)
         .hasMessage("Opportunity is full");
   }
 

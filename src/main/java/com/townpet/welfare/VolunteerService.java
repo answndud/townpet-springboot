@@ -2,6 +2,7 @@ package com.townpet.welfare;
 
 import com.townpet.common.UuidV7;
 import java.sql.*;
+import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
@@ -57,7 +58,7 @@ class VolunteerService {
         description.trim(),
         organization.trim(),
         location.trim(),
-        startsAt,
+        Timestamp.from(startsAt),
         capacity);
     return find(id).orElseThrow();
   }
@@ -73,12 +74,12 @@ class VolunteerService {
                 id)
             .stream()
             .findFirst()
-            .orElseThrow(NoSuchElementException::new);
+            .orElseThrow(VolunteerNotFoundException::new);
     if (!Set.of("OPEN", "FULL").contains(opportunity.status())) {
-      throw new IllegalStateException("Opportunity is closed");
+      throw new VolunteerStateException("Opportunity is closed");
     }
     if (!opportunity.startsAt().isAfter(Instant.now(clock))) {
-      throw new IllegalStateException("Opportunity has already started");
+      throw new VolunteerStateException("Opportunity has already started");
     }
     Integer applicationCountValue =
         jdbc.queryForObject(
@@ -90,7 +91,7 @@ class VolunteerService {
       jdbc.update(
           "UPDATE volunteer_opportunity SET status = 'FULL', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
           id);
-      throw new IllegalStateException("Opportunity is full");
+      throw new VolunteerStateException("Opportunity is full");
     }
     try {
       jdbc.update(
@@ -105,7 +106,7 @@ class VolunteerService {
             id);
       }
     } catch (org.springframework.dao.DataIntegrityViolationException e) {
-      throw new IllegalStateException("Already applied");
+      throw new VolunteerStateException("Already applied");
     }
   }
 

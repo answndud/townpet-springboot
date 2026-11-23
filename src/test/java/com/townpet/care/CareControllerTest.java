@@ -51,6 +51,48 @@ class CareControllerTest {
   }
 
   @Test
+  void volunteerFailuresReportSpecificCodes() throws Exception {
+    Cookie member = login("demo-member-2@townpet.local");
+    java.time.Instant start = java.time.Instant.now().plusSeconds(86400);
+    MvcResult created = mockMvc.perform(
+            post("/api/v1/volunteer")
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"봉사\",\"description\":\"도움\",\"organization\":\"센터\",\"location\":\"마포\",\"startsAt\":\""
+                    + start
+                    + "\",\"capacity\":1}"))
+        .andExpect(status().isCreated())
+        .andReturn();
+    String id = new com.fasterxml.jackson.databind.ObjectMapper()
+        .readTree(created.getResponse().getContentAsString()).path("id").asText();
+
+    mockMvc.perform(
+            post("/api/v1/volunteer/{id}/applications", java.util.UUID.randomUUID())
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"참여할게요\"}"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("VOLUNTEER_NOT_FOUND"));
+    mockMvc.perform(
+            post("/api/v1/volunteer/{id}/applications", id)
+                .cookie(member)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"참여할게요\"}"))
+        .andExpect(status().isCreated());
+    mockMvc.perform(
+            post("/api/v1/volunteer/{id}/applications", id)
+                .cookie(login("demo-member-1@townpet.local"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"정원 초과\"}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("VOLUNTEER_STATE_CONFLICT"));
+  }
+
+  @Test
   void cannotApplyToAnExpiredCareRequest() throws Exception {
     Cookie owner = login("demo-member-1@townpet.local");
     Cookie caregiver = login("demo-member-2@townpet.local");

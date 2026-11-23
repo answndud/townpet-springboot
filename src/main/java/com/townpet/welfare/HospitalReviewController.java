@@ -38,12 +38,8 @@ class HospitalReviewController {
   @MemberOnly
   @ResponseStatus(HttpStatus.CREATED)
   Response create(@CurrentMember UUID currentMemberId, @Valid @RequestBody CreateRequest r) {
-    try {
-      return response(
-          service.create(currentMemberId, r.hospitalName(), r.address(), r.rating(), r.body()));
-    } catch (IllegalStateException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
+    return response(
+        service.create(currentMemberId, r.hospitalName(), r.address(), r.rating(), r.body()));
   }
 
   private static Response response(HospitalReviewService.Review r) {
