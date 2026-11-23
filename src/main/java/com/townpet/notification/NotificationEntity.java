@@ -32,14 +32,14 @@ class NotificationEntity {
 
   protected NotificationEntity() {}
 
-  NotificationEntity(UUID id, UUID eventId, UUID recipientMemberId, String type, String title, String body) {
+  NotificationEntity(UUID id, UUID eventId, UUID recipientMemberId, String type, String title, String body, Instant now) {
     this.id = id;
     this.eventId = eventId;
     this.recipientMemberId = recipientMemberId;
     this.type = type;
     this.title = title;
     this.body = body;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   UUID getId() {
@@ -71,7 +71,7 @@ class NotificationEntity {
     return createdAt;
   }
 
-  void markRead() {
-    readAt = Instant.now();
+  void markRead(Instant now) {
+    readAt = now;
   }
 }

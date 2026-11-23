@@ -2,6 +2,7 @@ package com.townpet.notification;
 
 import com.townpet.common.CurrentMember;
 import com.townpet.common.MemberOnly;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.HttpStatus;
@@ -14,9 +15,12 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping({"/api/v1/notifications", "/api/notifications"})
 class NotificationController {
   private final NotificationRepository notifications;
+  private final Clock clock;
 
-  NotificationController(NotificationRepository notifications) {
+  NotificationController(NotificationRepository notifications,
+      Clock clock) {
     this.notifications = notifications;
+    this.clock = clock;
   }
 
   @GetMapping
@@ -49,7 +53,7 @@ class NotificationController {
             .findById(id)
             .filter(item -> item.getRecipientMemberId().equals(currentMemberId))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    notification.markRead();
+    notification.markRead(Instant.now(clock));
     return response(notification);
   }
 
