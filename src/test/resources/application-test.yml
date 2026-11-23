@@ -1,3 +1,5 @@
 townpet:
   demo-data:
     enabled: true
+    refresh:
+      enabled: false
