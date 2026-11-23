@@ -2,6 +2,7 @@ package com.townpet.welfare;
 
 import com.townpet.common.UuidV7;
 import java.sql.*;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,10 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class VolunteerService {
   private static final int PUBLIC_LIMIT = 100;
+  private final Clock clock;
   private final JdbcTemplate jdbc;
 
-  VolunteerService(JdbcTemplate jdbc) {
+  VolunteerService(JdbcTemplate jdbc, Clock clock) {
     this.jdbc = jdbc;
+    this.clock = clock;
   }
 
   @Transactional(readOnly = true)
@@ -74,7 +77,7 @@ class VolunteerService {
     if (!Set.of("OPEN", "FULL").contains(opportunity.status())) {
       throw new IllegalStateException("Opportunity is closed");
     }
-    if (!opportunity.startsAt().isAfter(Instant.now())) {
+    if (!opportunity.startsAt().isAfter(Instant.now(clock))) {
       throw new IllegalStateException("Opportunity has already started");
     }
     Integer applicationCountValue =
