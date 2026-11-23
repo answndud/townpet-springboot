@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/care")
@@ -22,13 +21,7 @@ class CareAssignmentController {
   @GetMapping("/requests/{requestId}/assignment")
   @MemberOnly
   Response assignment(@CurrentMember UUID currentMemberId, @PathVariable UUID requestId) {
-    try {
-      return response(service.findForParticipant(currentMemberId, requestId));
-    } catch (NoSuchElementException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (SecurityException e) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    }
+    return response(service.findForParticipant(currentMemberId, requestId));
   }
 
   @PostMapping("/requests/{requestId}/applications/{applicationId}/accept")
@@ -38,15 +31,7 @@ class CareAssignmentController {
       @PathVariable UUID requestId,
       @PathVariable UUID applicationId,
       @Valid @RequestBody VersionRequest r) {
-    try {
-      return response(service.accept(currentMemberId, requestId, applicationId, r.version()));
-    } catch (NoSuchElementException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (SecurityException e) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (IllegalStateException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
+    return response(service.accept(currentMemberId, requestId, applicationId, r.version()));
   }
 
   @PatchMapping("/assignments/{assignmentId}/status")
@@ -55,15 +40,7 @@ class CareAssignmentController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID assignmentId,
       @Valid @RequestBody DecisionRequest r) {
-    try {
-      return response(service.transition(currentMemberId, assignmentId, r.status(), r.version()));
-    } catch (NoSuchElementException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (SecurityException e) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (IllegalStateException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
+    return response(service.transition(currentMemberId, assignmentId, r.status(), r.version()));
   }
 
   @PostMapping("/assignments/{assignmentId}/feedback")
@@ -72,17 +49,9 @@ class CareAssignmentController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID assignmentId,
       @Valid @RequestBody FeedbackRequest r) {
-    try {
-      CareFeedbackEntity f = service.feedback(currentMemberId, assignmentId, r.body());
-      return new FeedbackResponse(
-          f.getId(), f.getAssignmentId(), f.getAuthorMemberId(), f.getBody(), f.getCreatedAt());
-    } catch (NoSuchElementException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (SecurityException e) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (IllegalStateException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
+    CareFeedbackEntity f = service.feedback(currentMemberId, assignmentId, r.body());
+    return new FeedbackResponse(
+        f.getId(), f.getAssignmentId(), f.getAuthorMemberId(), f.getBody(), f.getCreatedAt());
   }
 
   private static Response response(CareAssignmentEntity a) {

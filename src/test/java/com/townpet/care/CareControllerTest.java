@@ -80,6 +80,60 @@ class CareControllerTest {
   }
 
   @Test
+  void careFailuresKeepTheirStatusAndReportASpecificCode() throws Exception {
+    Cookie owner = login("demo-member-1@townpet.local");
+    Cookie caregiver = login("demo-member-2@townpet.local");
+    java.time.Instant start = java.time.Instant.now().plusSeconds(3600);
+    MvcResult created = mockMvc.perform(
+            post("/api/v1/care/requests")
+                .cookie(owner)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"다음 주 돌봄\",\"description\":\"산책\",\"location\":\"마포구\",\"startsAt\":\""
+                    + start
+                    + "\",\"endsAt\":\""
+                    + start.plusSeconds(3600)
+                    + "\",\"rewardHint\":\"없음\"}"))
+        .andExpect(status().isCreated())
+        .andReturn();
+    String requestId = new com.fasterxml.jackson.databind.ObjectMapper()
+        .readTree(created.getResponse().getContentAsString()).path("id").asText();
+
+    // Unknown request -> 404
+    mockMvc.perform(
+            post("/api/v1/care/requests/{requestId}/applications", java.util.UUID.randomUUID())
+                .cookie(caregiver)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"지원합니다\"}"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("CARE_NOT_FOUND"));
+    // The requester cannot apply to their own request -> 400
+    mockMvc.perform(
+            post("/api/v1/care/requests/{requestId}/applications", requestId)
+                .cookie(owner)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"message\":\"내 요청에 지원\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("CARE_INVALID_REQUEST"));
+    // Only the requester may list applications -> 403
+    mockMvc.perform(
+            get("/api/v1/care/requests/{requestId}/applications", requestId).cookie(caregiver))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("CARE_ACCESS_DENIED"));
+    // A stale version cannot cancel -> 409
+    mockMvc.perform(
+            patch("/api/v1/care/requests/{requestId}/cancel", requestId)
+                .cookie(owner)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":99}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code").value("CARE_VERSION_CONFLICT"));
+  }
+
+  @Test
   void ownerAcceptsSingleApplicantAndCompletesCareWithFeedback() throws Exception {
     Cookie owner = login("demo-member-1@townpet.local");
     Cookie caregiver = login("demo-member-2@townpet.local");

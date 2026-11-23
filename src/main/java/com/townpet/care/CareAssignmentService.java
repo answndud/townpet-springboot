@@ -30,11 +30,11 @@ class CareAssignmentService {
   @Transactional
   CareAssignmentEntity findForParticipant(UUID actor, UUID requestId) {
     CareAssignmentEntity assignment =
-        assignments.findByRequestId(requestId).orElseThrow(NoSuchElementException::new);
+        assignments.findByRequestId(requestId).orElseThrow(CareNotFoundException::new);
     CareRequestEntity request =
-        requests.findById(requestId).orElseThrow(NoSuchElementException::new);
+        requests.findById(requestId).orElseThrow(CareNotFoundException::new);
     if (!request.getRequesterMemberId().equals(actor)
-        && !assignment.getCaregiverMemberId().equals(actor)) throw new SecurityException();
+        && !assignment.getCaregiverMemberId().equals(actor)) throw new CareAccessDeniedException();
     return assignment;
   }
 
@@ -43,15 +43,15 @@ class CareAssignmentService {
     CareRequestEntity request =
         requests
             .findForUpdateByIdAndStatus(requestId, CareRequestStatus.OPEN)
-            .orElseThrow(NoSuchElementException::new);
-    if (!request.getRequesterMemberId().equals(requester)) throw new SecurityException();
+            .orElseThrow(CareNotFoundException::new);
+    if (!request.getRequesterMemberId().equals(requester)) throw new CareAccessDeniedException();
     if (assignments.findByRequestId(requestId).isPresent())
-      throw new IllegalStateException("Assignment already exists");
+      throw new CareStateConflictException("Assignment already exists");
     CareApplicationEntity application =
         applications
             .findByIdAndRequestId(applicationId, requestId)
-            .orElseThrow(NoSuchElementException::new);
-    if (application.getVersion() != appVersion) throw new IllegalStateException("version conflict");
+            .orElseThrow(CareNotFoundException::new);
+    if (application.getVersion() != appVersion) throw new CareVersionConflictException();
     application.changeStatus(CareApplicationStatus.ACCEPTED, Instant.now(clock));
     applications.save(application);
     applications.declineOtherPending(requestId, application.getId(), Instant.now(clock));
@@ -66,16 +66,16 @@ class CareAssignmentService {
   @Transactional
   CareAssignmentEntity transition(UUID actor, UUID id, CareAssignmentStatus status, long version) {
     CareAssignmentEntity assignment =
-        assignments.findById(id).orElseThrow(NoSuchElementException::new);
+        assignments.findById(id).orElseThrow(CareNotFoundException::new);
     CareRequestEntity request =
-        requests.findById(assignment.getRequestId()).orElseThrow(NoSuchElementException::new);
+        requests.findById(assignment.getRequestId()).orElseThrow(CareNotFoundException::new);
     if (!request.getRequesterMemberId().equals(actor)
-        && !assignment.getCaregiverMemberId().equals(actor)) throw new SecurityException();
-    if (assignment.getVersion() != version) throw new IllegalStateException("version conflict");
+        && !assignment.getCaregiverMemberId().equals(actor)) throw new CareAccessDeniedException();
+    if (assignment.getVersion() != version) throw new CareVersionConflictException();
     if (status == CareAssignmentStatus.CANCELLED_BY_REQUESTER
-        && !request.getRequesterMemberId().equals(actor)) throw new SecurityException();
+        && !request.getRequesterMemberId().equals(actor)) throw new CareAccessDeniedException();
     if (status == CareAssignmentStatus.CANCELLED_BY_CAREGIVER
-        && !assignment.getCaregiverMemberId().equals(actor)) throw new SecurityException();
+        && !assignment.getCaregiverMemberId().equals(actor)) throw new CareAccessDeniedException();
     assignment.transition(status, Instant.now(clock));
     return assignments.saveAndFlush(assignment);
   }
@@ -83,15 +83,15 @@ class CareAssignmentService {
   @Transactional
   CareFeedbackEntity feedback(UUID author, UUID assignmentId, String body) {
     CareAssignmentEntity a =
-        assignments.findById(assignmentId).orElseThrow(NoSuchElementException::new);
+        assignments.findById(assignmentId).orElseThrow(CareNotFoundException::new);
     if (a.getStatus() != CareAssignmentStatus.COMPLETED)
-      throw new IllegalStateException("Feedback requires completed assignment");
+      throw new CareStateConflictException("Feedback requires completed assignment");
     CareRequestEntity r =
-        requests.findById(a.getRequestId()).orElseThrow(NoSuchElementException::new);
+        requests.findById(a.getRequestId()).orElseThrow(CareNotFoundException::new);
     if (!r.getRequesterMemberId().equals(author) && !a.getCaregiverMemberId().equals(author))
-      throw new SecurityException();
+      throw new CareAccessDeniedException();
     if (feedbacks.existsByAssignmentIdAndAuthorMemberId(assignmentId, author))
-      throw new IllegalStateException("Feedback already exists");
+      throw new CareStateConflictException("Feedback already exists");
     return feedbacks.saveAndFlush(new CareFeedbackEntity(assignmentId, author, body, Instant.now(clock)));
   }
 }

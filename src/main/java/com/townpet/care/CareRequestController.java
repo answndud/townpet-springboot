@@ -37,23 +37,19 @@ class CareRequestController {
   @MemberOnly
   ResponseEntity<Response> create(
       @CurrentMember UUID currentMemberId, @Valid @RequestBody CreateRequest request) {
-    try {
-      Response response =
-          response(
-              requests
-                  .create(
-                      currentMemberId,
-                      request.title(),
-                      request.description(),
-                      request.location(),
-                      request.startsAt(),
-                      request.endsAt(),
-                      request.rewardHint())
-                  .request());
-      return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    } catch (IllegalArgumentException e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-    }
+    Response response =
+        response(
+            requests
+                .create(
+                    currentMemberId,
+                    request.title(),
+                    request.description(),
+                    request.location(),
+                    request.startsAt(),
+                    request.endsAt(),
+                    request.rewardHint())
+                .request());
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
   @PatchMapping("/{id}/cancel")
@@ -62,16 +58,8 @@ class CareRequestController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID id,
       @Valid @RequestBody VersionRequest request) {
-    try {
-      requests.cancel(currentMemberId, id, request.version());
-      return get(id);
-    } catch (NoSuchElementException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (SecurityException e) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (IllegalStateException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
+    requests.cancel(currentMemberId, id, request.version());
+    return get(id);
   }
 
   private static Response response(CareRequestEntity r) {

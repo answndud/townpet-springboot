@@ -38,7 +38,7 @@ class CareRequestService {
       Instant endsAt,
       String rewardHint) {
     if (!endsAt.isAfter(startsAt))
-      throw new IllegalArgumentException("endsAt must be after startsAt");
+      throw new CareInvalidRequestException("endsAt must be after startsAt");
     CareRequestEntity request =
         requests.saveAndFlush(
             new CareRequestEntity(
@@ -58,9 +58,9 @@ class CareRequestService {
     CareRequestEntity request =
         requests
             .findByIdAndStatus(id, CareRequestStatus.OPEN)
-            .orElseThrow(NoSuchElementException::new);
-    if (!request.getRequesterMemberId().equals(memberId)) throw new SecurityException();
-    if (request.getVersion() != version) throw new IllegalStateException("version conflict");
+            .orElseThrow(CareNotFoundException::new);
+    if (!request.getRequesterMemberId().equals(memberId)) throw new CareAccessDeniedException();
+    if (request.getVersion() != version) throw new CareVersionConflictException();
     request.cancel(Instant.now(clock));
     requests.saveAndFlush(request);
   }

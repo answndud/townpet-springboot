@@ -51,7 +51,7 @@ class CareAssignmentEntity {
                     || next == CareAssignmentStatus.CANCELLED_BY_REQUESTER
                     || next == CareAssignmentStatus.CANCELLED_BY_CAREGIVER
                     || next == CareAssignmentStatus.ABORTED));
-    if (!allowed) throw new IllegalStateException("Invalid assignment transition");
+    if (!allowed) throw new CareStateConflictException("Invalid assignment transition");
     status = next;
     updatedAt = now;
   }

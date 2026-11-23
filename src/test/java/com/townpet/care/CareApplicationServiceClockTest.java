@@ -30,7 +30,7 @@ class CareApplicationServiceClockTest {
         .thenReturn(Optional.of(requestStartingAt(NOW)));
 
     assertThatThrownBy(() -> service.apply(APPLICANT, REQUEST_ID, "도와드릴게요"))
-        .isInstanceOf(IllegalStateException.class)
+        .isInstanceOf(CareStateConflictException.class)
         .hasMessage("Request has expired");
   }
 

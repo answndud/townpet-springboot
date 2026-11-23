@@ -45,9 +45,9 @@ class CareApplicationEntity {
 
   void changeStatus(CareApplicationStatus next, Instant now) {
     if (status != CareApplicationStatus.PENDING)
-      throw new IllegalStateException("Application is not pending");
+      throw new CareStateConflictException("Application is not pending");
     if (next != CareApplicationStatus.ACCEPTED && next != CareApplicationStatus.DECLINED) {
-      throw new IllegalStateException("Invalid application transition");
+      throw new CareStateConflictException("Invalid application transition");
     }
     status = next;
     updatedAt = now;

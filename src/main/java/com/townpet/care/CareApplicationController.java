@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/care/requests/{requestId}/applications")
@@ -23,15 +22,9 @@ class CareApplicationController {
   @MemberOnly
   List<Response> list(
       @CurrentMember UUID currentMemberId, @PathVariable UUID requestId) {
-    try {
-      return applications.listForRequester(currentMemberId, requestId).stream()
-          .map(CareApplicationController::response)
-          .toList();
-    } catch (NoSuchElementException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (SecurityException e) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    }
+    return applications.listForRequester(currentMemberId, requestId).stream()
+        .map(CareApplicationController::response)
+        .toList();
   }
 
   @PostMapping
@@ -40,16 +33,8 @@ class CareApplicationController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID requestId,
       @Valid @RequestBody ApplyRequest request) {
-    try {
-      return ResponseEntity.status(HttpStatus.CREATED)
-          .body(response(applications.apply(currentMemberId, requestId, request.message())));
-    } catch (NoSuchElementException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (IllegalArgumentException e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-    } catch (IllegalStateException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(response(applications.apply(currentMemberId, requestId, request.message())));
   }
 
   @PatchMapping("/{applicationId}")
@@ -59,17 +44,9 @@ class CareApplicationController {
       @PathVariable UUID requestId,
       @PathVariable UUID applicationId,
       @Valid @RequestBody DecisionRequest request) {
-    try {
-      return response(
-          applications.decide(
-              currentMemberId, requestId, applicationId, request.status(), request.version()));
-    } catch (NoSuchElementException e) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (SecurityException e) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (IllegalStateException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-    }
+    return response(
+        applications.decide(
+            currentMemberId, requestId, applicationId, request.status(), request.version()));
   }
 
   private static Response response(CareApplicationEntity a) {

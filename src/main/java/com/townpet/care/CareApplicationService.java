@@ -25,25 +25,25 @@ class CareApplicationService {
     CareRequestEntity request =
         requests
             .findByIdAndStatus(requestId, CareRequestStatus.OPEN)
-            .orElseThrow(NoSuchElementException::new);
+            .orElseThrow(CareNotFoundException::new);
     if (!request.getStartsAt().isAfter(Instant.now(clock)))
-      throw new IllegalStateException("Request has expired");
+      throw new CareStateConflictException("Request has expired");
     if (request.getRequesterMemberId().equals(applicant))
-      throw new IllegalArgumentException("Requester cannot apply");
+      throw new CareInvalidRequestException("Requester cannot apply");
     if (applications.findByRequestIdAndApplicantMemberId(requestId, applicant).isPresent())
-      throw new IllegalStateException("Already applied");
+      throw new CareStateConflictException("Already applied");
     try {
       return applications.saveAndFlush(new CareApplicationEntity(requestId, applicant, message, Instant.now(clock)));
     } catch (DataIntegrityViolationException e) {
-      throw new IllegalStateException("Already applied", e);
+      throw new CareStateConflictException("Already applied", e);
     }
   }
 
   @Transactional(readOnly = true)
   List<CareApplicationEntity> listForRequester(UUID requester, UUID requestId) {
     CareRequestEntity request =
-        requests.findById(requestId).orElseThrow(NoSuchElementException::new);
-    if (!request.getRequesterMemberId().equals(requester)) throw new SecurityException();
+        requests.findById(requestId).orElseThrow(CareNotFoundException::new);
+    if (!request.getRequesterMemberId().equals(requester)) throw new CareAccessDeniedException();
     return applications.findTop100ByRequestIdOrderByCreatedAtAscIdAsc(requestId);
   }
 
@@ -55,22 +55,22 @@ class CareApplicationService {
       CareApplicationStatus status,
       long version) {
     CareRequestEntity request =
-        requests.findById(requestId).orElseThrow(NoSuchElementException::new);
-    if (!request.getRequesterMemberId().equals(requester)) throw new SecurityException();
+        requests.findById(requestId).orElseThrow(CareNotFoundException::new);
+    if (!request.getRequesterMemberId().equals(requester)) throw new CareAccessDeniedException();
     if (request.getStatus() != CareRequestStatus.OPEN) {
-      throw new IllegalStateException("Request is no longer open");
+      throw new CareStateConflictException("Request is no longer open");
     }
     if (!request.getStartsAt().isAfter(Instant.now(clock))) {
-      throw new IllegalStateException("Request has expired");
+      throw new CareStateConflictException("Request has expired");
     }
     if (status != CareApplicationStatus.ACCEPTED && status != CareApplicationStatus.DECLINED) {
-      throw new IllegalStateException("Only ACCEPTED or DECLINED is allowed");
+      throw new CareStateConflictException("Only ACCEPTED or DECLINED is allowed");
     }
     CareApplicationEntity application =
         applications
             .findByIdAndRequestId(applicationId, requestId)
-            .orElseThrow(NoSuchElementException::new);
-    if (application.getVersion() != version) throw new IllegalStateException("version conflict");
+            .orElseThrow(CareNotFoundException::new);
+    if (application.getVersion() != version) throw new CareVersionConflictException();
     application.changeStatus(status, Instant.now(clock));
     return applications.saveAndFlush(application);
   }

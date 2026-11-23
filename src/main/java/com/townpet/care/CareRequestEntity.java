@@ -70,14 +70,14 @@ class CareRequestEntity {
 
   void cancel(Instant now) {
     if (status != CareRequestStatus.OPEN)
-      throw new IllegalStateException("Care request is not open");
+      throw new CareStateConflictException("Care request is not open");
     status = CareRequestStatus.CANCELLED;
     updatedAt = now;
   }
 
   void markMatched(Instant now) {
     if (status != CareRequestStatus.OPEN)
-      throw new IllegalStateException("Care request is not open");
+      throw new CareStateConflictException("Care request is not open");
     status = CareRequestStatus.MATCHED;
     updatedAt = now;
   }
