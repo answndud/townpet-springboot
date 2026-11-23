@@ -5,6 +5,7 @@ import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -18,9 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/corrections")
 class CorrectionRequestController {
   private final CorrectionRequestRepository corrections;
+  private final Clock clock;
 
-  CorrectionRequestController(CorrectionRequestRepository corrections) {
+  CorrectionRequestController(CorrectionRequestRepository corrections,
+      Clock clock) {
     this.corrections = corrections;
+    this.clock = clock;
   }
 
   @PostMapping
@@ -29,7 +33,7 @@ class CorrectionRequestController {
   Response create(
       @CurrentMember UUID memberId, @Valid @RequestBody Request request) {
     CorrectionRequestEntity correction =
-        corrections.save(new CorrectionRequestEntity(memberId, request.title(), request.body()));
+        corrections.save(new CorrectionRequestEntity(memberId, request.title(), request.body(), Instant.now(clock)));
     return new Response(correction.getId(), correction.getStatus(), correction.getCreatedAt());
   }
 

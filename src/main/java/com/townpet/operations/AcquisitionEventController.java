@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -17,12 +19,15 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 class AcquisitionEventController {
   private final AcquisitionEventRepository events;
+  private final Clock clock;
   private final PublicIngressRateLimiter rateLimiter;
 
   AcquisitionEventController(
-      AcquisitionEventRepository events, PublicIngressRateLimiter rateLimiter) {
+      AcquisitionEventRepository events, PublicIngressRateLimiter rateLimiter,
+      Clock clock) {
     this.events = events;
     this.rateLimiter = rateLimiter;
+    this.clock = clock;
   }
 
   @PostMapping("/api/acquisition/events")
@@ -36,7 +41,7 @@ class AcquisitionEventController {
               request.eventName(),
               request.route(),
               hash(request.anonymousKey()),
-              request.clientEventId()));
+              request.clientEventId(), Instant.now(clock)));
     } catch (DataIntegrityViolationException exception) {
       if (request.clientEventId() == null
           || events.findByClientEventId(request.clientEventId()).isEmpty()) {

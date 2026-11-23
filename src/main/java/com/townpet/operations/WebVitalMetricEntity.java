@@ -23,12 +23,12 @@ class WebVitalMetricEntity {
 
   protected WebVitalMetricEntity() {}
 
-  WebVitalMetricEntity(UUID id, String metricName, double metricValue, String route) {
+  WebVitalMetricEntity(UUID id, String metricName, double metricValue, String route, Instant now) {
     this.id = id;
     this.metricName = metricName;
     this.metricValue = metricValue;
     this.route = route;
-    this.observedAt = Instant.now();
+    this.observedAt = now;
   }
 
   String getMetricName() {

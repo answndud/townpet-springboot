@@ -30,13 +30,13 @@ public class CorrectionRequestEntity {
 
   protected CorrectionRequestEntity() {}
 
-  public CorrectionRequestEntity(UUID memberId, String title, String body) {
+  public CorrectionRequestEntity(UUID memberId, String title, String body, Instant now) {
     this.id = UuidV7.randomUuid();
     this.memberId = memberId;
     this.title = title.trim();
     this.body = body.trim();
     this.status = "OPEN";
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   public UUID getId() {

@@ -4,6 +4,8 @@ import com.townpet.common.UuidV7;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,11 +14,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 class WebVitalMetricController {
   private final WebVitalMetricRepository metrics;
+  private final Clock clock;
   private final PublicIngressRateLimiter rateLimiter;
 
-  WebVitalMetricController(WebVitalMetricRepository metrics, PublicIngressRateLimiter rateLimiter) {
+  WebVitalMetricController(WebVitalMetricRepository metrics, PublicIngressRateLimiter rateLimiter,
+      Clock clock) {
     this.metrics = metrics;
     this.rateLimiter = rateLimiter;
+    this.clock = clock;
   }
 
   @PostMapping({"/api/v1/operations/web-vitals", "/api/metrics/web-vitals"})
@@ -25,7 +30,7 @@ class WebVitalMetricController {
     rateLimiter.requireCapacity(httpRequest);
     metrics.save(
         new WebVitalMetricEntity(
-            UuidV7.randomUuid(), request.metricName(), request.metricValue(), request.route()));
+            UuidV7.randomUuid(), request.metricName(), request.metricValue(), request.route(), Instant.now(clock)));
   }
 
   @GetMapping({"/api/v1/operations/web-vitals/summary", "/api/ops/web-vitals/summary"})

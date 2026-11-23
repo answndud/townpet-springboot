@@ -32,12 +32,12 @@ class AcquisitionEventEntity {
       String eventName,
       String route,
       @Nullable String anonymousKeyHash,
-      @Nullable UUID clientEventId) {
+      @Nullable UUID clientEventId, Instant now) {
     this.id = id;
     this.eventName = eventName;
     this.route = route;
     this.anonymousKeyHash = anonymousKeyHash;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
     this.clientEventId = clientEventId;
   }
 
