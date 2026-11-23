@@ -22,11 +22,11 @@ class GatheringParticipantEntity {
 
   protected GatheringParticipantEntity() {}
 
-  GatheringParticipantEntity(UUID id, UUID gatheringId, UUID memberId) {
+  GatheringParticipantEntity(UUID id, UUID gatheringId, UUID memberId, Instant now) {
     this.id = id;
     this.gatheringId = gatheringId;
     this.memberId = memberId;
-    this.joinedAt = Instant.now();
+    this.joinedAt = now;
   }
 
   UUID getMemberId() {

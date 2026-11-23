@@ -1,8 +1,10 @@
 package com.townpet.gathering;
 
 import com.townpet.common.UuidV7;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -13,16 +15,25 @@ import org.springframework.web.server.ResponseStatusException;
 class GatheringService {
   private final GatheringRepository gatherings;
   private final GatheringParticipantRepository participants;
+  private final Clock clock;
 
-  GatheringService(GatheringRepository gatherings, GatheringParticipantRepository participants) {
+  @Autowired
+  GatheringService(
+      GatheringRepository gatherings, GatheringParticipantRepository participants, Clock clock) {
     this.gatherings = gatherings;
     this.participants = participants;
+    this.clock = clock;
+  }
+
+  /** Uses the system clock; kept for callers that do not need to control time. */
+  GatheringService(GatheringRepository gatherings, GatheringParticipantRepository participants) {
+    this(gatherings, participants, Clock.systemUTC());
   }
 
   @Transactional(readOnly = true)
   List<GatheringView> list() {
     List<GatheringEntity> result = gatherings.findTop100ByStatusAndStartsAtAfterOrderByStartsAtAscIdAsc(
-        GatheringStatus.ACTIVE, Instant.now());
+        GatheringStatus.ACTIVE, Instant.now(clock));
     Map<UUID, Integer> counts = new HashMap<>();
     if (!result.isEmpty()) {
       participants.countByGatheringIdIn(result.stream().map(GatheringEntity::getId).toList())
@@ -53,7 +64,14 @@ class GatheringService {
     GatheringEntity gathering =
         gatherings.save(
             new GatheringEntity(
-                UuidV7.randomUuid(), host, title, description, location, startsAt, capacity));
+                UuidV7.randomUuid(),
+                host,
+                title,
+                description,
+                location,
+                startsAt,
+                capacity,
+                Instant.now(clock)));
     return view(gathering);
   }
 
@@ -65,13 +83,14 @@ class GatheringService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     if (gathering.getStatus() != GatheringStatus.ACTIVE)
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Gathering is cancelled");
-    if (!gathering.getStartsAt().isAfter(Instant.now()))
+    if (!gathering.getStartsAt().isAfter(Instant.now(clock)))
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Gathering has already started");
     if (participants.findByGatheringIdAndMemberId(id, member).isPresent())
       return view(gathering, member);
     if (participants.countByGatheringId(id) >= gathering.getCapacity())
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Gathering is full");
-    participants.save(new GatheringParticipantEntity(UuidV7.randomUuid(), id, member));
+    participants.save(
+        new GatheringParticipantEntity(UuidV7.randomUuid(), id, member, Instant.now(clock)));
     return view(gathering, member);
   }
 

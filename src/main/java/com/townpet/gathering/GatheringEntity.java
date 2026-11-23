@@ -38,6 +38,7 @@ class GatheringEntity {
 
   protected GatheringEntity() {}
 
+  /** Creates a gathering stamped with the current time; prefer the overload taking the time. */
   GatheringEntity(
       UUID id,
       UUID hostMemberId,
@@ -46,6 +47,18 @@ class GatheringEntity {
       String location,
       Instant startsAt,
       int capacity) {
+    this(id, hostMemberId, title, description, location, startsAt, capacity, Instant.now());
+  }
+
+  GatheringEntity(
+      UUID id,
+      UUID hostMemberId,
+      String title,
+      String description,
+      String location,
+      Instant startsAt,
+      int capacity,
+      Instant now) {
     this.id = id;
     this.hostMemberId = hostMemberId;
     this.title = title;
@@ -54,7 +67,7 @@ class GatheringEntity {
     this.startsAt = startsAt;
     this.capacity = capacity;
     this.status = GatheringStatus.ACTIVE;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   UUID getId() {
