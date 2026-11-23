@@ -26,11 +26,11 @@ class MfaRecoveryCodeEntity {
 
   protected MfaRecoveryCodeEntity() {}
 
-  MfaRecoveryCodeEntity(UUID memberId, String codeHash) {
+  MfaRecoveryCodeEntity(UUID memberId, String codeHash, Instant now) {
     this.id = UUID.randomUUID();
     this.memberId = memberId;
     this.codeHash = codeHash;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   UUID getId() {

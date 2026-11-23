@@ -21,11 +21,11 @@ public class AuthAuditEntity {
 
   protected AuthAuditEntity() {}
 
-  public AuthAuditEntity(UUID memberId, String action) {
+  public AuthAuditEntity(UUID memberId, String action, Instant now) {
     this.id = UUID.randomUUID();
     this.memberId = memberId;
     this.action = action;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   public UUID getMemberId() {

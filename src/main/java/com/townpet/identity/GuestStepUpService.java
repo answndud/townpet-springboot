@@ -1,5 +1,6 @@
 package com.townpet.identity;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -15,21 +16,24 @@ class GuestStepUpService {
   private static final Pattern SCOPE = Pattern.compile("[A-Za-z0-9:_-]{1,80}");
   private final GuestAuthorRepository guests;
   private final GuestStepUpChallengeRepository challenges;
+  private final Clock clock;
   private final PasswordEncoder passwords;
 
   GuestStepUpService(
       GuestAuthorRepository guests,
       GuestStepUpChallengeRepository challenges,
-      PasswordEncoder passwords) {
+      PasswordEncoder passwords,
+      Clock clock) {
     this.guests = guests;
     this.challenges = challenges;
     this.passwords = passwords;
+    this.clock = clock;
   }
 
   @Transactional
   GuestAuthorEntity createGuest(String password) {
     validatePassword(password);
-    return guests.save(new GuestAuthorEntity(passwords.encode(password)));
+    return guests.save(new GuestAuthorEntity(passwords.encode(password), Instant.now(clock)));
   }
 
   @Transactional
@@ -54,7 +58,7 @@ class GuestStepUpService {
   }
 
   private GuestAuthorEntity authenticate(GuestAuthorEntity guest, String password) {
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     if (guest.getLockedUntil() != null && guest.getLockedUntil().isAfter(now)) {
       throw new ResponseStatusException(
           HttpStatus.TOO_MANY_REQUESTS, "Guest credential is temporarily locked");
@@ -78,7 +82,7 @@ class GuestStepUpService {
         guests
             .findByPublicId(publicId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     if (guest.getLockedUntil() != null && guest.getLockedUntil().isAfter(now)) {
       throw new ResponseStatusException(
           HttpStatus.TOO_MANY_REQUESTS, "Guest credential is temporarily locked");
@@ -93,7 +97,7 @@ class GuestStepUpService {
     String raw = SecureToken.create();
     Instant expiresAt = now.plus(Duration.ofMinutes(5));
     challenges.save(
-        new GuestStepUpChallengeEntity(guest.getId(), scope, SecureToken.hash(raw), expiresAt));
+        new GuestStepUpChallengeEntity(guest.getId(), scope, SecureToken.hash(raw), expiresAt, Instant.now(clock)));
     return new Challenge(scope, expiresAt, raw);
   }
 
@@ -102,7 +106,7 @@ class GuestStepUpService {
     GuestStepUpChallengeEntity challenge =
         challenges
             .findByTokenHashAndUsedAtIsNullAndExpiresAtAfter(
-                SecureToken.hash(rawToken), Instant.now())
+                SecureToken.hash(rawToken), Instant.now(clock))
             .orElseThrow(
                 () ->
                     new ResponseStatusException(
@@ -110,7 +114,7 @@ class GuestStepUpService {
     if (!challenge.getScope().equals(expectedScope)) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Step-up scope mismatch");
     }
-    challenge.markUsed(Instant.now());
+    challenge.markUsed(Instant.now(clock));
     challenges.saveAndFlush(challenge);
     return challenge.getScope();
   }

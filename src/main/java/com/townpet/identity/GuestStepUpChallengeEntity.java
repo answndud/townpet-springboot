@@ -34,13 +34,13 @@ class GuestStepUpChallengeEntity {
   protected GuestStepUpChallengeEntity() {}
 
   GuestStepUpChallengeEntity(
-      UUID guestAuthorId, String scope, String tokenHash, Instant expiresAt) {
+      UUID guestAuthorId, String scope, String tokenHash, Instant expiresAt, Instant now) {
     this.id = UuidV7.randomUuid();
     this.guestAuthorId = guestAuthorId;
     this.scope = scope;
     this.tokenHash = tokenHash;
     this.expiresAt = expiresAt;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   String getScope() {

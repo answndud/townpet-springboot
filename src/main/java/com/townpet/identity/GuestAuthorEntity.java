@@ -30,11 +30,11 @@ class GuestAuthorEntity {
 
   protected GuestAuthorEntity() {}
 
-  GuestAuthorEntity(String passwordHash) {
+  GuestAuthorEntity(String passwordHash, Instant now) {
     this.id = UuidV7.randomUuid();
     this.publicId = UuidV7.randomUuid();
     this.managementPasswordHash = passwordHash;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   UUID getId() {

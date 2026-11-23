@@ -1,5 +1,6 @@
 package com.townpet.identity;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -16,6 +17,7 @@ public class EmailVerificationService {
   private final EmailVerificationTokenRepository tokens;
   private final AuthAuditRepository audit;
   private final ApplicationEventPublisher events;
+  private final Clock clock;
   private final AccountTokenCipher cipher;
 
   public EmailVerificationService(
@@ -23,12 +25,14 @@ public class EmailVerificationService {
       EmailVerificationTokenRepository tokens,
       AuthAuditRepository audit,
       ApplicationEventPublisher events,
-      AccountTokenCipher cipher) {
+      AccountTokenCipher cipher,
+      Clock clock) {
     this.credentials = credentials;
     this.tokens = tokens;
     this.audit = audit;
     this.events = events;
     this.cipher = cipher;
+    this.clock = clock;
   }
 
   @Transactional
@@ -38,7 +42,7 @@ public class EmailVerificationService {
       return;
     }
 
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     UUID memberId = credential.getMemberId();
     if (tokens.countByMemberIdAndCreatedAtAfter(memberId, now.minus(1, ChronoUnit.HOURS))
         >= MAX_REQUESTS_PER_HOUR) {
@@ -47,7 +51,7 @@ public class EmailVerificationService {
     String rawToken = SecureToken.create();
     tokens.save(
         new EmailVerificationTokenEntity(
-            memberId, SecureToken.hash(rawToken), now.plus(1, ChronoUnit.HOURS)));
+            memberId, SecureToken.hash(rawToken), now, now.plus(1, ChronoUnit.HOURS)));
     events.publishEvent(
         new AccountTokenDeliveryRequested(
             AccountTokenPurpose.EMAIL_VERIFICATION,
@@ -57,7 +61,7 @@ public class EmailVerificationService {
 
   @Transactional
   public void confirm(String rawToken) {
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     EmailVerificationTokenEntity token =
         tokens
             .findByTokenHashAndExpiresAtAfter(SecureToken.hash(rawToken), now)
@@ -76,7 +80,7 @@ public class EmailVerificationService {
 
     if (!credential.isEmailVerified()) {
       credential.verifyEmail(now);
-      audit.save(new AuthAuditEntity(credential.getMemberId(), "EMAIL_VERIFIED"));
+      audit.save(new AuthAuditEntity(credential.getMemberId(), "EMAIL_VERIFIED", Instant.now(clock)));
     }
     tokens.deleteAllByMemberId(credential.getMemberId());
   }

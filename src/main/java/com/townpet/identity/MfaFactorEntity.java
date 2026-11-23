@@ -31,11 +31,11 @@ class MfaFactorEntity {
 
   protected MfaFactorEntity() {}
 
-  MfaFactorEntity(UUID memberId, String secretCiphertext, Instant enrollmentExpiresAt) {
+  MfaFactorEntity(UUID memberId, String secretCiphertext, Instant enrollmentExpiresAt, Instant now) {
     this.memberId = memberId;
     this.secretCiphertext = secretCiphertext;
     this.enrollmentExpiresAt = enrollmentExpiresAt;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
     this.updatedAt = this.createdAt;
   }
 

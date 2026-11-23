@@ -1,5 +1,6 @@
 package com.townpet.identity;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ class MfaService {
   private final PasswordEncoder passwordEncoder;
   private final AccountTokenCipher cipher;
   private final TotpService totp;
+  private final Clock clock;
   private final AuthAuditRepository audit;
 
   MfaService(
@@ -29,13 +31,15 @@ class MfaService {
       PasswordEncoder passwordEncoder,
       AccountTokenCipher cipher,
       TotpService totp,
-      AuthAuditRepository audit) {
+      AuthAuditRepository audit,
+      Clock clock) {
     this.factors = factors;
     this.recoveryCodes = recoveryCodes;
     this.passwordEncoder = passwordEncoder;
     this.cipher = cipher;
     this.totp = totp;
     this.audit = audit;
+    this.clock = clock;
   }
 
   @Transactional
@@ -45,15 +49,15 @@ class MfaService {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "MFA is already enabled");
     }
     String secret = totp.newSecret();
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     if (factor == null) {
       factors.save(
-          new MfaFactorEntity(memberId, cipher.encrypt(secret), now.plus(ENROLLMENT_LIFETIME)));
+          new MfaFactorEntity(memberId, cipher.encrypt(secret), now.plus(ENROLLMENT_LIFETIME), Instant.now(clock)));
     } else {
       factor.replaceEnrollment(cipher.encrypt(secret), now.plus(ENROLLMENT_LIFETIME), now);
       factors.save(factor);
     }
-    audit.save(new AuthAuditEntity(memberId, "MFA_ENROLLMENT_STARTED"));
+    audit.save(new AuthAuditEntity(memberId, "MFA_ENROLLMENT_STARTED", Instant.now(clock)));
     return new Enrollment(secret, totp.otpauthUri(secret, memberId), now.plus(ENROLLMENT_LIFETIME));
   }
 
@@ -66,7 +70,7 @@ class MfaService {
                 () ->
                     new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "MFA enrollment is required"));
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     if (factor.getEnabledAt() != null) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "MFA is already enabled");
     }
@@ -80,9 +84,9 @@ class MfaService {
     for (int index = 0; index < RECOVERY_CODE_COUNT; index++) {
       String rawCode = recoveryCode();
       rawCodes.add(rawCode);
-      recoveryCodes.save(new MfaRecoveryCodeEntity(memberId, passwordEncoder.encode(rawCode)));
+      recoveryCodes.save(new MfaRecoveryCodeEntity(memberId, passwordEncoder.encode(rawCode), Instant.now(clock)));
     }
-    audit.save(new AuthAuditEntity(memberId, "MFA_ENROLLED"));
+    audit.save(new AuthAuditEntity(memberId, "MFA_ENROLLED", Instant.now(clock)));
     return rawCodes;
   }
 
@@ -101,10 +105,10 @@ class MfaService {
                 () ->
                     new ResponseStatusException(
                         HttpStatus.FORBIDDEN, "MFA enrollment is required"));
-    if (!totp.matches(cipher.decrypt(factor.getSecretCiphertext()), code, Instant.now())) {
+    if (!totp.matches(cipher.decrypt(factor.getSecretCiphertext()), code, Instant.now(clock))) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid MFA code");
     }
-    audit.save(new AuthAuditEntity(memberId, "MFA_VERIFIED"));
+    audit.save(new AuthAuditEntity(memberId, "MFA_VERIFIED", Instant.now(clock)));
   }
 
   @Transactional
@@ -115,9 +119,9 @@ class MfaService {
     List<MfaRecoveryCodeEntity> codes = recoveryCodes.findByMemberIdAndUsedAtIsNull(memberId);
     for (MfaRecoveryCodeEntity code : codes) {
       if (passwordEncoder.matches(rawCode, code.getCodeHash())) {
-        code.markUsed(Instant.now());
+        code.markUsed(Instant.now(clock));
         recoveryCodes.save(code);
-        audit.save(new AuthAuditEntity(memberId, "MFA_RECOVERY_USED"));
+        audit.save(new AuthAuditEntity(memberId, "MFA_RECOVERY_USED", Instant.now(clock)));
         return;
       }
     }

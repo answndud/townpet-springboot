@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -43,6 +44,7 @@ public class SessionController {
   private final ClientAddress clientAddress;
   private final Duration sessionTimeout;
   private final MfaService mfa;
+  private final Clock clock;
   private final SecurityContextRepository securityContexts =
       new HttpSessionSecurityContextRepository();
 
@@ -53,7 +55,8 @@ public class SessionController {
       RequestRateLimiter rateLimiter,
       ClientAddress clientAddress,
       @Value("${spring.session.timeout:30m}") Duration sessionTimeout,
-      MfaService mfa) {
+      MfaService mfa,
+      Clock clock) {
     this.authenticationManager = authenticationManager;
     this.credentials = credentials;
     this.secureCookies = secureCookies;
@@ -61,6 +64,7 @@ public class SessionController {
     this.clientAddress = clientAddress;
     this.sessionTimeout = sessionTimeout;
     this.mfa = mfa;
+    this.clock = clock;
   }
 
   @GetMapping("/csrf")
@@ -115,7 +119,7 @@ public class SessionController {
         .body(
             new SessionResponse(
                 memberId,
-                Instant.now().plus(sessionTimeout),
+                Instant.now(clock).plus(sessionTimeout),
                 role,
                 "MODERATOR".equals(role),
                 "MODERATOR".equals(role) && mfa.isEnabled(memberId)));

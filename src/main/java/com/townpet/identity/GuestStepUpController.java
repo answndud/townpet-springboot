@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -30,17 +31,20 @@ public class GuestStepUpController {
   private final GuestStepUpService steps;
   private final boolean secureCookies;
   private final RequestRateLimiter rateLimiter;
+  private final Clock clock;
   private final ClientAddress clientAddress;
 
   GuestStepUpController(
       GuestStepUpService steps,
       @Value("${townpet.security.secure-cookies:false}") boolean secureCookies,
       RequestRateLimiter rateLimiter,
-      ClientAddress clientAddress) {
+      ClientAddress clientAddress,
+      Clock clock) {
     this.steps = steps;
     this.secureCookies = secureCookies;
     this.rateLimiter = rateLimiter;
     this.clientAddress = clientAddress;
+    this.clock = clock;
   }
 
   @PostMapping("/authors")
@@ -114,7 +118,7 @@ public class GuestStepUpController {
             .maxAge(Duration.ZERO)
             .build()
             .toString());
-    return new ConsumedResponse(scope, Instant.now());
+    return new ConsumedResponse(scope, Instant.now(clock));
   }
 
   private static UUID parseGuestId(@Nullable String value) {

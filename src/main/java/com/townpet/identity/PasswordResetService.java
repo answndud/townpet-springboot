@@ -1,5 +1,6 @@
 package com.townpet.identity;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
@@ -41,6 +42,7 @@ public class PasswordResetService {
   private final SessionRevocationService sessionRevocation;
   private final ApplicationEventPublisher events;
   private final AccountTokenCipher cipher;
+  private final Clock clock;
 
   public PasswordResetService(
       CredentialRepository credentials,
@@ -49,7 +51,8 @@ public class PasswordResetService {
       PasswordEncoder passwordEncoder,
       SessionRevocationService sessionRevocation,
       ApplicationEventPublisher events,
-      AccountTokenCipher cipher) {
+      AccountTokenCipher cipher,
+      Clock clock) {
     this.credentials = credentials;
     this.tokens = tokens;
     this.audit = audit;
@@ -57,6 +60,7 @@ public class PasswordResetService {
     this.sessionRevocation = sessionRevocation;
     this.events = events;
     this.cipher = cipher;
+    this.clock = clock;
   }
 
   @Transactional
@@ -66,7 +70,7 @@ public class PasswordResetService {
       return;
     }
 
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     UUID memberId = credential.getMemberId();
     tokens.deleteConsumedOrExpired(memberId, now);
     if (tokens.countByMemberIdAndCreatedAtAfter(memberId, now.minus(1, ChronoUnit.HOURS))
@@ -76,7 +80,7 @@ public class PasswordResetService {
     String rawToken = SecureToken.create();
     tokens.save(
         new PasswordResetTokenEntity(
-            memberId, SecureToken.hash(rawToken), now.plus(1, ChronoUnit.HOURS)));
+            memberId, SecureToken.hash(rawToken), now, now.plus(1, ChronoUnit.HOURS)));
     events.publishEvent(
         new AccountTokenDeliveryRequested(
             AccountTokenPurpose.PASSWORD_RESET, credential.getEmail(), cipher.encrypt(rawToken)));
@@ -85,7 +89,7 @@ public class PasswordResetService {
   @Transactional
   public void confirm(String rawToken, String newPassword) {
     validatePassword(newPassword);
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     PasswordResetTokenEntity token =
         tokens
             .findByTokenHashAndUsedAtIsNullAndExpiresAtAfter(SecureToken.hash(rawToken), now)
@@ -104,7 +108,7 @@ public class PasswordResetService {
 
     credential.changePassword(passwordEncoder.encode(newPassword));
     token.markUsed(now);
-    audit.save(new AuthAuditEntity(credential.getMemberId(), "PASSWORD_RESET"));
+    audit.save(new AuthAuditEntity(credential.getMemberId(), "PASSWORD_RESET", Instant.now(clock)));
     tokens.flush();
     tokens.deleteConsumedOrExpired(credential.getMemberId(), now);
     sessionRevocation.revokeAll(credential.getMemberId());
