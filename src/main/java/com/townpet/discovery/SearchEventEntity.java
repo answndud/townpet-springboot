@@ -23,11 +23,11 @@ class SearchEventEntity {
 
   protected SearchEventEntity() {}
 
-  SearchEventEntity(UUID id, String queryHash, String route, @Nullable UUID clientEventId) {
+  SearchEventEntity(UUID id, String queryHash, String route, @Nullable UUID clientEventId, Instant now) {
     this.id = id;
     this.queryHash = queryHash;
     this.route = route;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
     this.clientEventId = clientEventId;
   }
 
