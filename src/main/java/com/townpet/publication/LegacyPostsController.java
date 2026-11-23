@@ -56,19 +56,15 @@ class LegacyPostsController {
   @ResponseStatus(HttpStatus.CREATED)
   PublicationController.PublicationResponse create(
       @CurrentMember UUID currentMemberId, @Valid @RequestBody CreateRequest request) {
-    try {
-      PublicationEntity publication =
-          publications.create(
-              currentMemberId,
-              PublicationType.FREE_BOARD,
-              null,
-              request.title(),
-              request.body(),
-              null);
-      return response(publication);
-    } catch (PublicationPolicyException exception) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
-    }
+    PublicationEntity publication =
+        publications.create(
+            currentMemberId,
+            PublicationType.FREE_BOARD,
+            null,
+            request.title(),
+            request.body(),
+            null);
+    return response(publication);
   }
 
   @GetMapping("/{id}")
@@ -86,26 +82,16 @@ class LegacyPostsController {
       @PathVariable UUID id,
       @CurrentMember UUID currentMemberId,
       @Valid @RequestBody EditRequest request) {
-    try {
-      return response(
-          publications.edit(
-              currentMemberId,
-              id,
-              request.version(),
-              null,
-              null,
-              request.title(),
-              request.body(),
-              null));
-    } catch (PublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (PublicationOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (PublicationVersionConflictException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT);
-    } catch (PublicationPolicyException exception) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
-    }
+    return response(
+        publications.edit(
+            currentMemberId,
+            id,
+            request.version(),
+            null,
+            null,
+            request.title(),
+            request.body(),
+            null));
   }
 
   @DeleteMapping("/{id}")
@@ -114,15 +100,7 @@ class LegacyPostsController {
       @PathVariable UUID id,
       @CurrentMember UUID currentMemberId,
       @Valid @RequestBody DeleteRequest request) {
-    try {
-      publications.delete(currentMemberId, id, request.version());
-    } catch (PublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (PublicationOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (PublicationVersionConflictException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT);
-    }
+    publications.delete(currentMemberId, id, request.version());
   }
 
   private static PublicationController.PublicationResponse response(PublicationEntity publication) {

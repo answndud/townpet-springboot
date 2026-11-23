@@ -2,6 +2,7 @@ package com.townpet.publication;
 
 import com.townpet.catalog.api.AnimalCommunityTagger;
 import com.townpet.catalog.api.AnimalInterestCatalog;
+import com.townpet.common.DomainProblemException;
 import com.townpet.member.api.MemberDirectory;
 import com.townpet.publication.api.GuestDirectory;
 import com.townpet.publication.api.PublicationModeration;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -275,14 +277,26 @@ class PublicationService implements PublicationModeration {
   }
 }
 
-final class PublicationPolicyException extends RuntimeException {
+final class PublicationPolicyException extends DomainProblemException {
   PublicationPolicyException(String message) {
-    super(message);
+    super(HttpStatus.BAD_REQUEST, "PUBLICATION_POLICY", message);
   }
 }
 
-final class PublicationNotFoundException extends RuntimeException {}
+final class PublicationNotFoundException extends DomainProblemException {
+  PublicationNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "PUBLICATION_NOT_FOUND");
+  }
+}
 
-final class PublicationOwnershipException extends RuntimeException {}
+final class PublicationOwnershipException extends DomainProblemException {
+  PublicationOwnershipException() {
+    super(HttpStatus.FORBIDDEN, "PUBLICATION_OWNERSHIP");
+  }
+}
 
-final class PublicationVersionConflictException extends RuntimeException {}
+final class PublicationVersionConflictException extends DomainProblemException {
+  PublicationVersionConflictException() {
+    super(HttpStatus.CONFLICT, "PUBLICATION_VERSION_CONFLICT");
+  }
+}

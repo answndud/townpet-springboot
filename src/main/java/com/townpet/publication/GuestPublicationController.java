@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/guest/posts")
@@ -62,22 +61,14 @@ class GuestPublicationController {
       @Valid @RequestBody EditRequest request,
       HttpServletRequest httpRequest) {
     requireContentCapacity(guestId, httpRequest, "guest-post-mutation", 120);
-    try {
-      return response(
-          publications.editGuest(
-              guestId,
-              request.password(),
-              publicationId,
-              request.version(),
-              request.title(),
-              request.body()));
-    } catch (PublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (PublicationOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (PublicationVersionConflictException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT);
-    }
+    return response(
+        publications.editGuest(
+            guestId,
+            request.password(),
+            publicationId,
+            request.version(),
+            request.title(),
+            request.body()));
   }
 
   @DeleteMapping("/{publicationId}")
@@ -88,15 +79,7 @@ class GuestPublicationController {
       @Valid @RequestBody DeleteRequest request,
       HttpServletRequest httpRequest) {
     requireContentCapacity(guestId, httpRequest, "guest-post-mutation", 120);
-    try {
-      publications.deleteGuest(guestId, request.password(), publicationId, request.version());
-    } catch (PublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (PublicationOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (PublicationVersionConflictException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT);
-    }
+    publications.deleteGuest(guestId, request.password(), publicationId, request.version());
   }
 
   private void requireContentCapacity(

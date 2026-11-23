@@ -43,20 +43,16 @@ class PublicationController {
       @CurrentMember UUID currentMemberId,
       @Valid @RequestBody CreatePublicationRequest request) {
     UUID memberId = currentMemberId;
-    try {
-      PublicationEntity publication =
-          publications.create(
-              memberId,
-              request.type() == null ? PublicationType.FREE_BOARD : request.type(),
-              request.animalInterestCode(),
-              request.title(),
-              request.body(),
-              request.animalCommunityCodes());
-      return ResponseEntity.created(URI.create("/api/v1/publications/" + publication.getId()))
-          .body(toResponse(publication));
-    } catch (PublicationPolicyException exception) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
-    }
+    PublicationEntity publication =
+        publications.create(
+            memberId,
+            request.type() == null ? PublicationType.FREE_BOARD : request.type(),
+            request.animalInterestCode(),
+            request.title(),
+            request.body(),
+            request.animalCommunityCodes());
+    return ResponseEntity.created(URI.create("/api/v1/publications/" + publication.getId()))
+        .body(toResponse(publication));
   }
 
   @GetMapping("/{publicationId}")
@@ -98,15 +94,7 @@ class PublicationController {
               request.title(),
               request.body(),
               request.animalCommunityCodes()));
-    } catch (PublicationPolicyException exception) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
-    } catch (PublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (PublicationOwnershipException exception) {
-      throw new ResponseStatusException(
-          HttpStatus.FORBIDDEN, "Only the author can edit this publication");
-    } catch (PublicationVersionConflictException
-        | ObjectOptimisticLockingFailureException exception) {
+    } catch (ObjectOptimisticLockingFailureException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication has changed");
     }
   }
@@ -121,13 +109,7 @@ class PublicationController {
       PublicationEntity publication =
           publications.delete(currentMemberId, publicationId, request.version());
       return ResponseEntity.noContent().eTag("\"" + publication.getVersion() + "\"").build();
-    } catch (PublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (PublicationOwnershipException exception) {
-      throw new ResponseStatusException(
-          HttpStatus.FORBIDDEN, "Only the author can delete this publication");
-    } catch (PublicationVersionConflictException
-        | ObjectOptimisticLockingFailureException exception) {
+    } catch (ObjectOptimisticLockingFailureException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication has changed");
     }
   }
@@ -141,13 +123,7 @@ class PublicationController {
     try {
       return toResponse(
           publications.restore(currentMemberId, publicationId, request.version()));
-    } catch (PublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (PublicationOwnershipException exception) {
-      throw new ResponseStatusException(
-          HttpStatus.FORBIDDEN, "Only the author can restore this publication");
-    } catch (PublicationVersionConflictException
-        | ObjectOptimisticLockingFailureException exception) {
+    } catch (ObjectOptimisticLockingFailureException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "Publication has changed");
     }
   }
