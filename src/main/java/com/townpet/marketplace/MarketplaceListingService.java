@@ -1,5 +1,6 @@
 package com.townpet.marketplace;
 
+import com.townpet.common.DomainProblemException;
 import com.townpet.common.UuidV7;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -7,6 +8,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -193,8 +195,20 @@ class MarketplaceListingService {
       long version) {}
 }
 
-final class MarketplaceListingNotFoundException extends RuntimeException {}
+final class MarketplaceListingNotFoundException extends DomainProblemException {
+  MarketplaceListingNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "MARKETPLACE_LISTING_NOT_FOUND");
+  }
+}
 
-final class MarketplaceListingOwnershipException extends RuntimeException {}
+final class MarketplaceListingOwnershipException extends DomainProblemException {
+  MarketplaceListingOwnershipException() {
+    super(HttpStatus.FORBIDDEN, "MARKETPLACE_LISTING_OWNERSHIP");
+  }
+}
 
-final class MarketplaceListingStateException extends RuntimeException {}
+final class MarketplaceListingStateException extends DomainProblemException {
+  MarketplaceListingStateException() {
+    super(HttpStatus.CONFLICT, "MARKETPLACE_LISTING_STATE");
+  }
+}

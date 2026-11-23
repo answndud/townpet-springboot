@@ -81,17 +81,9 @@ class MarketplaceListingController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID listingId,
       @Valid @RequestBody ChangeStatusRequest request) {
-    try {
-      return toResponse(
-          listings.changeStatus(
-              currentMemberId, listingId, request.status(), request.version()));
-    } catch (MarketplaceListingNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (MarketplaceListingOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (MarketplaceListingStateException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Invalid listing status transition");
-    }
+    return toResponse(
+        listings.changeStatus(
+            currentMemberId, listingId, request.status(), request.version()));
   }
 
   @org.springframework.web.bind.annotation.PatchMapping("/{listingId}")
@@ -100,22 +92,14 @@ class MarketplaceListingController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID listingId,
       @Valid @RequestBody UpdateListingRequest request) {
-    try {
-      return toResponse(
-          listings.update(
-              currentMemberId,
-              listingId,
-              request.title(),
-              request.description(),
-              request.priceKrw(),
-              request.version()));
-    } catch (MarketplaceListingNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (MarketplaceListingOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (MarketplaceListingStateException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Listing is not editable");
-    }
+    return toResponse(
+        listings.update(
+            currentMemberId,
+            listingId,
+            request.title(),
+            request.description(),
+            request.priceKrw(),
+            request.version()));
   }
 
   private static ListingResponse toResponse(MarketplaceListingService.ListingView listing) {
