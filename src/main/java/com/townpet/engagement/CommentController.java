@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -36,11 +37,13 @@ class CommentController {
 
   @GetMapping
   CommentListResponse list(
-      @PathVariable UUID publicationId, @CurrentMember(required = false) @Nullable UUID currentMemberId) {
+      @PathVariable UUID publicationId,
+      @CurrentMember(required = false) @Nullable UUID currentMemberId,
+      @RequestParam(required = false) @Nullable String cursor,
+      @RequestParam(defaultValue = "200") int limit) {
+    CommentService.CommentPage page = comments.list(publicationId, currentMemberId, cursor, limit);
     return new CommentListResponse(
-            comments.list(publicationId, currentMemberId).stream()
-            .map(CommentController::toResponse)
-            .toList());
+        page.items().stream().map(CommentController::toResponse).toList(), page.nextCursor());
   }
 
   @PostMapping
@@ -92,7 +95,7 @@ class CommentController {
         comment.getVersion());
   }
 
-  record CommentListResponse(List<CommentResponse> items) {}
+  record CommentListResponse(List<CommentResponse> items, @Nullable String nextCursor) {}
 
   record CreateCommentRequest(
       @NotBlank @Size(max = 5000) String body, @Nullable UUID parentCommentId) {}

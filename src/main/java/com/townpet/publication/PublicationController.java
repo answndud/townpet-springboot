@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -66,15 +67,21 @@ class PublicationController {
 
   @GetMapping("/mine")
   @MemberOnly
-  List<PublicationResponse> mine(@CurrentMember UUID currentMemberId) {
-    List<PublicationEntity> mine = publications.mine(currentMemberId);
+  MyPublicationsResponse mine(
+      @CurrentMember UUID currentMemberId,
+      @RequestParam(required = false) @Nullable String cursor,
+      @RequestParam(defaultValue = "100") int limit) {
+    PublicationService.PublicationPage page = publications.mine(currentMemberId, cursor, limit);
     Map<UUID, List<String>> tags =
-        publications.animalCommunityCodes(mine.stream().map(PublicationEntity::getId).toList());
-    return mine.stream()
-        .map(
-            publication ->
-                toResponse(publication, tags.getOrDefault(publication.getId(), List.of())))
-        .toList();
+        publications.animalCommunityCodes(
+            page.items().stream().map(PublicationEntity::getId).toList());
+    return new MyPublicationsResponse(
+        page.items().stream()
+            .map(
+                publication ->
+                    toResponse(publication, tags.getOrDefault(publication.getId(), List.of())))
+            .toList(),
+        page.nextCursor());
   }
 
   @PutMapping("/{publicationId}")
@@ -168,6 +175,9 @@ class PublicationController {
   record DeletePublicationRequest(@NotNull @Min(0) Long version) {}
 
   record RestorePublicationRequest(@NotNull @Min(0) Long version) {}
+
+  record MyPublicationsResponse(
+      List<PublicationResponse> items, @Nullable String nextCursor) {}
 
   record PublicationResponse(
       UUID id,

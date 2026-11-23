@@ -1,6 +1,7 @@
 package com.townpet.publication;
 
 import com.townpet.catalog.api.AnimalCommunityTagger;
+import com.townpet.common.PageCursor;
 import com.townpet.catalog.api.AnimalInterestCatalog;
 import com.townpet.common.DomainProblemException;
 import com.townpet.member.api.MemberDirectory;
@@ -17,6 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -139,10 +141,28 @@ class PublicationService implements PublicationModeration {
   }
 
   @Transactional(readOnly = true)
-  List<PublicationEntity> mine(UUID memberId) {
-    return publications.findTop100ByAuthorMemberIdAndLifecycleOrderByCreatedAtDescIdDesc(
-        memberId, PublicationLifecycle.ACTIVE);
+  PublicationPage mine(UUID memberId, @Nullable String cursor, int limit) {
+    PageCursor.requireLimit(limit, 100);
+    PageRequest window = PageRequest.of(0, limit + 1);
+    List<PublicationEntity> rows =
+        cursor == null || cursor.isBlank()
+            ? publications.findAuthorPage(memberId, PublicationLifecycle.ACTIVE, window)
+            : before(memberId, PageCursor.decode(cursor), window);
+    boolean hasMore = rows.size() > limit;
+    List<PublicationEntity> page = hasMore ? rows.subList(0, limit) : rows;
+    String next =
+        hasMore
+            ? new PageCursor(page.getLast().getCreatedAt(), page.getLast().getId()).encode()
+            : null;
+    return new PublicationPage(List.copyOf(page), next);
   }
+
+  private List<PublicationEntity> before(UUID memberId, PageCursor cursor, PageRequest window) {
+    return publications.findAuthorPageBefore(
+        memberId, PublicationLifecycle.ACTIVE, cursor.createdAt(), cursor.id(), window);
+  }
+
+  record PublicationPage(List<PublicationEntity> items, @Nullable String nextCursor) {}
 
   @Transactional(readOnly = true)
   List<String> animalCommunityCodes(UUID publicationId) {

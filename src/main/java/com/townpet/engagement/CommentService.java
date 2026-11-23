@@ -1,6 +1,7 @@
 package com.townpet.engagement;
 
 import com.townpet.common.DomainProblemException;
+import com.townpet.common.PageCursor;
 import com.townpet.common.UuidV7;
 import com.townpet.notification.api.NotificationEvent;
 import com.townpet.publication.api.ActivePublication;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -103,11 +105,30 @@ class CommentService {
   }
 
   @Transactional(readOnly = true)
-  List<CommentEntity> list(UUID publicationId, @Nullable UUID viewerMemberId) {
+  CommentPage list(
+      UUID publicationId, @Nullable UUID viewerMemberId, @Nullable String cursor, int limit) {
     requireAccessiblePublication(publicationId, viewerMemberId);
-    return comments.findTop500ByPublicationIdAndLifecycleOrderByCreatedAtAscIdAsc(
-        publicationId, CommentLifecycle.ACTIVE);
+    PageCursor.requireLimit(limit, PageCursor.MAX_LIMIT);
+    PageRequest window = PageRequest.of(0, limit + 1);
+    List<CommentEntity> rows =
+        cursor == null || cursor.isBlank()
+            ? comments.findFirstPage(publicationId, CommentLifecycle.ACTIVE, window)
+            : afterCursor(publicationId, PageCursor.decode(cursor), window);
+    boolean hasMore = rows.size() > limit;
+    List<CommentEntity> page = hasMore ? rows.subList(0, limit) : rows;
+    String next =
+        hasMore
+            ? new PageCursor(page.getLast().getCreatedAt(), page.getLast().getId()).encode()
+            : null;
+    return new CommentPage(List.copyOf(page), next);
   }
+
+  private List<CommentEntity> afterCursor(UUID publicationId, PageCursor cursor, PageRequest page) {
+    return comments.findPageAfter(
+        publicationId, CommentLifecycle.ACTIVE, cursor.createdAt(), cursor.id(), page);
+  }
+
+  record CommentPage(List<CommentEntity> items, @Nullable String nextCursor) {}
 
   @Transactional
   CommentEntity create(

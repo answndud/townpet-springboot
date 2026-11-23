@@ -339,6 +339,68 @@ class CommentControllerTest {
   }
 
   @Test
+  void commentsArePagedOldestFirstWithoutGapsOrDuplicates() throws Exception {
+    Cookie author = login("demo-member-1@townpet.local");
+    String publicationId = createPublication(author);
+    java.util.List<String> expected = new java.util.ArrayList<>();
+    for (int index = 1; index <= 5; index++) {
+      createComment(publicationId, author, "댓글 " + index);
+      expected.add("댓글 " + index);
+    }
+
+    java.util.List<String> bodies = new java.util.ArrayList<>();
+    java.util.List<Integer> pageSizes = new java.util.ArrayList<>();
+    String cursor = null;
+    do {
+      var request =
+          get("/api/v1/publications/{publicationId}/comments", publicationId).param("limit", "2");
+      if (cursor != null) request.param("cursor", cursor);
+      var body =
+          new com.fasterxml.jackson.databind.ObjectMapper()
+              .readTree(
+                  mockMvc
+                      .perform(request)
+                      .andExpect(status().isOk())
+                      .andReturn()
+                      .getResponse()
+                      .getContentAsString());
+      pageSizes.add(body.path("items").size());
+      body.path("items").forEach(item -> bodies.add(item.path("body").asText()));
+      cursor = body.path("nextCursor").isNull() ? null : body.path("nextCursor").asText();
+    } while (cursor != null);
+
+    org.assertj.core.api.Assertions.assertThat(bodies).containsExactlyElementsOf(expected);
+    org.assertj.core.api.Assertions.assertThat(pageSizes).containsExactly(2, 2, 1);
+    // Without a limit the first page holds everything and there is no next page.
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items.length()").value(5))
+        .andExpect(jsonPath("$.nextCursor").isEmpty());
+  }
+
+  @Test
+  void commentListRejectsABadCursorOrPageSize() throws Exception {
+    String publicationId = createPublication(login("demo-member-1@townpet.local"));
+    mockMvc
+        .perform(
+            get("/api/v1/publications/{publicationId}/comments", publicationId)
+                .param("cursor", "not-a-cursor"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_PAGE_REQUEST"));
+    mockMvc
+        .perform(
+            get("/api/v1/publications/{publicationId}/comments", publicationId)
+                .param("limit", "0"))
+        .andExpect(status().isBadRequest());
+    mockMvc
+        .perform(
+            get("/api/v1/publications/{publicationId}/comments", publicationId)
+                .param("limit", "501"))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void commentEditRequiresTheCommentToBelongToThePathPublication() throws Exception {
     Cookie author = login("demo-member-1@townpet.local");
     String publicationId = createPublication(author);

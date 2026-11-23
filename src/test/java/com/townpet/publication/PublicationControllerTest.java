@@ -719,6 +719,58 @@ class PublicationControllerTest {
         .andExpect(jsonPath("$.title").value("수정한 제목"));
   }
 
+  @Test
+  void myPublicationsArePagedNewestFirstWithoutGapsOrDuplicates() throws Exception {
+    Cookie session = login();
+    // Two posts share a timestamp, so the id decides their order across a page boundary.
+    insertPublication(UUID.fromString("00000000-0000-4000-8000-0000000a0001"), "가장 오래됨", "ACTIVE", "2026-01-01T00:00:00Z");
+    insertPublication(UUID.fromString("00000000-0000-4000-8000-0000000a0002"), "둘째", "ACTIVE", "2026-01-02T00:00:00Z");
+    insertPublication(UUID.fromString("00000000-0000-4000-8000-0000000a0003"), "셋째 가", "ACTIVE", "2026-01-03T00:00:00Z");
+    insertPublication(UUID.fromString("00000000-0000-4000-8000-0000000a0004"), "셋째 나", "ACTIVE", "2026-01-03T00:00:00Z");
+    insertPublication(UUID.fromString("00000000-0000-4000-8000-0000000a0005"), "가장 최근", "ACTIVE", "2026-01-04T00:00:00Z");
+    insertPublication(UUID.fromString("00000000-0000-4000-8000-0000000a0006"), "삭제됨", "DELETED", "2026-01-05T00:00:00Z");
+
+    java.util.List<String> titles = new java.util.ArrayList<>();
+    java.util.List<Integer> pageSizes = new java.util.ArrayList<>();
+    String cursor = null;
+    do {
+      var request = get("/api/v1/publications/mine").cookie(session).param("limit", "2");
+      if (cursor != null) request.param("cursor", cursor);
+      var body =
+          new com.fasterxml.jackson.databind.ObjectMapper()
+              .readTree(
+                  mockMvc
+                      .perform(request)
+                      .andExpect(status().isOk())
+                      .andReturn()
+                      .getResponse()
+                      .getContentAsString());
+      pageSizes.add(body.path("items").size());
+      body.path("items").forEach(item -> titles.add(item.path("title").asText()));
+      cursor = body.path("nextCursor").isNull() ? null : body.path("nextCursor").asText();
+    } while (cursor != null);
+
+    org.assertj.core.api.Assertions.assertThat(titles)
+        .containsExactly("가장 최근", "셋째 나", "셋째 가", "둘째", "가장 오래됨");
+    org.assertj.core.api.Assertions.assertThat(pageSizes).containsExactly(2, 2, 1);
+  }
+
+  @Test
+  void myPublicationsRejectABadCursorOrPageSize() throws Exception {
+    Cookie session = login();
+    mockMvc
+        .perform(get("/api/v1/publications/mine").cookie(session).param("cursor", "not-a-cursor"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_PAGE_REQUEST"));
+    mockMvc
+        .perform(get("/api/v1/publications/mine").cookie(session).param("limit", "0"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_PAGE_REQUEST"));
+    mockMvc
+        .perform(get("/api/v1/publications/mine").cookie(session).param("limit", "101"))
+        .andExpect(status().isBadRequest());
+  }
+
   private void insertPublication(UUID id, String title, String lifecycle, String createdAt) {
     OffsetDateTime timestamp = OffsetDateTime.parse(createdAt);
     jdbc.update(

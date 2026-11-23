@@ -493,7 +493,11 @@ export const memberApi = {
   publicReactions(memberId: string, signal?: AbortSignal) {
     return apiFetch<PublicMemberReaction[]>(`/api/v1/members/${encodeURIComponent(memberId)}/reactions`, { signal });
   },
-  myPosts(signal?: AbortSignal) { return apiFetch<Publication[]>("/api/v1/publications/mine", { signal }); },
+  myPosts(signal?: AbortSignal, cursor?: string | null) {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    return apiFetch<{ items?: Publication[]; nextCursor?: string | null }>(`/api/v1/publications/mine${query}`, { signal })
+      .then((response) => ({ items: Array.isArray(response?.items) ? response.items : [], nextCursor: response?.nextCursor ?? null }));
+  },
   bookmarks(signal?: AbortSignal) {
     return cachedGet<string[]>("member:bookmarks", "/api/v1/members/me/bookmarks", signal, 15_000);
   },
@@ -629,11 +633,12 @@ export const publicationApi = {
   stats(publicationId: string, signal?: AbortSignal) {
     return apiFetch<PublicationStats>(`/api/posts/${encodeURIComponent(publicationId)}/stats`, { signal });
   },
-  comments(publicationId: string, signal?: AbortSignal) {
-    return apiFetch<{ items?: Comment[] }>(
-      `/api/v1/publications/${encodeURIComponent(publicationId)}/comments`,
+  comments(publicationId: string, signal?: AbortSignal, cursor?: string | null) {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    return apiFetch<{ items?: Comment[]; nextCursor?: string | null }>(
+      `/api/v1/publications/${encodeURIComponent(publicationId)}/comments${query}`,
       { signal },
-    ).then((response) => ({ items: Array.isArray(response?.items) ? response.items : [] }));
+    ).then((response) => ({ items: Array.isArray(response?.items) ? response.items : [], nextCursor: response?.nextCursor ?? null }));
   },
   createComment(publicationId: string, input: CreateCommentInput) {
     return mutate<Comment>(

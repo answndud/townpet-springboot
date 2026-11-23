@@ -276,4 +276,50 @@ describe("Publication journeys", () => {
     fireEvent.click(screen.getByRole("button", { name: "댓글 삭제" }));
     await waitFor(() => expect(fetchMock.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(true));
   });
+
+  it("loads further comment pages with the cursor and does not repeat comments", async () => {
+    const comment = (id: string, text: string) => ({
+      id,
+      publicationId: PUBLICATION_ID,
+      authorId: null,
+      authorType: "GUEST",
+      parentCommentId: null,
+      body: text,
+      lifecycle: "ACTIVE",
+      createdAt: "2026-08-10T09:00:00Z",
+      updatedAt: "2026-08-10T09:00:00Z",
+      version: 0,
+    });
+    const fetchMock = vi.fn<typeof fetch>((input) => {
+      const path = String(input);
+      if (path.endsWith("/api/v1/members/me")) return Promise.resolve(response(undefined, 401));
+      if (path.endsWith("/api/v1/auth/csrf")) return Promise.resolve(response({ token: "csrf-token" }));
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}/comments?cursor=page-two`)) {
+        // The server repeats the last comment of page one; the screen must show it once.
+        return Promise.resolve(response({ items: [comment("c2", "두 번째 댓글"), comment("c3", "세 번째 댓글")], nextCursor: null }));
+      }
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}/comments`)) {
+        return Promise.resolve(response({ items: [comment("c1", "첫 번째 댓글"), comment("c2", "두 번째 댓글")], nextCursor: "page-two" }));
+      }
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}`)) return Promise.resolve(response(publication()));
+      if (path.endsWith(`/api/v1/publications/${PUBLICATION_ID}/reaction`)) return Promise.resolve(response({ active: false, count: 0 }));
+      return Promise.reject(new Error(`Unexpected request: ${path}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    document.cookie = "XSRF-TOKEN=csrf-token; path=/";
+
+    render(
+      <MemoryRouter initialEntries={[`/posts/${PUBLICATION_ID}`]}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("첫 번째 댓글")).toBeInTheDocument();
+    expect(screen.queryByText("세 번째 댓글")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "댓글 더 보기" }));
+
+    expect(await screen.findByText("세 번째 댓글")).toBeInTheDocument();
+    expect(screen.getAllByText("두 번째 댓글")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "댓글 더 보기" })).not.toBeInTheDocument();
+  });
 });

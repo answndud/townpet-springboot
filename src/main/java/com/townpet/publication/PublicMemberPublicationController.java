@@ -4,6 +4,7 @@ import com.townpet.member.api.MemberDirectory;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/v1/members/{memberId}/publications")
 class PublicMemberPublicationController {
+  /** The public profile shows the latest posts only. */
+  private static final int PROFILE_LIMIT = 100;
+
   private final PublicationRepository publications;
   private final MemberDirectory members;
 
@@ -29,8 +33,7 @@ class PublicMemberPublicationController {
     }
     if (!members.isPublicPosts(memberId)) return List.of();
     return publications
-        .findTop100ByAuthorMemberIdAndLifecycleOrderByCreatedAtDescIdDesc(
-            memberId, PublicationLifecycle.ACTIVE)
+        .findAuthorPage(memberId, PublicationLifecycle.ACTIVE, PageRequest.of(0, PROFILE_LIMIT))
         .stream()
         .map(PublicMemberPublicationController::response)
         .toList();

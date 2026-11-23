@@ -57,6 +57,8 @@ export default function PublicationDetailPage() {
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentsNextCursor, setCommentsNextCursor] = useState<string | null>(null);
+  const [commentsLoadingMore, setCommentsLoadingMore] = useState(false);
   const [commentBody, setCommentBody] = useState("");
   const [guestPassword, setGuestPassword] = useState("");
   const [guestManageComment, setGuestManageComment] = useState<Comment | null>(null);
@@ -105,6 +107,7 @@ export default function PublicationDetailPage() {
     setPublication(null);
     setError(null);
     setComments([]);
+    setCommentsNextCursor(null);
     setCommentsLoading(true);
     setCommentError(null);
     setReaction({ active: false, count: 0 });
@@ -129,7 +132,10 @@ export default function PublicationDetailPage() {
       });
     publicationApi
       .comments(publicationId, controller.signal)
-      .then((result) => setComments(result.items))
+      .then((result) => {
+        setComments(result.items);
+        setCommentsNextCursor(result.nextCursor);
+      })
       .catch((requestError: unknown) => {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
         if (!(requestError instanceof ApiError && requestError.status === 404)) {
@@ -139,6 +145,24 @@ export default function PublicationDetailPage() {
       .finally(() => setCommentsLoading(false));
     return () => controller.abort();
   }, [publicationId]);
+
+  async function loadMoreComments() {
+    if (!commentsNextCursor || commentsLoadingMore) return;
+    setCommentsLoadingMore(true);
+    setCommentError(null);
+    try {
+      const result = await publicationApi.comments(publicationId, undefined, commentsNextCursor);
+      setComments((current) => {
+        const known = new Set(current.map((item) => item.id));
+        return [...current, ...result.items.filter((item) => !known.has(item.id))];
+      });
+      setCommentsNextCursor(result.nextCursor);
+    } catch {
+      setCommentError("댓글을 더 불러오지 못했습니다.");
+    } finally {
+      setCommentsLoadingMore(false);
+    }
+  }
 
   useEffect(() => {
     if (!publication) return;
@@ -621,6 +645,11 @@ export default function PublicationDetailPage() {
               onChangeBody={setCommentBody}
               onSubmit={createComment}
             />
+            {commentsNextCursor ? (
+              <button className="button button-soft" type="button" disabled={commentsLoadingMore} onClick={() => void loadMoreComments()}>
+                {commentsLoadingMore ? "불러오는 중..." : "댓글 더 보기"}
+              </button>
+            ) : null}
           </div>
         ) : null}
         {!replyingTo && (memberViewer || guestViewer) ? (

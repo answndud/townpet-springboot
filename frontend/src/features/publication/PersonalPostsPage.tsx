@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, memberApi, publicationApi, type Publication } from "../../api/client";
 import { useAbortableRequest } from "../../hooks/useAbortableRequest";
@@ -10,15 +10,42 @@ export default function PersonalPostsPage({ saved = false }: { saved?: boolean }
   const query = searchParams.get("q") ?? "";
   const searchFieldParam = searchParams.get("searchField");
   const searchField = searchFieldParam === "TITLE" || searchFieldParam === "BODY" ? searchFieldParam : "ALL";
-  const { data: items, error: requestError, loading } = useAbortableRequest<Publication[]>((signal) => saved ? memberApi.bookmarks(signal).then((ids) => Promise.all(ids.map((id) => publicationApi.detail(id, signal)))) : memberApi.myPosts(signal), [saved]);
+  const { data: firstPage, error: requestError, loading } = useAbortableRequest<{ items: Publication[]; nextCursor: string | null }>((signal) => saved ? memberApi.bookmarks(signal).then((ids) => Promise.all(ids.map((id) => publicationApi.detail(id, signal)))).then((items) => ({ items, nextCursor: null })) : memberApi.myPosts(signal), [saved]);
+  const [moreItems, setMoreItems] = useState<Publication[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moreError, setMoreError] = useState(false);
+  useEffect(() => {
+    setMoreItems([]);
+    setMoreError(false);
+    setNextCursor(firstPage?.nextCursor ?? null);
+  }, [firstPage]);
+  const items = useMemo(() => [...(firstPage?.items ?? []), ...moreItems], [firstPage, moreItems]);
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setMoreError(false);
+    try {
+      const page = await memberApi.myPosts(undefined, nextCursor);
+      setMoreItems((current) => {
+        const known = new Set([...items, ...current].map((item) => item.id));
+        return [...current, ...page.items.filter((item) => !known.has(item.id))];
+      });
+      setNextCursor(page.nextCursor);
+    } catch {
+      setMoreError(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
   const error = requestError instanceof ApiError && requestError.status === 401 ? "로그인이 필요합니다." : requestError ? "게시글을 불러오지 못했습니다." : null;
   useEffect(() => {
     if (requestError instanceof ApiError && requestError.status === 401) navigate(`/login?next=${saved ? "/saved" : "/my-posts"}`, { replace: true });
   }, [navigate, requestError, saved]);
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
-    if (!normalizedQuery) return items ?? [];
-    return (items ?? []).filter((item) => {
+    if (!normalizedQuery) return items;
+    return items.filter((item) => {
       const value = searchField === "TITLE" ? item.title : searchField === "BODY" ? item.body : `${item.title} ${item.body}`;
       return value.toLocaleLowerCase().includes(normalizedQuery);
     });
@@ -45,6 +72,8 @@ export default function PersonalPostsPage({ saved = false }: { saved?: boolean }
         </section>
       ) : null}
       {!loading && filteredItems.length ? <section className="surface-card feed-list" aria-label={saved ? "저장한 게시글 목록" : "내 게시글 목록"} aria-live="polite">{filteredItems.map((item) => <article className="feed-item" key={item.id}><Link className="feed-item-title" to={`/posts/${item.id}`}><h2>{item.title}</h2></Link><time className="feed-item-meta" dateTime={item.createdAt}>{formatDateTime(item.createdAt)}</time></article>)}</section> : null}
+      {moreError ? <p role="alert">게시글을 더 불러오지 못했습니다.</p> : null}
+      {!loading && nextCursor ? <button className="button button-soft" type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? "불러오는 중..." : "더 보기"}</button> : null}
       <form aria-label="게시글 검색" className="search-panel community-bottom-search feed-bottom-search" onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
