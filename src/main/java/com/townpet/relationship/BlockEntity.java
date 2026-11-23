@@ -27,10 +27,10 @@ class BlockEntity {
 
   protected BlockEntity() {}
 
-  BlockEntity(UUID blockerMemberId, UUID blockedMemberId) {
+  BlockEntity(UUID blockerMemberId, UUID blockedMemberId, Instant now) {
     this.id = UuidV7.randomUuid();
     this.blockerMemberId = blockerMemberId;
     this.blockedMemberId = blockedMemberId;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 }

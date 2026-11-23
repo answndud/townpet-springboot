@@ -28,10 +28,10 @@ class FollowEntity {
 
   protected FollowEntity() {}
 
-  FollowEntity(UUID followerMemberId, UUID followedMemberId) {
+  FollowEntity(UUID followerMemberId, UUID followedMemberId, Instant now) {
     this.id = UuidV7.randomUuid();
     this.followerMemberId = followerMemberId;
     this.followedMemberId = followedMemberId;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 }
