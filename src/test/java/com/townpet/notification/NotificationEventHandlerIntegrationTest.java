@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,6 +30,7 @@ import org.testcontainers.utility.MountableFile;
 @ActiveProfiles("test")
 @Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@Tag("integration")
 class NotificationEventHandlerIntegrationTest {
   private static final UUID RECIPIENT = UUID.fromString("00000000-0000-4000-8300-000000000001");
   private static final UUID ACTOR = UUID.fromString("00000000-0000-4000-8300-000000000002");

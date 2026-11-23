@@ -1,5 +1,6 @@
 package com.townpet;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -15,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
       "spring.session.jdbc.initialize-schema=always",
       "spring.modulith.events.jdbc.schema-initialization.enabled=true"
     })
+@Tag("integration")
 class TownPetApplicationTests {
 
   @Test

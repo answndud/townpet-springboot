@@ -16,6 +16,7 @@ import jakarta.servlet.http.Cookie;
 import java.util.Objects;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,6 +43,7 @@ import org.springframework.test.web.servlet.MvcResult;
     })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Tag("integration")
 class IdentityMemberControllerTest {
   private static final UUID MEMBER_ID = UUID.fromString("00000000-0000-4000-8000-000000000001");
   private static final UUID MODERATOR_ID = UUID.fromString("00000000-0000-4000-8000-000000000002");

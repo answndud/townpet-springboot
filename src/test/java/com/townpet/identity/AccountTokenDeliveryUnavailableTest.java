@@ -9,6 +9,7 @@ import com.townpet.member.MemberEntity;
 import com.townpet.member.MemberRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,6 +33,7 @@ import org.springframework.test.web.servlet.MockMvc;
     })
 @AutoConfigureMockMvc
 @ActiveProfiles("delivery-unavailable")
+@Tag("integration")
 class AccountTokenDeliveryUnavailableTest {
   private static final UUID MEMBER_ID = UUID.fromString("00000000-0000-4000-8000-000000000091");
 

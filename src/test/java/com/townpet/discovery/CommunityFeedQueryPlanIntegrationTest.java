@@ -19,10 +19,12 @@ import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+@Tag("integration")
 class CommunityFeedQueryPlanIntegrationTest {
   private static final int LIMIT = 20;
   private static PostgreSQLContainer<?> container;

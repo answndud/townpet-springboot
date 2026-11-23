@@ -113,37 +113,12 @@ tasks.withType<Test>().configureEach {
 }
 
 val testSourceSet = sourceSets.named("test")
-val integrationTestPatterns = listOf(
-    "com.townpet.TownPetApplicationTests",
-    "com.townpet.care.CareControllerTest",
-    "com.townpet.common.RequestRateLimiterPostgresTest",
-    "com.townpet.common.web.GlobalProblemHttpTest",
-    "com.townpet.discovery.CommunityFeedQueryPlanIntegrationTest",
-    "com.townpet.engagement.BlockedEngagementPolicyTest",
-    "com.townpet.engagement.BookmarkControllerTest",
-    "com.townpet.engagement.CommentControllerTest",
-    "com.townpet.engagement.ReactionControllerTest",
-    "com.townpet.gathering.GatheringControllerTest",
-    "com.townpet.identity.AccountTokenDeliveryUnavailableTest",
-    "com.townpet.identity.IdentityMemberControllerTest",
-    "com.townpet.lostfound.LostFoundAlertControllerTest",
-    "com.townpet.lostfound.LostFoundSightingControllerTest",
-    "com.townpet.marketplace.MarketplaceListingControllerTest",
-    "com.townpet.media.MediaControllerTest",
-    "com.townpet.notification.NotificationEventHandlerIntegrationTest",
-    "com.townpet.operations.EventPublicationRecoveryIntegrationTest",
-    "com.townpet.performance.ReleaseCandidateQueryPlanTest",
-    "com.townpet.platform.DatabaseBaselineTest",
-    "com.townpet.publication.PublicationControllerTest",
-    "com.townpet.relationship.RelationshipControllerTest",
-    "com.townpet.welfare.AdoptionControllerTest",
-)
-
 // Keep the default test task as the fast suite so existing local commands
-// still work, while the database-backed tests move to integrationTest.
+// still work. Database-backed tests carry @Tag("integration") and run in
+// integrationTest, so a new integration test is picked up without editing this file.
 tasks.named<Test>("test") {
-    filter {
-        integrationTestPatterns.forEach { excludeTestsMatching(it) }
+    useJUnitPlatform {
+        excludeTags("integration")
     }
 }
 
@@ -163,8 +138,8 @@ registerVerificationTestTask("migrationTest", "Runs database migration tests.")
 registerVerificationTestTask("performanceTest", "Runs controlled performance tests.")
 registerVerificationTestTask("parityInventoryTest", "Runs legacy page and API inventory tests.")
 tasks.named<Test>("integrationTest") {
-    filter {
-        integrationTestPatterns.forEach { includeTestsMatching(it) }
+    useJUnitPlatform {
+        includeTags("integration")
     }
 }
 tasks.named<Test>("modulithTest") {
@@ -188,28 +163,10 @@ tasks.named<Test>("performanceTest") {
     }
 }
 
-// Deploy gate: one unit run and the domain boundaries that can break public use.
-// Exhaustive regression, query plans and browser combinations remain manual.
-registerVerificationTestTask("releaseIntegrationTest", "Runs the bounded deployment regression suite.")
-tasks.named<Test>("releaseIntegrationTest") {
-    filter {
-        listOf(
-            "com.townpet.identity.IdentityMemberControllerTest",
-            "com.townpet.publication.PublicationControllerTest",
-            "com.townpet.lostfound.LostFoundAlertControllerTest",
-            "com.townpet.lostfound.LostFoundSightingControllerTest",
-            "com.townpet.marketplace.MarketplaceListingControllerTest",
-            "com.townpet.welfare.AdoptionControllerTest",
-            "com.townpet.gathering.GatheringControllerTest",
-            "com.townpet.care.CareControllerTest",
-            "com.townpet.platform.DatabaseBaselineTest",
-        ).forEach { includeTestsMatching(it) }
-    }
-}
 tasks.register("releaseCheck") {
     group = "verification"
-    description = "Runs the fast unit and critical database deployment checks once."
-    dependsOn("test", "releaseIntegrationTest")
+    description = "Runs the fast unit suite and every integration test once."
+    dependsOn("test", "integrationTest")
 }
 
 tasks.named("check") {

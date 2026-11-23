@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.UUID;
 import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,6 +42,7 @@ import org.testcontainers.utility.MountableFile;
 @ActiveProfiles("test")
 @Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@Tag("integration")
 class GatheringControllerTest {
   private static final UUID HOST_GATHERING_ID =
       UUID.fromString("0198f342-13d7-7000-8000-000000000401");
