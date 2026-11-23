@@ -29,7 +29,6 @@ class PublicationModerationController {
       Clock clock) {
     this.publications = publications;
     this.jdbc = jdbc;
-  
     this.clock = clock;
   }
 

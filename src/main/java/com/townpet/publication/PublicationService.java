@@ -40,7 +40,6 @@ class PublicationService implements PublicationModeration {
     this.blocks = blocks;
     this.guests = guests;
     this.communityTags = communityTags;
-  
     this.clock = clock;
   }
 

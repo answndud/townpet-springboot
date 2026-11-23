@@ -24,7 +24,6 @@ class BookmarkService {
     this.bookmarks = bookmarks;
     this.publications = publications;
     this.blocks = blocks;
-  
     this.clock = clock;
   }
 

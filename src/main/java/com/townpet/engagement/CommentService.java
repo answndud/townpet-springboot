@@ -37,7 +37,6 @@ class CommentService {
     this.blocks = blocks;
     this.guests = guests;
     this.events = events;
-  
     this.clock = clock;
   }
 

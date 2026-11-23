@@ -24,7 +24,6 @@ class CommentModerationAdapter implements CommentModeration {
       Clock clock) {
     this.comments = comments;
     this.entityManager = entityManager;
-  
     this.clock = clock;
   }
 

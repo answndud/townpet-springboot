@@ -34,7 +34,6 @@ class ReactionService {
     this.publications = publications;
     this.blocks = blocks;
     this.events = events;
-  
     this.clock = clock;
   }
 
