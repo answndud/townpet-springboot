@@ -21,6 +21,81 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+  /** Reachable without signing in, for every HTTP method. */
+  private static final String[] PUBLIC_ANY_METHOD = {
+    "/actuator/health",
+    "/actuator/health/**",
+    "/actuator/info",
+    "/api/health",
+    "/api/viewer-shell",
+    "/api/v1/auth/csrf",
+    "/api/v1/auth/sessions",
+    "/api/v1/auth/password-resets/**",
+    "/api/v1/auth/email-verifications/**",
+    "/api/search/log",
+    "/api/security/csp-report",
+    "/api/acquisition/events",
+    "/api/guest/authors",
+    "/api/guest/step-up",
+    "/api/guest/step-up/consume",
+    "/api/guest/posts/**",
+    "/api/v1/catalog/**"
+  };
+
+  /** Public read-only pages and APIs. */
+  private static final String[] PUBLIC_GET = {
+    "/api/users/*/profile-summary",
+    "/api/v1/adoptions",
+    "/api/v1/adoptions/*",
+    "/api/v1/hospital-reviews",
+    "/api/v1/hospital-reviews/*",
+    "/api/v1/volunteer",
+    "/api/v1/volunteer/*",
+    "/api/v1/local-resources/**",
+    "/api/v1/gatherings/**",
+    "/api/v1/care/requests/**",
+    "/api/v1/publications/**",
+    "/api/v1/lost-found/alerts/**",
+    "/api/v1/lost-found/sightings/**",
+    "/api/v1/marketplace/listings/**",
+    "/api/v1/discovery",
+    "/api/v1/discovery/popular",
+    "/api/v1/communities/*/feed",
+    "/api/v1/boards/*/feed",
+    "/api/posts/**",
+    "/api/boards/*/posts",
+    "/api/lounges/breeds/*/groupbuys",
+    "/api/lounges/breeds/*/posts",
+    "/posts/*",
+    "/adoptions/*",
+    "/marketplace/*",
+    "/lost-found/*",
+    "/gatherings/*",
+    "/care/*",
+    "/guides/*"
+  };
+
+  /** Anonymous visitors may count views and shares and report web vitals. */
+  private static final String[] PUBLIC_POST = {
+    "/api/posts/*/view",
+    "/api/posts/*/share",
+    "/api/v1/operations/web-vitals",
+    "/api/metrics/web-vitals"
+  };
+
+  /** Staff-only areas, for every HTTP method. */
+  private static final String[] MODERATOR_ANY_METHOD = {
+    "/actuator/metrics/**",
+    "/api/v1/auth/mfa/**",
+    "/api/v1/operations/**",
+    "/api/admin/**",
+    "/api/ops/web-vitals/summary",
+    "/api/reports/bulk/**"
+  };
+
+  private static final String[] MODERATOR_GET = {"/api/v1/trust-reports/**", "/api/reports"};
+
+  private static final String[] MODERATOR_PATCH = {"/api/v1/trust-reports/**", "/api/reports/**"};
 
   @Bean
   PasswordEncoder passwordEncoder() {
@@ -57,112 +132,20 @@ public class SecurityConfig {
               if (e2eSupportEnabled) {
                 requests.requestMatchers("/api/_test/**").permitAll();
               }
+              // Rules are evaluated top to bottom and the first match wins, so the public POST
+              // endpoints under /api/v1/operations must stay ahead of the moderator rule.
               requests
-                  .requestMatchers(
-                      "/actuator/health",
-                      "/actuator/health/**",
-                      "/actuator/info",
-                      "/api/v1/auth/csrf",
-                      "/api/v1/auth/sessions")
+                  .requestMatchers(PUBLIC_ANY_METHOD)
                   .permitAll()
-                  .requestMatchers("/actuator/metrics/**")
+                  .requestMatchers(HttpMethod.GET, PUBLIC_GET)
+                  .permitAll()
+                  .requestMatchers(HttpMethod.POST, PUBLIC_POST)
+                  .permitAll()
+                  .requestMatchers(MODERATOR_ANY_METHOD)
                   .hasRole("MODERATOR")
-                  .requestMatchers("/api/health")
-                  .permitAll()
-                  .requestMatchers("/api/viewer-shell")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/users/*/profile-summary")
-                  .permitAll()
-                  .requestMatchers("/api/search/log")
-                  .permitAll()
-                  .requestMatchers("/api/security/csp-report")
-                  .permitAll()
-                  .requestMatchers("/api/acquisition/events")
-                  .permitAll()
-                  .requestMatchers(
-                      "/api/guest/authors",
-                      "/api/guest/step-up",
-                      "/api/guest/step-up/consume",
-                      "/api/guest/posts/**")
-                  .permitAll()
-                  .requestMatchers("/api/v1/auth/password-resets/**")
-                  .permitAll()
-                  .requestMatchers("/api/v1/auth/email-verifications/**")
-                  .permitAll()
-                  .requestMatchers("/api/v1/auth/mfa/**")
+                  .requestMatchers(HttpMethod.GET, MODERATOR_GET)
                   .hasRole("MODERATOR")
-                  .requestMatchers("/api/v1/catalog/**")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET,
-                      "/api/v1/adoptions", "/api/v1/adoptions/*",
-                      "/api/v1/hospital-reviews", "/api/v1/hospital-reviews/*",
-                      "/api/v1/volunteer", "/api/v1/volunteer/*")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/local-resources/**")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/gatherings/**")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/care/requests/**")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/publications/**")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/posts/**")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.POST, "/api/posts/*/view", "/api/posts/*/share")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/posts/*/stats")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/posts/*/lost-found-share.svg")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/lost-found/alerts/**")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/lost-found/sightings/**")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/marketplace/listings/**")
-                  .permitAll()
-                  .requestMatchers(
-                      HttpMethod.GET,
-                      "/posts/*",
-                      "/adoptions/*",
-                      "/marketplace/*",
-                      "/lost-found/*",
-                      "/gatherings/*",
-                      "/care/*",
-                      "/guides/*")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/boards/*/posts")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/lounges/breeds/*/groupbuys")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/lounges/breeds/*/posts")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/discovery")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/discovery/popular")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/communities/*/feed")
-                  .permitAll()
-                  .requestMatchers(HttpMethod.GET, "/api/v1/boards/*/feed")
-                  .permitAll()
-                  .requestMatchers(
-                      HttpMethod.POST, "/api/v1/operations/web-vitals", "/api/metrics/web-vitals")
-                  .permitAll()
-                  .requestMatchers("/api/v1/operations/**")
-                  .hasRole("MODERATOR")
-                  .requestMatchers(HttpMethod.GET, "/api/v1/trust-reports/**")
-                  .hasRole("MODERATOR")
-                  .requestMatchers(HttpMethod.PATCH, "/api/v1/trust-reports/**")
-                  .hasRole("MODERATOR")
-                  .requestMatchers("/api/admin/**")
-                  .hasRole("MODERATOR")
-                  .requestMatchers(
-                      "/api/ops/web-vitals/summary", "/api/v1/operations/web-vitals/summary")
-                  .hasRole("MODERATOR")
-                  .requestMatchers(HttpMethod.GET, "/api/v1/trust-reports/**", "/api/reports")
-                  .hasRole("MODERATOR")
-                  .requestMatchers(HttpMethod.PATCH, "/api/v1/trust-reports/**", "/api/reports/**")
-                  .hasRole("MODERATOR")
-                  .requestMatchers("/api/reports/bulk/**")
+                  .requestMatchers(HttpMethod.PATCH, MODERATOR_PATCH)
                   .hasRole("MODERATOR")
                   .anyRequest()
                   .authenticated();
