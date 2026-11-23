@@ -156,6 +156,17 @@ class CommentService {
   }
 
   @Transactional
+  CommentEntity edit(
+      UUID memberId, UUID publicationId, UUID commentId, long expectedVersion, String body) {
+    requireAccessiblePublication(publicationId, memberId);
+    CommentEntity comment = activeComment(commentId);
+    if (!comment.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
+    requireOwnershipAndVersion(comment, memberId, expectedVersion);
+    comment.edit(body, Instant.now());
+    return comments.saveAndFlush(comment);
+  }
+
+  @Transactional
   CommentEntity editById(UUID memberId, UUID commentId, long expectedVersion, String body) {
     CommentEntity comment = activeComment(commentId);
     requireAccessiblePublication(comment.getPublicationId(), memberId);
@@ -187,7 +198,10 @@ class CommentService {
 
   private void requireAccessiblePublication(UUID publicationId, @Nullable UUID viewerMemberId) {
     UUID authorId =
-        publications.findActive(publicationId).orElseThrow(CommentPublicationNotFoundException::new).authorMemberId();
+        publications
+            .findActive(publicationId)
+            .orElseThrow(CommentPublicationNotFoundException::new)
+            .authorMemberId();
     if (viewerMemberId != null
         && authorId != null
         && blocks.isBlocked(viewerMemberId, authorId)) {

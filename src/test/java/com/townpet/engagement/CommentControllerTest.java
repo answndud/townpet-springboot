@@ -357,6 +357,43 @@ class CommentControllerTest {
   }
 
   @Test
+  void commentEditRequiresTheCommentToBelongToThePathPublication() throws Exception {
+    Cookie author = login("demo-member-1@townpet.local");
+    String publicationId = createPublication(author);
+    String otherPublicationId = createPublication(author);
+    Cookie commenter = login("demo-member-2@townpet.local");
+    String commentId = createComment(publicationId, commenter, "원래 댓글");
+
+    mockMvc
+        .perform(
+            patch(
+                    "/api/v1/publications/{publicationId}/comments/{commentId}",
+                    otherPublicationId,
+                    commentId)
+                .cookie(commenter)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":0,\"body\":\"다른 게시글 경로로 수정\"}"))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.items[0].body").value("원래 댓글"));
+    mockMvc
+        .perform(
+            patch(
+                    "/api/v1/publications/{publicationId}/comments/{commentId}",
+                    publicationId,
+                    commentId)
+                .cookie(commenter)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"version\":0,\"body\":\"올바른 경로로 수정\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.body").value("올바른 경로로 수정"));
+  }
+
+  @Test
   void membersCannotEditOrDeleteGuestComments() throws Exception {
     String publicationId = createPublication(login("demo-member-1@townpet.local"));
     MvcResult guestComment =

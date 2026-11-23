@@ -96,7 +96,8 @@ class CommentController {
       @Valid @RequestBody EditCommentRequest request) {
     try {
       return toResponse(
-          comments.editById(memberId(principal), commentId, request.version(), request.body()));
+          comments.edit(
+              memberId(principal), publicationId, commentId, request.version(), request.body()));
     } catch (CommentNotFoundException | CommentPublicationNotFoundException exception) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     } catch (CommentOwnershipException exception) {
