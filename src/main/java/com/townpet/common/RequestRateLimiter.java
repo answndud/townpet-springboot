@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
@@ -35,6 +36,7 @@ public final class RequestRateLimiter {
   private final Map<String, Window> windows = new LinkedHashMap<>();
   private final MeterRegistry metrics;
   private final byte[] rateKeySecret;
+  private final Clock clock;
   private long lastCleanupMillis;
 
   /** Test-only fallback for unit tests that do not load the application context. */
@@ -46,11 +48,17 @@ public final class RequestRateLimiter {
     this(jdbc, metrics, LOCAL_KEY);
   }
 
+  RequestRateLimiter(@Nullable JdbcTemplate jdbc, MeterRegistry metrics, String key) {
+    this(jdbc, metrics, key, Clock.systemUTC());
+  }
+
   @Autowired
   RequestRateLimiter(
       @Nullable JdbcTemplate jdbc,
       MeterRegistry metrics,
-      @Value("${townpet.security.rate-limit-hmac-key:" + LOCAL_KEY + "}") String key) {
+      @Value("${townpet.security.rate-limit-hmac-key:" + LOCAL_KEY + "}") String key,
+      Clock clock) {
+    this.clock = clock;
     this.jdbc = jdbc;
     this.sharedDatabaseEnabled = jdbc != null && !isH2(jdbc);
     this.metrics = metrics;
@@ -85,7 +93,7 @@ public final class RequestRateLimiter {
     if (maxRequests < 1 || windowDuration.isNegative() || windowDuration.isZero()) {
       throw new IllegalArgumentException("Invalid rate limit policy");
     }
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     Instant windowStartedAt = now.minus(windowDuration);
     cleanupExpiredWindows(windowStartedAt);
     JdbcTemplate database = database();
@@ -124,7 +132,7 @@ public final class RequestRateLimiter {
   }
 
   private synchronized void cleanupExpiredWindows(Instant windowStartedAt) {
-    long now = System.currentTimeMillis();
+    long now = clock.millis();
     if (now - lastCleanupMillis < CLEANUP_INTERVAL_MILLIS) return;
     database()
         .update(
@@ -149,7 +157,7 @@ public final class RequestRateLimiter {
 
   private synchronized void requireInMemoryCapacity(
       String bucket, String key, int maxRequests, Duration windowDuration) {
-    Instant now = Instant.now();
+    Instant now = Instant.now(clock);
     String mapKey = bucket + "\u0000" + key;
     Window current = windows.get(mapKey);
     if (current == null
