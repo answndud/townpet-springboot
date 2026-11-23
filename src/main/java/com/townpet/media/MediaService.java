@@ -1,5 +1,6 @@
 package com.townpet.media;
 
+import com.townpet.common.DomainProblemException;
 import com.townpet.media.api.MediaOperations;
 import com.townpet.publication.api.PublicationAccess;
 import java.sql.Timestamp;
@@ -10,6 +11,7 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,7 +93,7 @@ class MediaService implements MediaOperations {
       throw new MediaObjectMismatchException();
     }
     if (content.length > 10 * 1024 * 1024) {
-      throw new MediaInputNotAllowedException();
+      throw new MediaUploadTooLargeException();
     }
     if (contentType.toLowerCase(java.util.Locale.ROOT).startsWith("image/")) {
       if (MediaImageDimensions.inspect(contentType, content).isEmpty()) {
@@ -212,20 +214,58 @@ class MediaService implements MediaOperations {
   }
 }
 
-final class MediaAssetNotFoundException extends RuntimeException {}
+final class MediaAssetNotFoundException extends DomainProblemException {
+  MediaAssetNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "MEDIA_ASSET_NOT_FOUND");
+  }
+}
 
-final class MediaInputNotAllowedException extends RuntimeException {}
+final class MediaInputNotAllowedException extends DomainProblemException {
+  MediaInputNotAllowedException() {
+    super(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "MEDIA_INPUT_NOT_ALLOWED");
+  }
+}
+
+final class MediaUploadTooLargeException extends DomainProblemException {
+  MediaUploadTooLargeException() {
+    super(HttpStatus.PAYLOAD_TOO_LARGE, "MEDIA_UPLOAD_TOO_LARGE");
+  }
+}
 
 final class MediaQuotaExceededException extends RuntimeException {}
 
-final class MediaAttachmentLimitException extends RuntimeException {}
+final class MediaAttachmentLimitException extends DomainProblemException {
+  MediaAttachmentLimitException() {
+    super(HttpStatus.CONFLICT, "MEDIA_ATTACHMENT_LIMIT");
+  }
+}
 
-final class MediaAssetStateException extends RuntimeException {}
+final class MediaAssetStateException extends DomainProblemException {
+  MediaAssetStateException() {
+    super(HttpStatus.CONFLICT, "MEDIA_ASSET_STATE");
+  }
+}
 
-final class MediaObjectNotFoundException extends RuntimeException {}
+final class MediaObjectNotFoundException extends DomainProblemException {
+  MediaObjectNotFoundException() {
+    super(HttpStatus.CONFLICT, "MEDIA_OBJECT_NOT_FOUND");
+  }
+}
 
-final class MediaObjectMismatchException extends RuntimeException {}
+final class MediaObjectMismatchException extends DomainProblemException {
+  MediaObjectMismatchException() {
+    super(HttpStatus.UNPROCESSABLE_ENTITY, "MEDIA_OBJECT_MISMATCH");
+  }
+}
 
-final class MediaPublicationNotFoundException extends RuntimeException {}
+final class MediaPublicationNotFoundException extends DomainProblemException {
+  MediaPublicationNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "MEDIA_PUBLICATION_NOT_FOUND");
+  }
+}
 
-final class MediaOwnershipException extends RuntimeException {}
+final class MediaOwnershipException extends DomainProblemException {
+  MediaOwnershipException() {
+    super(HttpStatus.FORBIDDEN, "MEDIA_OWNERSHIP");
+  }
+}

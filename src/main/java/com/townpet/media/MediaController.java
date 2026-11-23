@@ -48,9 +48,6 @@ class MediaController {
               request.checksumSha256(),
               request.contentType(),
               request.byteSize()));
-    } catch (MediaInputNotAllowedException exception) {
-      throw new ResponseStatusException(
-          HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media metadata");
     } catch (MediaQuotaExceededException exception) {
       metrics.counter("townpet.security.media_quota.rejections").increment();
       throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Media quota exceeded");
@@ -61,13 +58,7 @@ class MediaController {
   @MemberOnly
   ReadUrlResponse readUrl(
       @CurrentMember UUID currentMemberId, @PathVariable UUID assetId) {
-    try {
-      return new ReadUrlResponse(media.readUrl(currentMemberId, assetId));
-    } catch (MediaAssetNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (MediaAssetStateException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Media is not readable");
-    }
+    return new ReadUrlResponse(media.readUrl(currentMemberId, assetId));
   }
 
   @PostMapping("/{assetId}/finalize")
@@ -76,19 +67,8 @@ class MediaController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID assetId,
       @Valid @RequestBody FinalizeUploadRequest request) {
-    try {
-      return toResponse(
-          media.finalizeUpload(currentMemberId, assetId, request.checksumSha256()));
-    } catch (MediaAssetNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (MediaObjectNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Uploaded object is missing");
-    } catch (MediaObjectMismatchException exception) {
-      throw new ResponseStatusException(
-          HttpStatus.UNPROCESSABLE_ENTITY, "Uploaded object does not match metadata");
-    } catch (MediaAssetStateException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not finalizable");
-    }
+    return toResponse(
+        media.finalizeUpload(currentMemberId, assetId, request.checksumSha256()));
   }
 
   @PutMapping(value = "/{assetId}/content", consumes = "multipart/form-data")
@@ -105,15 +85,6 @@ class MediaController {
       }
       return toResponse(
           media.uploadContent(currentMemberId, assetId, contentType, file.getBytes()));
-    } catch (MediaAssetNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (MediaObjectMismatchException exception) {
-      throw new ResponseStatusException(
-          HttpStatus.UNPROCESSABLE_ENTITY, "Uploaded object does not match metadata");
-    } catch (MediaInputNotAllowedException exception) {
-      throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Upload is too large");
-    } catch (MediaAssetStateException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not active");
     } catch (java.io.IOException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read upload");
     }
@@ -125,18 +96,7 @@ class MediaController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID assetId,
       @PathVariable UUID publicationId) {
-    try {
-      return toResponse(media.attachToPublication(currentMemberId, assetId, publicationId));
-    } catch (MediaAssetNotFoundException | MediaPublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (MediaOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (MediaAttachmentLimitException exception) {
-      throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "Publication attachment limit reached");
-    } catch (MediaAssetStateException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Upload is not attachable");
-    }
+    return toResponse(media.attachToPublication(currentMemberId, assetId, publicationId));
   }
 
   private MediaResponse toResponse(UploadAssetEntity asset) {
