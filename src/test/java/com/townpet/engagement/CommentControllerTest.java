@@ -356,7 +356,9 @@ class CommentControllerTest {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"version\":0,\"body\":\"다른 게시글 경로로 수정\"}"))
-        .andExpect(status().isNotFound());
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code").value("COMMENT_NOT_FOUND"))
+        .andExpect(jsonPath("$.traceId").isNotEmpty());
     mockMvc
         .perform(get("/api/v1/publications/{publicationId}/comments", publicationId))
         .andExpect(status().isOk())
@@ -404,7 +406,8 @@ class CommentControllerTest {
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"version\":0,\"body\":\"회원이 바꾼 댓글\"}"))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("COMMENT_OWNERSHIP"));
     mockMvc
         .perform(
             delete(

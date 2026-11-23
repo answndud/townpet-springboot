@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.DomainProblemException;
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
 import java.time.Clock;
@@ -7,6 +8,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,4 +74,8 @@ class BookmarkService {
   record BookmarkState(boolean active) {}
 }
 
-final class BookmarkPublicationNotFoundException extends RuntimeException {}
+final class BookmarkPublicationNotFoundException extends DomainProblemException {
+  BookmarkPublicationNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "BOOKMARK_PUBLICATION_NOT_FOUND");
+  }
+}

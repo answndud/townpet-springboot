@@ -64,18 +64,12 @@ class GuestCommentController {
         clientAddress.resolve(httpRequest) + ":" + publicationId + ":" + normalizeForDuplicateCheck(request.body()),
         1,
         Duration.ofMinutes(10));
-    try {
-      return response(
-          comments.createGuest(
-              request.password(),
-              publicationId,
-              request.parentCommentId(),
-              request.body()));
-    } catch (CommentPublicationNotFoundException | CommentNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (CommentReplyDepthExceededException exception) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Replies can only be one level deep");
-    }
+    return response(
+        comments.createGuest(
+            request.password(),
+            publicationId,
+            request.parentCommentId(),
+            request.body()));
   }
 
   @DeleteMapping("/{commentId}")
@@ -89,16 +83,8 @@ class GuestCommentController {
     requireEnabled();
     rateLimiter.requireCapacity(
         "guest-content-ip", clientAddress.resolve(httpRequest), 120, Duration.ofHours(1));
-    try {
-      rateLimiter.requireCapacity("guest-comment-password-check", clientAddress.resolve(httpRequest), 20, Duration.ofHours(1));
-      comments.deleteGuest(request.password(), publicationId, commentId, request.version());
-    } catch (CommentPublicationNotFoundException | CommentNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (CommentOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (CommentVersionConflictException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT);
-    }
+    rateLimiter.requireCapacity("guest-comment-password-check", clientAddress.resolve(httpRequest), 20, Duration.ofHours(1));
+    comments.deleteGuest(request.password(), publicationId, commentId, request.version());
   }
 
   @PatchMapping("/{commentId}")
@@ -111,15 +97,7 @@ class GuestCommentController {
     requireEnabled();
     rateLimiter.requireCapacity("guest-content-ip", clientAddress.resolve(httpRequest), 120, Duration.ofHours(1));
     rateLimiter.requireCapacity("guest-comment-password-check", clientAddress.resolve(httpRequest), 20, Duration.ofHours(1));
-    try {
-      return response(comments.editGuest(request.password(), publicationId, commentId, request.version(), request.body()));
-    } catch (CommentPublicationNotFoundException | CommentNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (CommentOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (CommentVersionConflictException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT);
-    }
+    return response(comments.editGuest(request.password(), publicationId, commentId, request.version(), request.body()));
   }
 
   private void requireEnabled() {

@@ -1,5 +1,6 @@
 package com.townpet.common.web;
 
+import com.townpet.common.DomainProblemException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolationException;
@@ -69,6 +70,12 @@ public class GlobalProblemHandler {
       HttpServletRequest request,
       HttpServletResponse response) {
     return problem(HttpStatus.PAYLOAD_TOO_LARGE, "PAYLOAD_TOO_LARGE", request, response);
+  }
+
+  @ExceptionHandler(DomainProblemException.class)
+  ProblemDetail handleDomainProblem(
+      DomainProblemException exception, HttpServletRequest request, HttpServletResponse response) {
+    return problem(exception.status(), exception.code(), request, response);
   }
 
   @ExceptionHandler(ResponseStatusException.class)

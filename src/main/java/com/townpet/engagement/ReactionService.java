@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.DomainProblemException;
 import com.townpet.common.UuidV7;
 import com.townpet.notification.api.NotificationEvent;
 import com.townpet.publication.api.ActivePublication;
@@ -10,6 +11,7 @@ import java.time.Instant;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,4 +93,8 @@ class ReactionService {
   record ReactionState(boolean active, long count) {}
 }
 
-final class ReactionPublicationNotFoundException extends RuntimeException {}
+final class ReactionPublicationNotFoundException extends DomainProblemException {
+  ReactionPublicationNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "REACTION_PUBLICATION_NOT_FOUND");
+  }
+}

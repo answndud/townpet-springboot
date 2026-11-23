@@ -1,5 +1,6 @@
 package com.townpet.engagement;
 
+import com.townpet.common.DomainProblemException;
 import com.townpet.common.UuidV7;
 import com.townpet.notification.api.NotificationEvent;
 import com.townpet.publication.api.ActivePublication;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -216,12 +218,32 @@ class CommentService {
   }
 }
 
-final class CommentPublicationNotFoundException extends RuntimeException {}
+final class CommentPublicationNotFoundException extends DomainProblemException {
+  CommentPublicationNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "COMMENT_PUBLICATION_NOT_FOUND");
+  }
+}
 
-final class CommentNotFoundException extends RuntimeException {}
+final class CommentNotFoundException extends DomainProblemException {
+  CommentNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "COMMENT_NOT_FOUND");
+  }
+}
 
-final class CommentOwnershipException extends RuntimeException {}
+final class CommentOwnershipException extends DomainProblemException {
+  CommentOwnershipException() {
+    super(HttpStatus.FORBIDDEN, "COMMENT_OWNERSHIP");
+  }
+}
 
-final class CommentVersionConflictException extends RuntimeException {}
+final class CommentVersionConflictException extends DomainProblemException {
+  CommentVersionConflictException() {
+    super(HttpStatus.CONFLICT, "COMMENT_VERSION_CONFLICT");
+  }
+}
 
-final class CommentReplyDepthExceededException extends RuntimeException {}
+final class CommentReplyDepthExceededException extends DomainProblemException {
+  CommentReplyDepthExceededException() {
+    super(HttpStatus.BAD_REQUEST, "COMMENT_REPLY_DEPTH_EXCEEDED");
+  }
+}

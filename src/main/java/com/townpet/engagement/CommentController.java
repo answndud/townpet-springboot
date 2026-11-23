@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping({
@@ -38,14 +37,10 @@ class CommentController {
   @GetMapping
   CommentListResponse list(
       @PathVariable UUID publicationId, @CurrentMember(required = false) @Nullable UUID currentMemberId) {
-    try {
-      return new CommentListResponse(
-              comments.list(publicationId, currentMemberId).stream()
-              .map(CommentController::toResponse)
-              .toList());
-    } catch (CommentPublicationNotFoundException | CommentNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    }
+    return new CommentListResponse(
+            comments.list(publicationId, currentMemberId).stream()
+            .map(CommentController::toResponse)
+            .toList());
   }
 
   @PostMapping
@@ -54,16 +49,10 @@ class CommentController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID publicationId,
       @Valid @RequestBody CreateCommentRequest request) {
-    try {
-      CommentEntity comment =
-          comments.create(
-              currentMemberId, publicationId, request.parentCommentId(), request.body());
-      return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(comment));
-    } catch (CommentPublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (CommentReplyDepthExceededException exception) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Replies can only be one level deep");
-    }
+    CommentEntity comment =
+        comments.create(
+            currentMemberId, publicationId, request.parentCommentId(), request.body());
+    return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(comment));
   }
 
   @DeleteMapping("/{commentId}")
@@ -73,17 +62,8 @@ class CommentController {
       @PathVariable UUID publicationId,
       @PathVariable UUID commentId,
       @Valid @RequestBody DeleteCommentRequest request) {
-    try {
-      comments.delete(currentMemberId, publicationId, commentId, request.version());
-      return ResponseEntity.noContent().build();
-    } catch (CommentNotFoundException | CommentPublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (CommentOwnershipException exception) {
-      throw new ResponseStatusException(
-          HttpStatus.FORBIDDEN, "Only the author can delete this comment");
-    } catch (CommentVersionConflictException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Comment has changed");
-    }
+    comments.delete(currentMemberId, publicationId, commentId, request.version());
+    return ResponseEntity.noContent().build();
   }
 
   @PatchMapping("/{commentId}")
@@ -93,17 +73,9 @@ class CommentController {
       @PathVariable UUID publicationId,
       @PathVariable UUID commentId,
       @Valid @RequestBody EditCommentRequest request) {
-    try {
-      return toResponse(
-          comments.edit(
-              currentMemberId, publicationId, commentId, request.version(), request.body()));
-    } catch (CommentNotFoundException | CommentPublicationNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (CommentOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (CommentVersionConflictException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT);
-    }
+    return toResponse(
+        comments.edit(
+            currentMemberId, publicationId, commentId, request.version(), request.body()));
   }
 
   private static CommentResponse toResponse(CommentEntity comment) {
