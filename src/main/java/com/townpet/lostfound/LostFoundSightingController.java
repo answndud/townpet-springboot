@@ -51,10 +51,6 @@ class LostFoundSightingController {
               request.longitude(),
               request.exactLatitude(),
               request.exactLongitude()));
-    } catch (LostFoundAlertNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (LostFoundAlertStateException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Alert does not accept sightings");
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Exact location is incomplete");
     }
@@ -67,13 +63,9 @@ class LostFoundSightingController {
     if (limit < 1 || limit > 50) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "limit must be between 1 and 50");
     }
-    try {
-      return sightings.listForAlert(alertId, limit).stream()
-          .map(LostFoundSightingController::toResponse)
-          .toList();
-    } catch (LostFoundAlertNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    }
+    return sightings.listForAlert(alertId, limit).stream()
+        .map(LostFoundSightingController::toResponse)
+        .toList();
   }
 
   @GetMapping("/sightings/{sightingId}")

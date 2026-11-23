@@ -1,11 +1,13 @@
 package com.townpet.lostfound;
 
+import com.townpet.common.DomainProblemException;
 import com.townpet.common.UuidV7;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -205,8 +207,20 @@ class LostFoundAlertService {
       String closeReason) {}
 }
 
-final class LostFoundAlertNotFoundException extends RuntimeException {}
+final class LostFoundAlertNotFoundException extends DomainProblemException {
+  LostFoundAlertNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "LOST_FOUND_ALERT_NOT_FOUND");
+  }
+}
 
-final class LostFoundAlertOwnershipException extends RuntimeException {}
+final class LostFoundAlertOwnershipException extends DomainProblemException {
+  LostFoundAlertOwnershipException() {
+    super(HttpStatus.FORBIDDEN, "LOST_FOUND_ALERT_OWNERSHIP");
+  }
+}
 
-final class LostFoundAlertStateException extends RuntimeException {}
+final class LostFoundAlertStateException extends DomainProblemException {
+  LostFoundAlertStateException() {
+    super(HttpStatus.CONFLICT, "LOST_FOUND_ALERT_STATE");
+  }
+}

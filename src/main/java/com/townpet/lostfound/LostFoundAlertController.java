@@ -101,22 +101,14 @@ class LostFoundAlertController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID alertId,
       @Valid @RequestBody ChangeStatusRequest request) {
-    try {
-      return toResponse(
-          alerts.changeStatus(
-              currentMemberId,
-              alertId,
-              request.status(),
-              request.resolutionOutcome(),
-              request.closeReason(),
-              request.reopenReason()));
-    } catch (LostFoundAlertNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (LostFoundAlertOwnershipException exception) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-    } catch (LostFoundAlertStateException exception) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Invalid alert status transition");
-    }
+    return toResponse(
+        alerts.changeStatus(
+            currentMemberId,
+            alertId,
+            request.status(),
+            request.resolutionOutcome(),
+            request.closeReason(),
+            request.reopenReason()));
   }
 
   private static AlertResponse toResponse(LostFoundAlertService.AlertView alert) {
