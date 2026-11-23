@@ -33,7 +33,7 @@ class TrustReportEntity {
   protected TrustReportEntity() {}
 
   TrustReportEntity(
-      UUID id, UUID reporter, String targetType, UUID targetId, String reason, String detail) {
+      UUID id, UUID reporter, String targetType, UUID targetId, String reason, String detail, Instant now) {
     this.id = id;
     this.reporterMemberId = reporter;
     this.targetType = targetType;
@@ -41,7 +41,7 @@ class TrustReportEntity {
     this.reason = reason;
     this.detail = detail;
     this.status = "OPEN";
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   UUID getId() {

@@ -6,6 +6,7 @@ import com.townpet.common.UuidV7;
 import com.townpet.engagement.api.CommentModeration;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.http.*;
@@ -18,11 +19,14 @@ import org.springframework.web.server.ResponseStatusException;
 @Validated
 class TrustReportController {
   private final TrustReportRepository reports;
+  private final Clock clock;
   private final CommentModeration comments;
 
-  TrustReportController(TrustReportRepository reports, CommentModeration comments) {
+  TrustReportController(TrustReportRepository reports, CommentModeration comments,
+      Clock clock) {
     this.reports = reports;
     this.comments = comments;
+    this.clock = clock;
   }
 
   @PostMapping
@@ -48,7 +52,7 @@ class TrustReportController {
                 r.targetType(),
                 r.targetId(),
                 r.reason(),
-                r.detail())));
+                r.detail(), Instant.now(clock))));
   }
 
   @GetMapping
