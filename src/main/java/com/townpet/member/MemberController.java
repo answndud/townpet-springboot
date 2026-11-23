@@ -5,6 +5,8 @@ import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -25,12 +27,15 @@ public class MemberController {
   private final MemberRepository members;
   private final MemberProfileRepository profiles;
   private final MemberPetRepository pets;
+  private final Clock clock;
 
   public MemberController(
-      MemberRepository members, MemberProfileRepository profiles, MemberPetRepository pets) {
+      MemberRepository members, MemberProfileRepository profiles, MemberPetRepository pets,
+      Clock clock) {
     this.members = members;
     this.profiles = profiles;
     this.pets = pets;
+    this.clock = clock;
   }
 
   @GetMapping("/me")
@@ -58,13 +63,13 @@ public class MemberController {
             .findByMemberId(member.getId())
             .map(
                 existing -> {
-                  existing.update(request.bio(), request.neighborhoodId());
+                  existing.update(request.bio(), request.neighborhoodId(), Instant.now(clock));
                   return existing;
                 })
             .orElseGet(
                 () ->
                     new MemberProfileEntity(
-                        member.getId(), request.bio(), request.neighborhoodId()));
+                        member.getId(), request.bio(), request.neighborhoodId(), Instant.now(clock)));
     profiles.save(profile);
     pets.deleteAllByMemberId(member.getId());
     List<MemberPetEntity> savedPets =
@@ -72,7 +77,7 @@ public class MemberController {
             .map(
                 pet ->
                     new MemberPetEntity(
-                        UUID.randomUUID(), member.getId(), pet.name(), pet.species()))
+                        UUID.randomUUID(), member.getId(), pet.name(), pet.species(), Instant.now(clock)))
             .toList();
     pets.saveAll(savedPets);
     return toResponse(principal, member, profile, savedPets);
@@ -95,20 +100,20 @@ public class MemberController {
                       request.showPublicPosts(),
                       request.showPublicComments(),
                       request.showPublicPets(),
-                      request.showPublicReactions());
+                      request.showPublicReactions(), Instant.now(clock));
                   if (request.bio() != null)
-                    existing.update(request.bio(), existing.getNeighborhoodId());
+                    existing.update(request.bio(), existing.getNeighborhoodId(), Instant.now(clock));
                   return existing;
                 })
             .orElseGet(
                 () -> {
                   MemberProfileEntity created =
-                      new MemberProfileEntity(member.getId(), request.bio(), null);
+                      new MemberProfileEntity(member.getId(), request.bio(), null, Instant.now(clock));
                   created.updateVisibility(
                       request.showPublicPosts(),
                       request.showPublicComments(),
                       request.showPublicPets(),
-                      request.showPublicReactions());
+                      request.showPublicReactions(), Instant.now(clock));
                   return created;
                 });
     profiles.save(profile);

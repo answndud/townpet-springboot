@@ -20,10 +20,15 @@ public class MemberEntity {
 
   protected MemberEntity() {}
 
+  /** Creates a member stamped with the current time; prefer the overload taking the time. */
   public MemberEntity(UUID id, String nickname) {
+    this(id, nickname, Instant.now());
+  }
+
+  public MemberEntity(UUID id, String nickname, Instant now) {
     this.id = id;
     this.nickname = nickname;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   public UUID getId() {

@@ -26,12 +26,17 @@ public class MemberPetEntity {
 
   protected MemberPetEntity() {}
 
+  /** Creates a pet stamped with the current time; prefer the overload taking the time. */
   public MemberPetEntity(UUID id, UUID memberId, String name, String species) {
+    this(id, memberId, name, species, Instant.now());
+  }
+
+  public MemberPetEntity(UUID id, UUID memberId, String name, String species, Instant now) {
     this.id = id;
     this.memberId = memberId;
     this.name = name;
     this.species = species;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   public UUID getId() {

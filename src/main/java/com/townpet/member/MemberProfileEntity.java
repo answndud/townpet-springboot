@@ -38,34 +38,35 @@ public class MemberProfileEntity {
 
   protected MemberProfileEntity() {}
 
-  public MemberProfileEntity(UUID memberId, @Nullable String bio, @Nullable UUID neighborhoodId) {
+  public MemberProfileEntity(UUID memberId, @Nullable String bio, @Nullable UUID neighborhoodId, Instant now) {
     this.memberId = memberId;
     this.bio = bio;
     this.neighborhoodId = neighborhoodId;
-    this.updatedAt = Instant.now();
+    this.updatedAt = now;
   }
 
-  public void update(@Nullable String bio, @Nullable UUID neighborhoodId) {
+  public void update(@Nullable String bio, @Nullable UUID neighborhoodId, Instant now) {
     this.bio = bio;
     this.neighborhoodId = neighborhoodId;
-    this.updatedAt = Instant.now();
+    this.updatedAt = now;
   }
 
   public void updateVisibility(
-      boolean showPublicPosts, boolean showPublicComments, boolean showPublicPets) {
-    updateVisibility(showPublicPosts, showPublicComments, showPublicPets, true);
+      boolean showPublicPosts, boolean showPublicComments, boolean showPublicPets, Instant now) {
+    updateVisibility(showPublicPosts, showPublicComments, showPublicPets, true, now);
   }
 
   public void updateVisibility(
       boolean showPublicPosts,
       boolean showPublicComments,
       boolean showPublicPets,
-      boolean showPublicReactions) {
+      boolean showPublicReactions,
+      Instant now) {
     this.showPublicPosts = showPublicPosts;
     this.showPublicComments = showPublicComments;
     this.showPublicPets = showPublicPets;
     this.showPublicReactions = showPublicReactions;
-    this.updatedAt = Instant.now();
+    this.updatedAt = now;
   }
 
   public UUID getMemberId() {
