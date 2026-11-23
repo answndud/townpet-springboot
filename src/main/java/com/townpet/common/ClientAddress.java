@@ -2,17 +2,27 @@ package com.townpet.common;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
-/** Resolves the client address used by local abuse limits behind the Caddy reverse proxy. */
+/**
+ * Resolves the client address used by local abuse limits behind the Caddy reverse proxy.
+ *
+ * <p>{@code X-Forwarded-For} is only read when the socket peer is a trusted proxy. Each proxy
+ * appends the address it received the request from, so the list is walked from the right and the
+ * first address that is not a trusted proxy is the client. Everything to the left of it is
+ * client-controlled and ignored. Only IP literals are accepted, so a header value can never
+ * trigger a DNS lookup.
+ */
 @Component
 public final class ClientAddress {
+  private static final String FORWARDED_FOR = "X-Forwarded-For";
+
   private final List<Cidr> trustedProxies;
 
   public ClientAddress(@Value("${townpet.security.trusted-proxy-cidrs:}") String configuredCidrs) {
@@ -21,26 +31,35 @@ public final class ClientAddress {
 
   public String resolve(HttpServletRequest request) {
     String remoteAddress = request.getRemoteAddr();
-    String forwarded = request.getHeader("X-Forwarded-For");
-    if (isTrustedProxy(remoteAddress) && forwarded != null && !forwarded.isBlank()) {
-      String first = forwarded.split(",", 2)[0].trim();
-      if (isAddress(first)) return first;
+    InetAddress peer = literal(remoteAddress);
+    if (peer == null || !isTrustedProxy(peer)) return remoteAddress;
+    String forwarded = request.getHeader(FORWARDED_FOR);
+    if (forwarded == null || forwarded.isBlank()) return remoteAddress;
+
+    String[] hops = forwarded.split(",");
+    String client = null;
+    for (int index = hops.length - 1; index >= 0; index--) {
+      InetAddress hop = literal(hops[index].trim());
+      // A malformed hop cannot be attributed to any proxy, so stop trusting the list here.
+      if (hop == null) break;
+      client = hop.getHostAddress();
+      if (!isTrustedProxy(hop)) return client;
     }
-    return remoteAddress;
+    return client != null ? client : remoteAddress;
   }
 
-  private boolean isTrustedProxy(String address) {
-    if (address == null || address.isBlank()) return false;
+  private boolean isTrustedProxy(InetAddress address) {
     return trustedProxies.stream().anyMatch(cidr -> cidr.contains(address));
   }
 
-  private static boolean isAddress(String value) {
-    if (value.isBlank() || value.indexOf(' ') >= 0 || value.indexOf('\t') >= 0) return false;
+  /** Parses an IP literal without ever resolving a host name. */
+  @Nullable
+  private static InetAddress literal(@Nullable String value) {
+    if (value == null || value.isBlank()) return null;
     try {
-      InetAddress.getByName(value);
-      return true;
-    } catch (UnknownHostException exception) {
-      return false;
+      return InetAddress.ofLiteral(value.trim());
+    } catch (IllegalArgumentException exception) {
+      return null;
     }
   }
 
@@ -65,35 +84,31 @@ public final class ClientAddress {
 
     private static Cidr parse(String value) {
       String[] parts = value.split("/", 2);
+      InetAddress address = literal(parts[0]);
+      if (address == null) throw new IllegalArgumentException("Invalid trusted proxy CIDR: " + value);
       try {
-        InetAddress address = InetAddress.getByName(parts[0]);
         int prefix =
             parts.length == 2 ? Integer.parseInt(parts[1]) : address.getAddress().length * 8;
         if (prefix < 0 || prefix > address.getAddress().length * 8) {
           throw new IllegalArgumentException("Invalid trusted proxy CIDR: " + value);
         }
         return new Cidr(address.getAddress(), prefix);
-      } catch (UnknownHostException | NumberFormatException exception) {
+      } catch (NumberFormatException exception) {
         throw new IllegalArgumentException("Invalid trusted proxy CIDR: " + value, exception);
       }
     }
 
-    private boolean contains(String value) {
-      try {
-        byte[] candidate = InetAddress.getByName(value).getAddress();
-        if (candidate.length != network.length) return false;
-        int fullBytes = prefixLength / 8;
-        int remainingBits = prefixLength % 8;
-        if (!Arrays.equals(
-            Arrays.copyOf(candidate, fullBytes), Arrays.copyOf(network, fullBytes))) {
-          return false;
-        }
-        if (remainingBits == 0) return true;
-        int mask = 0xff << (8 - remainingBits);
-        return (candidate[fullBytes] & mask) == (network[fullBytes] & mask);
-      } catch (UnknownHostException exception) {
+    private boolean contains(InetAddress address) {
+      byte[] candidate = address.getAddress();
+      if (candidate.length != network.length) return false;
+      int fullBytes = prefixLength / 8;
+      int remainingBits = prefixLength % 8;
+      if (!Arrays.equals(Arrays.copyOf(candidate, fullBytes), Arrays.copyOf(network, fullBytes))) {
         return false;
       }
+      if (remainingBits == 0) return true;
+      int mask = 0xff << (8 - remainingBits);
+      return (candidate[fullBytes] & mask) == (network[fullBytes] & mask);
     }
   }
 }
