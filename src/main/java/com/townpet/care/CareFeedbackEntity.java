@@ -24,12 +24,12 @@ class CareFeedbackEntity {
 
   protected CareFeedbackEntity() {}
 
-  CareFeedbackEntity(UUID assignment, UUID author, String body) {
+  CareFeedbackEntity(UUID assignment, UUID author, String body, Instant now) {
     id = UuidV7.randomUuid();
     assignmentId = assignment;
     authorMemberId = author;
     this.body = body.trim();
-    createdAt = Instant.now();
+    createdAt = now;
   }
 
   UUID getId() {

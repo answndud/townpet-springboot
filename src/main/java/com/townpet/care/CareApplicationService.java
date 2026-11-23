@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -9,11 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class CareApplicationService {
   private final CareRequestRepository requests;
+  private final Clock clock;
   private final CareApplicationRepository applications;
 
-  CareApplicationService(CareRequestRepository requests, CareApplicationRepository applications) {
+  CareApplicationService(CareRequestRepository requests, CareApplicationRepository applications,
+      Clock clock) {
     this.requests = requests;
     this.applications = applications;
+    this.clock = clock;
   }
 
   @Transactional
@@ -22,14 +26,14 @@ class CareApplicationService {
         requests
             .findByIdAndStatus(requestId, CareRequestStatus.OPEN)
             .orElseThrow(NoSuchElementException::new);
-    if (!request.getStartsAt().isAfter(Instant.now()))
+    if (!request.getStartsAt().isAfter(Instant.now(clock)))
       throw new IllegalStateException("Request has expired");
     if (request.getRequesterMemberId().equals(applicant))
       throw new IllegalArgumentException("Requester cannot apply");
     if (applications.findByRequestIdAndApplicantMemberId(requestId, applicant).isPresent())
       throw new IllegalStateException("Already applied");
     try {
-      return applications.saveAndFlush(new CareApplicationEntity(requestId, applicant, message));
+      return applications.saveAndFlush(new CareApplicationEntity(requestId, applicant, message, Instant.now(clock)));
     } catch (DataIntegrityViolationException e) {
       throw new IllegalStateException("Already applied", e);
     }
@@ -56,7 +60,7 @@ class CareApplicationService {
     if (request.getStatus() != CareRequestStatus.OPEN) {
       throw new IllegalStateException("Request is no longer open");
     }
-    if (!request.getStartsAt().isAfter(Instant.now())) {
+    if (!request.getStartsAt().isAfter(Instant.now(clock))) {
       throw new IllegalStateException("Request has expired");
     }
     if (status != CareApplicationStatus.ACCEPTED && status != CareApplicationStatus.DECLINED) {
@@ -67,7 +71,7 @@ class CareApplicationService {
             .findByIdAndRequestId(applicationId, requestId)
             .orElseThrow(NoSuchElementException::new);
     if (application.getVersion() != version) throw new IllegalStateException("version conflict");
-    application.changeStatus(status);
+    application.changeStatus(status, Instant.now(clock));
     return applications.saveAndFlush(application);
   }
 }

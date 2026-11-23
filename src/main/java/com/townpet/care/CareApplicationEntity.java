@@ -33,24 +33,24 @@ class CareApplicationEntity {
 
   protected CareApplicationEntity() {}
 
-  CareApplicationEntity(UUID requestId, UUID applicantMemberId, String message) {
+  CareApplicationEntity(UUID requestId, UUID applicantMemberId, String message, Instant now) {
     this.id = UuidV7.randomUuid();
     this.requestId = requestId;
     this.applicantMemberId = applicantMemberId;
     this.message = message.trim();
     this.status = CareApplicationStatus.PENDING;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
     this.updatedAt = createdAt;
   }
 
-  void changeStatus(CareApplicationStatus next) {
+  void changeStatus(CareApplicationStatus next, Instant now) {
     if (status != CareApplicationStatus.PENDING)
       throw new IllegalStateException("Application is not pending");
     if (next != CareApplicationStatus.ACCEPTED && next != CareApplicationStatus.DECLINED) {
       throw new IllegalStateException("Invalid application transition");
     }
     status = next;
-    updatedAt = Instant.now();
+    updatedAt = now;
   }
 
   UUID getId() {

@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.stereotype.Service;
@@ -8,15 +9,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class CareRequestService {
   private final CareRequestRepository requests;
+  private final Clock clock;
 
-  CareRequestService(CareRequestRepository requests) {
+  CareRequestService(CareRequestRepository requests,
+      Clock clock) {
     this.requests = requests;
+    this.clock = clock;
   }
 
   @Transactional(readOnly = true)
   List<CareRequestEntity> open() {
     return requests.findTop100ByStatusAndStartsAtAfterOrderByStartsAtAscIdAsc(
-        CareRequestStatus.OPEN, Instant.now());
+        CareRequestStatus.OPEN, Instant.now(clock));
   }
 
   @Transactional(readOnly = true)
@@ -38,7 +42,14 @@ class CareRequestService {
     CareRequestEntity request =
         requests.saveAndFlush(
             new CareRequestEntity(
-                memberId, title, description, location, startsAt, endsAt, rewardHint));
+                memberId,
+                title,
+                description,
+                location,
+                startsAt,
+                endsAt,
+                rewardHint,
+                Instant.now(clock)));
     return new CreateResult(request);
   }
 
@@ -50,7 +61,7 @@ class CareRequestService {
             .orElseThrow(NoSuchElementException::new);
     if (!request.getRequesterMemberId().equals(memberId)) throw new SecurityException();
     if (request.getVersion() != version) throw new IllegalStateException("version conflict");
-    request.cancel();
+    request.cancel(Instant.now(clock));
     requests.saveAndFlush(request);
   }
 

@@ -30,16 +30,16 @@ class CareAssignmentEntity {
 
   protected CareAssignmentEntity() {}
 
-  CareAssignmentEntity(UUID requestId, UUID caregiver) {
+  CareAssignmentEntity(UUID requestId, UUID caregiver, Instant now) {
     id = UuidV7.randomUuid();
     this.requestId = requestId;
     caregiverMemberId = caregiver;
     status = CareAssignmentStatus.MATCHED;
-    createdAt = Instant.now();
+    createdAt = now;
     updatedAt = createdAt;
   }
 
-  void transition(CareAssignmentStatus next) {
+  void transition(CareAssignmentStatus next, Instant now) {
     boolean allowed =
         (status == CareAssignmentStatus.MATCHED
                 && (next == CareAssignmentStatus.IN_PROGRESS
@@ -53,7 +53,7 @@ class CareAssignmentEntity {
                     || next == CareAssignmentStatus.ABORTED));
     if (!allowed) throw new IllegalStateException("Invalid assignment transition");
     status = next;
-    updatedAt = Instant.now();
+    updatedAt = now;
   }
 
   UUID getId() {

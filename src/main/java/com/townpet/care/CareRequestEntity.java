@@ -54,7 +54,7 @@ class CareRequestEntity {
       String location,
       Instant startsAt,
       Instant endsAt,
-      String rewardHint) {
+      String rewardHint, Instant now) {
     this.id = UuidV7.randomUuid();
     this.requesterMemberId = requester;
     this.title = title.trim();
@@ -64,22 +64,22 @@ class CareRequestEntity {
     this.endsAt = endsAt;
     this.rewardHint = rewardHint == null || rewardHint.isBlank() ? null : rewardHint.trim();
     this.status = CareRequestStatus.OPEN;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
     this.updatedAt = createdAt;
   }
 
-  void cancel() {
+  void cancel(Instant now) {
     if (status != CareRequestStatus.OPEN)
       throw new IllegalStateException("Care request is not open");
     status = CareRequestStatus.CANCELLED;
-    updatedAt = Instant.now();
+    updatedAt = now;
   }
 
-  void markMatched() {
+  void markMatched(Instant now) {
     if (status != CareRequestStatus.OPEN)
       throw new IllegalStateException("Care request is not open");
     status = CareRequestStatus.MATCHED;
-    updatedAt = Instant.now();
+    updatedAt = now;
   }
 
   UUID getId() {

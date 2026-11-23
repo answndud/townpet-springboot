@@ -1,5 +1,6 @@
 package com.townpet.care;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 import org.springframework.stereotype.Service;
@@ -10,17 +11,20 @@ class CareAssignmentService {
   private final CareRequestRepository requests;
   private final CareApplicationRepository applications;
   private final CareAssignmentRepository assignments;
+  private final Clock clock;
   private final CareFeedbackRepository feedbacks;
 
   CareAssignmentService(
       CareRequestRepository r,
       CareApplicationRepository a,
       CareAssignmentRepository s,
-      CareFeedbackRepository f) {
+      CareFeedbackRepository f,
+      Clock clock) {
     requests = r;
     applications = a;
     assignments = s;
     feedbacks = f;
+    this.clock = clock;
   }
 
   @Transactional
@@ -48,12 +52,13 @@ class CareAssignmentService {
             .findByIdAndRequestId(applicationId, requestId)
             .orElseThrow(NoSuchElementException::new);
     if (application.getVersion() != appVersion) throw new IllegalStateException("version conflict");
-    application.changeStatus(CareApplicationStatus.ACCEPTED);
+    application.changeStatus(CareApplicationStatus.ACCEPTED, Instant.now(clock));
     applications.save(application);
-    applications.declineOtherPending(requestId, application.getId(), Instant.now());
+    applications.declineOtherPending(requestId, application.getId(), Instant.now(clock));
     CareAssignmentEntity assignment =
-        assignments.save(new CareAssignmentEntity(requestId, application.getApplicantMemberId()));
-    request.markMatched();
+        assignments.save(new CareAssignmentEntity(
+                requestId, application.getApplicantMemberId(), Instant.now(clock)));
+    request.markMatched(Instant.now(clock));
     requests.save(request);
     return assignments.saveAndFlush(assignment);
   }
@@ -71,7 +76,7 @@ class CareAssignmentService {
         && !request.getRequesterMemberId().equals(actor)) throw new SecurityException();
     if (status == CareAssignmentStatus.CANCELLED_BY_CAREGIVER
         && !assignment.getCaregiverMemberId().equals(actor)) throw new SecurityException();
-    assignment.transition(status);
+    assignment.transition(status, Instant.now(clock));
     return assignments.saveAndFlush(assignment);
   }
 
@@ -87,6 +92,6 @@ class CareAssignmentService {
       throw new SecurityException();
     if (feedbacks.existsByAssignmentIdAndAuthorMemberId(assignmentId, author))
       throw new IllegalStateException("Feedback already exists");
-    return feedbacks.saveAndFlush(new CareFeedbackEntity(assignmentId, author, body));
+    return feedbacks.saveAndFlush(new CareFeedbackEntity(assignmentId, author, body, Instant.now(clock)));
   }
 }
