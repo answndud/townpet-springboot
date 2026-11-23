@@ -39,10 +39,10 @@ class BookmarkEntity {
     return createdAt;
   }
 
-  BookmarkEntity(UUID publicationId, UUID memberId) {
+  BookmarkEntity(UUID publicationId, UUID memberId, Instant now) {
     this.id = UuidV7.randomUuid();
     this.publicationId = publicationId;
     this.memberId = memberId;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 }

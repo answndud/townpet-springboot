@@ -1,6 +1,7 @@
 package com.townpet.engagement;
 
 import com.townpet.engagement.api.CommentModeration;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -16,11 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 class CommentModerationAdapter implements CommentModeration {
   private final CommentRepository comments;
+  private final Clock clock;
   private final EntityManager entityManager;
 
-  CommentModerationAdapter(CommentRepository comments, EntityManager entityManager) {
+  CommentModerationAdapter(CommentRepository comments, EntityManager entityManager,
+      Clock clock) {
     this.comments = comments;
     this.entityManager = entityManager;
+  
+    this.clock = clock;
   }
 
   @Override
@@ -76,7 +81,7 @@ class CommentModerationAdapter implements CommentModeration {
         .filter(comment -> comment.getLifecycle() == CommentLifecycle.ACTIVE)
         .map(
             comment -> {
-              comment.deleteByModerator(Instant.now());
+              comment.deleteByModerator(Instant.now(clock));
               return view(comments.saveAndFlush(comment));
             });
   }
@@ -89,7 +94,7 @@ class CommentModerationAdapter implements CommentModeration {
         .filter(comment -> comment.getLifecycle() == CommentLifecycle.MODERATOR_DELETED)
         .map(
             comment -> {
-              comment.restoreByModerator(Instant.now());
+              comment.restoreByModerator(Instant.now(clock));
               return view(comments.saveAndFlush(comment));
             });
   }

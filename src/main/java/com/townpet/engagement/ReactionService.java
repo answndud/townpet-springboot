@@ -5,6 +5,8 @@ import com.townpet.notification.api.NotificationEvent;
 import com.townpet.publication.api.ActivePublication;
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,17 +21,21 @@ class ReactionService {
   private final ReactionRepository reactions;
   private final PublicationAccess publications;
   private final BlockDirectory blocks;
+  private final Clock clock;
   private final ApplicationEventPublisher events;
 
   ReactionService(
       ReactionRepository reactions,
       PublicationAccess publications,
       BlockDirectory blocks,
-      ApplicationEventPublisher events) {
+      ApplicationEventPublisher events,
+      Clock clock) {
     this.reactions = reactions;
     this.publications = publications;
     this.blocks = blocks;
     this.events = events;
+  
+    this.clock = clock;
   }
 
   @Transactional(readOnly = true)
@@ -50,7 +56,7 @@ class ReactionService {
         reactions.findByPublicationIdAndAuthorMemberIdAndType(publicationId, memberId, TYPE);
     if (active && existing.isEmpty()) {
       try {
-        reactions.saveAndFlush(new ReactionEntity(publicationId, memberId, TYPE));
+        reactions.saveAndFlush(new ReactionEntity(publicationId, memberId, TYPE, Instant.now(clock)));
         publications
             .findActive(publicationId)
             .map(ActivePublication::authorMemberId)

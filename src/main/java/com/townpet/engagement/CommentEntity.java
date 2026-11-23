@@ -45,19 +45,19 @@ class CommentEntity {
   protected CommentEntity() {}
 
   CommentEntity(
-      UUID publicationId, UUID authorMemberId, @Nullable UUID parentCommentId, String body) {
+      UUID publicationId, UUID authorMemberId, @Nullable UUID parentCommentId, String body, Instant now) {
     this.id = UuidV7.randomUuid();
     this.publicationId = publicationId;
     this.authorMemberId = authorMemberId;
     this.parentCommentId = parentCommentId;
     this.body = body;
     this.lifecycle = CommentLifecycle.ACTIVE;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
     this.updatedAt = createdAt;
   }
 
   static CommentEntity forGuest(
-      UUID publicationId, UUID guestAuthorId, @Nullable UUID parentCommentId, String body) {
+      UUID publicationId, UUID guestAuthorId, @Nullable UUID parentCommentId, String body, Instant now) {
     CommentEntity comment = new CommentEntity();
     comment.id = UuidV7.randomUuid();
     comment.publicationId = publicationId;
@@ -65,7 +65,7 @@ class CommentEntity {
     comment.parentCommentId = parentCommentId;
     comment.body = body.trim();
     comment.lifecycle = CommentLifecycle.ACTIVE;
-    comment.createdAt = Instant.now();
+    comment.createdAt = now;
     comment.updatedAt = comment.createdAt;
     return comment;
   }

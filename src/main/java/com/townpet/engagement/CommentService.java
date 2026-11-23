@@ -6,6 +6,7 @@ import com.townpet.publication.api.ActivePublication;
 import com.townpet.publication.api.GuestDirectory;
 import com.townpet.publication.api.PublicationAccess;
 import com.townpet.relationship.api.BlockDirectory;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -22,18 +23,22 @@ class CommentService {
   private final BlockDirectory blocks;
   private final GuestDirectory guests;
   private final ApplicationEventPublisher events;
+  private final Clock clock;
 
   CommentService(
       CommentRepository comments,
       PublicationAccess publications,
       BlockDirectory blocks,
       GuestDirectory guests,
-      ApplicationEventPublisher events) {
+      ApplicationEventPublisher events,
+      Clock clock) {
     this.comments = comments;
     this.publications = publications;
     this.blocks = blocks;
     this.guests = guests;
     this.events = events;
+  
+    this.clock = clock;
   }
 
   @Transactional
@@ -54,7 +59,8 @@ class CommentService {
     GuestDirectory.GuestIdentity guest = guests.createCommentAuthor(password);
     CommentEntity comment =
         comments.saveAndFlush(
-            CommentEntity.forGuest(publicationId, guest.internalId(), parentCommentId, body));
+            CommentEntity.forGuest(
+                publicationId, guest.internalId(), parentCommentId, body, Instant.now(clock)));
     publications
         .findActive(publicationId)
         .map(ActivePublication::authorMemberId)
@@ -78,7 +84,7 @@ class CommentService {
     if (comment.getGuestAuthorId() == null) throw new CommentOwnershipException();
     guests.authenticateByInternalId(comment.getGuestAuthorId(), password);
     if (comment.getVersion() != expectedVersion) throw new CommentVersionConflictException();
-    comment.delete(Instant.now());
+    comment.delete(Instant.now(clock));
     comments.saveAndFlush(comment);
   }
 
@@ -91,7 +97,7 @@ class CommentService {
     if (comment.getGuestAuthorId() == null) throw new CommentOwnershipException();
     guests.authenticateByInternalId(comment.getGuestAuthorId(), password);
     if (comment.getVersion() != expectedVersion) throw new CommentVersionConflictException();
-    comment.edit(body, Instant.now());
+    comment.edit(body, Instant.now(clock));
     return comments.saveAndFlush(comment);
   }
 
@@ -117,7 +123,8 @@ class CommentService {
     try {
       CommentEntity comment =
           comments.saveAndFlush(
-              new CommentEntity(publicationId, memberId, parentCommentId, body.trim()));
+              new CommentEntity(
+                  publicationId, memberId, parentCommentId, body.trim(), Instant.now(clock)));
       publications
           .findActive(publicationId)
           .map(ActivePublication::authorMemberId)
@@ -151,7 +158,7 @@ class CommentService {
     if (comment.getVersion() != expectedVersion) {
       throw new CommentVersionConflictException();
     }
-    comment.delete(Instant.now());
+    comment.delete(Instant.now(clock));
     comments.saveAndFlush(comment);
   }
 
@@ -162,7 +169,7 @@ class CommentService {
     CommentEntity comment = activeComment(commentId);
     if (!comment.getPublicationId().equals(publicationId)) throw new CommentNotFoundException();
     requireOwnershipAndVersion(comment, memberId, expectedVersion);
-    comment.edit(body, Instant.now());
+    comment.edit(body, Instant.now(clock));
     return comments.saveAndFlush(comment);
   }
 
@@ -171,7 +178,7 @@ class CommentService {
     CommentEntity comment = activeComment(commentId);
     requireAccessiblePublication(comment.getPublicationId(), memberId);
     requireOwnershipAndVersion(comment, memberId, expectedVersion);
-    comment.edit(body, Instant.now());
+    comment.edit(body, Instant.now(clock));
     return comments.saveAndFlush(comment);
   }
 
@@ -180,7 +187,7 @@ class CommentService {
     CommentEntity comment = activeComment(commentId);
     requireAccessiblePublication(comment.getPublicationId(), memberId);
     requireOwnershipAndVersion(comment, memberId, expectedVersion);
-    comment.delete(Instant.now());
+    comment.delete(Instant.now(clock));
     comments.saveAndFlush(comment);
   }
 

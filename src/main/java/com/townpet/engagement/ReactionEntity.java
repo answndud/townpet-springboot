@@ -34,12 +34,12 @@ class ReactionEntity {
 
   protected ReactionEntity() {}
 
-  ReactionEntity(UUID publicationId, UUID authorMemberId, ReactionType type) {
+  ReactionEntity(UUID publicationId, UUID authorMemberId, ReactionType type, Instant now) {
     this.id = UuidV7.randomUuid();
     this.publicationId = publicationId;
     this.authorMemberId = authorMemberId;
     this.type = type;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
   }
 
   UUID getPublicationId() {
