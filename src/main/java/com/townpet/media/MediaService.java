@@ -3,6 +3,7 @@ package com.townpet.media;
 import com.townpet.media.api.MediaOperations;
 import com.townpet.publication.api.PublicationAccess;
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -20,17 +21,20 @@ class MediaService implements MediaOperations {
   private final UploadAssetRepository assets;
   private final PublicationAccess publications;
   private final ObjectStoragePort storage;
+  private final Clock clock;
   private final JdbcTemplate jdbc;
 
   MediaService(
       UploadAssetRepository assets,
       PublicationAccess publications,
       ObjectStoragePort storage,
-      JdbcTemplate jdbc) {
+      JdbcTemplate jdbc,
+      Clock clock) {
     this.assets = assets;
     this.publications = publications;
     this.storage = storage;
     this.jdbc = jdbc;
+    this.clock = clock;
   }
 
   @Transactional
@@ -43,8 +47,8 @@ class MediaService implements MediaOperations {
         || byteSize > 10 * 1024 * 1024) {
       throw new MediaInputNotAllowedException();
     }
-    reserveUploadQuota(ownerMemberId, byteSize, Instant.now());
-    Instant now = Instant.now();
+    reserveUploadQuota(ownerMemberId, byteSize, Instant.now(clock));
+    Instant now = Instant.now(clock);
     return assets.save(
         new UploadAssetEntity(
             ownerMemberId,
@@ -52,7 +56,7 @@ class MediaService implements MediaOperations {
             checksumSha256,
             normalizedType,
             byteSize,
-            now.plus(1, ChronoUnit.HOURS)));
+            now.plus(1, ChronoUnit.HOURS), Instant.now(clock)));
   }
 
   String uploadUrl(UploadAssetEntity asset) {
@@ -71,7 +75,7 @@ class MediaService implements MediaOperations {
     if (asset.getStatus() != MediaAssetStatus.ATTACHED) {
       throw new MediaAssetStateException();
     }
-    return storage.createReadUrl(asset.getObjectKey(), Instant.now().plus(5, ChronoUnit.MINUTES));
+    return storage.createReadUrl(asset.getObjectKey(), Instant.now(clock).plus(5, ChronoUnit.MINUTES));
   }
 
   @Transactional
@@ -79,7 +83,7 @@ class MediaService implements MediaOperations {
       UUID ownerMemberId, UUID assetId, String contentType, byte[] content) {
     UploadAssetEntity asset = ownedAsset(ownerMemberId, assetId);
     if (asset.getStatus() != MediaAssetStatus.UPLOADING
-        || !asset.getExpiresAt().isAfter(Instant.now())) {
+        || !asset.getExpiresAt().isAfter(Instant.now(clock))) {
       throw new MediaAssetStateException();
     }
     if (!asset.getContentType().equalsIgnoreCase(contentType)
@@ -109,7 +113,7 @@ class MediaService implements MediaOperations {
   UploadAssetEntity finalizeUpload(UUID ownerMemberId, UUID assetId, String checksumSha256) {
     UploadAssetEntity asset = ownedAsset(ownerMemberId, assetId);
     if (asset.getStatus() != MediaAssetStatus.UPLOADING
-        || !asset.getExpiresAt().isAfter(Instant.now())) {
+        || !asset.getExpiresAt().isAfter(Instant.now(clock))) {
       throw new MediaAssetStateException();
     }
     StoredObject object =
@@ -126,7 +130,7 @@ class MediaService implements MediaOperations {
       storage.delete(asset.getObjectKey());
       throw new MediaObjectMismatchException();
     }
-    asset.finalizeUpload(checksumSha256, Instant.now());
+    asset.finalizeUpload(checksumSha256, Instant.now(clock));
     return assets.saveAndFlush(asset);
   }
 
@@ -172,7 +176,7 @@ class MediaService implements MediaOperations {
             Integer.class,
             publicationId);
     if (attachmentCount != null && attachmentCount >= 5) throw new MediaAttachmentLimitException();
-    asset.attach(publicationId, Instant.now());
+    asset.attach(publicationId, Instant.now(clock));
     return assets.saveAndFlush(asset);
   }
 

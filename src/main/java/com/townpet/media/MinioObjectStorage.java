@@ -15,6 +15,7 @@ import io.minio.http.Method;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -37,9 +38,11 @@ final class MinioObjectStorage implements ObjectStoragePort, HealthIndicator {
   private final String publicEndpoint;
   private final String bucket;
   private final int expirySeconds;
+  private final Clock clock;
   private final MeterRegistry metrics;
 
-  MinioObjectStorage(MinioStorageProperties properties, MeterRegistry metrics) {
+  MinioObjectStorage(MinioStorageProperties properties, MeterRegistry metrics,
+      Clock clock) {
     client =
         MinioClient.builder()
             .endpoint(properties.endpoint())
@@ -61,6 +64,7 @@ final class MinioObjectStorage implements ObjectStoragePort, HealthIndicator {
     } catch (Exception exception) {
       throw new IllegalStateException("Could not initialize MinIO bucket", exception);
     }
+    this.clock = clock;
   }
 
   @Override
@@ -82,9 +86,9 @@ final class MinioObjectStorage implements ObjectStoragePort, HealthIndicator {
           new PostPolicy(
               bucket,
               ZonedDateTime.ofInstant(
-                  expiresAt.isBefore(Instant.now().plusSeconds(expirySeconds))
+                  expiresAt.isBefore(Instant.now(clock).plusSeconds(expirySeconds))
                       ? expiresAt
-                      : Instant.now().plusSeconds(expirySeconds),
+                      : Instant.now(clock).plusSeconds(expirySeconds),
                   ZoneOffset.UTC));
       policy.addEqualsCondition("key", objectKey);
       policy.addEqualsCondition("Content-Type", contentType);
@@ -111,7 +115,7 @@ final class MinioObjectStorage implements ObjectStoragePort, HealthIndicator {
                   Math.min(
                       expirySeconds,
                       Math.max(
-                          1, (int) (expiresAt.getEpochSecond() - Instant.now().getEpochSecond()))),
+                          1, (int) (expiresAt.getEpochSecond() - Instant.now(clock).getEpochSecond()))),
                   TimeUnit.SECONDS)
               .build());
       sample.stop(operationTimer("create_read_url", "success"));

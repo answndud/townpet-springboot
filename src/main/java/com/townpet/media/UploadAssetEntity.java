@@ -57,7 +57,8 @@ class UploadAssetEntity {
       String checksumSha256,
       String contentType,
       long byteSize,
-      Instant expiresAt) {
+      Instant expiresAt,
+      Instant now) {
     this.id = UuidV7.randomUuid();
     this.ownerMemberId = ownerMemberId;
     this.objectKey = objectKey;
@@ -66,7 +67,7 @@ class UploadAssetEntity {
     this.byteSize = byteSize;
     this.status = MediaAssetStatus.UPLOADING;
     this.expiresAt = expiresAt;
-    this.createdAt = Instant.now();
+    this.createdAt = now;
     this.updatedAt = createdAt;
   }
 
