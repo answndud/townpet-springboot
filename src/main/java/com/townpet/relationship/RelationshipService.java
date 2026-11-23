@@ -1,8 +1,10 @@
 package com.townpet.relationship;
 
+import com.townpet.common.DomainProblemException;
 import com.townpet.common.UuidV7;
 import com.townpet.member.api.MemberDirectory;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +60,14 @@ class RelationshipService {
   record RelationshipState(boolean following, boolean blocking) {}
 }
 
-final class RelationshipTargetNotFoundException extends RuntimeException {}
+final class RelationshipTargetNotFoundException extends DomainProblemException {
+  RelationshipTargetNotFoundException() {
+    super(HttpStatus.NOT_FOUND, "RELATIONSHIP_TARGET_NOT_FOUND");
+  }
+}
 
-final class RelationshipSelfTargetException extends RuntimeException {}
+final class RelationshipSelfTargetException extends DomainProblemException {
+  RelationshipSelfTargetException() {
+    super(HttpStatus.BAD_REQUEST, "RELATIONSHIP_SELF_TARGET");
+  }
+}

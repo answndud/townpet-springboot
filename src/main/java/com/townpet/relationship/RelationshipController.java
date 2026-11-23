@@ -5,14 +5,12 @@ import com.townpet.common.MemberOnly;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping({
@@ -30,11 +28,7 @@ class RelationshipController {
   @MemberOnly
   RelationshipResponse get(
       @CurrentMember UUID currentMemberId, @PathVariable UUID targetMemberId) {
-    try {
-      return toResponse(relationships.state(currentMemberId, targetMemberId));
-    } catch (RelationshipTargetNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    }
+    return toResponse(relationships.state(currentMemberId, targetMemberId));
   }
 
   @PutMapping
@@ -43,15 +37,9 @@ class RelationshipController {
       @CurrentMember UUID currentMemberId,
       @PathVariable UUID targetMemberId,
       @Valid @RequestBody SetRelationshipRequest request) {
-    try {
-      return toResponse(
-          relationships.set(
-              currentMemberId, targetMemberId, request.following(), request.blocking()));
-    } catch (RelationshipTargetNotFoundException exception) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    } catch (RelationshipSelfTargetException exception) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot target yourself");
-    }
+    return toResponse(
+        relationships.set(
+            currentMemberId, targetMemberId, request.following(), request.blocking()));
   }
 
   private static RelationshipResponse toResponse(RelationshipService.RelationshipState state) {
